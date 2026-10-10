@@ -1,0 +1,840 @@
+// src/kernels/cuda/dsv4_fast.cu - see include/strata/kernels/dsv4_fast.hpp.
+//
+// Transcribed from llama.cpp's deepseek4 graph (src/models/deepseek4.cpp, MIT) and ggml's CUDA rope (rope.cu: the
+// NORM-mode rope_yarn, offset by ggml_rope_set_offset); docs/deepseek4/SPEC.md has the math these kernels follow.
+#include "strata/kernels/dsv4_fast.hpp"
+
+#include <cuda_fp16.h>
+#include <cuda_runtime.h>
+
+#define GGML_COMMON_DECL_CUDA
+#define GGML_COMMON_IMPL_CUDA
+#include "ggml-common.h"
+#include "dsa_topk.cuh"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+
+namespace strata::kernels::dsv4 {
+namespace {
+
+__device__ __forceinline__ float warp_sum(float v) {
+#pragma unroll
+    for (int o = 16; o > 0; o >>= 1) v += __shfl_xor_sync(0xffffffffu, v, o);
+    return v;
+}
+__device__ __forceinline__ float warp_max(float v) {
+#pragma unroll
+    for (int o = 16; o > 0; o >>= 1) v = fmaxf(v, __shfl_xor_sync(0xffffffffu, v, o));
+    return v;
+}
+// block-wide sum / max; every thread gets the result.  sh: >= 32 floats.
+__device__ __forceinline__ float block_sum(float v, float* sh) {
+    const int lane = threadIdx.x & 31, w = threadIdx.x >> 5, nw = (blockDim.x + 31) >> 5;
+    v = warp_sum(v);
+    __syncthreads();
+    if (lane == 0) sh[w] = v;
+    __syncthreads();
+    float t = 0.0f;
+    for (int i = 0; i < nw; ++i) t += sh[i];
+    __syncthreads();
+    return t;
+}
+__device__ __forceinline__ float block_max(float v, float* sh) {
+    const int lane = threadIdx.x & 31, w = threadIdx.x >> 5, nw = (blockDim.x + 31) >> 5;
+    v = warp_max(v);
+    __syncthreads();
+    if (lane == 0) sh[w] = v;
+    __syncthreads();
+    float t = -INFINITY;
+    for (int i = 0; i < nw; ++i) t = fmaxf(t, sh[i]);
+    __syncthreads();
+    return t;
+}
+// one q8_1 block from 32 values held one per lane (the glm fast path's q8_1_store_warp)
+__device__ __forceinline__ void q8_1_store_warp(float v, block_q8_1* dst, int lane) {
+    const float amax = warp_max(fabsf(v));
+    const float sum = warp_sum(v);
+    const float d = fminf(amax / 127.0f, 65504.0f);
+    const int8_t q = amax == 0.0f ? 0 : (int8_t) fmaxf(-127.0f, fminf(127.0f, roundf(v / d)));
+    dst->qs[lane] = q;
+    if (lane == 0) dst->ds = make_half2(d, fmaxf(-65504.0f, fminf(65504.0f, sum)));
+}
+__device__ __forceinline__ float bf(uint16_t v) { return __uint_as_float((uint32_t) v << 16); }
+
+// ggml's rope_yarn (rope.cu), for the pair starting at iw (even, relative to the rotated span)
+__device__ __forceinline__ void rope_cs(const Rope& r, int pos, int iw, bool forward, float& c, float& s) {
+    const float theta_extrap = (float) pos * powf(r.theta_scale, iw / 2.0f);
+    const float theta_interp = r.freq_scale * theta_extrap;
+    float theta = theta_interp;
+    float mscale = r.attn_factor;
+    if (r.ext_factor != 0.0f) {
+        const float y = (float) (iw / 2 - r.corr_lo) / fmaxf(0.001f, r.corr_hi - r.corr_lo);
+        const float ramp = 1.0f - fminf(1.0f, fmaxf(0.0f, y));
+        const float ramp_mix = ramp * r.ext_factor;
+        theta = theta_interp * (1.0f - ramp_mix) + theta_extrap * ramp_mix;
+        mscale *= 1.0f + 0.1f * logf(1.0f / r.freq_scale);
+    }
+    c = cosf(theta) * mscale;
+    s = sinf(theta) * mscale;
+    if (!forward) s = -s;
+}
+// rotates the last n_rot values of v[0, dim) in place (NORM mode: adjacent pairs).  Called by threads
+// [0, n_rot / 2) of the block with t = threadIdx.x; v in shared memory.
+__device__ __forceinline__ void rope_pair(float* v, int dim, int n_rot, const Rope& r, int pos, bool forward, int t) {
+    const int iw = 2 * t;
+    const int i0 = dim - n_rot + iw;
+    float c, s;
+    rope_cs(r, pos, iw, forward, c, s);
+    const float x0 = v[i0], x1 = v[i0 + 1];
+    v[i0] = x0 * c - x1 * s;
+    v[i0 + 1] = x0 * s + x1 * c;
+}
+
+// ---------------------------------------------------------------- prep
+// block 0: qr; block 1: kv -> raw ring; blocks 2.. : the compressor rings
+__global__ void __launch_bounds__(512) prep_kernel(const PrepArgs a) {
+    __shared__ float sh[32];
+    __shared__ float v[1024];
+    const int tid = threadIdx.x;
+    if (blockIdx.x == 0) {
+        float ss = 0.0f;
+        for (int i = tid; i < a.q_lora; i += blockDim.x) ss += a.qr_raw[i] * a.qr_raw[i];
+        const float inv = rsqrtf(block_sum(ss, sh) / (float) a.q_lora + a.eps);
+        for (int i = tid; i < a.q_lora; i += blockDim.x) {   // blockDim % 32 == 0: each warp a whole q8_1 block
+            const float y = a.qr_raw[i] * inv * a.q_a_norm[i];
+            a.qr[i] = y;
+            q8_1_store_warp(y, (block_q8_1*) a.qr_q + i / 32, tid & 31);
+        }
+        return;
+    }
+    if (blockIdx.x == 1) {
+        const int D = a.head_dim;
+        float ss = 0.0f;
+        for (int i = tid; i < D; i += blockDim.x) ss += a.kv_raw[i] * a.kv_raw[i];
+        const float inv = rsqrtf(block_sum(ss, sh) / (float) D + a.eps);
+        for (int i = tid; i < D; i += blockDim.x) v[i] = a.kv_raw[i] * inv * a.kv_norm[i];
+        __syncthreads();
+        if (tid < a.n_rot / 2) rope_pair(v, D, a.n_rot, a.rope, a.p, true, tid);
+        __syncthreads();
+        uint16_t* row = a.raw + (size_t) (a.p % a.ring) * D;
+        for (int i = tid; i < D; i += blockDim.x) row[i] = __half_as_ushort(__float2half(v[i]));
+        return;
+    }
+    const int c = blockIdx.x - 2;
+    if (c >= a.n_comp) return;
+    const Comp& C = a.comp[c];
+    const int W = (C.overlap ? 2 : 1) * C.D;
+    const int state = (C.overlap ? 2 : 1) * C.ratio;
+    const int row = a.p % state;
+    const float* ape = C.ape + (size_t) (a.p % C.ratio) * W;
+    for (int i = tid; i < W; i += blockDim.x) {
+        C.ring_kv[(size_t) row * W + i] = a.comp_kv[c][i];
+        C.ring_sc[(size_t) row * W + i] = a.comp_sc[c][i] + ape[i];
+    }
+}
+
+// one block per finishing compressor: the per-channel softmax-weighted sum of the block's rows, rms * norm, RoPE at
+// the block's first position, FP16 into the cache row b
+__global__ void __launch_bounds__(512) compress_kernel(const PrepArgs a) {
+    __shared__ float sh[32];
+    __shared__ float v[512];
+    const Comp& C = a.comp[blockIdx.x];
+    const int D = C.D, R = C.ratio, tid = threadIdx.x;
+    const int W = (C.overlap ? 2 : 1) * D;
+    const int state = (C.overlap ? 2 : 1) * R;
+    const int s0 = a.p + 1 - R;
+    const int b = a.p / R;
+    float ss = 0.0f;
+    for (int d = tid; d < D; d += blockDim.x) {
+        // the rows: the overlap's previous window from the FIRST half of the projection, then this window from the
+        // SECOND half; one window of the whole projection otherwise.  Positions < 0 are kv 0, score -inf.
+        float m = -INFINITY;
+        const int n = C.overlap ? 2 * R : R;
+        for (int t = 0; t < n; ++t) {
+            const int pos = C.overlap ? s0 - R + t : s0 + t;
+            if (pos < 0) continue;
+            const int half = C.overlap && t >= R ? D : 0;
+            m = fmaxf(m, C.ring_sc[(size_t) (pos % state) * W + half + d]);
+        }
+        float den = 0.0f, num = 0.0f;
+        for (int t = 0; t < n; ++t) {
+            const int pos = C.overlap ? s0 - R + t : s0 + t;
+            if (pos < 0) continue;
+            const int half = C.overlap && t >= R ? D : 0;
+            const size_t at = (size_t) (pos % state) * W + half + d;
+            const float e = expf(C.ring_sc[at] - m);
+            den += e;
+            num += e * C.ring_kv[at];
+        }
+        const float y = num / den;
+        v[d] = y;
+        ss += y * y;
+    }
+    const float inv = rsqrtf(block_sum(ss, sh) / (float) D + a.eps);
+    for (int d = tid; d < D; d += blockDim.x) v[d] = v[d] * inv * C.norm[d];
+    __syncthreads();
+    if (tid < a.n_rot / 2) rope_pair(v, D, a.n_rot, a.comp_rope, s0, true, tid);
+    __syncthreads();
+    uint16_t* row = C.cache + (size_t) b * D;
+    for (int d = tid; d < D; d += blockDim.x) row[d] = __half_as_ushort(__float2half(v[d]));
+}
+
+// ---------------------------------------------------------------- q / iq
+__global__ void __launch_bounds__(128) q_prep_kernel(float* q, int n_head, int head_dim, int n_rot, Rope rope, float* iq,
+                                                     int idx_dim, Rope comp_rope, int p, float eps) {
+    __shared__ float sh[32];
+    __shared__ float v[512];
+    const int tid = threadIdx.x;
+    if ((int) blockIdx.x < n_head) {
+        float* x = q + (size_t) blockIdx.x * head_dim;
+        float ss = 0.0f;
+        for (int i = tid; i < head_dim; i += blockDim.x) {
+            v[i] = x[i];
+            ss += v[i] * v[i];
+        }
+        const float inv = rsqrtf(block_sum(ss, sh) / (float) head_dim + eps);
+        for (int i = tid; i < head_dim; i += blockDim.x) v[i] *= inv;
+        __syncthreads();
+        if (tid < n_rot / 2) rope_pair(v, head_dim, n_rot, rope, p, true, tid);
+        __syncthreads();
+        for (int i = tid; i < head_dim; i += blockDim.x) x[i] = v[i];
+        return;
+    }
+    float* x = iq + (size_t) (blockIdx.x - n_head) * idx_dim;
+    for (int i = tid; i < idx_dim; i += blockDim.x) v[i] = x[i];
+    __syncthreads();
+    if (tid < n_rot / 2) rope_pair(v, idx_dim, n_rot, comp_rope, p, true, tid);
+    __syncthreads();
+    for (int i = tid; i < idx_dim; i += blockDim.x) x[i] = v[i];
+}
+
+// ---------------------------------------------------------------- the lightning indexer
+constexpr int IDX_WARPS = 8;
+// one warp per compressed row; iq (idx_heads x idx_dim, idx_dim == 128) and w in shared memory
+__global__ void __launch_bounds__(IDX_WARPS * 32) idx_score_kernel(const float* __restrict__ iq,
+                                                                   const uint16_t* __restrict__ K,
+                                                                   const float* __restrict__ w, int idx_heads,
+                                                                   int n_vis, float* __restrict__ score) {
+    extern __shared__ float s_iq[];   // idx_heads * 128, then idx_heads weights
+    float* s_w = s_iq + idx_heads * 128;
+    for (int i = threadIdx.x; i < idx_heads * 128; i += blockDim.x) s_iq[i] = iq[i];
+    for (int i = threadIdx.x; i < idx_heads; i += blockDim.x) s_w[i] = w[i];
+    __syncthreads();
+    const int lane = threadIdx.x & 31;
+    const int j = blockIdx.x * IDX_WARPS + (threadIdx.x >> 5);
+    if (j >= n_vis) return;
+    const uint16_t* kr = K + (size_t) j * 128 + lane * 4;
+    const float k0 = __half2float(__ushort_as_half(kr[0])), k1 = __half2float(__ushort_as_half(kr[1]));
+    const float k2 = __half2float(__ushort_as_half(kr[2])), k3 = __half2float(__ushort_as_half(kr[3]));
+    float acc = 0.0f;
+    for (int h = 0; h < idx_heads; ++h) {
+        const float* qh = s_iq + h * 128 + lane * 4;
+        const float d = warp_sum(qh[0] * k0 + qh[1] * k1 + qh[2] * k2 + qh[3] * k3);
+        acc += fmaxf(d, 0.0f) * s_w[h];
+    }
+    if (lane == 0) score[j] = acc;
+}
+__global__ void __launch_bounds__(1024) idx_select_kernel(const float* __restrict__ score, int n_vis, int top,
+                                                          int* __restrict__ sel) {
+    strata::kernels::dsa::select_top_pools(score, n_vis, top, 1, sel);
+}
+
+// ---------------------------------------------------------------- attention
+constexpr int ATT_THREADS = 256;
+// one block per head; logits of every key in shared memory (dynamic: n_raw + n_comp floats)
+__global__ void __launch_bounds__(ATT_THREADS) attend_kernel(const float* __restrict__ q, const uint16_t* __restrict__ raw,
+                                                             int ring, int n_raw, const uint16_t* __restrict__ comp,
+                                                             const int* __restrict__ comp_sel, int n_comp,
+                                                             const float* __restrict__ sinks, int n_rot, Rope rope,
+                                                             int p, float scale, float* __restrict__ out) {
+    constexpr int D = 512;
+    extern __shared__ float s_l[];
+    __shared__ float s_q[D];
+    __shared__ float s_o[D];
+    __shared__ float sh[32];
+    const int h = blockIdx.x, tid = threadIdx.x, lane = tid & 31, warp = tid >> 5;
+    const int n = n_raw + n_comp;
+    for (int i = tid; i < D; i += ATT_THREADS) s_q[i] = q[(size_t) h * D + i];
+    __syncthreads();
+    const auto key = [&](int j) -> const uint16_t* {
+        if (j < n_raw) {
+            const int pos = p - n_raw + 1 + j;
+            return raw + (size_t) (pos % ring) * D;
+        }
+        const int r = comp_sel != nullptr ? comp_sel[j - n_raw] : j - n_raw;
+        return comp + (size_t) r * D;
+    };
+    // 1. the logits, one warp per key: lane l takes the half2 pairs l, l + 32, ... (coalesced)
+    for (int j = warp; j < n; j += ATT_THREADS / 32) {
+        const __half2* k2 = (const __half2*) key(j);
+        float acc = 0.0f;
+#pragma unroll
+        for (int i = 0; i < D / 64; ++i) {
+            const float2 kv = __half22float2(k2[lane + 32 * i]);
+            const int e = 2 * (lane + 32 * i);
+            acc += s_q[e] * kv.x + s_q[e + 1] * kv.y;
+        }
+        acc = warp_sum(acc);
+        if (lane == 0) s_l[j] = acc * scale;
+    }
+    __syncthreads();
+    // 2. the softmax with the sink (it joins the max and the denominator, no value)
+    const float sink = sinks[h];
+    float m = sink;
+    for (int j = tid; j < n; j += ATT_THREADS) m = fmaxf(m, s_l[j]);
+    m = block_max(m, sh);
+    float den = 0.0f;
+    for (int j = tid; j < n; j += ATT_THREADS) {
+        const float e = expf(s_l[j] - m);
+        s_l[j] = e;
+        den += e;
+    }
+    den = block_sum(den, sh) + expf(sink - m);
+    const float rden = 1.0f / den;
+    // 3. o = sum_j w_j k_j: thread t owns the pair (2t, 2t+1)
+    float o0 = 0.0f, o1 = 0.0f;
+    for (int j = 0; j < n; ++j) {
+        const float2 kv = __half22float2(((const __half2*) key(j))[tid]);
+        const float wj = s_l[j];
+        o0 += wj * kv.x;
+        o1 += wj * kv.y;
+    }
+    s_o[2 * tid] = o0 * rden;
+    s_o[2 * tid + 1] = o1 * rden;
+    __syncthreads();
+    // 4. de-rope (V = K carries the rotation): the inverse rotation at the query's position
+    if (tid < n_rot / 2) rope_pair(s_o, D, n_rot, rope, p, false, tid);
+    __syncthreads();
+    for (int i = tid; i < D; i += ATT_THREADS) out[(size_t) h * D + i] = s_o[i];
+}
+
+// ---------------------------------------------------------------- the hyper-connection head
+__global__ void __launch_bounds__(1024) head_prep_kernel(const float* __restrict__ R, const uint16_t* __restrict__ fn,
+                                                         const float* __restrict__ scale, const float* __restrict__ base,
+                                                         float hc_eps, const float* __restrict__ norm_w, float eps,
+                                                         int n_embd, float* __restrict__ x, block_q8_1* __restrict__ xq) {
+    __shared__ float sh[32];
+    __shared__ float s_pre[4];
+    const int tid = threadIdx.x, F = 4 * n_embd;
+    float ss = 0.0f, m0 = 0.0f, m1 = 0.0f, m2 = 0.0f, m3 = 0.0f;
+    for (int i = tid; i < F; i += blockDim.x) {
+        const float r = R[i];
+        ss += r * r;
+        m0 += bf(fn[i]) * r;
+        m1 += bf(fn[(size_t) F + i]) * r;
+        m2 += bf(fn[(size_t) 2 * F + i]) * r;
+        m3 += bf(fn[(size_t) 3 * F + i]) * r;
+    }
+    const float inv = rsqrtf(block_sum(ss, sh) / (float) F + eps);
+    m0 = block_sum(m0, sh);
+    m1 = block_sum(m1, sh);
+    m2 = block_sum(m2, sh);
+    m3 = block_sum(m3, sh);
+    if (tid == 0) {
+        const float mm[4] = {m0, m1, m2, m3};
+        for (int s = 0; s < 4; ++s) s_pre[s] = 1.0f / (1.0f + expf(-(mm[s] * inv * scale[0] + base[s]))) + hc_eps;
+    }
+    __syncthreads();
+    float hs = 0.0f;
+    for (int e = tid; e < n_embd; e += blockDim.x) {
+        const float h = s_pre[0] * R[e] + s_pre[1] * R[n_embd + e] + s_pre[2] * R[2 * n_embd + e] +
+                        s_pre[3] * R[3 * n_embd + e];
+        x[e] = h;
+        hs += h * h;
+    }
+    const float inv2 = rsqrtf(block_sum(hs, sh) / (float) n_embd + eps);
+    for (int e = tid; e < n_embd; e += blockDim.x) {
+        const float y = x[e] * inv2 * norm_w[e];
+        x[e] = y;
+        q8_1_store_warp(y, xq + e / 32, tid & 31);
+    }
+}
+
+
+// ================================================================ the prompt path
+__global__ void win_load_kernel(const uint16_t* __restrict__ ring, int n_ring, uint16_t* __restrict__ keys, int n_hist,
+                                int p0, int D) {
+    const int i = blockIdx.x;
+    const int pos = p0 - n_hist + i;
+    const uint16_t* src = ring + (size_t) (pos % n_ring) * D;
+    for (int d = threadIdx.x; d < D; d += blockDim.x) keys[(size_t) i * D + d] = src[d];
+}
+__global__ void win_store_kernel(uint16_t* __restrict__ ring, int n_ring, const uint16_t* __restrict__ keys, int n_total,
+                                 int n_keep, int pos0, int D) {
+    const int r = n_total - n_keep + blockIdx.x;
+    const int pos = pos0 + r;
+    uint16_t* dst = ring + (size_t) (pos % n_ring) * D;
+    for (int d = threadIdx.x; d < D; d += blockDim.x) dst[d] = keys[(size_t) r * D + d];
+}
+
+__global__ void __launch_bounds__(512) prep_batch_kernel(const BatchPrepArgs a) {
+    __shared__ float sh[32];
+    __shared__ float v[512];
+    const int t = blockIdx.x, tid = threadIdx.x;
+    if (blockIdx.y == 0) {
+        const float* in = a.qr_raw + (size_t) t * a.q_lora;
+        float ss = 0.0f;
+        for (int i = tid; i < a.q_lora; i += blockDim.x) ss += in[i] * in[i];
+        const float inv = rsqrtf(block_sum(ss, sh) / (float) a.q_lora + a.eps);
+        for (int i = tid; i < a.q_lora; i += blockDim.x) {
+            const float y = in[i] * inv * a.q_a_norm[i];
+            a.qr[(size_t) t * a.q_lora + i] = y;
+            a.qr16[(size_t) t * a.q_lora + i] = __half_as_ushort(__float2half(y));
+        }
+        return;
+    }
+    const int D = a.head_dim;
+    const float* in = a.kv_raw + (size_t) t * D;
+    float ss = 0.0f;
+    for (int i = tid; i < D; i += blockDim.x) ss += in[i] * in[i];
+    const float inv = rsqrtf(block_sum(ss, sh) / (float) D + a.eps);
+    for (int i = tid; i < D; i += blockDim.x) v[i] = in[i] * inv * a.kv_norm[i];
+    __syncthreads();
+    if (tid < a.n_rot / 2) rope_pair(v, D, a.n_rot, a.rope, a.p0 + t, true, tid);
+    __syncthreads();
+    uint16_t* row = a.keys + (size_t) (a.n_hist + t) * D;
+    for (int i = tid; i < D; i += blockDim.x) row[i] = __half_as_ushort(__float2half(v[i]));
+}
+
+struct BatchCompArgs {
+    BatchComp c[2];
+    int n_comp, p0, T, n_rot;
+    Rope rope;
+    float eps;
+};
+// one block per (block ending in the batch, compressor)
+__global__ void __launch_bounds__(512) compress_batch_kernel(const BatchCompArgs a) {
+    __shared__ float sh[32];
+    __shared__ float v[512];
+    const BatchComp& B = a.c[blockIdx.y];
+    const Comp& C = B.c;
+    const int D = C.D, R = C.ratio, tid = threadIdx.x;
+    const int W = (C.overlap ? 2 : 1) * D;
+    const int state = (C.overlap ? 2 : 1) * R;
+    const int b_lo = (a.p0 + R) / R - 1, b_hi = (a.p0 + a.T) / R - 1;
+    const int b = b_lo + (int) blockIdx.x;
+    if (b > b_hi || b < 0) return;
+    const int s0 = b * R;
+    const int n = C.overlap ? 2 * R : R;
+    // a row's kv and score for channel col: this batch's projections (with the ape) or the ring (positions < p0)
+    const auto row = [&](int pos, int col, float& kv, float& sc) {
+        if (pos >= a.p0) {
+            const size_t at = (size_t) (pos - a.p0) * W + col;
+            kv = B.kv[at];
+            sc = B.sc[at] + C.ape[(size_t) (pos % R) * W + col];
+        } else {
+            const size_t at = (size_t) (pos % state) * W + col;
+            kv = C.ring_kv[at];
+            sc = C.ring_sc[at];
+        }
+    };
+    float ss = 0.0f;
+    for (int d = tid; d < D; d += blockDim.x) {
+        float m = -INFINITY;
+        for (int t = 0; t < n; ++t) {
+            const int pos = C.overlap ? s0 - R + t : s0 + t;
+            if (pos < 0) continue;
+            float kv, sc;
+            row(pos, (C.overlap && t >= R ? D : 0) + d, kv, sc);
+            m = fmaxf(m, sc);
+        }
+        float den = 0.0f, num = 0.0f;
+        for (int t = 0; t < n; ++t) {
+            const int pos = C.overlap ? s0 - R + t : s0 + t;
+            if (pos < 0) continue;
+            float kv, sc;
+            row(pos, (C.overlap && t >= R ? D : 0) + d, kv, sc);
+            const float e = expf(sc - m);
+            den += e;
+            num += e * kv;
+        }
+        const float y = num / den;
+        v[d] = y;
+        ss += y * y;
+    }
+    const float inv = rsqrtf(block_sum(ss, sh) / (float) D + a.eps);
+    for (int d = tid; d < D; d += blockDim.x) v[d] = v[d] * inv * C.norm[d];
+    __syncthreads();
+    if (tid < a.n_rot / 2) rope_pair(v, D, a.n_rot, a.rope, s0, true, tid);
+    __syncthreads();
+    uint16_t* out = C.cache + (size_t) b * D;
+    for (int d = tid; d < D; d += blockDim.x) out[d] = __half_as_ushort(__float2half(v[d]));
+}
+// the ring takes the batch's last `state` rows (after every block above read the old ones)
+__global__ void comp_ring_kernel(const BatchCompArgs a) {
+    const BatchComp& B = a.c[blockIdx.y];
+    const Comp& C = B.c;
+    const int W = (C.overlap ? 2 : 1) * C.D, state = (C.overlap ? 2 : 1) * C.ratio;
+    const int first = max(a.p0, a.p0 + a.T - state);
+    const int pos = first + (int) blockIdx.x;
+    if (pos >= a.p0 + a.T) return;
+    const size_t src = (size_t) (pos - a.p0) * W, dst = (size_t) (pos % state) * W;
+    const float* ape = C.ape + (size_t) (pos % C.ratio) * W;
+    for (int i = threadIdx.x; i < W; i += blockDim.x) {
+        C.ring_kv[dst + i] = B.kv[src + i];
+        C.ring_sc[dst + i] = B.sc[src + i] + ape[i];
+    }
+}
+
+__global__ void __launch_bounds__(128) q_prep_batch_kernel(float* q, int n_head, int head_dim, int n_rot, Rope rope,
+                                                           float* iq, int idx_heads, int idx_dim, Rope comp_rope,
+                                                           int p0, float eps) {
+    __shared__ float sh[32];
+    __shared__ float v[512];
+    const int t = blockIdx.x, h = blockIdx.y, tid = threadIdx.x, p = p0 + t;
+    if (h < n_head) {
+        float* x = q + ((size_t) t * n_head + h) * head_dim;
+        float ss = 0.0f;
+        for (int i = tid; i < head_dim; i += blockDim.x) {
+            v[i] = x[i];
+            ss += v[i] * v[i];
+        }
+        const float inv = rsqrtf(block_sum(ss, sh) / (float) head_dim + eps);
+        for (int i = tid; i < head_dim; i += blockDim.x) v[i] *= inv;
+        __syncthreads();
+        if (tid < n_rot / 2) rope_pair(v, head_dim, n_rot, rope, p, true, tid);
+        __syncthreads();
+        for (int i = tid; i < head_dim; i += blockDim.x) x[i] = v[i];
+        return;
+    }
+    float* x = iq + ((size_t) t * idx_heads + (h - n_head)) * idx_dim;
+    for (int i = tid; i < idx_dim; i += blockDim.x) v[i] = x[i];
+    __syncthreads();
+    if (tid < n_rot / 2) rope_pair(v, idx_dim, n_rot, comp_rope, p, true, tid);
+    __syncthreads();
+    for (int i = tid; i < idx_dim; i += blockDim.x) x[i] = v[i];
+}
+
+// a tile of 32 tokens x 32 compressed rows over every indexer head (idx_dim 128): K once, each head's q in turn
+constexpr int IQT = 32, IRT = 32, IPAD = 129;
+__global__ void __launch_bounds__(256) idx_score_batch_kernel(const float* __restrict__ iq, const uint16_t* __restrict__ K,
+                                                              const float* __restrict__ w, int idx_heads, int ratio,
+                                                              int p0, int T, float* __restrict__ score, int ld) {
+    __shared__ float s_k[IRT * IPAD];
+    __shared__ float s_q[IQT * IPAD];
+    __shared__ float s_w[IQT * 64];
+    const int tid = threadIdx.x;
+    const int t0 = blockIdx.y * IQT, j0 = blockIdx.x * IRT;
+    const int max_vis = (p0 + min(T, t0 + IQT) - 1 + 1) / ratio;   // the tile's last token sees the most rows
+    if (j0 >= max_vis) {
+        // rows nobody in the tile sees: -inf for the tokens in range
+        for (int i = tid; i < IQT * IRT; i += blockDim.x) {
+            const int tq = i / IRT, r = i % IRT;
+            if (t0 + tq < T && j0 + r < ld) score[(size_t) (t0 + tq) * ld + j0 + r] = -INFINITY;
+        }
+        return;
+    }
+    for (int i = tid; i < IRT * 128; i += blockDim.x) {
+        const int r = i / 128, k = i % 128;
+        s_k[r * IPAD + k] = j0 + r < max_vis ? __half2float(__ushort_as_half(K[(size_t) (j0 + r) * 128 + k])) : 0.0f;
+    }
+    for (int i = tid; i < IQT * idx_heads; i += blockDim.x) {
+        const int tq = i / idx_heads, h = i % idx_heads;
+        s_w[tq * 64 + h] = t0 + tq < T ? w[(size_t) (t0 + tq) * idx_heads + h] : 0.0f;
+    }
+    const int tq = tid / 8, tr = tid % 8;
+    constexpr int NR = IRT / 8;   // rows a thread scores: tr, tr + 8, ..
+    float acc[NR];
+#pragma unroll
+    for (int i = 0; i < NR; ++i) acc[i] = 0.0f;
+    for (int h = 0; h < idx_heads; ++h) {
+        __syncthreads();
+        for (int i = tid; i < IQT * 128; i += blockDim.x) {
+            const int q = i / 128, k = i % 128;
+            s_q[q * IPAD + k] = t0 + q < T ? iq[((size_t) (t0 + q) * idx_heads + h) * 128 + k] : 0.0f;
+        }
+        __syncthreads();
+        float d[NR];
+#pragma unroll
+        for (int i = 0; i < NR; ++i) d[i] = 0.0f;
+        const float* qq = s_q + tq * IPAD;
+        for (int k = 0; k < 128; ++k) {
+            const float x = qq[k];
+#pragma unroll
+            for (int i = 0; i < NR; ++i) d[i] += x * s_k[(tr + 8 * i) * IPAD + k];
+        }
+        const float wh = s_w[tq * 64 + h];
+#pragma unroll
+        for (int i = 0; i < NR; ++i) acc[i] += fmaxf(d[i], 0.0f) * wh;
+    }
+    const int t = t0 + tq;
+    if (t >= T) return;
+    const int n_vis = (p0 + t + 1) / ratio;
+#pragma unroll
+    for (int i = 0; i < NR; ++i) {
+        const int j = j0 + tr + 8 * i;
+        if (j < ld) score[(size_t) t * ld + j] = j < n_vis ? acc[i] : -INFINITY;
+    }
+}
+__global__ void __launch_bounds__(1024) idx_select_batch_kernel(const float* __restrict__ score, int ld, int ratio, int p0,
+                                                                int top_k, int* __restrict__ sel) {
+    const int t = blockIdx.x;
+    const int n_vis = (p0 + t + 1) / ratio;
+    if (n_vis <= 0) return;
+    strata::kernels::dsa::select_top_pools(score + (size_t) t * ld, n_vis, min(top_k, n_vis), 1, sel + (size_t) t * top_k);
+}
+
+// 8 heads of one token per block, online softmax over tiles of 32 keys (the sink seeds the max and the sum)
+constexpr int AB_H = 8, AB_TILE = 32;
+__global__ void __launch_bounds__(256) attend_batch_kernel(const float* __restrict__ q, const uint16_t* __restrict__ keys,
+                                                           int n_hist, int n_swa, const uint16_t* __restrict__ comp,
+                                                           const int* __restrict__ sel, int top_k, int ratio,
+                                                           const float* __restrict__ sinks, int n_head, int n_rot,
+                                                           Rope rope, int p0, float scale, float* __restrict__ out) {
+    constexpr int D = 512;
+    __shared__ float s_q[AB_H][D];
+    __shared__ float s_l[AB_TILE][AB_H];
+    __shared__ float s_m[AB_H], s_sum[AB_H], s_scale[AB_H];
+    const int t = blockIdx.x, h0 = blockIdx.y * AB_H, tid = threadIdx.x, lane = tid & 31, warp = tid >> 5;
+    const int p = p0 + t;
+    for (int i = tid; i < AB_H * D; i += blockDim.x)
+        s_q[i / D][i % D] = q[((size_t) t * n_head + h0 + i / D) * D + i % D];
+    if (tid < AB_H) {
+        s_m[tid] = sinks[h0 + tid];
+        s_sum[tid] = 1.0f;
+    }
+    const int n_raw = min(p + 1, n_swa);
+    const int raw0 = p - n_raw + 1 - (p0 - n_hist);   // the window's first row in keys
+    int n_c = 0;
+    if (ratio == 128) n_c = (p + 1) / 128;
+    else if (ratio == 4) n_c = min(top_k, (p + 1) / 4);
+    const int n = n_raw + n_c;
+    const auto key = [&](int j) -> const __half2* {
+        if (j < n_raw) return (const __half2*) (keys + (size_t) (raw0 + j) * D);
+        const int r = ratio == 4 ? sel[(size_t) t * top_k + (j - n_raw)] : j - n_raw;
+        return (const __half2*) (comp + (size_t) r * D);
+    };
+    float acc[AB_H][2];
+#pragma unroll
+    for (int h = 0; h < AB_H; ++h) acc[h][0] = acc[h][1] = 0.0f;
+    __syncthreads();
+    for (int j0 = 0; j0 < n; j0 += AB_TILE) {
+        const int nt = min(AB_TILE, n - j0);
+        // 1. the tile's logits: warp w takes keys w, w + 8, .. ; lane l the half2 pairs l, l + 32, ..
+        for (int jj = warp; jj < nt; jj += 8) {
+            const __half2* k2 = key(j0 + jj);
+            float part[AB_H];
+#pragma unroll
+            for (int h = 0; h < AB_H; ++h) part[h] = 0.0f;
+#pragma unroll
+            for (int i = 0; i < D / 64; ++i) {
+                const float2 kv = __half22float2(k2[lane + 32 * i]);
+                const int e = 2 * (lane + 32 * i);
+#pragma unroll
+                for (int h = 0; h < AB_H; ++h) part[h] += s_q[h][e] * kv.x + s_q[h][e + 1] * kv.y;
+            }
+#pragma unroll
+            for (int h = 0; h < AB_H; ++h) {
+                const float v = warp_sum(part[h]);
+                if (lane == 0) s_l[jj][h] = v * scale;
+            }
+        }
+        __syncthreads();
+        // 2. the running max and sum per head; the tile's weights replace its logits
+        if (tid < AB_H) {
+            const int h = tid;
+            float m = s_m[h];
+            for (int jj = 0; jj < nt; ++jj) m = fmaxf(m, s_l[jj][h]);
+            const float sc = expf(s_m[h] - m);
+            float sum = s_sum[h] * sc;
+            for (int jj = 0; jj < nt; ++jj) {
+                const float e = expf(s_l[jj][h] - m);
+                s_l[jj][h] = e;
+                sum += e;
+            }
+            s_m[h] = m;
+            s_sum[h] = sum;
+            s_scale[h] = sc;
+        }
+        __syncthreads();
+        // 3. the values: thread t owns the pair (2t, 2t + 1) of every head
+#pragma unroll
+        for (int h = 0; h < AB_H; ++h) {
+            acc[h][0] *= s_scale[h];
+            acc[h][1] *= s_scale[h];
+        }
+        for (int jj = 0; jj < nt; ++jj) {
+            const float2 kv = __half22float2(key(j0 + jj)[tid]);
+#pragma unroll
+            for (int h = 0; h < AB_H; ++h) {
+                const float wj = s_l[jj][h];
+                acc[h][0] += wj * kv.x;
+                acc[h][1] += wj * kv.y;
+            }
+        }
+        __syncthreads();
+    }
+    // 4. normalise, de-rope (V = K carries the rotation) and write
+#pragma unroll
+    for (int h = 0; h < AB_H; ++h) {
+        const float r = 1.0f / s_sum[h];
+        s_q[h][2 * tid] = acc[h][0] * r;
+        s_q[h][2 * tid + 1] = acc[h][1] * r;
+    }
+    __syncthreads();
+    {
+        const int h = tid / (n_rot / 2), pr = tid % (n_rot / 2);
+        if (h < AB_H) rope_pair(s_q[h], D, n_rot, rope, p, false, pr);
+    }
+    __syncthreads();
+    for (int i = tid; i < AB_H * D; i += blockDim.x)
+        out[((size_t) t * n_head + h0 + i / D) * D + i % D] = s_q[i / D][i % D];
+}
+
+__global__ void to_f16_kernel(const float* __restrict__ x, uint16_t* __restrict__ y, int64_t n) {
+    for (int64_t i = (int64_t) blockIdx.x * blockDim.x + threadIdx.x; i < n; i += (int64_t) gridDim.x * blockDim.x)
+        y[i] = __half_as_ushort(__float2half(x[i]));
+}
+
+void check(const char* what) {
+    const cudaError_t e = cudaGetLastError();
+    if (e != cudaSuccess) std::fprintf(stderr, "dsv4_fast %s: %s\n", what, cudaGetErrorString(e));
+}
+
+}  // namespace
+
+Rope make_rope(int n_rot, float base, float freq_scale, float ext_factor, int n_ctx_orig, float beta_fast,
+               float beta_slow) {
+    Rope r;
+    r.theta_scale = powf(base, -2.0f / (float) n_rot);
+    r.freq_scale = freq_scale;
+    r.ext_factor = ext_factor;
+    r.attn_factor = ext_factor == 0.0f ? 1.0f : 1.0f / (1.0f + 0.1f * logf(1.0f / freq_scale));
+    if (ext_factor != 0.0f && n_ctx_orig > 0) {
+        // ggml_rope_yarn_corr_dims
+        const auto corr_dim = [&](float b) {
+            return (float) n_rot * logf((float) n_ctx_orig / (b * 2.0f * (float) M_PI)) / (2.0f * logf(base));
+        };
+        r.corr_lo = std::max(0.0f, floorf(corr_dim(beta_fast)));
+        r.corr_hi = std::min((float) (n_rot - 1), ceilf(corr_dim(beta_slow)));
+    }
+    return r;
+}
+
+void prep(const PrepArgs& a, cudaStream_t s) {
+    prep_kernel<<<2 + a.n_comp, 512, 0, s>>>(a);
+    check("prep");
+}
+
+void compress(const PrepArgs& a, cudaStream_t s) {
+    // only the compressors whose block ends at p (the caller passes those first in a.comp)
+    if (a.n_comp <= 0) return;
+    compress_kernel<<<a.n_comp, 512, 0, s>>>(a);
+    check("compress");
+}
+
+void q_prep(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, float* iq, int idx_heads, int idx_dim,
+            const Rope& comp_rope, int p, float eps, cudaStream_t s) {
+    const int blocks = n_head + (iq != nullptr ? idx_heads : 0);
+    q_prep_kernel<<<blocks, 128, 0, s>>>(q, n_head, head_dim, n_rot, rope, iq, idx_dim, comp_rope, p, eps);
+    check("q_prep");
+}
+
+void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, int idx_dim, int n_vis, int top_k,
+             float* score, int* sel, cudaStream_t s) {
+    if (n_vis <= 0) return;
+    (void) idx_dim;   // 128 (the kernel's layout)
+    const size_t sm = (size_t) (idx_heads * 128 + idx_heads) * sizeof(float);
+    idx_score_kernel<<<(n_vis + IDX_WARPS - 1) / IDX_WARPS, IDX_WARPS * 32, sm, s>>>(iq, K, w, idx_heads, n_vis, score);
+    check("idx_score");
+    idx_select_kernel<<<1, 1024, 0, s>>>(score, n_vis, std::min(top_k, n_vis), sel);
+    check("idx_select");
+}
+
+void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint16_t* comp, const int* comp_sel,
+            int n_comp, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p, float* out,
+            cudaStream_t s) {
+    const size_t sm = (size_t) (n_raw + n_comp) * sizeof(float);
+    static bool attr = false;
+    if (!attr) {
+        cudaFuncSetAttribute(attend_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 64 * 1024);
+        attr = true;
+    }
+    attend_kernel<<<n_head, ATT_THREADS, sm, s>>>(q, raw, ring, n_raw, comp, comp_sel, n_comp, sinks, n_rot, rope, p,
+                                                  1.0f / sqrtf((float) head_dim), out);
+    check("attend");
+}
+
+void head_prep(const float* R, const uint16_t* fn, const float* scale, const float* base, float hc_eps,
+               const float* norm_w, float eps, int n_embd, float* x, void* xq, cudaStream_t s) {
+    head_prep_kernel<<<1, 1024, 0, s>>>(R, fn, scale, base, hc_eps, norm_w, eps, n_embd, x, (block_q8_1*) xq);
+    check("head_prep");
+}
+
+
+void win_load(const uint16_t* ring, int n_ring, uint16_t* keys, int n_hist, int p0, int D, cudaStream_t s) {
+    if (n_hist <= 0) return;
+    win_load_kernel<<<n_hist, 256, 0, s>>>(ring, n_ring, keys, n_hist, p0, D);
+    check("win_load");
+}
+void win_store(uint16_t* ring, int n_ring, const uint16_t* keys, int n_hist, int p0, int T, int D, cudaStream_t s) {
+    const int n_total = n_hist + T, n_keep = std::min(n_ring, n_total);
+    if (n_keep <= 0) return;
+    win_store_kernel<<<n_keep, 256, 0, s>>>(ring, n_ring, keys, n_total, n_keep, p0 - n_hist, D);
+    check("win_store");
+}
+void prep_batch(const BatchPrepArgs& a, cudaStream_t s) {
+    if (a.T <= 0) return;
+    prep_batch_kernel<<<dim3((unsigned) a.T, 2), 512, 0, s>>>(a);
+    check("prep_batch");
+}
+void compress_batch(const BatchComp* comps, int n_comp, int p0, int T, int n_rot, const Rope& comp_rope, float eps,
+                    cudaStream_t s) {
+    if (n_comp <= 0 || T <= 0) return;
+    BatchCompArgs a{};
+    int max_blocks = 0, max_state = 0;
+    for (int i = 0; i < n_comp; ++i) {
+        a.c[i] = comps[i];
+        const int R = comps[i].c.ratio;
+        max_blocks = std::max(max_blocks, (p0 + T) / R - ((p0 + R) / R - 1));
+        max_state = std::max(max_state, (comps[i].c.overlap ? 2 : 1) * R);
+    }
+    a.n_comp = n_comp;
+    a.p0 = p0;
+    a.T = T;
+    a.n_rot = n_rot;
+    a.rope = comp_rope;
+    a.eps = eps;
+    if (max_blocks > 0) {
+        compress_batch_kernel<<<dim3((unsigned) max_blocks, (unsigned) n_comp), 512, 0, s>>>(a);
+        check("compress_batch");
+    }
+    comp_ring_kernel<<<dim3((unsigned) std::min(T, max_state), (unsigned) n_comp), 256, 0, s>>>(a);
+    check("comp_ring");
+}
+void q_prep_batch(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, float* iq, int idx_heads,
+                  int idx_dim, const Rope& comp_rope, int p0, int T, float eps, cudaStream_t s) {
+    if (T <= 0) return;
+    const int hy = n_head + (iq != nullptr ? idx_heads : 0);
+    q_prep_batch_kernel<<<dim3((unsigned) T, (unsigned) hy), 128, 0, s>>>(q, n_head, head_dim, n_rot, rope, iq, idx_heads,
+                                                                        idx_dim, comp_rope, p0, eps);
+    check("q_prep_batch");
+}
+void indexer_batch(const float* iq, const uint16_t* K, const float* w, int idx_heads, int ratio, int p0, int T, int top_k,
+                   float* score, int ld, int* sel, cudaStream_t s) {
+    const int max_vis = (p0 + T) / ratio;
+    if (T <= 0 || max_vis <= 0) return;
+    const dim3 grid((unsigned) ((max_vis + IRT - 1) / IRT), (unsigned) ((T + IQT - 1) / IQT));
+    idx_score_batch_kernel<<<grid, 256, 0, s>>>(iq, K, w, idx_heads, ratio, p0, T, score, ld);
+    check("idx_score_batch");
+    idx_select_batch_kernel<<<T, 1024, 0, s>>>(score, ld, ratio, p0, top_k, sel);
+    check("idx_select_batch");
+}
+void attend_batch(const float* q, const uint16_t* keys, int n_hist, int n_swa, const uint16_t* comp, const int* sel,
+                  int top_k, int ratio, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p0,
+                  int T, float* out, cudaStream_t s) {
+    if (T <= 0) return;
+    attend_batch_kernel<<<dim3((unsigned) T, (unsigned) (n_head / AB_H)), 256, 0, s>>>(
+        q, keys, n_hist, n_swa, comp, sel, top_k, ratio, sinks, n_head, n_rot, rope, p0, 1.0f / sqrtf((float) head_dim),
+        out);
+    check("attend_batch");
+}
+void to_f16(const float* x, uint16_t* y, int64_t n, cudaStream_t s) {
+    if (n <= 0) return;
+    to_f16_kernel<<<(unsigned) std::min<int64_t>(4096, (n + 255) / 256), 256, 0, s>>>(x, y, n);
+    check("to_f16");
+}
+
+}  // namespace strata::kernels::dsv4
