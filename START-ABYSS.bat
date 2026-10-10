@@ -1,10 +1,10 @@
 @echo off
-rem Project Maya for Windows (experimental): the first run checks the PC, compiles the engine, asks before it
+rem Abyss for Windows (experimental): the first run checks the PC, compiles the engine, asks before it
 rem downloads the model, builds the pack and starts the dashboard; later runs just start it.
-rem START-MAYA.bat --help lists the options. Like ./maya.sh, nothing is installed system-wide: a missing Python,
+rem START-ABYSS.bat --help lists the options. Like ./abyss.sh, nothing is installed system-wide: a missing Python,
 rem compiler or CUDA toolkit is reported with where to get it.
 setlocal
-title Project Maya
+title Abyss
 cd /d "%~dp0"
 rem a .venv from an earlier run that failed half-way has a python but no pip: start it again
 if exist ".venv\Scripts\python.exe" (
@@ -15,7 +15,7 @@ if exist ".venv\Scripts\python.exe" goto run
 call :findpy
 if defined PY goto venv
 echo.
-echo  64-bit Python 3.10 or newer is needed. Install it, then double-click START-MAYA.bat again:
+echo  64-bit Python 3.10 or newer is needed. Install it, then double-click START-ABYSS.bat again:
 echo    winget install -e --id Python.Python.3.12 --scope user
 echo  or https://www.python.org/downloads/ (tick "Add python.exe to PATH").
 echo.
@@ -31,7 +31,7 @@ pause
 exit /b 1
 
 :run
-".venv\Scripts\python.exe" maya.py %*
+".venv\Scripts\python.exe" abyss.py %*
 if errorlevel 1 pause
 exit /b
 

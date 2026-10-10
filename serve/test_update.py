@@ -1,5 +1,5 @@
 """serve/test_update.py - About > Updates: the version compare, the release summary, which folders may update themselves,
-and the update itself (a fast-forward to the release's tag, then the server's exit for maya.py) - against a throwaway
+and the update itself (a fast-forward to the release's tag, then the server's exit for abyss.py) - against a throwaway
 git "origin" with two releases, nothing from the network.
 
     python -m unittest serve.test_update -v

@@ -656,7 +656,7 @@ document.addEventListener("click", (e) => {
 });
 // ------------------------------------------------------------------ About > Updates
 // the server asks GitHub for the latest release (at most every six hours) and says whether this folder can update
-// itself (a git checkout without local changes, started by maya.sh / START-MAYA.bat); else the steps by hand
+// itself (a git checkout without local changes, started by abyss.sh / START-ABYSS.bat); else the steps by hand
 let update = null, updateWatch = null;
 async function loadUpdate(force = false) {
   try {

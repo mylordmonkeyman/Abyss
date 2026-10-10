@@ -1,8 +1,8 @@
-"""The setup on a screen of its own (./maya.sh's first run and --setup), laid out like binsider
+"""The setup on a screen of its own (./abyss.sh's first run and --setup), laid out like binsider
 (github.com/orhun/binsider) in the dashboard's colours (setup_look.py): the steps as tabs along the top, the logo, a
 card with what runs now and its progress, the output in a box below it, a question in a box of its own, and the keys
 in the bottom border.  Tab / Shift+Tab show an earlier step's output, Esc the live one.  Textual (MIT) draws it: it
-comes with Maya in third_party/wheels, and maya.py puts it into .venv from there (setup_screen).
+comes with Maya in third_party/wheels, and abyss.py puts it into .venv from there (setup_screen).
 
 The setup is the same code as without the screen: it runs in a thread of its own, and setup.py's output functions
 (say, step, ok, warn, fail, ask, run, progress) hand everything to a Bridge (setup_bridge.py) instead of printing it
@@ -32,7 +32,7 @@ from setup_dash import Dashboard
 from setup_look import (ACCENT, ACCENT_TEXT, DANGER, EDGE, FAINT, INK, LINE, MUTED, OK, OK_TEXT, SETUP_CSS, THEME,
                         TINT, Card, Output, StopScreen, clock, hints, serving_card, setup_card, splash, styled, title)
 
-# maya.py's steps (setup.step) as tabs, the tuning after them, then Maya running (Bridge.serve): its dashboard, its log
+# abyss.py's steps (setup.step) as tabs, the tuning after them, then Maya running (Bridge.serve): its dashboard, its log
 STEPS = {1: "This PC", 2: "Choices", 3: "Packages", 4: "Engine", 5: "Model", 6: "Pack", 7: "Images", 8: "Config",
          9: "Tuning", 10: "Dashboard", 11: "Log"}
 SERVE, LOG = 10, 11
@@ -58,7 +58,7 @@ class SetupApp(App):
         self.steps = steps                              # False: Maya's start alone - no setup steps, no setup log
         self.state = {n: "wait" for n in STEPS}
         self.times: dict = {}                           # step -> [start, end or None]
-        self.titles: dict = {}                          # step -> its title, as maya.py says it
+        self.titles: dict = {}                          # step -> its title, as abyss.py says it
         self.warned: set = set()
         self.cur = 0                                    # the step running now
         self.view = None                                # the step whose output the box shows (None: the live one)
@@ -131,7 +131,7 @@ class SetupApp(App):
         self.bridge.entries.extend((self.bridge.step_no, "out", line) for line in lines)
 
     def work(self) -> None:
-        """The setup's thread: maya.py's set_up, then the screen closes."""
+        """The setup's thread: abyss.py's set_up, then the screen closes."""
         try:
             end = ("done", self.body())
         except KeyboardInterrupt:
@@ -448,7 +448,7 @@ class SetupApp(App):
 
 
 def run(body, version: str, log_path: Path | None, me: str, steps: bool = True):
-    """body() - maya.py's set_up (and Maya's start), or the start alone (steps False) - on the setup's screen; returns
+    """body() - abyss.py's set_up (and Maya's start), or the start alone (steps False) - on the setup's screen; returns
     what it returns.  A fail() in it, read on the screen, is printed once the screen has closed and ends the setup as
     without it; a stop is a KeyboardInterrupt here.  log_path: the setup's whole output (None: none kept)."""
     import setup as S

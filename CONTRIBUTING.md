@@ -6,8 +6,8 @@ Reports and pull requests are welcome. These are what helps most.
 
 Open an issue with:
 
-- **`./maya.sh --bench`** (Maya stopped) **then `./maya.sh --report`**, and attach `maya-report.txt`. Windows:
-  `START-MAYA.bat --bench` / `--report`. The report includes the bench results.
+- **`./abyss.sh --bench`** (Maya stopped) **then `./abyss.sh --report`**, and attach `maya-report.txt`. Windows:
+  `START-ABYSS.bat --bench` / `--report`. The report includes the bench results.
 - **A build from source without the installer** is fine too. Send the same things by hand:
   - the exact engine command and environment (`STRATA_GLM_*` settings);
   - GPUs (model, VRAM, PCIe generation and width as `nvidia-smi` shows them), CPU, RAM, disk;
@@ -21,7 +21,7 @@ Name your Maya version (`VERSION`, or the commit). Say what you measured and wha
 
 ## A bug
 
-Run `./maya.sh --report` right after the failure and attach `maya-report.txt`. If the engine stopped, add the end
+Run `./abyss.sh --report` right after the failure and attach `maya-report.txt`. If the engine stopped, add the end
 of its log (the `.log` next to your `maya-*.json`).
 
 ## A pull request

@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import maya  # noqa: E402
+import abyss as maya  # noqa: E402
 
 
 class ModelChoice(unittest.TestCase):
@@ -98,10 +98,10 @@ class WholeShards(unittest.TestCase):
 
 
 class RestartAfterUpdate(unittest.TestCase):
-    """The dashboard's Update ends the server with UPDATE_EXIT: maya.py starts the new version - the same model and
+    """The dashboard's Update ends the server with UPDATE_EXIT: abyss.py starts the new version - the same model and
     settings, no setup flags, no question - and nothing else (no download, no pack)."""
 
-    def start(self, rc, argv=("maya.py", "--setup", "--model", "Maya-L", "--port", "8090")):
+    def start(self, rc, argv=("abyss.py", "--setup", "--model", "Maya-L", "--port", "8090")):
         with tempfile.TemporaryDirectory() as d:
             d = Path(d)
             for f in ("strata", "pack/x", "tok/vocab.json"):
@@ -119,9 +119,9 @@ class RestartAfterUpdate(unittest.TestCase):
     def test_update_exit_starts_the_new_version(self):
         _, call, execv, refresh = self.start(maya.UPDATE_EXIT)
         self.assertEqual(call.call_args.kwargs["env"]["MAYA_RESTART_ON_UPDATE"], "1")
-        refresh.assert_called_once()                    # (the new maya.py compiles what changed when it starts)
+        refresh.assert_called_once()                    # (the new abyss.py compiles what changed when it starts)
         argv = execv.call_args.args[1]
-        self.assertEqual(argv[1:3], [str(maya.HERE / "maya.py"), "--yes"])
+        self.assertEqual(argv[1:3], [str(maya.HERE / "abyss.py"), "--yes"])
         self.assertNotIn("--setup", argv)               # no setup: the same model, nothing downloaded or packed
         self.assertNotIn("--model", argv)
         for flag, v in (("--port", "8090"), ("--gpus", "0,1"), ("--backend", "cuda")):
@@ -134,7 +134,7 @@ class RestartAfterUpdate(unittest.TestCase):
 
 
 class RunScript(unittest.TestCase):
-    """run-maya-<model>.sh starts its config through maya.py - on the screen in a terminal, as ./maya.sh does - not
+    """run-maya-<model>.sh starts its config through abyss.py - on the screen in a terminal, as ./abyss.sh does - not
     the server alone in the terminal."""
 
     def test_the_script_starts_its_config_through_maya_py(self):
@@ -142,7 +142,7 @@ class RunScript(unittest.TestCase):
             cfg = Path(d) / "maya-maya-l.json"
             script = maya.write_run_script(cfg, 8091).read_text()
         # (shlex-quoted as the script writes it: a Windows test run's paths have backslashes)
-        self.assertIn(shlex.join([str(maya.HERE / "maya.py"), "--config", str(cfg), "--port", "8091"]) + ' "$@"',
+        self.assertIn(shlex.join([str(maya.HERE / "abyss.py"), "--config", str(cfg), "--port", "8091"]) + ' "$@"',
                       script)
         self.assertNotIn("server.py", script)
 
@@ -152,7 +152,7 @@ class RunScript(unittest.TestCase):
             for p in (mine, other):
                 p.write_text("{}")
             with patch.object(maya, "configs", return_value=[other, mine]), patch.object(maya, "say"), \
-                    patch.object(maya.sys, "argv", ["maya.py", "--config", str(mine), "--port", "8091"]), \
+                    patch.object(maya.sys, "argv", ["abyss.py", "--config", str(mine), "--port", "8091"]), \
                     patch.object(maya, "ask", side_effect=AssertionError("no question: --config names it")), \
                     patch.object(maya, "start", return_value=0) as start:
                 self.assertEqual(maya.main(), 0)

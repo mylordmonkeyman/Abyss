@@ -42,7 +42,7 @@ endif()
 # build without it does not link (found by @boxwrench in #17)
 if(STRATA_ENABLE_HIP AND NOT STRATA_PREFILL_MMQ)
   message(FATAL_ERROR "A HIP build needs -DSTRATA_PREFILL_MMQ=ON: the GLM prompt path multiplies its experts with "
-                      "MMQ (./maya.sh --backend hip sets it)")
+                      "MMQ (./abyss.sh --backend hip sets it)")
 endif()
 if(STRATA_ENABLE_CUDA AND STRATA_ENABLE_HIP)
   message(FATAL_ERROR "STRATA_ENABLE_CUDA and STRATA_ENABLE_HIP are separate backends; enable only one")

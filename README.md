@@ -39,7 +39,7 @@ Details: [docs/deepseek4/PORT.md](docs/deepseek4/PORT.md). The forward pass it i
 ## Build
 
 Linux, CUDA 13.3 (the version tested), an RTX 50-series GPU (the MXFP4 expert rows use Blackwell's FP4 MMA; build for
-`120a`). Python 3.12 in `.venv` with the packages Maya's installer uses (`maya.py --setup`).
+`120a`). Python 3.12 in `.venv` with the packages Maya's installer uses (`abyss.py --setup`).
 
 ```sh
 .venv/bin/cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSTRATA_ENABLE_CUDA=ON \

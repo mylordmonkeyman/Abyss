@@ -53,7 +53,7 @@ std::string arch_problem(const cudaDeviceProp& p, int ordinal) {
     const std::string card = "GPU " + std::to_string(ordinal) + " (" + p.name + ", " + arch + ")";
     if (!compiled_for(arch)) {
         return card + " is not an architecture this Maya engine was compiled for (" + STRATA_HIP_ARCHS +
-               "); compile it for this card (./maya.sh --backend hip, or -DCMAKE_HIP_ARCHITECTURES=" + arch +
+               "); compile it for this card (./abyss.sh --backend hip, or -DCMAKE_HIP_ARCHITECTURES=" + arch +
                ", docs/AMD_HIP.md) or choose another GPU with HIP_VISIBLE_DEVICES";
     }
     if (p.warpSize != 32) {

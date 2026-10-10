@@ -82,7 +82,7 @@ def wait_gpu_release(pid: int, timeout: float = 60.0):
 
 CONTEXT_MIN = 4096          # the dashboard's Context size: the smallest it offers ...
 CONTEXT_FALLBACK_MAX = 262144   # ... and the largest when the model file does not say what it was trained for
-# the engine log's lines a report carries (maya.py's --report reads the same ones)
+# the engine log's lines a report carries (abyss.py's --report reads the same ones)
 REPORT_LINES = re.compile(r"glm fast:|glm prefill: (?:CUDA|HIP)|glm split|glm stat|glm slots|glm prefill: \d|ERR|error|"
                           r"failed|out of memory|WARNING", re.I)
 IM_END = "<|im_end|>"

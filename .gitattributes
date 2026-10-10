@@ -1,7 +1,7 @@
 # Frozen prompts are hashed byte for byte (manifest sha256): never convert their line endings.
 bench/prompts/** -text
 
-# the setup screen's Python packages (maya.py installs them from here, offline): zip files, byte for byte
+# the setup screen's Python packages (abyss.py installs them from here, offline): zip files, byte for byte
 third_party/wheels/** -text
 
 # launchers keep their platform line endings wherever the repository is cloned

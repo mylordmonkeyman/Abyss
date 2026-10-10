@@ -222,7 +222,7 @@ class Bridge:
 
     def serve(self, cmd, env, info: dict):
         """Maya's server, after the setup, on the same screen until it ends: its exit code.  `info`: what the screen
-        shows of it (maya.py, server_command)."""
+        shows of it (abyss.py, server_command)."""
         if not self._here():
             return None
         self.events.put(("serve", info))

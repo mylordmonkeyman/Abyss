@@ -1,7 +1,7 @@
 """tools/test_setup_tui.py - the setup on its own screen (tools/setup_tui.py, setup_bridge.py): the commands' output as
 it comes (curl's rewritten meter apart), the questions answered with keys, a failure read on the screen, a stop that
 ends the running command, and the plain text setup unchanged without the screen.  No GPU, no network; the screen's
-tests need Textual (./maya.sh --setup installs it from third_party/wheels) and are skipped without it."""
+tests need Textual (./abyss.sh --setup installs it from third_party/wheels) and are skipped without it."""
 from pathlib import Path
 import importlib.util
 import io
@@ -16,7 +16,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parent)]
-import maya  # noqa: E402
+import abyss as maya  # noqa: E402
 import setup as S  # noqa: E402
 from setup_bridge import Bridge  # noqa: E402
 try:
@@ -24,7 +24,7 @@ try:
     import setup_tui as T
 except ImportError:
     L = T = None
-needs_textual = unittest.skipIf(T is None, "Textual is not installed (./maya.sh --setup installs it)")
+needs_textual = unittest.skipIf(T is None, "Textual is not installed (./abyss.sh --setup installs it)")
 
 
 def events(bridge: Bridge) -> list:
@@ -161,7 +161,7 @@ class Screen(unittest.IsolatedAsyncioTestCase):
         """Runs `body` on the screen; each of `answers` (keys) answers the next question.  -> (end, bridge, app)"""
         bridge = Bridge(self.log)
         S.UI = bridge
-        app = T.SetupApp(bridge, body, "Project Maya - setup", "./maya.sh", self.log)
+        app = T.SetupApp(bridge, body, "Project Maya - setup", "./abyss.sh", self.log)
         async with app.run_test(size=(110, 32)) as pilot:
             async def until(cond):
                 t0 = time.time()
@@ -209,7 +209,7 @@ class Screen(unittest.IsolatedAsyncioTestCase):
                 "time.sleep(1)")
         bridge = Bridge(self.log)
         S.UI = bridge
-        app = T.SetupApp(bridge, lambda: S.run([sys.executable, "-c", code]), "1.0", "./maya.sh", self.log)
+        app = T.SetupApp(bridge, lambda: S.run([sys.executable, "-c", code]), "1.0", "./abyss.sh", self.log)
         async with app.run_test(size=(110, 32)) as pilot:
             t0 = time.time()
             while app.bar is None or app.bar[0] < 0.75:
@@ -243,7 +243,7 @@ class Screen(unittest.IsolatedAsyncioTestCase):
             self.assertIn("Your choices", text(app))
         bridge = Bridge(self.log)
         S.UI = bridge
-        app = T.SetupApp(bridge, body, "1.0", "./maya.sh", self.log)
+        app = T.SetupApp(bridge, body, "1.0", "./abyss.sh", self.log)
         async with app.run_test(size=(110, 40)) as pilot:
             while app.pending is None:
                 await pilot.pause(0.02)
@@ -268,7 +268,7 @@ class Screen(unittest.IsolatedAsyncioTestCase):
             went_on.append(True)
         bridge = Bridge(self.log)
         S.UI = bridge
-        app = T.SetupApp(bridge, body, "Project Maya - setup", "./maya.sh", self.log)
+        app = T.SetupApp(bridge, body, "Project Maya - setup", "./abyss.sh", self.log)
         async with app.run_test(size=(110, 32)) as pilot:
             while not any(t.startswith("pids ") for _, _, t in bridge.entries):
                 await pilot.pause(0.05)
@@ -310,7 +310,7 @@ class Screen(unittest.IsolatedAsyncioTestCase):
             return S.UI.serve([sys.executable, "-c", server], dict(os.environ, PYTHONUNBUFFERED="1"), self.INFO)
         bridge = Bridge(self.log)
         S.UI = bridge
-        app = T.SetupApp(bridge, body, "1.0", "./maya.sh", self.log)
+        app = T.SetupApp(bridge, body, "1.0", "./abyss.sh", self.log)
         async with app.run_test(size=(110, 40)) as pilot:
             t0 = time.time()
             while not (app.serving and app.serving["speed"]):

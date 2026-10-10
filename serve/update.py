@@ -2,8 +2,8 @@
 
 The check asks GitHub for the latest release of the repository this folder was cloned from (git's origin; else
 mw00/project-maya) - only when the dashboard asks, at most every six hours (MAYA_UPDATE_CHECK=0 turns it off).
-Updating fast-forwards the git checkout to that release's tag, then the server ends with UPDATE_EXIT: maya.sh /
-START-MAYA.bat (maya.py) start Maya again, which compiles what changed in the engine and loads the model.  A folder
+Updating fast-forwards the git checkout to that release's tag, then the server ends with UPDATE_EXIT: abyss.sh /
+START-ABYSS.bat (abyss.py) start Maya again, which compiles what changed in the engine and loads the model.  A folder
 that can't do that (no git, local changes, a server started some other way) gets the reason and the steps by hand."""
 import json
 import os
@@ -16,8 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO = "mw00/project-maya"
-UPDATE_EXIT = 75                    # the server's exit code that tells maya.py: updated, start again (EX_TEMPFAIL)
-SUPERVISED = "MAYA_RESTART_ON_UPDATE"   # set by maya.py for the server it starts: it starts it again after an update
+UPDATE_EXIT = 75                    # the server's exit code that tells abyss.py: updated, start again (EX_TEMPFAIL)
+SUPERVISED = "MAYA_RESTART_ON_UPDATE"   # set by abyss.py for the server it starts: it starts it again after an update
 CHECK_EVERY = 6 * 3600
 RETRY_AFTER = 10 * 60               # GitHub not reached: ask again after this
 TAG = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
@@ -109,7 +109,7 @@ class Updater:
     def blocker(self) -> str | None:
         """Why this install can't update itself from the page (None: it can)."""
         if not os.environ.get(SUPERVISED):
-            return "this server was not started by ./setup.sh or START-MAYA.bat, which start it again after an update"
+            return "this server was not started by ./setup.sh or START-ABYSS.bat, which start it again after an update"
         if not (self.root / ".git").exists():
             return "this folder is not a git checkout (it was downloaded as an archive)"
         try:
@@ -129,7 +129,7 @@ class Updater:
         return {"current": self.current, "enabled": self.enabled(), "latest": self.latest, "newer": newer,
                 "checked": self.checked or None, "error": self.error, "can_update": newer and why is None,
                 "blocker": why, "state": state,
-                "by_hand": ("git pull, then start Maya again (./setup.sh or START-MAYA.bat)" if (self.root / ".git").exists()
+                "by_hand": ("git pull, then start Maya again (./setup.sh or START-ABYSS.bat)" if (self.root / ".git").exists()
                             else "download the new release from GitHub into a new folder")}
 
     def busy(self) -> bool:
@@ -168,7 +168,7 @@ class Updater:
                 print(f"[maya] the update did not happen: {err}", flush=True)
                 self.state.update(state="failed", error=err, ended=time.time())
                 return
-            print(f"[maya] updated the files {before[:9] if before else ''} -> {tag}; Maya starts again (maya.py "
+            print(f"[maya] updated the files {before[:9] if before else ''} -> {tag}; Maya starts again (abyss.py "
                   "compiles what changed in the engine, then loads the model) ...", flush=True)
             svc.close_for_restart()
             os._exit(UPDATE_EXIT)

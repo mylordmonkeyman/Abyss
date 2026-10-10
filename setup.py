@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""The helpers Project Maya's installer (maya.py) uses, from Strata's setup (MIT): the PC checks (GPUs, CPU,
+"""The helpers Project Maya's installer (abyss.py) uses, from Strata's setup (MIT): the PC checks (GPUs, CPU,
 RAM, the page file), the Python packages, llama.cpp's source at the pinned commit, resumable downloads, the
 engine's source hash, the shards check and the console messages.  Importing it runs nothing; ./setup.sh and
-START-MAYA.bat start maya.py."""
+START-ABYSS.bat start abyss.py."""
 from __future__ import annotations
 
 import argparse

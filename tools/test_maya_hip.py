@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import maya
+import abyss as maya
 
 
 class HipSetupTests(unittest.TestCase):
@@ -399,7 +399,7 @@ class HipSetupTests(unittest.TestCase):
         hip = self.installed_config()
         cuda = self.installed_config(backend="cuda")
         with patch.object(maya, "configs", return_value=[cuda, hip]), \
-                patch.object(sys, "argv", ["maya.py", "--backend", "hip", "--bench"]), \
+                patch.object(sys, "argv", ["abyss.py", "--backend", "hip", "--bench"]), \
                 patch.object(maya, "bench", return_value=0) as bench:
             self.assertEqual(maya.main(), 0)
         bench.assert_called_once_with(hip, (maya.HERE / "VERSION").read_text().strip())
@@ -408,14 +408,14 @@ class HipSetupTests(unittest.TestCase):
         path = self.installed_config()
         for action in ("bench", "report"):
             with self.subTest(action=action), \
-                    patch.object(sys, "argv", ["maya.py", "--backend", "hip", f"--{action}", "--config", str(path)]), \
+                    patch.object(sys, "argv", ["abyss.py", "--backend", "hip", f"--{action}", "--config", str(path)]), \
                     patch.object(maya, action, return_value=0) as run:
                 self.assertEqual(maya.main(), 0)
                 self.assertIn(path, run.call_args.args)
 
     def test_cli_backend_never_benchmarks_cuda_config_as_hip(self):
         self.installed_config(backend="cuda")
-        with patch.object(sys, "argv", ["maya.py", "--backend", "hip", "--bench"]), \
+        with patch.object(sys, "argv", ["abyss.py", "--backend", "hip", "--bench"]), \
                 patch.object(maya, "bench", side_effect=AssertionError("must not start the CUDA engine")):
             with self.assertRaises(SystemExit):
                 maya.main()
@@ -483,7 +483,7 @@ ROCM_DEVICES_MISSING, FIND_VCVARS = maya.rocm_devices_missing, maya.S.find_vcvar
 
 
 class WindowsHipSetupTests(unittest.TestCase):
-    """START-MAYA.bat --backend hip on a Strix Halo / Gorgon Halo PC, with TheRock's ROCm wheels."""
+    """START-ABYSS.bat --backend hip on a Strix Halo / Gorgon Halo PC, with TheRock's ROCm wheels."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

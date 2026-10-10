@@ -2,12 +2,12 @@
 """Project Maya - set up and start GLM-5.3-Flash on your own GPU(s).
 CUDA: Linux; Windows (experimental). HIP: experimental gfx1100/gfx1201/gfx1151, Linux and Windows, text only.
 
-    ./maya.sh                 the first run sets everything up and starts the dashboard; later runs just start it
-    ./maya.sh --setup         set up again (other GPUs, another context length, another model folder)
-    ./maya.sh --check         only check this PC
-    ./maya.sh --backend hip --gpu 0 --check    check an RX 7900 XT / XTX with system ROCm 7
+    ./abyss.sh                 the first run sets everything up and starts the dashboard; later runs just start it
+    ./abyss.sh --setup         set up again (other GPUs, another context length, another model folder)
+    ./abyss.sh --check         only check this PC
+    ./abyss.sh --backend hip --gpu 0 --check    check an RX 7900 XT / XTX with system ROCm 7
 
-On Windows START-MAYA.bat takes the same options.  Both make the private Python environment (.venv) and run this
+On Windows START-ABYSS.bat takes the same options.  Both make the private Python environment (.venv) and run this
 file.  Its helpers (setup.py) do the PC checks, pip, llama.cpp's source and resumable downloads.
 
 In a terminal the setup runs on a screen of its own (tools/setup_tui.py): the steps, what runs now with a progress
@@ -31,7 +31,7 @@ What the first run does (each step is skipped when it is already done):
   7. images: compiles the vision encoder (`build-vision/bin/strata-vision`) and fetches the model's vision files
      (1.1 GB, shown and asked first like the model; --no-vision and HIP skip it)
   8. writes maya-<model>.json and run-maya-<model>.sh (.bat on Windows) - with the settings tuned for this PC
-     earlier, or it offers the tuning (./maya.sh --calibrate does it any time) - and starts the dashboard on
+     earlier, or it offers the tuning (./abyss.sh --calibrate does it any time) - and starts the dashboard on
      http://127.0.0.1:8080
 
 The tuning (tools/calibrate_glm.py): decode speed measured with a few splits of the RAM-tier
@@ -61,10 +61,10 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "tools"))
 import setup as S  # noqa: E402  Strata's installer: PC checks, pip, llama.cpp, downloads (nothing runs on import)
 from setup import ask, fail, ok, run, say, step, warn  # noqa: E402
-import calibrate_glm as CAL  # noqa: E402  the CPU lane's tuning for this PC (./maya.sh --calibrate)
+import calibrate_glm as CAL  # noqa: E402  the CPU lane's tuning for this PC (./abyss.sh --calibrate)
 
 WIN = S.WIN
-ME = "START-MAYA.bat" if WIN else "./maya.sh"      # how this is started, for the messages
+ME = "START-ABYSS.bat" if WIN else "./abyss.sh"      # how this is started, for the messages
 UPDATE_EXIT = 75                                   # the server's exit after the dashboard updated Maya (serve/update.py)
 ROOT = S.ROOT
 BUILD = ROOT / "build"
@@ -1465,16 +1465,16 @@ def parse_env(items) -> dict:
 
 
 def write_run_script(cfg_path: Path, port: int) -> Path:
-    """run-<config>.sh (.bat): this config's start through maya.py - on its screen in a terminal (its loading and
+    """run-<config>.sh (.bat): this config's start through abyss.py - on its screen in a terminal (its loading and
     dashboard), else (--plain, or no terminal: a service) the server's text as it prints."""
-    cmd = [sys.executable, str(HERE / "maya.py"), "--config", str(cfg_path), "--port", str(port)]
+    cmd = [sys.executable, str(HERE / "abyss.py"), "--config", str(cfg_path), "--port", str(port)]
     if WIN:
         script = ROOT / f"run-{cfg_path.stem}.bat"
-        script.write_text(f'@echo off\r\nrem starts the Project Maya dashboard and API (written by maya.py; {ME} does '
+        script.write_text(f'@echo off\r\nrem starts the Project Maya dashboard and API (written by abyss.py; {ME} does '
                           f'the same)\r\ncd /d "{ROOT}" || exit /b 1\r\n{cmdline(cmd)} %*\r\n', encoding="utf-8")
         return script
     script = ROOT / f"run-{cfg_path.stem}.sh"
-    script.write_text("#!/bin/sh\n# starts the Project Maya dashboard and API (written by maya.py; ./maya.sh does the "
+    script.write_text("#!/bin/sh\n# starts the Project Maya dashboard and API (written by abyss.py; ./abyss.sh does the "
                       "same)\ncd " + shlex.quote(str(ROOT)) + " || exit 1\nexec " + shlex.join(cmd) + ' "$@"\n',
                       encoding="utf-8")
     script.chmod(0o755)
@@ -1673,7 +1673,7 @@ def calibrate_config(cfg_path: Path) -> bool:
     busy = busy_gpus(cfg)
     if busy:
         warn("the tuning needs the GPU(s) to itself: " + ", ".join(f"GPU {i} has {m} MiB in use" for i, m in busy) +
-             " (a model server still running?) - stop it, then run ./maya.sh --calibrate")
+             " (a model server still running?) - stop it, then run ./abyss.sh --calibrate")
         return False
     say()
     say("  Tuning Maya for this PC: the output speed is measured with a few splits of the work between the CPU and")
@@ -1806,11 +1806,11 @@ def last_line(path: Path | None, since: int) -> str:
 
 def after_server(rc: int, a) -> int:
     """The server ended: its exit code - or About > Updates moved this folder to a new release, and the new version
-    starts: its maya.py compiles what changed in the engine and loads the same model (the most recently used, so no
+    starts: its abyss.py compiles what changed in the engine and loads the same model (the most recently used, so no
     question)."""
     if rc != UPDATE_EXIT:
         return rc
-    again = [sys.executable, str(HERE / "maya.py"), "--yes"]
+    again = [sys.executable, str(HERE / "abyss.py"), "--yes"]
     for flag, v in (("--backend", a.backend), ("--port", a.port), ("--host", a.host), ("--api-key", a.api_key),
                     ("--gpu", a.gpu), ("--gpus", a.gpus), ("--config", getattr(a, "config", None))):
         if v is not None:
@@ -2177,13 +2177,13 @@ def set_up(a, prev: dict) -> Path | None:
              not a.no_start)
     if a.calibrate or (offer and ask(
             "Tune Maya for this PC now? It measures the split of the work between the CPU and the PCIe link and the "
-            "CPU threads (about 10-15 minutes; later: ./maya.sh --calibrate)", ["y", "n"], "y", a.yes) == "y"):
+            "CPU threads (about 10-15 minutes; later: ./abyss.sh --calibrate)", ["y", "n"], "y", a.yes) == "y"):
         if S.UI is not None:                           # (the screen lists the tuning as a step of its own)
             S.UI.step(9, "tuning Maya for this PC")
         tuned = calibrate_config(cfg_path)
     if tuned is False:
         say()
-        warn("this PC is NOT tuned (the reason is above): ./maya.sh --calibrate tries again")
+        warn("this PC is NOT tuned (the reason is above): ./abyss.sh --calibrate tries again")
     return cfg_path
 
 
@@ -2259,11 +2259,11 @@ def main() -> int:
         if a.backend and read_json(a.config).get("backend", "cuda") != a.backend:
             ap.error(f"{a.config}: config backend does not match --backend {a.backend}")
     if not WIN and sys.prefix == sys.base_prefix and not os.environ.get("MAYA_SH"):
-        # started as `python3 maya.py`: a system Python takes no pip installs (PEP 668, "externally-managed-
-        # environment") - maya.sh makes the private .venv and runs this file with its Python
-        say("Starting through ./maya.sh, which runs Maya with its own Python environment (.venv) ...")
+        # started as `python3 abyss.py`: a system Python takes no pip installs (PEP 668, "externally-managed-
+        # environment") - abyss.sh makes the private .venv and runs this file with its Python
+        say("Starting through ./abyss.sh, which runs Maya with its own Python environment (.venv) ...")
         sys.stdout.flush()
-        os.execve("/bin/sh", ["/bin/sh", str(HERE / "maya.sh"), *sys.argv[1:]], dict(os.environ, MAYA_SH="1"))
+        os.execve("/bin/sh", ["/bin/sh", str(HERE / "abyss.sh"), *sys.argv[1:]], dict(os.environ, MAYA_SH="1"))
     version = maya_version()
     say(f"Project Maya v{version} - GLM-5.3-Flash on your own GPU(s).")
     if a.report:
