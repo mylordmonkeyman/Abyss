@@ -39,27 +39,20 @@ Details: [docs/deepseek4/PORT.md](docs/deepseek4/PORT.md). The forward pass it i
 
 ## Getting started
 
-The manual has every step - build, the model, the pack, the config, the API, the settings and troubleshooting:
-**[docs/MANUAL.md](docs/MANUAL.md)** (日本語: [docs/MANUAL.ja.md](docs/MANUAL.ja.md)). In short:
-
 ```sh
-# build (CUDA 13.x, an RTX 50 GPU: arch 120a; llama.cpp's source in third_party/llama.cpp - see the manual)
-.venv/bin/cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSTRATA_ENABLE_CUDA=ON \
-  -DCMAKE_CUDA_ARCHITECTURES=120a -DSTRATA_NATIVE_EXPERTS=ON -DSTRATA_BUILD_TESTS=OFF \
-  -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DSTRATA_GGML_DIR=$PWD/third_party/llama.cpp
-.venv/bin/cmake --build build --target strata -j 16
-
-# the model (unsloth UD-Q2_K_XL, 96.8 GB) and its pack, next to the shards
-hf download unsloth/DeepSeek-V4-Flash-0731-GGUF --include "UD-Q2_K_XL/*" --local-dir ../Abyss-data/models/unsloth/DeepSeek-V4-Flash-0731-GGUF
-.venv/bin/python tools/iq_pack.py --gguf ../Abyss-data/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/UD-Q2_K_XL/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf \
-  --out ../Abyss-data/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/UD-Q2_K_XL/pack-dsv4 --compat-bf16
-
-# a config (see the manual) and the server: http://127.0.0.1:8082/
-.venv/bin/python serve/server.py --engine strata --config abyss-dsv4.json --port 8082
+git clone https://github.com/zephel01/Abyss.git ~/llm/apps/Abyss
+cd ~/llm/apps/Abyss
+./setup-deepseek.sh --download-model    # engine, model (96.8 GB), pack, run config, ../Abyss-tools
+../Abyss-tools/abyss.sh start           # then http://127.0.0.1:8082/
 ```
 
+The setup builds the engine for your GPU, downloads unsloth's UD-Q2_K_XL into `../Abyss-data`, checks it, makes the
+pack, writes the run config and creates **Abyss-tools** beside Abyss (`abyss.sh start | stop | status | update | log |
+models`). Every step by hand, the settings, the API and troubleshooting: **[docs/MANUAL.md](docs/MANUAL.md)**
+(日本語: [docs/MANUAL.ja.md](docs/MANUAL.ja.md)).
+
 `./abyss.sh` / `START-ABYSS.bat` are Maya's installer, renamed: they still set up Maya's GLM-5.3-Flash models
-([docs/maya/README.md](docs/maya/README.md)); DeepSeek V4 is set up as above.
+([docs/maya/README.md](docs/maya/README.md)).
 
 ## Documentation
 
@@ -75,7 +68,7 @@ hf download unsloth/DeepSeek-V4-Flash-0731-GGUF --include "UD-Q2_K_XL/*" --local
 - Speculative decoding (the GGUF has no MTP block; DSpark is a separate drafter model).
 - Conversation slots on disk (the live snapshot of the last conversation works).
 - Images.
-- The installer (`./abyss.sh`) for DeepSeek V4; one GPU tested (Maya's layer split is untested with DeepSeek V4).
+- Windows and several GPUs for DeepSeek V4 (one GPU on Linux tested; Maya's layer split is untested with it).
 
 ## License
 

@@ -8,6 +8,7 @@ Abyss は [Project Maya](https://github.com/mw00/project-maya)（MIT）をコピ
 （GLM-5.3-Flash、AMD、複数 GPU、インストーラ）は [docs/maya/](maya/README.md) にそのまま残している。
 
 - [必要なもの](#必要なもの)
+- [まとめてセットアップ](#まとめてセットアップ)
 - [ビルド](#ビルド)
 - [モデルを取る](#モデルを取る)
 - [pack を作る](#pack-を作る)
@@ -32,7 +33,46 @@ Abyss は [Project Maya](https://github.com/mw00/project-maya)（MIT）をコピ
 | Python | 3.12 | Abyss のフォルダ内の `.venv` |
 
 `./abyss.sh`（Maya のインストーラの名前を変えたもの）は、今も Maya の GLM-5.3-Flash を入れるためのもの。
-DeepSeek V4 は下の手順で準備する。
+DeepSeek V4 は `./setup-deepseek.sh`（次の節）か、その後の手順を手で行って準備する。
+
+## まとめてセットアップ
+
+```sh
+git clone https://github.com/zephel01/Abyss.git ~/llm/apps/Abyss
+cd ~/llm/apps/Abyss
+./setup-deepseek.sh --download-model
+```
+
+`setup-deepseek.sh` は `.venv` を作ってから `tools/abyss_setup.py` を実行する。済んだ手順は飛ばすので、何度実行してもよい:
+
+1. PC の確認（NVIDIA GPU、RAM）
+2. Python パッケージ、固定コミットの llama.cpp のソース
+3. GPU に合わせてエンジンをビルド（RTX 50 は `120a`）
+4. モデルを `../Abyss-data/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/<量子化>` にダウンロード（`--download-model` が
+   なければ先に確認する）。全ファイルを Hugging Face の SHA-256 と照合する
+5. シャードと同じフォルダに pack を作る
+6. Abyss のフォルダに設定 `abyss-<名前>.json` と起動スクリプト `run-abyss-<名前>.sh` を書く
+7. Abyss の隣に **Abyss-tools** フォルダを作る（`abyss.sh start | stop | restart | status | update | build | log | models`。
+   雛形は本体の `ops/abyss-tools/`）。セットアップを再実行すると `abyss.sh` / `common.sh` は雛形に合わせて更新し
+   （前のものは `.bak` に残す）、自分で書いた `README.md` はそのまま残す
+
+```sh
+../Abyss-tools/abyss.sh start      # 起動後 http://127.0.0.1:8082/
+../Abyss-tools/abyss.sh stop
+```
+
+| オプション | |
+| --- | --- |
+| `--quant UD-IQ3_XXS` | unsloth/DeepSeek-V4-Flash-0731-GGUF のほかの量子化（既定 `UD-Q2_K_XL`。確認済みはこれだけ） |
+| `--name 名前` | `abyss-<名前>.json` の名前（既定 `dsv4-<量子化>`。例 `dsv4-q2_k_xl`） |
+| `--context N`, `--port N` | コンテキスト長（既定 65536）とポート（既定 8082） |
+| `--data-dir DIR`, `--tools-dir DIR` | Abyss-data と Abyss-tools を別の場所にする |
+| `--gpu N`, `--arch A` | 使う GPU、コンパイルする CUDA アーキテクチャ |
+| `--download-model`, `--yes` | 確認せずにダウンロード、すべての質問に既定値で答える |
+| `--rewrite-config` | `abyss-<名前>.json` を書き直す（なければ既存のものを残す） |
+| `--tools-only` | Abyss-tools だけを作る / 更新する |
+
+以下の節は、同じことを手で行う手順。
 
 ## ビルド
 
@@ -242,4 +282,4 @@ RTX 5090 + RAM 94 GB での実測（UD-Q2_K_XL、コンテキスト 65536、全�
 - 会話のディスク保存（`STRATA_GLM_SLOTS`）は DeepSeek V4 では無効。直前の会話の再利用は動く。
 - 画像は扱わない（ここでは DeepSeek V4 Flash はテキストのみ）。
 - 確認したのは GPU 1 枚だけ。Maya の複数 GPU への層の分割は、DeepSeek V4 では未確認。
-- `./abyss.sh`（インストーラ）は、まだ DeepSeek V4 に対応していない。
+- `./abyss.sh`（Maya から引き継いだインストーラ）は GLM 用。DeepSeek V4 は `./setup-deepseek.sh`。

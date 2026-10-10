@@ -8,6 +8,7 @@ Maya's; DeepSeek V4 support is what Abyss adds. Maya's own documentation (GLM-5.
 installer) is kept under [docs/maya/](maya/README.md).
 
 - [What you need](#what-you-need)
+- [Setup in one command](#setup-in-one-command)
 - [Build](#build)
 - [Get the model](#get-the-model)
 - [Make the pack](#make-the-pack)
@@ -31,8 +32,48 @@ installer) is kept under [docs/maya/](maya/README.md).
 | Compiler | g++ 13 | a version your CUDA accepts |
 | Python | 3.12 | a private `.venv` in the Abyss folder |
 
-`./abyss.sh` (Maya's installer, renamed) still installs Maya's GLM-5.3-Flash models. DeepSeek V4 is set up with the
-steps below.
+`./abyss.sh` (Maya's installer, renamed) still installs Maya's GLM-5.3-Flash models. DeepSeek V4 is set up with
+`./setup-deepseek.sh` (next section), or by hand with the steps after it.
+
+## Setup in one command
+
+```sh
+git clone https://github.com/zephel01/Abyss.git ~/llm/apps/Abyss
+cd ~/llm/apps/Abyss
+./setup-deepseek.sh --download-model
+```
+
+`setup-deepseek.sh` makes the `.venv`, then runs `tools/abyss_setup.py`. Each step is skipped when it is already done,
+so it can be run again at any time:
+
+1. checks the PC (an NVIDIA GPU, RAM);
+2. Python packages, llama.cpp's source at the pinned commit;
+3. compiles the engine for the GPU (`120a` on RTX 50);
+4. downloads the model to `../Abyss-data/models/unsloth/DeepSeek-V4-Flash-0731-GGUF/<quant>` - it asks first unless
+   `--download-model` is given - and checks every file against Hugging Face's SHA-256;
+5. makes the pack next to the shards;
+6. writes the run config `abyss-<name>.json` and the start script `run-abyss-<name>.sh` in the Abyss folder;
+7. creates the **Abyss-tools** folder beside Abyss: `abyss.sh start | stop | restart | status | update | build | log |
+   models`, from the templates in `ops/abyss-tools/`. Running the setup again brings `abyss.sh` / `common.sh` up to date
+   with the templates (the old ones kept as `.bak`) and keeps your own `README.md` there.
+
+```sh
+../Abyss-tools/abyss.sh start      # then http://127.0.0.1:8082/
+../Abyss-tools/abyss.sh stop
+```
+
+| Option | |
+| --- | --- |
+| `--quant UD-IQ3_XXS` | another quant of unsloth/DeepSeek-V4-Flash-0731-GGUF (default `UD-Q2_K_XL`, the tested one) |
+| `--name NAME` | the model's name in `abyss-<name>.json` (default `dsv4-<quant>`, e.g. `dsv4-q2_k_xl`) |
+| `--context N`, `--port N` | the context (default 65536) and the port (default 8082) |
+| `--data-dir DIR`, `--tools-dir DIR` | other places for Abyss-data and Abyss-tools |
+| `--gpu N`, `--arch A` | the GPU, the CUDA architecture to compile for |
+| `--download-model`, `--yes` | download without asking; the defaults for every question |
+| `--rewrite-config` | write `abyss-<name>.json` again (otherwise an existing one is kept) |
+| `--tools-only` | only create / update Abyss-tools |
+
+The sections below are the same steps by hand.
 
 ## Build
 
@@ -243,4 +284,4 @@ KL 0.009 over 3000 tokens, with the same next-token accuracy.
 - Conversation slots on disk (`STRATA_GLM_SLOTS`) are off for DeepSeek V4; the live reuse of the last conversation works.
 - No images (DeepSeek V4 Flash is text-only here).
 - One GPU tested; Maya's layer split across GPUs is untested with DeepSeek V4.
-- `./abyss.sh` (the installer) does not know DeepSeek V4 yet.
+- `./abyss.sh` (Maya's installer) is for GLM; DeepSeek V4 is set up with `./setup-deepseek.sh`.
