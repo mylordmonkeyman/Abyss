@@ -636,7 +636,7 @@ bool Glm5Model::load(const std::string& gguf_path, int64_t max_ctx, std::string&
         if (is_nextn(t.name)) continue;
         if (t.type != 0) {
             err = "glm5_model: tensor " + t.name + " is not F32 - quantized glm5-next GGUFs need the packer "
-                  "(docs/GLM5-FLASH.md Phase 3)";
+                  "(docs/maya/GLM5-FLASH.md Phase 3)";
             return false;
         }
         bytes += ((uint64_t) t.elements() * sizeof(float) + 255u) & ~(uint64_t) 255u;
@@ -1721,7 +1721,7 @@ bool Glm5Model::step_layers(int64_t p, std::string& err) {
             const int64_t slab = (int64_t) g.n_embd * g.n_ff_exp;
             if (pack_) {
                 // the routed experts ride the native path (quantized blobs, per-token);
-                // docs/GLM5-FLASH.md §9 - device pool with LRU (M2b), CPU native fallback
+                // docs/maya/GLM5-FLASH.md §9 - device pool with LRU (M2b), CPU native fallback
                 if (dev_experts_) {
                     if (!pack_moe_tail_device(err, ids, rw, A, il)) return false;
                 } else {
@@ -1800,7 +1800,7 @@ bool Glm5Model::step_layers(int64_t p, std::string& err) {
 
 }  // namespace strata::core
 
-// ================================ the pack (docs/GLM5-FLASH.md §9) ================================
+// ================================ the pack (docs/maya/GLM5-FLASH.md §9) ================================
 
 // the routed half of one MoE layer, on the CPU: x (device) -> host, the selected experts'
 // quantized blobs dotted by native_expert, weighted sum uploaded into A + sc_moe
@@ -2075,7 +2075,7 @@ bool strata::core::Glm5Model::pack_moe_tail_device(std::string& err, const std::
     return true;
 }
 
-// ================================ the pack (docs/GLM5-FLASH.md §9) ================================
+// ================================ the pack (docs/maya/GLM5-FLASH.md §9) ================================
 
 static bool pack_shard_mmap(const std::string& path, strata::core::Glm5Model::Shard& s, uint64_t data_start,
                             std::string& err) {

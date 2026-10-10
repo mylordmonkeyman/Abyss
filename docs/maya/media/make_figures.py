@@ -1,8 +1,8 @@
-"""docs/media/make_figures.py - the README's "How does it work?" illustrations, in the Strata app's style: its colors
+"""docs/maya/media/make_figures.py - the README's "How does it work?" illustrations, in the Strata app's style: its colors
 (serve/web/tokens.css), its icons (serve/web/sprite.svg) and its font (Outfit, embedded, SIL OFL 1.1).  Light and dark
 follow the reader's system setting.
 
-    python docs/media/make_figures.py        # writes docs/media/how-it-works.svg and docs/media/guess-and-check.svg
+    python docs/maya/media/make_figures.py        # writes docs/maya/media/how-it-works.svg and docs/maya/media/guess-and-check.svg
 """
 import base64
 import random

@@ -1,6 +1,6 @@
 // include/strata/core/glm_model.hpp - a glm5-next model runner: GGUF in, streaming logits out.
 //
-// Phase 3 of docs/GLM5-FLASH.md: the kernel family (glm_hc, glm_kda, glm_dsa, glm_ffn,
+// Phase 3 of docs/maya/GLM5-FLASH.md: the kernel family (glm_hc, glm_kda, glm_dsa, glm_ffn,
 // router_sigmoid) composed into a MODEL, with the state a real decode needs living between calls:
 //
 //   * the mHC residual stack R;
@@ -107,7 +107,7 @@ public:
     /// Loads a PACK (tools/iq_pack.py output: index.txt + dense.bin + native_experts.txt beside
     /// the GGUF shards).  Dense tensors are dequantized into the same F32 device arena at load;
     /// the routed experts stay quantized on the CPU path (native_expert), read from the shards'
-    /// mmaps per token.  docs/GLM5-FLASH.md §9.  `dev` picks the CUDA device; `l0`/`l1` restrict
+    /// mmaps per token.  docs/maya/GLM5-FLASH.md §9.  `dev` picks the CUDA device; `l0`/`l1` restrict
     /// this instance to layers [l0, l1) (l1 == 0 means "to the end") - the layer split's halves.
     bool load_pack(const std::string& pack_dir, int64_t max_ctx, std::string& err, int dev = 0, int l0 = 0,
                    int l1 = 0);

@@ -17,7 +17,7 @@ for GLM-5.3-Flash (the expert tiers across VRAM, RAM and SSD, the two-GPU split,
 dashboard started from Strata's and were reworked for Maya (a new dashboard, images on demand, the thinking budget).
 
 **AMD (experimental):** Linux and Windows on RX 7900 XT / XTX, R9700 / RX 9070 and Strix Halo / Gorgon Halo (Radeon 8060S / 8065S), one GPU or two (Strix Halo: one), text only - see
-[docs/AMD_MAYA.md](docs/AMD_MAYA.md).
+[docs/maya/AMD_MAYA.md](AMD_MAYA.md).
 
 ## The models: Maya-S, Maya-S24, Maya-M and Maya-L
 
@@ -30,7 +30,7 @@ experts, and it keeps the model's MTP block, which drafts tokens ahead (speculat
 **It keeps 97.9% of the full FP8 model's accuracy** on zero-shot tasks (ARC-Easy, ARC-Challenge, HellaSwag,
 WinoGrande, PIQA; 400 questions each, the same for both models). On held-out text it picks the same next token as the
 FP8 model 83% of the time, and it writes long answers (6,000-14,000 tokens) without looping.
-Details: [bench/results/MAYA-S.md](bench/results/MAYA-S.md).
+Details: [bench/results/MAYA-S.md](../../bench/results/MAYA-S.md).
 
 **Maya-S24** (94.7 GB) is Maya-S with the same 2-bit routed experts (most of the model) and only its attention and
 shared experts - the small part every token runs through - in 4-bit (Q4_K) instead of 6-bit: about 1.5 GB less that
@@ -39,7 +39,7 @@ has to stay on the GPU, so a 24 GB card holds more experts. On one Tesla V100 li
 same. It keeps 97.7% of the FP8 model's zero-shot accuracy (Maya-S: 97.9%) and picks the same next token as the
 FP8 model 83% of the time, like Maya-S. On cards of 24 GB or less the setup recommends it; else
 `./setup.sh --setup --model Maya-S24` (Windows: `START-MAYA.bat --setup --model Maya-S24`).
-Details: [bench/results/MAYA-S24.md](bench/results/MAYA-S24.md).
+Details: [bench/results/MAYA-S24.md](../../bench/results/MAYA-S24.md).
 
 **Maya-M** (116 GB) is the larger quant, made for PCs with a bigger memory pool across RAM and VRAM: more bits where
 they count - IQ2_S gate/up experts, IQ3_XXS down projections and IQ3_S in the most sensitive layers - with the same
@@ -47,7 +47,7 @@ FP8 statistics and error-feedback rounding, calibrated toward tool calls and fro
 model than Maya-S token by token: 23% lower KL divergence, and it picks the same next token as the FP8 model 86%
 of the time; on the zero-shot tasks both keep 97.9% of the FP8 model's accuracy. Set it
 up with `./setup.sh --setup --model Maya-M` (Windows: `START-MAYA.bat --setup --model Maya-M`).
-Details: [bench/results/MAYA-M.md](bench/results/MAYA-M.md).
+Details: [bench/results/MAYA-M.md](../../bench/results/MAYA-M.md).
 
 **Maya-L** (156.3 GB) is the largest, made for PCs with the biggest memory pool: Maya-M's recipe one step up -
 IQ3_S gate/up experts, IQ4_XS down projections and Q5_K in the most sensitive layers - with Maya-M's FP8 statistics and
@@ -57,7 +57,7 @@ the FP8 model 90% of the time. It is the most demanding of the four: it is faste
 of its 156 GB (what does not fit is read from the SSD while it answers): a user's RTX 4090 with 192 GB of RAM holds
 all of it there and decodes 16.4 tokens/s ([#63](https://github.com/mw00/project-maya/issues/63)). Set it up with
 `./setup.sh --setup --model Maya-L` (Windows: `START-MAYA.bat --setup --model Maya-L`).
-Details: [bench/results/MAYA-L.md](bench/results/MAYA-L.md).
+Details: [bench/results/MAYA-L.md](../../bench/results/MAYA-L.md).
 
 **Files downloaded before 2026-10-09** name the architecture `glm5next`, an early spelling.
 `python tools/gguf_fix_arch.py <the model's first .gguf> --in-place` gives them the standard name, `glm5-next`,
@@ -92,7 +92,7 @@ then `--report`, in a
 
 | | |
 | --- | --- |
-| **GPU** | NVIDIA, compute capability 7.0 or newer (V100 and newer); one GPU, or up to 16 that share the model (two split the layers in the middle; with more, each takes a share sized to its free VRAM). The engine fills whatever VRAM you have with the most-used experts: more VRAM is faster. Measured: 1 and 2x V100 32 GB; by users: 2x CMP 170HX (above), 1x RTX 3090 and nine GPUs (8x RTX 5060 Ti 16 GB + the 3090). **AMD (experimental):** RX 7900 XT / XTX, Radeon AI PRO R9700 / RX 9070 (one GPU or two) and Strix Halo / Gorgon Halo, Radeon 8060S / 8065S (one GPU), text only ([docs/AMD_MAYA.md](docs/AMD_MAYA.md)). |
+| **GPU** | NVIDIA, compute capability 7.0 or newer (V100 and newer); one GPU, or up to 16 that share the model (two split the layers in the middle; with more, each takes a share sized to its free VRAM). The engine fills whatever VRAM you have with the most-used experts: more VRAM is faster. Measured: 1 and 2x V100 32 GB; by users: 2x CMP 170HX (above), 1x RTX 3090 and nine GPUs (8x RTX 5060 Ti 16 GB + the 3090). **AMD (experimental):** RX 7900 XT / XTX, Radeon AI PRO R9700 / RX 9070 (one GPU or two) and Strix Halo / Gorgon Halo, Radeon 8060S / 8065S (one GPU), text only ([docs/maya/AMD_MAYA.md](AMD_MAYA.md)). |
 | **RAM** | It runs with **32 GB** (the 2x V100 machine in the speed table above has 30 GB). More RAM keeps more experts close and is faster; what does not fit is read from the SSD while it answers. |
 | **Disk** | **~100 GB free on a fast NVMe SSD** (Maya-S is 96.5 GB, its pictures encoder 1.1 GB, and the engine reads from the model while it answers; Maya-M needs ~120 GB, Maya-L ~160 GB). Not a hard disk. |
 | **System** | Linux (x86-64; a CPU with AVX2 is best - without it the engine still runs, its CPU expert lane on ggml's slower kernels), NVIDIA driver, CUDA toolkit 12.x (CUDA 13 can be used for Turing and newer, but it no longer compiles for Volta/V100), g++, Python 3.10+. Windows 10/11: experimental, with Visual Studio 2022 Build Tools instead of g++ ([Windows](#windows)). Not WSL2. AMD: ROCm 7 instead of the NVIDIA driver and CUDA (on Windows AMD's ROCm SDK wheels, which the setup offers to install). |
@@ -108,7 +108,7 @@ and the CUDA toolkit (12.x for a V100; the engine is compiled for your GPU). Eve
 model - is set up for you, the way Strata does it. On an AMD RX 7900 XT / XTX, R9700 / RX 9070 or Strix Halo / Gorgon Halo
 (experimental, Linux with ROCm 7, or Windows): `./maya.sh --backend hip --gpu 0 --check` first (Windows:
 `START-MAYA.bat --backend hip --gpu 0 --check`; two cards: `--gpus 0,1`; Strix Halo stays one GPU), then
-[docs/AMD_MAYA.md](docs/AMD_MAYA.md).
+[docs/maya/AMD_MAYA.md](AMD_MAYA.md).
 
 1. Get Project Maya:
    ```sh
@@ -227,7 +227,7 @@ These settings change what the engine chooses (put them in the config with `--en
 | `STRATA_GLM_CPU_LANE<n>` | the setting above | the same for CUDA`<n>` alone (`STRATA_GLM_CPU_LANE0=6`, `STRATA_GLM_CPU_LANE1=2`): two cards on links of different speed want different counts - the slower the link, the more CPU threads help. RTX 4070 Ti SUPER on PCIe 3.0 x4 + RTX 5070 Ti on 4.0 x16, split 17: 6 / 2 threads beat the default 4 / 4 |
 | `STRATA_GLM_CPU_PIN` | Linux: on with two GPUs on a host with two NUMA nodes or more. Windows: never | a split whose GPUs have a pool each (two GPUs, or `STRATA_GLM_CPU_SHARED=0`): every GPU's CPU lane on CPUs of its own, a thread a physical core of them (the SMT siblings stay free) - a whole NUMA node while there are enough (its GPU's node when the GPUs hang off different ones), else an even share of a node's physical cores - so one card's idle workers never spin on the cores the other's are using (2 x Xeon Gold 6152, RTX 3090 + 5060 Ti: decode 15.4 -> 19.8 tok/s); on one NUMA node it stays off - there the parts' pools sharing every core were faster (two V100s on one 14-core Xeon: 25.8 tok/s unpinned, 24.7 pinned). `1` = pinned on any Linux host, `0` = unpinned. Linux only: on Windows the engine pins nothing whatever this says, and one GPU is never pinned anywhere, so `0` changes nothing there |
 | `STRATA_GLM_CPU_SHARED` | on with 3+ GPUs | a split of three or more GPUs runs its cards one after another, so one CPU pool serves them all in turn, sized as one GPU's; `0` = a pool per GPU with the cores divided between them (A/B), `1` = one pool for two GPUs too. A card given its own count (`STRATA_GLM_CPU_LANE<n>`) keeps a pool of its own |
-| `STRATA_GLM_KDA_GRAPH` | off | experimental: `1` replays single-GPU KDA decode layers as CUDA graphs; DSA, MTP/split, profiling, dumps, prefetch and lookahead stay direct. Two thinking-Max 32K/2048 pairs on v1.0.21: 30.73 -> 31.45 tok/s (+2.35%). Current-main full native/quality validation is pending; see [scope and checks](docs/GLM-KDA-GRAPHS.md) |
+| `STRATA_GLM_KDA_GRAPH` | off | experimental: `1` replays single-GPU KDA decode layers as CUDA graphs; DSA, MTP/split, profiling, dumps, prefetch and lookahead stay direct. Two thinking-Max 32K/2048 pairs on v1.0.21: 30.73 -> 31.45 tok/s (+2.35%). Current-main full native/quality validation is pending; see [scope and checks](GLM-KDA-GRAPHS.md) |
 | `STRATA_GLM_CPU_SPLIT` | about 48 pieces in all | decode: each CPU-lane thread's share of a token's RAM-tier experts is cut into this many pieces (1-64), claimed in turn, so one thread held up by the disk readers doesn't hold up the token. Few threads take several pieces each (6 threads: 8 - one V100, Maya-S: 17.1 tok/s against 14.3 with one); 40 or more take one each, which streams the memory best |
 | `STRATA_GLM_PCIE_SHARE` | measured at start | the share of a token's RAM-tier experts copied over PCIe and run on the GPU instead of on the CPU: `0` = the CPU takes every one, `1` = none (the tuning sets it; `STRATA_GLM_CPU_PLAN` = the split per expert count, digits for 0..8) |
 | `STRATA_GLM_PREFETCH_N` | 0 | `1` or `2`: each layer copies up to this many of the next layer's predicted experts (its router on this layer's input) that are not in VRAM into that layer's spares while it computes. `STRATA_GLM_PREFETCH_AT`: when the copy starts - `route` (the default: at once, beside this layer's own PCIe fetch and CPU lane), `fetch` (after this layer's fetch) or `cpu` (after its CPU lane); `STRATA_GLM_PREFETCH_BLOCKS`: the copy's blocks (default half the SMs); `STRATA_GLM_PREFETCH_RANK`: copy only the prediction's first n ranks (its first guesses are right almost always, its 5th-8th mostly not). Maya-M on an RTX 3090 + 3060 with `RAM_RESIDENT=1`, decode at 21K: off 19.64, `N=1` 17.0, `N=1 AT=fetch BLOCKS=4` 19.75, `+ RANK=2` 20.22 tokens/s (VRAM hits 64 -> 69 %); Maya-L there (bigger experts, a busier link): no gain |
@@ -365,7 +365,7 @@ and measured on Linux; on Windows 11 a user runs Maya-L on an RTX 4090, built wi
   `--calibrate` once: it tunes Maya for your PC, and a setup for another context keeps its settings.
 - AMD on Windows (more experimental still), Strix Halo / Gorgon Halo included: `START-MAYA.bat --backend hip --gpu 0
   --setup` builds the HIP engine with AMD's HIP SDK, or offers AMD's ROCm SDK wheels in `.venv` when there is none
-  ([docs/AMD_MAYA.md](docs/AMD_MAYA.md#windows)).
+  ([docs/maya/AMD_MAYA.md](AMD_MAYA.md#windows)).
   `tools\hip\build_maya_windows.bat` builds it by hand (an RX 7900 XTX,
   [#54](https://github.com/mw00/project-maya/pull/54)).
 
@@ -374,7 +374,7 @@ and measured on Linux; on Windows 11 a user runs Maya-L on an RTX 4090, built wi
 Project Maya is free and open source. If it is useful to you, you can support its development:
 **[buymeacoffee.com/peasantsmith](https://buymeacoffee.com/peasantsmith)**. Thank you!
 
-Speed reports, bug reports and pull requests are welcome: [CONTRIBUTING.md](CONTRIBUTING.md) says what helps most.
+Speed reports, bug reports and pull requests are welcome: [CONTRIBUTING.md](../../CONTRIBUTING.md) says what helps most.
 
 ## Credits and license
 
@@ -386,4 +386,4 @@ Speed reports, bug reports and pull requests are welcome: [CONTRIBUTING.md](CONT
 - The model: [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash) by zai-org (MIT); Maya-S and the image
   encoder file are made from zai-org's released weights and keep its license.
 - The dashboard's font: Outfit (SIL Open Font License 1.1, `serve/web/fonts/OFL.txt`).
-- Maya is open source under the [MIT License](LICENSE); the notices of Strata and ggml stay with every copy.
+- Maya is open source under the [MIT License](../../LICENSE); the notices of Strata and ggml stay with every copy.

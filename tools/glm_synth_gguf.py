@@ -1,6 +1,6 @@
 """tools/glm_synth_gguf.py - a tiny, structurally complete synthetic glm5-next GGUF.
 
-Phase 1 of docs/GLM5-FLASH.md needs a model the reference forward pass (`ref/glm.py`) and the
+Phase 1 of docs/maya/GLM5-FLASH.md needs a model the reference forward pass (`ref/glm.py`) and the
 future engine kernels can run against without the 320B download: same tensor set, same metadata
 keys, every path exercised (KDA layers, nope-MLA + k-pool DSA layers, dense lead FFN, MoE with
 shared expert, mHC on both halves), dimensions scaled down and values drawn from a seeded RNG

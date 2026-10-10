@@ -1,6 +1,6 @@
-# DeepSeek V4 Flash on Maya (the `deepseek4` port)
+# DeepSeek V4 Flash in Abyss (the `deepseek4` port)
 
-Branch `deepseek4` of a Maya (project-maya, the GLM-5.3-Flash fork of Strata) copy. DeepSeek V4 Flash
+Abyss is a copy of Maya (project-maya, the GLM-5.3-Flash fork of Strata). DeepSeek V4 Flash
 (llama.cpp arch `deepseek4`) runs on the `Glm5Model` fast path as a second architecture: the mHC residual, the
 router + expert tiers (VRAM / pinned RAM / disk, CPU lane), the shared expert, the server and the prompt path are
 Maya's; the attention mixer, the routing function, the head and the packaging are new. The math is in
@@ -52,7 +52,7 @@ inside the 3000-token test.
   -DCMAKE_CUDA_ARCHITECTURES=120a -DSTRATA_NATIVE_EXPERTS=ON -DSTRATA_BUILD_TESTS=OFF \
   -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DSTRATA_GGML_DIR=$PWD/third_party/llama.cpp
 .venv/bin/cmake --build build --target strata -j 16
-.venv/bin/python tools/iq_pack.py --gguf <shard 1>.gguf --out <model dir>/pack-dsv4 --compat-bf16
+.venv/bin/python tools/iq_pack.py --gguf <shard 1>.gguf --out ../Abyss-data/models/<repo>/<quant>/pack-dsv4 --compat-bf16
 ```
 
 ## Not done yet

@@ -1,4 +1,4 @@
-"""tools/maya_quant/gptq.py - error-feedback rounding of the routed experts (docs/QUANT-PLAN.md, stage 3).
+"""tools/maya_quant/gptq.py - error-feedback rounding of the routed experts (docs/maya/QUANT-PLAN.md, stage 3).
 
 GPTQ at superblock granularity, for any ggml type whose rows are independent 256-weight superblocks (the IQ lattice
 types and the K-quants): per expert, the input dimension is walked in 256-column blocks.  Each block is quantized by

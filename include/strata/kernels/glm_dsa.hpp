@@ -1,6 +1,6 @@
 // include/strata/kernels/glm_dsa.hpp - the glm5-next DSA layer's indexer and absorbed-MLA attention.
 //
-// Phase 2 of docs/GLM5-FLASH.md.  The 11 full-attention layers cache ONLY the compressed latent
+// Phase 2 of docs/maya/GLM5-FLASH.md.  The 11 full-attention layers cache ONLY the compressed latent
 // (kv_lora_rank per token): q is absorbed through wk_b (score = (wk_b_h^T q_h) . latent) and v is
 // absorbed through wv_b AFTER the softmax, so no per-head K or V ever exists.  The k-pool indexer
 // decides which cells each query sees.  Reference: `ref/glm.py::dsa_layer`, transcribed from

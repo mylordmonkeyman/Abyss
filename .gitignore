@@ -38,6 +38,9 @@ td.log
 /run-maya-*.sh
 /run-maya-*.bat
 /maya-report.txt
+# Abyss-tools' run configs (abyss-<model>.json, run-abyss-<model>.sh) and engine logs
+/abyss-*.json
+/abyss-*.log
 /build-strata.bat
 /build-maya*.bat
 

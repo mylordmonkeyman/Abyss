@@ -1,6 +1,6 @@
 // include/strata/kernels/router_sigmoid.hpp - the glm5-next MoE router (sigmoid + selection bias).
 //
-// Phase 2 of docs/GLM5-FLASH.md.  The qwen4exp router (`router_top10.hpp`) is softmax over all
+// Phase 2 of docs/maya/GLM5-FLASH.md.  The qwen4exp router (`router_top10.hpp`) is softmax over all
 // experts with renormalised weights; glm5-next is DeepSeek noaux_tc, whose semantics
 // (`ref/glm.py::moe_ffn`, transcribed from llama-graph.cpp's build_moe_ffn) are easy to blur in
 // exactly one place, and the parity harness exists because of it:

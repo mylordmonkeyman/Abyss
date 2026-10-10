@@ -97,7 +97,7 @@ bool supported(int t) {
         case GGML_TYPE_IQ1_S:  // GLM-5.3-Flash's IQ1_S experts
         case GGML_TYPE_Q2_K: case GGML_TYPE_Q3_K: case GGML_TYPE_Q4_K: case GGML_TYPE_Q5_K: case GGML_TYPE_Q6_K:
         case GGML_TYPE_MXFP4:  // deepseek4's FP4 expert rows
-            return true;   // (the Maya quants' candidates, docs/QUANT-PLAN.md; IQ1_M has no MMQ)
+            return true;   // (the Maya quants' candidates, docs/maya/QUANT-PLAN.md; IQ1_M has no MMQ)
         default:
             return false;
     }

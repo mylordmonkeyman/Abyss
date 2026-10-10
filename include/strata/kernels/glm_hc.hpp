@@ -1,6 +1,6 @@
 // include/strata/kernels/glm_hc.hpp - the glm5-next mHC (manifold-constrained hyper-connections).
 //
-// Phase 2 of docs/GLM5-FLASH.md.  The qwen4exp gated residual (`gr.hpp`) collapses the stream stack through
+// Phase 2 of docs/maya/GLM5-FLASH.md.  The qwen4exp gated residual (`gr.hpp`) collapses the stream stack through
 // a low-rank bottleneck; glm5-next's mHC replaces that with a direct projection to (2+hc)*hc mixing values,
 // three affine gates, and a Sinkhorn normalization that runs PER TOKEN - the reference is
 // `ref/glm.py::hc_pre` / `hc_sinkhorn` / `hc_post`, transcribed from

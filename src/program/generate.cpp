@@ -926,7 +926,7 @@ double probe_pcie_h2d_gbps() {
 // ================================ the glm5-next pack path (M3.1) ================================
 //
 // A GLM-5.3-Flash pack (tools/iq_pack.py output) runs the VERIFIED runner - Glm5Model, the same
-// path glm_pack_test drives (docs/GLM5-FLASH.md §9) - behind this driver's wire contract:
+// path glm_pack_test drives (docs/maya/GLM5-FLASH.md §9) - behind this driver's wire contract:
 // `T <id>` per generated token on stdout, `ERR <message>` when a request cannot run, the DONE
 // summary at the end, and --serve reading `GEN <max_new> <id,id,...>` lines (QUIT ends).
 //
@@ -2232,7 +2232,7 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "maya generate: --resident-cpu-experts does not support layer splits or remote expert caches\n");
         return 2;
     }
-    // the helper-GPU expert caches (--expert-cache-remote, docs/SECOND_GPU.md): CUDA1..3 on one GPU; with a layer
+    // the helper-GPU expert caches (--expert-cache-remote, docs/maya/SECOND_GPU.md): CUDA1..3 on one GPU; with a layer
     // split, the visible GPUs no stage runs on, in order
     int remote_dev[3] = {1, 2, 3};
     if (multi_gpu) {
@@ -2554,7 +2554,7 @@ int main(int argc, char** argv) {
         try {
             strata::GgufFile model_gguf(o.native_preset);
             // BOTH spellings in the wild: llama.cpp's canonical "glm5-next" and unsloth's "glm5next"
-            // (docs/GLM5-FLASH.md; Glm5Geometry::from_gguf detects them the same way).
+            // (docs/maya/GLM5-FLASH.md; Glm5Geometry::from_gguf detects them the same way).
             if (const strata::MetaValue* v = model_gguf.get("general.architecture");
                 v != nullptr && v->type == strata::MetaType::STRING &&
                 (v->s == "glm5-next" || v->s == "glm5next")) {
@@ -2564,7 +2564,7 @@ int main(int argc, char** argv) {
                              "maya generate: %s declares architecture %s (GLM-5.3-Flash)\n"
                              "maya generate: the qwen4exp driver path cannot serve it - run the pack instead:\n"
                              "maya generate:   strata generate --glm-pack <pack_dir> --tokens ... (the verified\n"
-                             "maya generate:   Glm5Model runner; docs/GLM5-FLASH.md §9)\n",
+                             "maya generate:   Glm5Model runner; docs/maya/GLM5-FLASH.md §9)\n",
                              o.native_preset.c_str(), v->s.c_str());
                 return 2;
             }
@@ -2897,7 +2897,7 @@ int main(int argc, char** argv) {
         // read+fill about 24x (measured 0.05 vs 1.42 GiB/s for the same binary, args and cache state; the
         // scheduler's defaults - Below normal priority and a least-privilege token - were the only
         // difference between the runs).  Say so instead of letting the user blame the disk; see
-        // docs/DETAILS.md, "Running it at startup (Task Scheduler)".
+        // docs/maya/DETAILS.md, "Running it at startup (Task Scheduler)".
 #ifdef _WIN32   // a Windows launch context; elsewhere a load this slow is the disk
         if (arena_src.load_gib_per_second() > 0.0 && arena_src.load_gib_per_second() < 0.2) {
             std::fprintf(stderr,
@@ -2905,7 +2905,7 @@ int main(int argc, char** argv) {
                          "launch. If Maya is started by Task Scheduler or a service, register the task "
                          "with Priority 4 (Normal) and 'Run with highest privileges' - the scheduler's "
                          "defaults (Below normal + a least-privilege token) throttle the load. See "
-                         "docs/DETAILS.md ('Running it at startup').\n");
+                         "docs/maya/DETAILS.md ('Running it at startup').\n");
         }
 #endif
         srcp = &arena_src;

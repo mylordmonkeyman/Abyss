@@ -1,7 +1,7 @@
 # Strata - the details
 
 The technical side of Strata: every measured number, the API, images, all settings and how the engine works.
-New here? Start with the [README](../README.md) - it has everything you need to install and use it.
+New here? Start with the [README](README.md) - it has everything you need to install and use it.
 
 > **On this page:** [Speed](#speed-measured) · [Other GPUs](#other-gpus-estimated) · [Which model?](#which-model) ·
 > [Requirements](#before-you-start) · [Windows](#windows) · [Linux](#linux) · [API](#using-it) ·
@@ -46,8 +46,8 @@ Engine 0.1.26, the same runs. † not measured again: 0.1.14.
 Output speed depends on the text as well: speculative decoding runs faster when more of the drafted tokens are
 accepted, so a different answer to the same prompt moves it by several percent. Run back to back on the 4K prompt,
 0.1.14 writes 88.5 tokens/s and 0.1.12 85.7. The numbers before 0.1.13 (prompts about half as fast):
-[`bench/results/2026-09-24-final`](../bench/results/2026-09-24-final/matrix.md); these:
-[`bench/results/2026-09-28-speed-0114`](../bench/results/2026-09-28-speed-0114/README.md).
+[`bench/results/2026-09-24-final`](../../bench/results/2026-09-24-final/matrix.md); these:
+[`bench/results/2026-09-28-speed-0114`](../../bench/results/2026-09-28-speed-0114/README.md).
 
 IQ3_XXS and IQ3_S at 262K are not measured: with their 43 / 50 GB of experts, a 260K-token context brings a 64 GB PC
 to its memory limit. Use up to 128K with them on 64 GB (setup caps it). IQ3_S (engine 0.1.4 or newer) is only published
@@ -62,7 +62,7 @@ it on.
 **4-bit KV cache (engine 0.1.8, optional):** `START-HERE.bat --setup` asks above 8K context (or pass `--kv q4_0`). It
 halves the KV cache's memory with a Hadamard rotation before 4-bit rounding (PR #21), about 4% faster at 128K, but it
 is measurably less precise on long documents (perplexity +8-12%; needle tests still pass). 8-bit stays the default.
-Details: [`bench/results/2026-09-27-kv-q4`](../bench/results/2026-09-27-kv-q4/README.md).
+Details: [`bench/results/2026-09-27-kv-q4`](../../bench/results/2026-09-27-kv-q4/README.md).
 
 **Hybrid K8V4 KV cache (engine 0.1.25, optional, PR #120):** `--kv k8v4` (`START-HERE.bat --setup --kv k8v4`) keeps
 the keys at 8 bits and stores the values as rotated 4-bit: 23% less KV memory than 8-bit, so more experts fit in
@@ -90,9 +90,9 @@ whole chunk at once; unpinned experts are copied by helper threads. Measured on 
 32K-token prompt: Q2_0 572 -> 1,290 tokens/s, IQ3_S 383 -> 1,208. Through the server (Q2_0, 128K context): 999 tokens
 353 -> 438 tokens/s, 6,927 tokens 529 -> 1,077, 28,584 tokens 584 -> 1,249. Output speed is unchanged. Needles 5/5
 (1K-262K). Details and the quality check:
-[`bench/results/2026-09-28-prefill-speed`](../bench/results/2026-09-28-prefill-speed/README.md). Existing installs
+[`bench/results/2026-09-28-prefill-speed`](../../bench/results/2026-09-28-prefill-speed/README.md). Existing installs
 switch to `--prefill auto` the next time START-HERE / setup.sh starts them. The raw numbers:
-[`bench/results/`](../bench/results/). The [paper](paper/Strata-Paper.pdf) explains every number.
+[`bench/results/`](../../bench/results/). The [paper](paper/Strata-Paper.pdf) explains every number.
 
 ## Other GPUs (estimated)
 
@@ -583,7 +583,7 @@ The full story, with measurements, bottlenecks and what comes next: **[docs/pape
 
 ## Credits and licenses
 
-Strata itself: [MIT](../LICENSE). The model files are not part of it; their licenses apply to them (below).
+Strata itself: [MIT](../../LICENSE). The model files are not part of it; their licenses apply to them (below).
 
 - Model: [Qwen/Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next) by the Qwen team; quantizations by
   [ISTA-DASLab](https://huggingface.co/ISTA-DASLab), the Coder too

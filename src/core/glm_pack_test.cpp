@@ -4,7 +4,7 @@
 //
 // Teacher-forces token ids 1..n (streaming, one forward per token) through the pack-backed
 // runner and writes the (T, vocab) float32 logits.  The cross-check is llama.cpp on the same
-// GGUF (llm_logits_dump) - docs/GLM5-FLASH.md §9.
+// GGUF (llm_logits_dump) - docs/maya/GLM5-FLASH.md §9.
 #include "strata/core/glm_model.hpp"
 
 #include <algorithm>

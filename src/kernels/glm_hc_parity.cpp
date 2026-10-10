@@ -2,7 +2,7 @@
 //
 // Same discipline as gr_parity: every prose-reading trap is computed the WRONG way first and required to
 // differ materially, because a test that only compares against the right reference passes against either.
-// The mHC readings that are easy to get wrong (docs/GLM5-FLASH.md §3.4, glm_hc.hpp):
+// The mHC readings that are easy to get wrong (docs/maya/GLM5-FLASH.md §3.4, glm_hc.hpp):
 //
 //   1. JOINT vs PER-STREAM rms norm.  gr's norm is one RMS per stream; mHC's is ONE RMS over the whole
 //      flattened stack (glm5-next.cpp L472 reshapes to (hc_dim, T) and rms_norms).  The gr reading is the

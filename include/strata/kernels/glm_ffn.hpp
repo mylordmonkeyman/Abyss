@@ -1,6 +1,6 @@
 // include/strata/kernels/glm_ffn.hpp - the glm5-next FFN activation: the clamped SwiGLU.
 //
-// Phase 2 of docs/GLM5-FLASH.md.  glm5-next's FFNs (the 3 dense lead layers, the routed experts,
+// Phase 2 of docs/maya/GLM5-FLASH.md.  glm5-next's FFNs (the 3 dense lead layers, the routed experts,
 // and the shared expert) all use the GLM-family clamped SwiGLU, whose kernel semantics
 // (`ref/glm.py::swiglu_clamp`, transcribed from ggml's ggml_swiglu_clamp, cpu-ops.cpp L3449) are
 // easy to read past:

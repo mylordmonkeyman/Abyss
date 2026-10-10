@@ -10,7 +10,7 @@
 //      the final position must match one batched forward of the whole prefix.
 //   B. STATE DETERMINISM: A, reset, B, reset, A - the second A is bitwise the first.
 //   C. VS THE F64 ORACLE over all 512 columns: the acceptance rule calibrated in
-//      docs/GLM5-FLASH.md §8.2 - argmax agreement (relaxed: MoE selection near-ties flip on
+//      docs/maya/GLM5-FLASH.md §8.2 - argmax agreement (relaxed: MoE selection near-ties flip on
 //      f32-vs-f64 rounding), p99 of the per-column KL below 1e-4, and max KL below 0.1.
 //   D. NO NaN/INF anywhere in the streamed logits (the hot scales are the point).
 //

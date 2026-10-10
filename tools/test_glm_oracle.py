@@ -1,7 +1,7 @@
 """tools/test_glm_oracle.py - the glm5-next reference forward pass, checked on a synthetic model.
 
 Runs `tools/glm_synth_gguf.py`'s tiny glm5-next GGUF through `ref/glm.py` and asserts the
-invariants that hold by construction of the architecture (docs/GLM5-FLASH.md §3):
+invariants that hold by construction of the architecture (docs/maya/GLM5-FLASH.md §3):
 
   * the logits are finite and the greedy loop terminates;
   * the MoE weights renormalize to exactly expert_weights_scale per token;

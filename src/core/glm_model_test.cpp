@@ -1,6 +1,6 @@
 // src/core/glm_model_test.cpp - the glm5-next runner vs the oracle, and streaming vs batched.
 //
-// Four gates (docs/GLM5-FLASH.md Phase 3):
+// Four gates (docs/maya/GLM5-FLASH.md Phase 3):
 //
 //   1. BATCHED VS THE ORACLE: forward(prompt) must reproduce ref/glm.py's teacher-forced logits
 //      (the last column of the result_output dump) - the whole model through the runner.

@@ -1,4 +1,4 @@
-"""tools/maya_quant/calib.py - the reference and statistics pass of the Maya quants (docs/QUANT-PLAN.md, stage 2).
+"""tools/maya_quant/calib.py - the reference and statistics pass of the Maya quants (docs/maya/QUANT-PLAN.md, stage 2).
 
 The official GLM-5.3-Flash checkpoint (block FP8) runs layer by layer on one GPU: each layer is built from
 transformers' own glm5_next modules (attention, KDA, mHC) with the routed experts replaced by a module that also

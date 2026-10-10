@@ -1,6 +1,6 @@
 """ref/glm.py - the glm5-next (GLM-5.3-Flash) reference forward pass, one op at a time.
 
-Phase 1 of docs/GLM5-FLASH.md: the specification every engine kernel is parity-tested against.
+Phase 1 of docs/maya/GLM5-FLASH.md: the specification every engine kernel is parity-tested against.
 It is written from `ref/upstream-llama.cpp/glm5-next.cpp` (the llama.cpp implementation this
 architecture's GGUF conversion follows) with the released config's values as defaults, and it
 keeps ggml's own conventions so the two can be compared op by op:

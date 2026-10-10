@@ -136,7 +136,15 @@ class ArchitectureCheck(unittest.TestCase):
         self.assertIn("qwen4exp", iq_pack.ARCHITECTURES)
         self.assertIn("glm5-next", iq_pack.ARCHITECTURES)
         self.assertIn("glm5next", iq_pack.ARCHITECTURES)   # unsloth's spelling, same KV family
-        self.assertEqual(len(iq_pack.ARCHITECTURES), 3)
+        self.assertIn("deepseek4", iq_pack.ARCHITECTURES)  # Abyss: DeepSeek V4
+        self.assertEqual(len(iq_pack.ARCHITECTURES), 4)
+
+    def test_deepseek4_bf16_list(self):
+        # the hc fn matrices (F32 in the GGUFs) take the BF16 path, the indexer's F32 projection does not
+        self.assertTrue(iq_pack.needs_bf16("blk.3.hc_attn_fn.weight", "F32", "deepseek4"))
+        self.assertTrue(iq_pack.needs_bf16("output_hc_fn.weight", "F32", "deepseek4"))
+        self.assertFalse(iq_pack.needs_bf16("blk.2.indexer.proj.weight", "F32", "deepseek4"))
+        self.assertFalse(iq_pack.needs_bf16("blk.0.ffn_gate_inp.weight", "BF16", "deepseek4"))
 
 
 if __name__ == "__main__":

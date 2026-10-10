@@ -1,6 +1,22 @@
-# Contributing to Project Maya
+# Contributing to Abyss
 
-Reports and pull requests are welcome. These are what helps most.
+Reports and pull requests are welcome. Abyss is a fork of [Project Maya](https://github.com/mw00/project-maya):
+an issue or a change that is about Maya's own parts (GLM-5.3-Flash, the installer, AMD) may belong upstream there.
+
+## DeepSeek V4: a speed report, a bug, a new machine
+
+Open an issue with:
+
+- GPU(s) (model, VRAM, PCIe as `nvidia-smi` shows it), CPU, RAM, disk, CUDA version;
+- the model file (repository and quant) and `--max-context`;
+- your config (`abyss-*.json`, without an API key) and the engine log's `glm fast:`, `glm prefill:`, `deepseek4:` and
+  `glm stat:` lines (the log is the config's `"log"`);
+- what you did and what you saw (the request, the answer or the error).
+
+An output problem is best shown against llama.cpp on the same GGUF: `tools/dsv4_logits_dump.cpp` and
+`STRATA_GLM_SCORE_REF` ([docs/deepseek4/PORT.md](docs/deepseek4/PORT.md)).
+
+The sections below are Maya's and apply to its GLM-5.3-Flash setup.
 
 ## A speed report or a new machine
 

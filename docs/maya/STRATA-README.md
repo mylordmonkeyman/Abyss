@@ -3,7 +3,7 @@
 <p align="center"><b>Run a 125-billion-parameter AI model on a normal gaming PC</b><br>
 one NVIDIA card (12-24 GB) + 64 GB of RAM · Windows or Linux · one click to install</p>
 
-<p align="center"><a href="https://github.com/Niko1221/Strata/releases/download/v0.1.10/Pagoda.mp4"><img src="docs/media/pagoda-preview.webp" width="720" alt="A voxel pagoda garden that Strata's model wrote, running in the browser"></a><br>
+<p align="center"><a href="https://github.com/Niko1221/Strata/releases/download/v0.1.10/Pagoda.mp4"><img src="media/pagoda-preview.webp" width="720" alt="A voxel pagoda garden that Strata's model wrote, running in the browser"></a><br>
 <sub>A voxel pagoda garden, 1 shot prompt running on an RTX 5070 with Strata (IQ3_S, 128K context) ·
 <a href="https://github.com/Niko1221/Strata/releases/download/v0.1.10/Pagoda.mp4">full video (49 s)</a></sub></p>
 
@@ -15,7 +15,7 @@ of a word): faster than you can read.
 
 > **Jump to:** [How fast?](#how-fast-is-it) · [Which model?](#which-model-should-i-pick) · [Install](#install) ·
 > [Using it](#using-it) · [Problems?](#something-went-wrong) · [How it works](#how-does-it-work) ·
-> [All the details](docs/DETAILS.md)
+> [All the details](DETAILS.md)
 
 ---
 
@@ -37,7 +37,7 @@ Measured on an RTX 5070 (12 GB), a Ryzen 5 7600 and 64 GB of RAM:
 
 A card with more VRAM is faster, because more of the model fits on the GPU: an RTX 3090 (24 GB) should do roughly
 100-140 tokens per second. All measurements, long-context numbers and estimates for other cards are in the
-[details](docs/DETAILS.md#speed-measured).
+[details](DETAILS.md#speed-measured).
 
 Every PC is different: `START-HERE.bat --calibrate` measures a few engine settings on yours and keeps the fastest
 (about 5-10 minutes; on the PC above it made the Coder 7% faster).
@@ -47,7 +47,7 @@ asks whether to share the model across them (recommended when two can). An insta
 its next start. Or choose yourself: `START-HERE.bat --gpus 0,2` (both, remembered), `--gpus all`, or `--gpu 0` (one
 card, this start only). Each card keeps the experts of its own layers, and prompts flow through the cards in a
 pipeline: on an RTX 5080 + RTX 3090 prompts were read 18-20% faster than on the 5080 alone, decoding on par.
-Every card must be an RTX 20 series or newer with 8 GB or more. See [docs/MULTI_GPU.md](docs/MULTI_GPU.md).
+Every card must be an RTX 20 series or newer with 8 GB or more. See [docs/maya/MULTI_GPU.md](MULTI_GPU.md).
 
 ## Which model should I pick?
 
@@ -81,17 +81,17 @@ lower the RAM needed.
 Not sure? Take **IQ2_XS** - or the **Coder** if you mainly write code, or have 32-48 GB of RAM. You can add another
 one later with `SETUP.bat` (the same as `START-HERE.bat --setup`; on Linux `./setup.sh --setup`).
 
-For **OrcaRouter's Flash-Next Uncensored IQ3_XXS**, see the [manual compatibility setup](docs/ORCA.md).
+For **OrcaRouter's Flash-Next Uncensored IQ3_XXS**, see the [manual compatibility setup](ORCA.md).
 It needs an explicit packing conversion and is not an installer menu option.
 
 An **AMD Radeon RX 7900 XT / XTX on Linux** works too (experimental): `./setup.sh --backend hip`, chosen by itself on
 a PC with no NVIDIA card Strata can use. It installs ROCm without sudo and compiles the engine (one GPU, no images
-yet). Details: [AMD HIP](docs/AMD_HIP.md).
+yet). Details: [AMD HIP](AMD_HIP.md).
 
 ## Install
 
 **You need:** an NVIDIA RTX 20, 30, 40 or 50 card with 12 GB of VRAM or more (RTX 20 since 0.1.27), enough RAM for the size you pick (above;
-a big GPU makes up for less RAM - the [low-RAM mode](docs/DETAILS.md)),
+a big GPU makes up for less RAM - the [low-RAM mode](DETAILS.md)),
 ~80 GB of free disk space (an SSD makes the first start much faster), and Windows 10/11 or Linux. The only thing you
 install yourself is a current **NVIDIA driver** ([nvidia.com/drivers](https://www.nvidia.com/drivers) or the NVIDIA
 App). Everything else - Python, the engine, the model - is set up for you.
@@ -104,7 +104,7 @@ App). Everything else - Python, the engine, the model - is set up for you.
    - **Which model and size?** The original or Swift 1.5, and Q2_0, IQ2_XS, IQ3_XXS or IQ3_S - see [above](#which-model-should-i-pick)
    - **How much context?** How much text it can keep in mind at once (it suggests one for your card)
    - **Images?** Whether it should also read pictures
-   - **Experimental speed projection?** Off unless you say yes - [read what it does](docs/DETAILS.md#experimental-speed-projection-experimental-off-by-default) first
+   - **Experimental speed projection?** Off unless you say yes - [read what it does](DETAILS.md#experimental-speed-projection-experimental-off-by-default) first
 
 Then it downloads everything (the model is ~70 GB, so the first time takes a while - you can stop and it picks up
 where it left off) and **starts the model**. Your browser opens the Strata app at `http://127.0.0.1:8080`.
@@ -124,7 +124,7 @@ the same way - nothing big is downloaded again.
 
 ## Using it
 
-<p align="center"><img src="docs/media/runpagoda.png" width="900" alt="The Strata app's Monitor tab next to a coding agent"><br>
+<p align="center"><img src="media/runpagoda.png" width="900" alt="The Strata app's Monitor tab next to a coding agent"><br>
 <sub>The Strata app's <b>Monitor</b> (left) while a coding agent writes the pagoda garden from the video (right)</sub></p>
 
 - **In the browser:** `http://127.0.0.1:8080` - the Strata app (it opens by itself when the model starts): **Chat**, a
@@ -136,9 +136,9 @@ the same way - nothing big is downloaded again.
   `/think low` in `chat.py`, or with your app's "reasoning effort" setting. Off is fastest; high is best for hard questions.
 - **Pictures:** in the chat page click **Picture**; in `chat.py` type `/image <path>`; in apps just attach them.
 - **From your phone or another PC:** `START-HERE.bat --setup --host 0.0.0.0 --api-key <secret>`, then open the
-  address the server window prints; see the [details](docs/DETAILS.md#using-it).
+  address the server window prints; see the [details](DETAILS.md#using-it).
 - **Experimental speed projection (off by default):** an experimental control vector that setup can turn on; it
-  changes how the model answers - read [what it does](docs/DETAILS.md#experimental-speed-projection-experimental-off-by-default) first.
+  changes how the model answers - read [what it does](DETAILS.md#experimental-speed-projection-experimental-off-by-default) first.
 
 **Good to know:** it answers one request at a time. The first message of a chat is read in full (about 1 minute per
 30,000 tokens); after that it keeps the conversation and reads only what is new, so follow-ups start in seconds.
@@ -172,7 +172,7 @@ engine by itself. If it keeps happening, close other programs or pick a smaller 
 The conversation is longer than the context you chose. Start a new chat, or run `SETUP.bat` and pick more
 context.
 
-**Still stuck?** Look in the [full troubleshooting table](docs/DETAILS.md#troubleshooting), or open an issue and
+**Still stuck?** Look in the [full troubleshooting table](DETAILS.md#troubleshooting), or open an issue and
 attach `strata-<model>.log` from the Strata folder.
 
 ## How does it work?
@@ -181,7 +181,7 @@ Models like this one normally run on servers with hundreds of gigabytes of graph
 12-24 GB. Strata makes it fit by **sharing the work across your whole PC** - the same idea as a kitchen, where the
 things you use all the time stay on the counter and the rest waits in the pantry.
 
-<p align="center"><img src="docs/media/how-it-works.svg" width="860" alt="The model's 24,576 experts: the busiest on the graphics card, all of them in RAM, a lookup table on the SSD"></p>
+<p align="center"><img src="media/how-it-works.svg" width="860" alt="The model's 24,576 experts: the busiest on the graphics card, all of them in RAM, a lookup table on the SSD"></p>
 
 - **The model is a team of 24,576 small specialists ("experts"),** and each word it writes needs only 10 of them.
   So it doesn't have to have all of them on the graphics card at once.
@@ -191,7 +191,7 @@ things you use all the time stay on the counter and the rest waits in the pantry
   at the same time as the graphics card, so neither waits for the other.
 - **Your SSD** holds a big lookup table; the model only reads a few small rows of it per word.
 
-<p align="center"><img src="docs/media/guess-and-check.svg" width="860" alt="A small helper guesses the next words; the big model checks them all at once and keeps the right ones"></p>
+<p align="center"><img src="media/guess-and-check.svg" width="860" alt="A small helper guesses the next words; the big model checks them all at once and keeps the right ones"></p>
 
 - **Guess, then check.** A small, fast helper built into the model guesses the next few words, and the big model
   checks all the guesses in one go. It keeps the ones it agrees with and writes the next word itself - so one step
@@ -200,7 +200,7 @@ things you use all the time stay on the counter and the rest waits in the pantry
 - **Long texts are read in big pieces** (up to 8,192 tokens - pieces of words - at a time), which is why a long
   document or code base is read at over 1,000 tokens per second.
 
-Want the full picture? The [details](docs/DETAILS.md#how-it-works) explain every part and its numbers, and the
+Want the full picture? The [details](DETAILS.md#how-it-works) explain every part and its numbers, and the
 [paper](docs/paper/Strata-Paper.pdf) tells the whole story, with the measurements behind it.
 
 ## Credits
@@ -211,11 +211,11 @@ Want the full picture? The [details](docs/DETAILS.md#how-it-works) explain every
   to the model files.
 - Built with parts of [llama.cpp / ggml](https://github.com/ggml-org/llama.cpp) (MIT). Ideas from
   [Splash](https://github.com/incoai/splash), [ninfer](https://github.com/Neroued/ninfer) and
-  [HyperQwen](https://github.com/syv-ai/HyperQwen). More in the [details](docs/DETAILS.md#credits-and-licenses).
+  [HyperQwen](https://github.com/syv-ai/HyperQwen). More in the [details](DETAILS.md#credits-and-licenses).
 
 ## License
 
-Strata is open source under the [MIT License](LICENSE). A few parts carry their own licenses: `third_party/ggml`
+Strata is open source under the [MIT License](../../LICENSE). A few parts carry their own licenses: `third_party/ggml`
 (MIT, llama.cpp / ggml), the web app's font (SIL Open Font License 1.1) and the experimental speed projection's
 vector in `data/experimental-speed-projection` (Qwen Community License 1.0, from the model's activations). The
 models are not part of this repository; each model's own license applies to its files.

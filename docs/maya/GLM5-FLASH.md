@@ -168,7 +168,7 @@ Either way this is the *cheapest* architecture delta; the risk is only parity di
   mis-indexed", `expert_source.hpp:18-21`). GLM does not go through it: the **native path**
   (`native_expert.hpp`) is runtime-geometry (per-layer `NativeFmt` with `n_embd`, `n_ff`, ggml types from
   the GGUF), and that is the path GLM must ride - exactly as the Coder and the Orca compatibility pack do
-  (`docs/ORCA.md`). Consequence for the study: GLM packs are native packs; the canonical Q2_0 pack path
+  (`docs/maya/ORCA.md`). Consequence for the study: GLM packs are native packs; the canonical Q2_0 pack path
   is out of scope for the port.
 * **Expert blob size.** 3 × 4096 × 2048 = 25.2 M params/expert ≈ 3.2× the implemented expert. Blob sizes
   become per-layer-native (already supported: `layer_offsets_`/`layer_blob_bytes_`,
@@ -264,7 +264,7 @@ pages again quickly (`expert_source.cpp:332-343`). The expert access pattern is 
 
 ## 5. Expected performance envelope (estimates, ±30 %)
 
-Same method as `docs/DETAILS.md`'s GPU table: GPU part scaled by bandwidth and VRAM-held expert share,
+Same method as `docs/maya/DETAILS.md`'s GPU table: GPU part scaled by bandwidth and VRAM-held expert share,
 CPU part by remaining expert bytes. Assume an RTX 3090-class card (24 GB) + DDR5, Q2_0-class pack:
 
 * ~3,000 VRAM-cached experts cover ~70 % of reads (profile economics transfer; per-expert bytes are
@@ -397,14 +397,14 @@ counts) read into `ModelGeometry`.
 
 **Phase 4 - serve and measure.** Vision helper against the glm5 mmproj; end-to-end parity vs the oracle
 per residual ladder (`dump_layers`); needle tests across 1 K-1 M; the benchmark matrix; then the
-`docs/DETAILS.md` tables gain a GLM section.
+`docs/maya/DETAILS.md` tables gain a GLM section.
 
 Rough effort weighting: Phase 2 ≈ 60 %, Phase 1 ≈ 15 %, Phase 3 ≈ 15 %, Phase 4 ≈ 10 %. The critical
 path runs through the MLA attention kernels and their parity harness.
 
 ## 7. What this branch contains
 
-* `docs/GLM5-FLASH.md` - this study.
+* `docs/maya/GLM5-FLASH.md` - this study.
 * The §4 mmap work in `FileExpertSource`: per-layer prefetch of the routed blobs from the existing
   `begin_layer` hook (Windows `PrefetchVirtualMemory`; Linux `posix_fadvise(WILLNEED)`), best-effort and
   retention-friendly - the mapping itself stays hint-free for the measured reason above. With a test.

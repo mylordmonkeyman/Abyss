@@ -1,6 +1,6 @@
 // include/strata/kernels/glm_kda.hpp - the glm5-next KDA (Kimi Delta Attention) layer pieces.
 //
-// Phase 2 of docs/GLM5-FLASH.md.  glm5-next's 34 linear-attention layers are KDA: the qwen4exp GDN
+// Phase 2 of docs/maya/GLM5-FLASH.md.  glm5-next's 34 linear-attention layers are KDA: the qwen4exp GDN
 // (`gdn.hpp`) with the per-head scalar decay replaced by a PER-CHANNEL decay on the KEY axis, produced
 // by a low-rank gate and squashed through the architecture's lower-bound form.  The reference is
 // `ref/glm.py::kda_layer` / `conv1d_causal`, transcribed from `ref/upstream-llama.cpp/glm5-next.cpp`

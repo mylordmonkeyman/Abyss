@@ -2,7 +2,7 @@
 
 Every sample is rendered with GLM-5.3-Flash's own chat template (reasoning in reasoning_content, tool calls as
 tool_calls, tool results as observations), tokenised, and packed into sequences of --len tokens.  The mix, by
-tokens, follows docs/QUANT-PLAN.md: chat, multilingual chat, reasoning traces, web code (three.js / canvas / WebGL
+tokens, follows docs/maya/QUANT-PLAN.md: chat, multilingual chat, reasoning traces, web code (three.js / canvas / WebGL
 first), other code, tool calls, plus any model-written conversations in --extra (jsonl of {"messages": [...]}).
 The evaluation set takes disjoint samples of each source, plus wikitext-2 as plain text.
 
