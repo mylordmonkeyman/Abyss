@@ -42,8 +42,14 @@ inside the 3000-token test.
 
 | | Abyss | llama.cpp (`-ot exps=CPU`) |
 | --- | --- | --- |
-| Decode, short answers | 36-62 tok/s | 5-7 tok/s |
-| Prompt, 5.6K tokens (server) | ~600 tok/s | 3-6 tok/s (short prompts) |
+| Decode, answers of ~1,500 tokens | ~57 tok/s (v1.0: 48) | 5-7 tok/s |
+| Decode, short answers | 37-56 tok/s | 5-7 tok/s |
+| Prompt, 5.6K tokens (server) | ~1,000-1,090 tok/s (v1.0: ~690) | 3-6 tok/s (short prompts) |
+| Prompt, 18K tokens (server) | ~1,700 tok/s | - |
+
+v1.1.0's speed work (CHANGELOG): the token-path attention split over key chunks (flash-decoding), a lighter route
+kernel and CPU-answer read, the prompt path's CPU rows by the AVX-512 i-quant kernels, and an adaptive prestage. The
+validation above was repeated after it: 3000 tokens KL 0.0091 (CPU lane on), 2499 + 500 KL 0.0054.
 
 ## Build and pack
 
@@ -60,4 +66,4 @@ inside the 3000-token test.
 - The MTP / DSpark draft (the GGUF has no MTP block; DSpark needs its own model) - no speculative decode.
 - File conversation slots (`STRATA_GLM_SLOTS`) - off for deepseek4; the live snapshot works.
 - Images.
-- Prompt-path tuning (the 5.6K prompt spends most of its time staging RAM-tier experts).
+- Further prompt-path tuning: on PCIe Gen4 x4 the expert copies still take most of a prompt's time.

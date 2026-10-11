@@ -230,8 +230,10 @@ Measured on one RTX 5090 + 94 GB RAM (UD-Q2_K_XL, context 65536, every expert in
 
 | | |
 | --- | --- |
-| Decode, short answers | 36-62 tok/s |
-| Prompt, 5.6K tokens | ~600 tok/s |
+| Decode, answers of ~1,500 tokens | ~57 tok/s |
+| Decode, short answers | 37-56 tok/s |
+| Prompt, 5.6K tokens | ~1,000-1,090 tok/s |
+| Prompt, 18K tokens | ~1,700 tok/s |
 | Start-up (weights + expert warm-up) | ~1 min |
 | Attention caches at 65536 tokens | 0.44 GB |
 

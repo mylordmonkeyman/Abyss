@@ -2001,6 +2001,38 @@ __device__ __forceinline__ float route_score(float x, int gating) {
     return 1.0f / (1.0f + expf(-x));
 }
 
+// the top-k of sel[0, E) (E <= 512) by one warp: 16 scores a lane in registers, k rounds of shuffles; the same
+// selection rule and ties as topk_argmax (the larger score, then the lower index); invalid ranks -> -1
+__device__ void warp_topk(const float* sel, int E, int k, int* out) {
+    const int lane = threadIdx.x & 31;
+    float v[16];
+#pragma unroll
+    for (int j = 0; j < 16; ++j) v[j] = lane + 32 * j < E ? sel[lane + 32 * j] : -INFINITY;
+    for (int r = 0; r < k; ++r) {
+        float bv = -INFINITY;
+        int bi = 0x7fffffff;
+#pragma unroll
+        for (int j = 0; j < 16; ++j)
+            if (lane + 32 * j < E && (v[j] > bv || (v[j] == bv && lane + 32 * j < bi))) {
+                bv = v[j];
+                bi = lane + 32 * j;
+            }
+#pragma unroll
+        for (int o = 16; o > 0; o >>= 1) {
+            const float ov = __shfl_xor_sync(0xffffffffu, bv, o);
+            const int oi = __shfl_xor_sync(0xffffffffu, bi, o);
+            if (ov > bv || (ov == bv && oi < bi)) {
+                bv = ov;
+                bi = oi;
+            }
+        }
+#pragma unroll
+        for (int j = 0; j < 16; ++j)
+            if (lane + 32 * j == bi) v[j] = -INFINITY;
+        if (lane == 0) out[r] = bi >= 0 && bi < E && isfinite(bv) ? bi : -1;
+    }
+}
+
 __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_constant__ RouteArgs a) {
     const int tid = threadIdx.x, lane = tid & 31;
     if (blockIdx.x > 0) {
@@ -2018,7 +2050,10 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     __shared__ float s_w[8];
     __shared__ unsigned int s_mask, s_seq;
     __shared__ int bad;
-    if (tid == 0) bad = a.d.route_error != nullptr && *a.d.route_error != 0 ? 1 : 0;
+    // the host-mapped error flag: a PCIe round trip - read now, used at the bad check below, so it overlaps the
+    // scores and the selection instead of stalling the block
+    const int prev_err = tid == 0 && a.d.route_error != nullptr ? *a.d.route_error : 0;
+    if (tid == 0) bad = 0;
     __syncthreads();
     // the CPU lane's frequency counts age: every 4096 routes all of them halve (the whole block, before any use)
     if (a.cpu_plan != 0ull && a.d.dcnt != nullptr && ((*a.d.seq + 1) & 4095u) == 0u)
@@ -2034,6 +2069,9 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     __syncthreads();
     if (a.hash_ids != nullptr) {
         if (tid < a.k) s_ids[tid] = a.hash_ids[tid];
+        __syncthreads();
+    } else if (E <= 512) {
+        if (tid < 32) warp_topk(s_sel, E, a.k, s_ids);
         __syncthreads();
     } else {
         topk_argmax(s_sel, E, a.k, s_ids, s_bv, s_bi);
@@ -2103,6 +2141,18 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             }
         }
     }
+    // (4) the route's table entries, one thread an expert: tid 0's plan below then reads shared memory, not k
+    // dependent global loads (the RAM-tier table, the VRAM table, the route counts)
+    __shared__ unsigned long long s_tab[8], s_rtab[8];
+    __shared__ unsigned int s_cnt[8], s_seq0;
+    if (tid < a.k && s_ids[tid] >= 0 && s_ids[tid] < E) {
+        const size_t key = (size_t) a.layer * E + s_ids[tid];
+        s_tab[tid] = a.d.tab[key];
+        s_rtab[tid] = a.d.tab[a.d.n_keys + key];
+        s_cnt[tid] = a.cpu_plan != 0ull && a.skip_from > 0 && a.d.dcnt != nullptr ? ++a.d.dcnt[key] : 0u;
+    }
+    if (tid == 32) s_seq0 = *a.d.seq;
+    if (tid == 0 && prev_err != 0) atomicMax(&bad, 1);
     __syncthreads();
     if (bad != 0) {
         if (tid == 0) {
@@ -2148,9 +2198,8 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             int f_ram = 0, ri[8];
             unsigned int rcnt[8];
             for (int i = 0; i < a.k; ++i) {
-                const size_t key = (size_t) a.layer * E + s_ids[i];
-                const unsigned int c = a.d.dcnt != nullptr ? ++a.d.dcnt[key] : 0u;
-                if (i < a.skip_from && a.d.tab[key] == 0ull && rtab[key] != 0ull) {
+                const unsigned int c = s_cnt[i];
+                if (i < a.skip_from && s_tab[i] == 0ull && s_rtab[i] != 0ull) {
                     ri[f_ram] = i;
                     rcnt[f_ram++] = c;
                 }
@@ -2167,14 +2216,14 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             const float w = (float) ((double) s_p[s_ids[i]] * inv * a.w_scale);
             s_w[i] = w;
             const size_t key = (size_t) a.layer * E + s_ids[i];
-            unsigned long long ptr = a.d.tab[key];
+            unsigned long long ptr = s_tab[i];
             unsigned long long src = 0ull;
             s_pp[i] = 0ull;
             s_cs[i] = 0ull;
             if (ptr == 0ull && i >= a.skip_from) {
                 // left out: the expert kernels skip a null plan entry (a draft only has to be a good guess)
             } else if (ptr == 0ull) {
-                src = rtab[key];
+                src = s_rtab[i];
                 if (src != 0ull && ((host_set >> i) & 1u)) {
                     // to the host: a null plan entry (the expert kernels skip it), no spare, no fetch
                     cpu |= 1u << i;
@@ -2245,7 +2294,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         }
         *a.d.pf_n = npf;
         s_npf = npf;
-        const unsigned int seq = *a.d.seq + 1;
+        const unsigned int seq = s_seq0 + 1;
         *a.d.seq = seq;
         s_seq = seq;
         *a.d.wait_seq = mask ? seq : 0u;
@@ -2336,7 +2385,27 @@ __global__ void moe_cpu_wait_kernel(MoeDev d, int n_embd, float* out) {
         __threadfence_system();
     }
     __syncthreads();
-    for (int e = tid; e < n_embd; e += blockDim.x) out[e] += ((volatile const CpuAnswer*) r)->part[e];
+    // the host's part: 16-byte uncached loads spread over the grid's blocks (each block waits for the answer
+    // itself) - one block reading 4096 floats a value at a time took ~30 us a layer over PCIe Gen4 x4, 8 blocks ~9
+    if ((n_embd & 3) == 0) {
+        const float4* src = (const float4*) r->part;
+        float4* dst = (float4*) out;
+        const int n4 = n_embd / 4;
+        for (int i = blockIdx.x * blockDim.x + tid; i < n4; i += gridDim.x * blockDim.x) {
+#if defined(__HIPCC__)
+            const volatile float* vp = (const volatile float*) (src + i);
+            const float4 v = make_float4(vp[0], vp[1], vp[2], vp[3]);
+#else
+            const float4 v = __ldcv(src + i);
+#endif
+            float4 o = dst[i];
+            o.x += v.x; o.y += v.y; o.z += v.z; o.w += v.w;
+            dst[i] = o;
+        }
+    } else {
+        for (int e = blockIdx.x * blockDim.x + tid; e < n_embd; e += gridDim.x * blockDim.x)
+            out[e] += ((volatile const CpuAnswer*) r)->part[e];
+    }
 }
 
 __global__ void __launch_bounds__(256) moe_prefetch_kernel(MoeDev d, size_t n16) {
@@ -3223,7 +3292,8 @@ void moe_wait(const MoeDev& d, int n_embd, cudaStream_t s) {
 
 void moe_cpu_wait(const MoeDev& d, int n_embd, float* out, cudaStream_t s) {
     if (d.cpu_seq == nullptr) return;
-    moe_cpu_wait_kernel<<<1, 256, 0, s>>>(d, n_embd, out);
+    static const int cwb = [] { const char* v = getenv("STRATA_GLM_CPU_WAIT_BLOCKS"); return v ? std::max(1, std::atoi(v)) : 8; }();
+    moe_cpu_wait_kernel<<<cwb, 128, 0, s>>>(d, n_embd, out);   // STRATA_GLM_CPU_WAIT_BLOCKS: the blocks (A/B)
     launch_check("moe_cpu_wait");
 }
 

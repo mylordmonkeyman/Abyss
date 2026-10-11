@@ -282,6 +282,7 @@ bool Glm5Model::fast_dsv4_attn(int il, int64_t p64, std::string& err) {
         const int n_vis = (p + 1) / r;
         if (r == 4 && n_vis > 0) {
             ds::indexer(F->iq, Ly.idx_cache, F->iw, g.idx_heads, g.idx_key, n_vis, g.idx_top_k, F->score, F->ds_sel, s);
+            if (F->prof_on) F->mark("ds_index");
             n_comp = std::min(n_vis, g.idx_top_k);
             sel = F->ds_sel;
         } else {

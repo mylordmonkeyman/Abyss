@@ -31,7 +31,7 @@ thinking and tool calls — all on your own machine.
 ## ✨ Highlights
 
 - **284B MoE on one card** — 256 experts per layer spread over VRAM, pinned RAM and SSD, filled from your own usage.
-- **5–10x llama.cpp's decode speed** on the same GGUF and machine, with the batched prompt path at ~600 tok/s.
+- **5–10x llama.cpp's decode speed** on the same GGUF and machine, with the batched prompt path at ~1,000-1,700 tok/s.
 - **Checked against llama.cpp** — same next-token accuracy over 3,000 tokens (KL 0.009).
 - **Full DeepSeek V4 attention** — sliding window, CSA/HCA compressed KV, the lightning indexer's top-512, sinks.
 - **Thinking and tool calls** — reasoning levels `none` / `low` / `high` / `max`, DeepSeek's DSML tool calls, parallel calls.
@@ -45,8 +45,10 @@ unsloth's [DeepSeek-V4-Flash-0731-GGUF](https://huggingface.co/unsloth/DeepSeek-
 
 | | Abyss | llama.cpp (experts on the CPU) |
 | --- | :---: | :---: |
-| Decode | **36–62 tok/s** | 5–7 tok/s |
-| Prompt (5.6K tokens) | **~600 tok/s** | – |
+| Decode (answers of ~1,500 tokens) | **~57 tok/s** | 5–7 tok/s |
+| Decode (short answers) | 37–56 tok/s | 5–7 tok/s |
+| Prompt (5.6K tokens) | **~1,000–1,090 tok/s** | – |
+| Prompt (18K tokens) | **~1,700 tok/s** | – |
 | Start-up (weights + expert warm-up) | ~1 min | ~50 s |
 
 All 11,008 routed experts fit in VRAM (23 GB) + pinned RAM (70 GB) — nothing is read from the SSD once warm.

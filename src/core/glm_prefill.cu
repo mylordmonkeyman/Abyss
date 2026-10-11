@@ -21,6 +21,8 @@
 
 #include "strata/core/progress.hpp"
 #include "strata/kernels/cpu/kq_avx512.hpp"
+#include "strata/kernels/cpu/expert_layout.hpp"
+#include "strata/kernels/cpu/iq_avx512.hpp"
 #include "strata/kernels/dequant_bf16.hpp"
 #include "strata/kernels/glm_batch.hpp"
 #include "strata/kernels/iq_kernels.hpp"
@@ -42,6 +44,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -1668,11 +1671,20 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 if (pred >= kPreMinRows) cand.push_back(Cand{pred, e, rs});
             }
         }
-        // the layer's count: the buffer's, or (STRATA_GLM_PRESTAGE_ADAPT=1) what its mixer's window took before
-        static const bool adapt = getenv("STRATA_GLM_PRESTAGE_ADAPT") != nullptr && std::atoi(getenv("STRATA_GLM_PRESTAGE_ADAPT")) != 0;
+        // the layer's count: the buffer's, or (STRATA_GLM_PRESTAGE_ADAPT=1) what its mixer's window took before.
+        // deepseek4 adapts by default (=0: the whole buffer): with the CPU lane's AVX-512 i-quant rows the host takes
+        // the lightly routed experts the full buffer would have copied - Ryzen AI Max+ 395 + RTX 5090 on PCIe Gen4 x4,
+        // UD-Q2_K_XL: a 5.6K prompt 693 -> 1065 tok/s, an 18K one 1752 -> 1720
+        static const bool adapt = [&] {
+            const char* v = getenv("STRATA_GLM_PRESTAGE_ADAPT");
+            return v != nullptr && v[0] != '\0' ? std::atoi(v) != 0 : g.arch == 1;
+        }();
         const int cap = std::min(S->NP, (int) std::min<size_t>(S->pbuf_bytes / P.stride,
                                                                 S->ev_pdone.size() * PrefillState::kPreEv));
-        const double rate = S->pre_rate[Ly.recr ? 0 : 1];
+        // (deepseek4 before its first lesson: 64 experts for a 5.6K-token chunk, the cap from ~14K tokens on - the best
+        // fixed counts measured there, so a server's first prompt does not pay the whole buffer)
+        const double rate = S->pre_rate[Ly.recr ? 0 : 1] > 0.0 ? S->pre_rate[Ly.recr ? 0 : 1]
+                                                                 : (adapt && g.arch == 1 ? 64.0 / 5600.0 : 0.0);
         const int want = !adapt || rate <= 0.0 ? cap : std::max(std::min(cap, 16), std::min(cap, (int) std::lround(rate * T)));
         const int n = (int) std::min<size_t>((size_t) want, cand.size());
         if (n == 0) return;
@@ -2463,6 +2475,17 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             const auto kq_use = [&](int type, int act_type, int cnt) {
                 return kq_on && kc::kq_type_ok(type) && act_type == 15 /* Q8_K */ && cnt >= (type == 11 ? 8 : 12);
             };
+            // the i-quant rows (IQ2_XXS/XS/S, IQ3_XXS/S) of an expert with 2+ rows: the AVX-512 multi-token kernel
+            // (iq_avx512.cpp, a weight block decoded once for 4 tokens) - DeepSeek V4's IQ2_XS gate/up and IQ3_XXS
+            // down on a Ryzen AI Max+ 395, one thread: 1.2 ms a token through an expert by ggml's dots, 0.52 from 4
+            // tokens on.  STRATA_GLM_PREFILL_IQ512=0: ggml's (A/B)
+            static const bool iq_on = [] {
+                const char* v = getenv("STRATA_GLM_PREFILL_IQ512");
+                return kc::cpu_avx512_ok() && (v == nullptr || std::atoi(v) != 0);
+            }();
+            const auto iq_use = [&](int type, int act_type, int cnt) {
+                return iq_on && kc::iq512_supported(type) && act_type == 15 /* Q8_K */ && cnt >= 2;
+            };
             std::vector<size_t> off_a((size_t) ncx, SIZE_MAX), off_h((size_t) ncx, SIZE_MAX);
             size_t pack_a = 0, pack_h = 0;
             for (int j = 0; j < ncx; ++j) {
@@ -2532,6 +2555,34 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                     a[(size_t) t] = S->c_act.data() + (size_t) (b + t) * kA;
                     o[(size_t) t] = S->c_ff.data() + (size_t) (b + t) * nff;
                 }
+                if (iq_use(nf.gu_type, nf.gu_act, cnt)) {
+                    // gate and up rows [r0, r0 + kGu) for every token of the expert, then the clamped swiglu
+                    thread_local std::vector<float> gu_t;
+                    thread_local std::vector<float*> go, uo;
+                    gu_t.resize((size_t) 2 * cnt * kGu);
+                    go.resize((size_t) cnt);
+                    uo.resize((size_t) cnt);
+                    for (int t = 0; t < cnt; ++t) {
+                        go[(size_t) t] = gu_t.data() + (size_t) t * kGu;
+                        uo[(size_t) t] = gu_t.data() + (size_t) (cnt + t) * kGu;
+                    }
+                    kc::iq512_rows(nf.gu_type, blob + (size_t) r0 * nf.gu_row, nf.gu_row, E, a.data(), cnt, go.data(),
+                                   0, kGu);
+                    kc::iq512_rows(nf.gu_type, blob + Ly.gu_bytes + (size_t) r0 * nf.gu_row, nf.gu_row, E, a.data(),
+                                   cnt, uo.data(), 0, kGu);
+                    const float lim = g.swiglu_exp;
+                    const bool clamp = lim != std::numeric_limits<float>::infinity();
+                    for (int t = 0; t < cnt; ++t)
+                        for (int r = 0; r < kGu; ++r) {
+                            float gg = go[(size_t) t][r], uu = uo[(size_t) t][r];
+                            if (clamp) {
+                                gg = std::fmin(gg, lim);
+                                uu = std::fmin(std::fmax(uu, -lim), lim);
+                            }
+                            o[(size_t) t][r0 + r] = (gg / (1.f + std::exp(-gg))) * uu;
+                        }
+                    return;
+                }
                 kc::native_gu_rows_split(nf, blob, blob + Ly.gu_bytes, a.data(), cnt, o.data(), r0, r0 + kGu,
                                          g.swiglu_exp);
             });
@@ -2567,6 +2618,10 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 for (int t = 0; t < cnt; ++t) {
                     h[(size_t) t] = S->c_hq.data() + (size_t) (b + t) * kH;
                     o[(size_t) t] = S->out_h + (size_t) (b + t) * E;
+                }
+                if (iq_use(nf.d_type, nf.d_act, cnt)) {   // (out[t][r] for r in [r0, r0 + kDn), as the split's)
+                    kc::iq512_rows(nf.d_type, down, nf.d_row, nff, h.data(), cnt, o.data(), r0, r0 + kDn);
+                    return;
                 }
                 kc::native_down_rows_split(nf, down, h.data(), cnt, o.data(), r0, r0 + kDn);
               });

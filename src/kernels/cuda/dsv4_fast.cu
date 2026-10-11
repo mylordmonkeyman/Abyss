@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
+#include <vector>
 
 namespace strata::kernels::dsv4 {
 namespace {
@@ -308,6 +310,126 @@ __global__ void __launch_bounds__(ATT_THREADS) attend_kernel(const float* __rest
     if (tid < n_rot / 2) rope_pair(s_o, D, n_rot, rope, p, false, tid);
     __syncthreads();
     for (int i = tid; i < D; i += ATT_THREADS) out[(size_t) h * D + i] = s_o[i];
+}
+
+// the split attention (flash-decoding): every head reads the same keys (K = V, one 512-wide row a position), so a
+// block takes AS_H heads and a chunk of AS_KEYS keys - each key tile is read from L2 once for 8 heads, and
+// n_head / 8 x ceil(n / 64) blocks fill the GPU where one block a head left most SMs idle.  Each block leaves its
+// chunk's max, denominator and unnormalized sum; attend_combine_kernel merges them with the sink.
+constexpr int AS_H = 8, AS_TILE = 16;
+__global__ void __launch_bounds__(256) attend_split_kernel(const float* __restrict__ q, const uint16_t* __restrict__ raw,
+                                                           int ring, int n_raw, const uint16_t* __restrict__ comp,
+                                                           const int* __restrict__ comp_sel, int n_comp, int p,
+                                                           float scale, int ck, int S, float* __restrict__ part) {
+    constexpr int D = 512;
+    __shared__ float s_q[AS_H][D];
+    __shared__ __align__(16) __half2 s_k[AS_TILE][D / 2];
+    __shared__ float s_w[AS_H][AS_TILE];
+    __shared__ float s_m[AS_H], s_a[AS_H], s_den[AS_H];
+    const int h0 = blockIdx.x * AS_H, c = blockIdx.y, tid = threadIdx.x, lane = tid & 31, warp = tid >> 5;
+    const int n = n_raw + n_comp, j0 = c * ck, j1 = min(n, j0 + ck);
+    for (int i = tid; i < AS_H * D; i += 256) s_q[i / D][i % D] = q[(size_t) h0 * D + i];
+    if (tid < AS_H) { s_m[tid] = -INFINITY; s_den[tid] = 0.0f; }
+    const auto key = [&](int j) -> const uint16_t* {
+        if (j < n_raw) return raw + (size_t) ((p - n_raw + 1 + j) % ring) * D;
+        const int r = comp_sel != nullptr ? comp_sel[j - n_raw] : j - n_raw;
+        return comp + (size_t) r * D;
+    };
+    float o[AS_H][2];
+#pragma unroll
+    for (int h = 0; h < AS_H; ++h) o[h][0] = o[h][1] = 0.0f;
+    for (int t0 = j0; t0 < j1; t0 += AS_TILE) {
+        const int nt = min(AS_TILE, j1 - t0);
+        __syncthreads();   // the previous tile's s_k / s_w are done with
+        for (int i = tid; i < nt * (D / 8); i += 256) {   // 16-byte loads, 64 a key
+            const int kk = i / (D / 8), cc = i % (D / 8);
+            ((uint4*) s_k[kk])[cc] = ((const uint4*) key(t0 + kk))[cc];
+        }
+        __syncthreads();
+        // logits: warp w is head w, lanes across the row
+        {
+            const int h = warp;
+            float mx = -INFINITY;
+            float l[AS_TILE];
+#pragma unroll
+            for (int kk = 0; kk < AS_TILE; ++kk) {
+                float acc = 0.0f;
+                if (kk < nt) {
+#pragma unroll
+                    for (int i = 0; i < D / 64; ++i) {
+                        const float2 kv = __half22float2(s_k[kk][lane + 32 * i]);
+                        const int e = 2 * (lane + 32 * i);
+                        acc += s_q[h][e] * kv.x + s_q[h][e + 1] * kv.y;
+                    }
+                    acc = warp_sum(acc) * scale;
+                    mx = fmaxf(mx, acc);
+                }
+                l[kk] = acc;
+            }
+            const float m_old = s_m[h], m_new = fmaxf(m_old, mx);
+            float sum = 0.0f;
+#pragma unroll
+            for (int kk = 0; kk < AS_TILE; ++kk) {
+                const float e = kk < nt ? expf(l[kk] - m_new) : 0.0f;
+                sum += e;
+                if (lane == kk) s_w[h][kk] = e;
+            }
+            if (lane == 0) {
+                const float a = expf(m_old - m_new);   // m_old = -inf on the first tile: 0
+                s_a[h] = a;
+                s_den[h] = s_den[h] * a + sum;
+                s_m[h] = m_new;
+            }
+        }
+        __syncthreads();
+        // values: thread t owns the pair (2t, 2t+1) of every head
+#pragma unroll
+        for (int h = 0; h < AS_H; ++h) { o[h][0] *= s_a[h]; o[h][1] *= s_a[h]; }
+        for (int kk = 0; kk < nt; ++kk) {
+            const float2 kv = __half22float2(s_k[kk][tid]);
+#pragma unroll
+            for (int h = 0; h < AS_H; ++h) {
+                const float w = s_w[h][kk];
+                o[h][0] += w * kv.x;
+                o[h][1] += w * kv.y;
+            }
+        }
+    }
+    __syncthreads();
+#pragma unroll
+    for (int h = 0; h < AS_H; ++h) {
+        float* P = part + ((size_t) (h0 + h) * S + c) * (D + 2);
+        if (tid == 0) { P[0] = s_m[h]; P[1] = s_den[h]; }
+        P[2 + 2 * tid] = o[h][0];
+        P[2 + 2 * tid + 1] = o[h][1];
+    }
+}
+
+__global__ void __launch_bounds__(256) attend_combine_kernel(const float* __restrict__ part, int S,
+                                                             const float* __restrict__ sinks, int n_rot, Rope rope,
+                                                             int p, float* __restrict__ out) {
+    constexpr int D = 512;
+    __shared__ float s_o[D];
+    const int h = blockIdx.x, tid = threadIdx.x;
+    const float* P = part + (size_t) h * S * (D + 2);
+    const float sink = sinks[h];
+    float M = sink;
+    for (int c = 0; c < S; ++c) M = fmaxf(M, P[(size_t) c * (D + 2)]);
+    float den = expf(sink - M), o0 = 0.0f, o1 = 0.0f;
+    for (int c = 0; c < S; ++c) {
+        const float* Pc = P + (size_t) c * (D + 2);
+        const float a = expf(Pc[0] - M);
+        den += Pc[1] * a;
+        o0 += Pc[2 + 2 * tid] * a;
+        o1 += Pc[2 + 2 * tid + 1] * a;
+    }
+    const float rden = 1.0f / den;
+    s_o[2 * tid] = o0 * rden;
+    s_o[2 * tid + 1] = o1 * rden;
+    __syncthreads();
+    if (tid < n_rot / 2) rope_pair(s_o, D, n_rot, rope, p, false, tid);
+    __syncthreads();
+    for (int i = tid; i < D; i += 256) out[(size_t) h * D + i] = s_o[i];
 }
 
 // ---------------------------------------------------------------- the hyper-connection head
@@ -746,15 +868,72 @@ void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, 
 void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint16_t* comp, const int* comp_sel,
             int n_comp, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p, float* out,
             cudaStream_t s) {
-    const size_t sm = (size_t) (n_raw + n_comp) * sizeof(float);
-    static bool attr = false;
-    if (!attr) {
-        cudaFuncSetAttribute(attend_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 64 * 1024);
-        attr = true;
+    const int n = n_raw + n_comp;
+    const float scale = 1.0f / sqrtf((float) head_dim);
+    // STRATA_DS4_ATTN=1: the one-block-a-head kernel (A/B); STRATA_DS4_ATTN_CHECK=1: both, compared every 997th call
+    static const int mode = [] { const char* v = getenv("STRATA_DS4_ATTN"); return v ? std::atoi(v) : 0; }();
+    static const bool chk = getenv("STRATA_DS4_ATTN_CHECK") != nullptr;
+    const auto old = [&](float* o) {
+        static bool attr = false;
+        if (!attr) {
+            cudaFuncSetAttribute(attend_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 64 * 1024);
+            attr = true;
+        }
+        attend_kernel<<<n_head, ATT_THREADS, (size_t) n * sizeof(float), s>>>(q, raw, ring, n_raw, comp, comp_sel,
+                                                                            n_comp, sinks, n_rot, rope, p, scale, o);
+        check("attend");
+    };
+    if (mode == 1 || head_dim != 512 || n_head % AS_H != 0) { old(out); return; }
+    // the partials: [n_head][S][2 + 512] floats, per device, grown when a longer context needs more chunks
+    // the chunk: about two blocks an SM (n_head / 8 x S blocks), in whole tiles, 16..256 keys
+    static const int nsm = [] {
+        int d = 0, v = 0;
+        cudaGetDevice(&d);
+        cudaDeviceGetAttribute(&v, cudaDevAttrMultiProcessorCount, d);
+        return v > 0 ? v : 80;
+    }();
+    const int hb = n_head / AS_H;
+    int ck = (n * hb + 2 * nsm - 1) / (2 * nsm);
+    ck = std::min(256, std::max(AS_TILE, (ck + AS_TILE - 1) / AS_TILE * AS_TILE));
+    const int S = (n + ck - 1) / ck;
+    static float* part[16] = {};
+    static size_t part_n[16] = {};
+    int dev = 0;
+    cudaGetDevice(&dev);
+    const size_t need = (size_t) n_head * std::max(S, 64) * (head_dim + 2);
+    if (dev < 0 || dev >= 16) { old(out); return; }
+    if (part_n[dev] < need) {
+        if (part[dev]) cudaFree(part[dev]);
+        if (cudaMalloc(&part[dev], need * sizeof(float)) != cudaSuccess) { part[dev] = nullptr; part_n[dev] = 0; old(out); return; }
+        part_n[dev] = need;
     }
-    attend_kernel<<<n_head, ATT_THREADS, sm, s>>>(q, raw, ring, n_raw, comp, comp_sel, n_comp, sinks, n_rot, rope, p,
-                                                  1.0f / sqrtf((float) head_dim), out);
-    check("attend");
+    attend_split_kernel<<<dim3((unsigned) hb, (unsigned) S), 256, 0, s>>>(q, raw, ring, n_raw, comp,
+                                                                                      comp_sel, n_comp, p, scale, ck, S,
+                                                                                      part[dev]);
+    check("attend_split");
+    attend_combine_kernel<<<n_head, 256, 0, s>>>(part[dev], S, sinks, n_rot, rope, p, out);
+    check("attend_combine");
+    if (chk) {
+        static long calls = 0;
+        if (calls++ % 997 == 0) {
+            static float* ref = nullptr;
+            const size_t no = (size_t) n_head * head_dim;
+            if (!ref) cudaMalloc(&ref, 64 * 1024 * sizeof(float));
+            if (no > 64 * 1024) return;
+            old(ref);
+            std::vector<float> a(no), b(no);
+            cudaMemcpyAsync(a.data(), out, no * sizeof(float), cudaMemcpyDeviceToHost, s);
+            cudaMemcpyAsync(b.data(), ref, no * sizeof(float), cudaMemcpyDeviceToHost, s);
+            cudaStreamSynchronize(s);
+            double dn = 0, dd = 0, mx = 0;
+            for (size_t i = 0; i < no; ++i) {
+                const double d = std::fabs((double) a[i] - b[i]);
+                dn += d; dd += std::fabs((double) b[i]); mx = std::max(mx, d);
+            }
+            std::fprintf(stderr, "dsv4 attend check: p %d n %d (raw %d comp %d) S %d: rel %.2e, max abs %.2e\n", p, n,
+                         n_raw, n_comp, S, dn / (dd + 1e-30), mx);
+        }
+    }
 }
 
 void head_prep(const float* R, const uint16_t* fn, const float* scale, const float* base, float hc_eps,

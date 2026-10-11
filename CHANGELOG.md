@@ -4,6 +4,45 @@ Every release is on GitHub (Releases) with these notes; every published change m
 dashboard's About > Update (from v1.0.18), or `git pull`, then `./setup.sh` (Windows: `START-MAYA.bat`) - it recompiles
 only what changed and starts; the model is not downloaded again.
 
+Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
+was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
+
+## v1.1.0 - 2026-10-11
+
+DeepSeek V4 Flash writes ~19% faster and reads a 5.6K-token prompt ~55% faster. Measured on an RTX 5090 on PCIe Gen4
+x4 + Ryzen AI Max+ 395 (94 GB RAM), unsloth UD-Q2_K_XL, every expert in VRAM or pinned RAM:
+
+| | v1.0 (port) | v1.1.0 |
+| --- | --- | --- |
+| Decode, two ~1,500-token answers (greedy) | 20.8 ms/token (48 tok/s) | 17.4-17.7 ms/token (57 tok/s) |
+| Prompt, 5.6K tokens (first after start / later) | 690 tok/s | 1,018 / 1,075-1,090 tok/s |
+| Prompt, 18K tokens | 1,752 tok/s | 1,716-1,734 tok/s |
+| KL vs llama.cpp, 3000 tokens one by one (CPU lane on) | 0.0093 | 0.0091 |
+| KL vs llama.cpp, 2499 through the prompt path + 500 | 0.0059 | 0.0054 |
+
+- **The token path's attention, split over key chunks** (`dsv4_fast.cu`): every head reads the same 512-wide keys, so a
+  block now takes 8 heads and a chunk of keys (one tile read from L2 for all 8) and a combine kernel merges the chunks
+  with the sink - one block a head had left most of the GPU idle. 3.2 -> 0.84 ms a token at ~1.4K context; equal to
+  the old kernel to 4e-7. `STRATA_DS4_ATTN=1`: the old kernel; `STRATA_DS4_ATTN_CHECK=1`: both, compared now and then.
+- **A lighter route kernel** (`glm_fast.cu`, every MoE layer, GLM too): the host-mapped error flag is read without
+  stalling the block, the top-k is one warp's (no block barriers a rank), and the route's table entries are read by one
+  thread an expert instead of one after another by thread 0.
+- **The CPU lane's answer read by 8 blocks with 16-byte loads**: 30 -> 9 us a layer over PCIe Gen4 x4.
+  `STRATA_GLM_CPU_WAIT_BLOCKS=<n>` sets the blocks. With the route kernel above: 18.4 -> 17.5 ms a token.
+- **The prompt path's CPU rows by the AVX-512 i-quant kernels** (`glm_prefill.cu`): IQ2_XXS/XS/S and IQ3_XXS/S rows of
+  an expert with 2+ prompt tokens go through `iq_avx512.cpp` (a weight block decoded once for 4 tokens) instead of
+  ggml's one-token dots: 1.2 -> 0.52 ms a token through a DeepSeek V4 expert on one core, 0.12 -> 0.04 ms a row in the
+  lane. Only on CPUs with AVX-512 F/BW/VL/VNNI/VBMI (Zen 4/5, Intel Ice Lake and later); the others keep ggml's.
+  `STRATA_GLM_PREFILL_IQ512=0`: ggml's.
+- **deepseek4 prestages adaptively by default**: with the faster CPU rows the host takes the lightly routed experts that
+  the full 160-expert prestage buffer would have copied over PCIe. It starts at 64 experts for a 5.6K-token chunk (the
+  whole buffer from ~14K tokens on) and learns from there. `STRATA_GLM_PRESTAGE_ADAPT=0`: the whole buffer, as before.
+- `STRATA_GLM_PROF` splits out `ds_index` (the indexer) from `ds_attend`.
+
+Tried and left out: the AVX-512 kernels for ONE token (the decode lane) are slower than ggml's on Zen 5 too (1.6 vs
+1.2 ms an expert on one core), and 24 / 32 lane threads instead of 16 were equal / slower (12.1 vs 7.0 ms a token in
+the lane at 32: SMT siblings spin against the service thread).
+
 ## v1.0.31 - 2026-10-10
 
 The expert prefetch can now pay on a RAM-bound split: three settings choose when its copy starts, how many GPU blocks it
