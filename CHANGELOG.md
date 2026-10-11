@@ -7,6 +7,12 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.1.1 - 2026-10-11
+
+`/health` says which server this is: `"service": "abyss"` (Strata's says `"strata"`). Abyss and Maya answer the same
+`/health` and llama.cpp's `/props` (whose `model_path` is only `pack/full`), so a client could not tell them apart -
+a benchmark tool recorded Abyss as llama.cpp. Nothing else changes.
+
 ## v1.1.0 - 2026-10-11
 
 DeepSeek V4 Flash writes ~19% faster and reads a 5.6K-token prompt ~55% faster. Measured on an RTX 5090 on PCIe Gen4

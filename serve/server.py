@@ -2200,7 +2200,10 @@ def make_handler(svc: Service):
                                            "reloading" if svc.reloading() else "ok",
                                  "max_context": svc.engine.max_context, "model": svc.model,
                                  "images": svc.vision is not None, "api_key": bool(svc.api_key), "defaults": rec,
-                                 "version": MAYA_VERSION, "mcp_tools": bool(svc.mcp)})
+                                 "version": MAYA_VERSION, "mcp_tools": bool(svc.mcp),
+                                 # which server this is (Strata answers "strata"): Abyss and Maya share this
+                                 # /health and llama.cpp's /props, so a client tells them apart by this field
+                                 "service": "abyss"})
             elif path == "/api/context":
                 # the dashboard's Context size: the range, the measured cost of the current size, a reload's state
                 if self._authorized():
