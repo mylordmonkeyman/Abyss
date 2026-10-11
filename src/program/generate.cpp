@@ -88,6 +88,7 @@
 #include <sstream>
 #include <string>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -925,6 +926,38 @@ double probe_pcie_h2d_gbps() {
 
 // ================================ the glm5-next pack path (M3.1) ================================
 //
+// The speculative decode's drafter: prompt lookup over the whole sequence (prompt + answer).  Every n-gram of the
+// history (n = min_n) maps to the position right after its latest occurrence that is not the sequence's own suffix;
+// propose() continues the latest earlier occurrence of the current suffix by up to k tokens.  swe-bench's prompts and
+// DeepSeek V4's answers (fixed files echo their source): ~1.7 tokens a step at k = 3, n = 3 (offline).
+struct NgramDrafter {
+    explicit NgramDrafter(int n) : n_(n) {}
+    void push(int32_t t) {
+        h_.push_back(t);
+        // the n-gram that ended one token ago becomes findable (the newest one is the suffix being matched)
+        const int64_t end = (int64_t) h_.size() - 2;
+        if (end + 1 >= n_) last_[key(end)] = end + 1;
+    }
+    void propose(int k, std::vector<int32_t>& out) const {
+        out.clear();
+        const int64_t end = (int64_t) h_.size() - 1;
+        if (k <= 0 || end + 1 < n_) return;
+        const auto it = last_.find(key(end));
+        if (it == last_.end()) return;
+        for (int64_t i = it->second; i < (int64_t) h_.size() && (int) out.size() < k; ++i) out.push_back(h_[(size_t) i]);
+    }
+
+private:
+    uint64_t key(int64_t end) const {   // the n tokens ending at `end`
+        uint64_t x = 1469598103934665603ull;
+        for (int64_t i = end - n_ + 1; i <= end; ++i) x = (x ^ (uint64_t) (uint32_t) h_[(size_t) i]) * 1099511628211ull;
+        return x;
+    }
+    int n_;
+    std::vector<int32_t> h_;
+    std::unordered_map<uint64_t, int64_t> last_;
+};
+
 // A GLM-5.3-Flash pack (tools/iq_pack.py output) runs the VERIFIED runner - Glm5Model, the same
 // path glm_pack_test drives (docs/maya/GLM5-FLASH.md §9) - behind this driver's wire contract:
 // `T <id>` per generated token on stdout, `ERR <message>` when a request cannot run, the DONE
@@ -961,6 +994,16 @@ static int glm_pack_generate(const Options& o) {
         std::signal(SIGPIPE, SIG_IGN);
     }
 #endif
+    // STRATA_DS4_SPEC=<k> (1..3): deepseek4's n-gram speculative decode with k drafted tokens a window;
+    // STRATA_DS4_SPEC_MIN=<n> (2..4, default 3): the suffix length that must match
+    const int spec_k = [] {
+        const char* v = std::getenv("STRATA_DS4_SPEC");
+        return v ? std::max(0, std::min(strata::core::Glm5Model::kVerifyMax - 1, std::atoi(v))) : 0;
+    }();
+    const int spec_min = [] {
+        const char* v = std::getenv("STRATA_DS4_SPEC_MIN");
+        return v ? std::max(2, std::min(4, std::atoi(v))) : 3;
+    }();
     strata::core::Glm5Model model;
     std::string err;
     // the prompt chunk, set in the config's args like Strata's: --prefill auto | N (a chunk of N tokens) | 0
@@ -1559,6 +1602,97 @@ static int glm_pack_generate(const Options& o) {
                 std::printf("ERR %s\n", err.c_str());
                 return 1;
             }
+        } else if (spec_k > 0 && model.fast() && model.verify_ready()) {
+            // deepseek4's n-gram speculative decode (STRATA_DS4_SPEC=<k>): after each token, the latest earlier
+            // occurrence of the last spec_min tokens in the prompt + the answer so far proposes the next k; the token
+            // and its proposal go through one verify window, and each column's sample is compared with the proposal -
+            // equal: accepted (emitted), else the sample is the next token and the window's tail is dropped.  The
+            // samples are the token-at-a-time loop's (the same sampler on the same logits, forced tokens applied), so
+            // the output follows the same distribution; only the time per token changes.
+            NgramDrafter dr(spec_min);
+            for (const int64_t t : prompt) dr.push((int32_t) t);
+            int tok = model.sample_token(sp, err);
+            if (tok < 0) {
+                std::printf("ERR %s\n", err.c_str());
+                return 1;
+            }
+            tok = model.forced(tok);
+            sp.counter += 1;
+            std::vector<int32_t> draft, win;
+            int64_t n_win = 0, n_one = 0, n_draft = 0, n_acc = 0;
+            double ms_win = 0.0, ms_one = 0.0;   // the windows' and the single tokens' time (forward / verify + sample)
+            const auto ms_since = [](std::chrono::steady_clock::time_point a) {
+                return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - a).count();
+            };
+            for (;;) {
+                if (stop_req.load()) {
+                    finish = "cancel";
+                    break;
+                }
+                if (!on_token(tok)) break;
+                dr.push(tok);
+                const int64_t p0 = model.position();
+                const int room = (int) std::min<int64_t>(spec_k, o.max_context - p0 - 1);
+                dr.propose(room, draft);
+                const auto tw = std::chrono::steady_clock::now();
+                if (draft.empty()) {
+                    ++n_one;
+                    if (!model.forward({(int32_t) tok}, lg, err)) {
+                        std::printf("ERR %s\n", err.c_str());
+                        return 1;
+                    }
+                    tok = model.sample_token(sp, err);
+                    if (tok < 0) {
+                        std::printf("ERR %s\n", err.c_str());
+                        return 1;
+                    }
+                    tok = model.forced(tok);
+                    sp.counter += 1;
+                    ms_one += ms_since(tw);
+                    continue;
+                }
+                win.assign(1, (int32_t) tok);
+                win.insert(win.end(), draft.begin(), draft.end());
+                if (!model.verify(win, err)) {
+                    std::printf("ERR %s\n", err.c_str());
+                    return 1;
+                }
+                model.spec_steps_ += draft.size();
+                ++n_win;
+                n_draft += (int64_t) draft.size();
+                int next = -1, kept = 1;   // kept: the window's tokens that stay in the sequence
+                bool stopped = false;
+                for (int i = 0; i <= (int) draft.size(); ++i) {
+                    int s2 = model.verify_sample(i, sp, err);
+                    if (s2 < 0) {
+                        std::printf("ERR %s\n", err.c_str());
+                        return 1;
+                    }
+                    s2 = model.forced(s2);
+                    sp.counter += 1;
+                    if (i == (int) draft.size() || s2 != draft[(size_t) i]) {
+                        next = s2;   // the sample after the last kept token: the next window's first
+                        break;
+                    }
+                    ++model.spec_hits_;
+                    ++n_acc;
+                    if (stop_req.load() || !on_token(s2)) {   // accepted and emitted, but the answer ends here
+                        stopped = true;
+                        break;
+                    }
+                    dr.push(s2);
+                    ++kept;
+                }
+                model.spec_rewind(p0 + kept);
+                ms_win += ms_since(tw);
+                if (stopped) break;
+                tok = next;
+            }
+            std::fprintf(stderr, "ds4 spec: k %d, n-gram %d: %lld windows (%lld drafted, %lld accepted = %.0f%%) and "
+                                 "%lld single tokens; %.1f ms a window, %.1f a single token\n", spec_k, spec_min,
+                         (long long) n_win, (long long) n_draft, (long long) n_acc,
+                         100.0 * (double) n_acc / (double) std::max<int64_t>(1, n_draft), (long long) n_one,
+                         ms_win / (double) std::max<int64_t>(1, n_win), ms_one / (double) std::max<int64_t>(1, n_one));
         } else {
             for (;;) {
                 if (stop_req.load()) {
@@ -1663,8 +1797,35 @@ static int glm_pack_generate(const Options& o) {
                 }
                 i0 = c - 1;
             }
+            // STRATA_GLM_SCORE_VERIFY=<T> (deepseek4): the tokens through the verify window, T at a time - its logits
+            // against the one-token path's (the speculative decode's correctness yardstick)
+            const int vt = [] {
+                const char* v = getenv("STRATA_GLM_SCORE_VERIFY");
+                return v ? std::max(0, std::min(strata::core::Glm5Model::kVerifyMax, std::atoi(v))) : 0;
+            }();
+            const bool use_verify = vt >= 1 && model.verify_ready();
+            if (vt >= 1 && !use_verify) std::fprintf(stderr, "maya generate: STRATA_GLM_SCORE_VERIFY: no verify path\n");
+            std::vector<std::vector<float>> wl;   // the window's logits
+            size_t w0 = 0, wn = 0;
             for (size_t i = i0; i + 1 < o.tokens.size(); ++i) {
-                if (!model.forward({(int32_t) o.tokens[i]}, lg, err)) {
+                if (use_verify) {
+                    if (i >= w0 + wn) {
+                        w0 = i;
+                        wn = std::min((size_t) vt, o.tokens.size() - 1 - i);
+                        const std::vector<int32_t> win(o.tokens.begin() + (long) i, o.tokens.begin() + (long) (i + wn));
+                        if (!model.verify(win, err)) {
+                            std::printf("ERR %s\n", err.c_str());
+                            return 1;
+                        }
+                        wl.assign(wn, {});
+                        for (size_t j = 0; j < wn; ++j)
+                            if (!model.verify_logits((int) j, wl[j], err)) {
+                                std::printf("ERR %s\n", err.c_str());
+                                return 1;
+                            }
+                    }
+                    lg = wl[i - w0];
+                } else if (!model.forward({(int32_t) o.tokens[i]}, lg, err)) {
                     std::printf("ERR %s\n", err.c_str());
                     return 1;
                 }

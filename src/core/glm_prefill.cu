@@ -1346,7 +1346,7 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     S->mark("ds4_proj", s);
     // 2. the window keys (the ring's last positions, then this sub-batch's), q_a's norm, the compressors
     const int n_hist = std::min(p0, g.n_swa - 1);
-    ds::win_load(Ly.raw, g.n_swa, B.keys, n_hist, p0, D, s);
+    ds::win_load(Ly.raw, ds_ring_, B.keys, n_hist, p0, D, s);
     ds::BatchPrepArgs a;
     a.qr_raw = B.qr_raw;
     a.q_a_norm = Ly.q_a_norm;
@@ -1364,7 +1364,7 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     a.T = tn;
     a.eps = g.norm_eps;
     ds::prep_batch(a, s);
-    ds::win_store(Ly.raw, g.n_swa, B.keys, n_hist, p0, tn, D, s);
+    ds::win_store(Ly.raw, ds_ring_, B.keys, n_hist, p0, tn, D, s);
     ds::BatchComp comps[2];
     int nc = 0;
     if (r != 0) {

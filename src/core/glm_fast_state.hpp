@@ -4,6 +4,7 @@
 #pragma once
 
 #include "strata/core/glm_model.hpp"
+#include "strata/igpu/igpu_lane.h"
 #include "strata/kernels/glm_fast.hpp"
 #include "strata/kernels/cpu/native_expert.hpp"
 #include "glm_memory.hpp"
@@ -417,6 +418,12 @@ struct Glm5Model::FastState {
     std::vector<uint8_t> cpu_act, cpu_hq;                    // x's activation quant; 8 h quants
     std::vector<float> cpu_ff, cpu_dn;                       // 8 x n_ff; 8 x n_embd
     std::atomic<uint64_t> cpu_experts{0}, cpu_routes{0}, cpu_us{0};
+    // ---- the iGPU LANE (STRATA_GLM_IGPU=1, src/igpu/igpu_lane.cpp): the lane's calls computed by an APU's integrated
+    //      GPU from the registered RAM tier instead of the pool's threads; a call it cannot take stays on the CPU
+    void* igpu_lib = nullptr;
+    abyss_igpu_experts_fn igpu_experts = nullptr;
+    abyss_igpu_poke_fn igpu_poke = nullptr;   // the service thread's keep-alive while a decode runs
+    std::atomic<uint64_t> igpu_calls{0}, igpu_falls{0};
     std::thread svc;
     std::atomic<bool> quit{false};
     uint64_t clock = 0;

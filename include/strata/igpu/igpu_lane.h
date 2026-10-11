@@ -1,0 +1,33 @@
+// include/strata/igpu/igpu_lane.h - the iGPU LANE: the CPU lane's RAM-tier experts computed by an AMD APU's integrated
+// GPU (Ryzen AI Max+ 395: Radeon 8060S, gfx1151) instead of the CPU cores.  The iGPU reads the same DRAM at ~240 GB/s
+// (the CPU lane's threads ~75), the RAM tier included: the engine registers its pinned slots with HIP, so nothing is
+// copied.  Built with hipcc into libabyss_igpu.so (src/igpu/igpu_lane.cpp + the HIP build of glm_fast.cu's expert
+// kernels) and loaded at run time by the CUDA engine (src/core/glm_fast_path.cu, STRATA_GLM_IGPU): a C interface, so
+// neither runtime's headers meet the other's.
+#pragma once
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define ABYSS_IGPU_API 1   // abyss_igpu_version() of this interface
+
+typedef int (*abyss_igpu_version_fn)(void);
+/// The first HIP device; n_embd / n_ff: the largest of the model (buffers).  0 ok, else err holds why.
+typedef int (*abyss_igpu_open_fn)(int n_embd, int n_ff, char* err, int err_n);
+/// Make host memory [host, host + bytes) readable by the iGPU (pinned already or not: hipHostRegister, mapped).
+typedef int (*abyss_igpu_register_fn)(const void* host, size_t bytes, char* err, int err_n);
+/// out[n_embd] = sum_i w[i] * expert_i(x): ne (1..8) experts whose blobs (gate | up | down at down_off) lie in
+/// registered memory.  Synchronous.  0 ok; 1 a blob is not in registered memory (nothing done: compute it elsewhere);
+/// < 0 an error (the lane should stop).
+typedef int (*abyss_igpu_experts_fn)(int gu_type, int d_type, int n_embd, int n_ff, size_t down_off, float limit, int ne,
+                                     const void* const* blobs, const float* w, const float* x, float* out);
+/// A no-op kernel when the lane is idle: called every ~50 us while a decode runs, it keeps the iGPU's clocks up -
+/// after 0.3 ms idle a one-expert call took 103 us instead of 57 (Radeon 8060S, power_dpm "auto").
+typedef void (*abyss_igpu_poke_fn)(void);
+typedef void (*abyss_igpu_close_fn)(void);
+
+#ifdef __cplusplus
+}
+#endif

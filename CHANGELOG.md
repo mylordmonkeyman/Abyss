@@ -7,6 +7,45 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.2.0 - 2026-10-11
+
+DeepSeek V4 Flash decodes ~30% faster on a Ryzen AI Max+ 395: its integrated GPU computes the RAM-tier experts that
+the CPU threads computed. Opt-in speculative decoding adds ~12% on coding prompts. Measured on an RTX 5090 on PCIe
+Gen4 x4 + Ryzen AI Max+ 395 (94 GB RAM), unsloth UD-Q2_K_XL:
+
+| | v1.1.2 | v1.2.0 | v1.2.0 + `STRATA_DS4_SPEC=1` |
+| --- | --- | --- | --- |
+| Decode, two answers of ~1,500 tokens (greedy) | 17.8 ms/token (56 tok/s) | 13.7 (73 tok/s) | 13.7 (prose: drafts rarely match) |
+| Decode, 20 swe-bench prompts (up to 800 tokens) | 19.6 ms/token (51 tok/s) | 15.1 (66 tok/s) | 12.8 (78 tok/s) |
+| ... the same, prompt + answer, end to end | 41.5 tok/s | 52.9 tok/s | 59.3 tok/s |
+| KL vs llama.cpp, 3000 tokens one by one | 0.0096 | 0.0093 | - |
+| Prompt, 5.6K tokens (later requests) | 1,065-1,069 tok/s | 1,053-1,054 tok/s | - |
+
+- **The iGPU lane** (`src/igpu/igpu_lane.cpp`, `libabyss_igpu.so`): the Radeon 8060S reads the same DRAM as the CPU at
+  ~240 GB/s (the CPU lane's threads ~75), including memory CUDA pinned. At start the engine registers its RAM tier with
+  HIP (69.7 GB in ~0.35 s, nothing copied) and the CPU lane's calls go to the iGPU: glm_fast's expert kernels built
+  for gfx1151 by ROCm's `hipcc`, loaded at run time (CUDA and HIP never share a translation unit). 0.046 ms an expert
+  against the CPU's 0.107; its sums equal the RTX 5090's (relative L2 0.00000; 0.0137 against a double reference, the
+  CPU lane's 0.0265). A down kernel for 1-2 experts (a decode's usual call; the device's has a warp an expert of 8:
+  55 -> 18 us) and a no-op kernel every 50 us while a decode runs (a call after 0.3 ms idle took 103 us instead of 57)
+  bring a token's lane from 8.6 to 3.7 ms. The start-up log says which lane computes and why; the CPU stays when it
+  is faster, or without the library or a HIP device. `STRATA_GLM_IGPU=0` off, `=1` on even when slower.
+  The prompt path keeps the CPU threads (and plans with the CPU's own time). GLM-5.3-Flash too: 29.1 -> 18.1 ms a
+  token scored one by one; with the iGPU lane off, its logits still equal Maya 1.0.24's (KL 0.000000).
+- **Speculative decoding from the text itself** (`STRATA_DS4_SPEC=<k>`, 1-3; off by default): the last 3 tokens'
+  (`STRATA_DS4_SPEC_MIN`) latest earlier occurrence in the prompt or the answer proposes the next k, and the token with
+  its proposal goes through one verify window (`src/core/dsv4_verify.cu`); a column whose sample matches the proposal
+  is kept, the first mismatch's sample is the next token, and the rejected tail is dropped by position (the attention
+  ring keeps 4 spare rows). The output is the token-at-a-time loop's (the same sampler on the same logits). The window
+  runs as k + 1 staggered CUDA streams: token t + 1's attention of a layer runs while the RAM-tier lane computes token
+  t's experts of it (`STRATA_DS4_SPEC_PIPE=0`: one batched stream, 36.8 against 29.1 ms for 2 tokens without the iGPU).
+  swe-bench prompts: 77-83% of the drafts accepted, 1.4-1.8 tokens a step; prose ~50%, about even. `k = 1` measured
+  the fastest. `STRATA_GLM_SCORE_VERIFY=<T>` scores through T-token windows (KL 0.000000 against the token path with
+  every expert on the GPU).
+- The CPU lane's and the disk misses' answers are kept 4 deep (a window has several routes of a layer in flight).
+- The build makes `libabyss_igpu.so` when ROCm's `hipcc` is found (`-DSTRATA_IGPU_ARCH`, default `gfx1151`;
+  `-DSTRATA_IGPU_LANE=OFF` skips it).
+
 ## v1.1.2 - 2026-10-11
 
 The CPU lane no longer sends an expert over PCIe on a start whose calibration came out a little slow. GLM-5.3-Flash

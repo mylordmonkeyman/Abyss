@@ -117,7 +117,7 @@ bool Glm5Model::dsv4_alloc(std::string& err) {
     size_t bytes = 0;
     const auto layer_bytes = [&](int il) {
         const int r = g.ratio(il);
-        size_t b = al((size_t) g.n_swa * D * 2);
+        size_t b = al((size_t) (g.n_swa + kSpecSlack) * D * 2);
         if (r == 4) {
             b += al((ctx / 4 + 1) * D * 2) + al((ctx / 4 + 1) * (size_t) g.idx_key * 2);
             b += 2 * al((size_t) 8 * 2 * D * 4) + 2 * al((size_t) 8 * 2 * g.idx_key * 4);
@@ -126,6 +126,7 @@ bool Glm5Model::dsv4_alloc(std::string& err) {
         }
         return b;
     };
+    ds_ring_ = g.n_swa + kSpecSlack;
     for (int il = l0_; il < l1_; ++il) bytes += layer_bytes(il);
     // the activations: the compressors' projections (2 x 2D), the attention output and its q8_1, wo_a's output and q8_1,
     // the indexer's selection
@@ -149,7 +150,7 @@ bool Glm5Model::dsv4_alloc(std::string& err) {
     for (int il = l0_; il < l1_; ++il) {
         auto& Ly = F->L[(size_t) il];
         const int r = g.ratio(il);
-        Ly.raw = (uint16_t*) take((size_t) g.n_swa * D * 2);
+        Ly.raw = (uint16_t*) take((size_t) ds_ring_ * D * 2);
         if (r == 4) {
             Ly.comp_cache = (uint16_t*) take((ctx / 4 + 1) * D * 2);
             Ly.idx_cache = (uint16_t*) take((ctx / 4 + 1) * (size_t) g.idx_key * 2);
@@ -219,7 +220,7 @@ bool Glm5Model::fast_dsv4_attn(int il, int64_t p64, std::string& err) {
     a.kv_raw = F->kv_raw;
     a.kv_norm = Ly.kv_a_norm;
     a.raw = Ly.raw;
-    a.ring = g.n_swa;
+    a.ring = ds_ring_;
     a.head_dim = D;
     a.n_rot = g.n_rot;
     a.rope = rope;
@@ -289,7 +290,7 @@ bool Glm5Model::fast_dsv4_attn(int il, int64_t p64, std::string& err) {
             n_comp = n_vis;
         }
     }
-    ds::attend(F->q, Ly.raw, g.n_swa, n_raw, Ly.comp_cache, sel, n_comp, Ly.sinks, g.n_head, D, g.n_rot, rope, p,
+    ds::attend(F->q, Ly.raw, ds_ring_, n_raw, Ly.comp_cache, sel, n_comp, Ly.sinks, g.n_head, D, g.n_rot, rope, p,
                F->ds_o, s);
     if (F->prof_on) F->mark("ds_attend");
     if (dumps) dsv4_dump(s, "attn_derope-" + Ls, F->ds_o, (int64_t) g.n_head * D);
@@ -324,7 +325,7 @@ bool Glm5Model::dsv4_snap_copy(bool restore) {
     std::vector<Run> runs;
     for (int il = l0_; il < l1_; ++il) {
         const auto& Ly = F->L[(size_t) il];
-        runs.push_back({Ly.raw, (size_t) g.n_swa * D * 2});
+        runs.push_back({Ly.raw, (size_t) ds_ring_ * D * 2});
         if (Ly.ratio == 4) {
             runs.push_back({Ly.ring_kv, (size_t) 8 * 2 * D * 4});
             runs.push_back({Ly.ring_sc, (size_t) 8 * 2 * D * 4});

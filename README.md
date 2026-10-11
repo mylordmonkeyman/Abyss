@@ -32,6 +32,7 @@ thinking and tool calls — all on your own machine.
 
 - **284B MoE on one card** — 256 experts per layer spread over VRAM, pinned RAM and SSD, filled from your own usage.
 - **5–10x llama.cpp's decode speed** on the same GGUF and machine, with the batched prompt path at ~1,000-1,700 tok/s.
+- **An AMD APU's integrated GPU as a second lane** — on a Ryzen AI Max the Radeon iGPU computes the RAM-tier experts in place (ROCm; picked at start when it is faster than the CPU).
 - **Checked against llama.cpp** — same next-token accuracy over 3,000 tokens (KL 0.009).
 - **Full DeepSeek V4 attention** — sliding window, CSA/HCA compressed KV, the lightning indexer's top-512, sinks.
 - **Thinking and tool calls** — reasoning levels `none` / `low` / `high` / `max`, DeepSeek's DSML tool calls, parallel calls.
@@ -41,12 +42,12 @@ thinking and tool calls — all on your own machine.
 ## 📊 Performance
 
 unsloth's [DeepSeek-V4-Flash-0731-GGUF](https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF) `UD-Q2_K_XL`
-(96.8 GB), RTX 5090 (32 GB) + 94 GB RAM, Linux:
+(96.8 GB), RTX 5090 (32 GB) + Ryzen AI Max+ 395 with 94 GB RAM (iGPU lane on), Linux:
 
 | | Abyss | llama.cpp (experts on the CPU) |
 | --- | :---: | :---: |
-| Decode (answers of ~1,500 tokens) | **~57 tok/s** | 5–7 tok/s |
-| Decode (short answers) | 37–56 tok/s | 5–7 tok/s |
+| Decode (answers of ~1,500 tokens) | **~73 tok/s** (CPU lane only: ~56) | 5–7 tok/s |
+| Decode (coding prompts, up to 800 tokens) | **~66 tok/s**, ~78 with `STRATA_DS4_SPEC=1` | 5–7 tok/s |
 | Prompt (5.6K tokens) | **~1,000–1,090 tok/s** | – |
 | Prompt (18K tokens) | **~1,700 tok/s** | – |
 | Start-up (weights + expert warm-up) | ~1 min | ~50 s |
@@ -93,7 +94,7 @@ and more in the [manual](docs/MANUAL.md#setup-in-one-command).
 | GPU | NVIDIA, tested on RTX 5090 32 GB |
 | Memory | VRAM + RAM ≳ 100 GB to keep every expert in memory (less works, reading from the SSD) |
 | Disk | NVMe SSD with ~100 GB free |
-| Toolchain | CUDA 13.x (`nvcc`), g++, Python 3.10+ |
+| Toolchain | CUDA 13.x (`nvcc`), g++, Python 3.10+; optional ROCm 7 (`hipcc`) for the iGPU lane on an AMD APU |
 
 ## 🧠 How it works
 

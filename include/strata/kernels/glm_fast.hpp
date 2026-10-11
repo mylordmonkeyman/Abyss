@@ -31,10 +31,16 @@ struct MvJob {
     float alpha = 1.0f;
     int type = 0;
     int n_in = 0, n_out = 0;
+    int xs = 0, ys = 0;   // mvn: column strides of the activations (q8_1 blocks, or floats for BF16 / F32) and the
+                          // outputs (floats); 0 = contiguous columns (n_in / 32 blocks or n_in floats, n_out floats)
 };
 constexpr int kMaxMvJobs = 8;
 /// One launch for up to kMaxMvJobs independent GEMVs (they share nothing but the launch).
 bool mv(const MvJob* jobs, int n, cudaStream_t s);
+/// mv() for nc (1..4) activation columns at once - a verify window's tokens: the weight rows are read once. Column c
+/// of a job reads xq + c * n_in / 32 (q8_1 blocks) or xf + c * n_in (BF16 / F32) and writes y + c * n_out.
+bool mvn(const MvJob* jobs, int n, int nc, cudaStream_t s);
+bool mvn_supported(int type);
 /// Whether mv() serves this weight type.
 bool mv_supported(int type);
 /// Whether moe_gate_up() / moe_down() serve routed experts of this type.
@@ -178,6 +184,10 @@ struct MoeDev {
                                                //     RAM-tier experts go to the host, the hot ones are promoted
     volatile int* route_error = nullptr;       // host-mapped, first invalid route: 4 * layer + kind (1..3)
 };
+/// The host's answers to routes - the CPU LANE's (CpuAnswer) and the disk misses' (MoeResponse, with its pinned
+/// staging): kCpuAnswers of each, the route `seq`'s at index seq % kCpuAnswers - a verify window has several routes
+/// of a layer in flight, and the host answers them in order before the device reads them.
+constexpr int kCpuAnswers = 4;
 /// The CPU LANE's answer: the weighted sum of the RAM-tier experts the host computed for route `seq`.
 struct CpuAnswer {
     volatile unsigned int seq;

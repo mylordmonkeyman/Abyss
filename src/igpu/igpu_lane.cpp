@@ -1,0 +1,217 @@
+// src/igpu/igpu_lane.cpp - the iGPU lane (include/strata/igpu/igpu_lane.h): glm_fast's HIP expert kernels on the
+// APU's integrated GPU, reading the engine's RAM-tier slots in place.  One call: x (host) -> q8_1 -> gate/up ->
+// down, the k experts' weighted sum -> out (host).  Built by hipcc with the HIP compat header (cuda* -> hip*), as one
+// translation unit with glm_fast.cu (its row-dot helpers are file-local).
+#include "strata/igpu/igpu_lane.h"
+#include "../kernels/cuda/glm_fast.cu"
+
+#include <hip/hip_runtime.h>
+
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <mutex>
+#include <vector>
+
+namespace gf = strata::kernels::glmf;
+
+namespace strata::kernels::glmf {
+namespace {
+// The lane's down for a FEW experts (a decode's lane call holds 1-2): every warp of a block on NR rows of its own,
+// looping over the experts and combining in plan order as moe_down does (the same sum).  moe_down gives each expert
+// one warp of a block's 8 (the device's plans hold 8), so at k = 1 seven of them idle: ~55 us for one expert's 3 MB.
+template<int TD, int NR>
+__global__ void __launch_bounds__(256) lane_down_kernel(const unsigned long long* plan_ptr, const float* plan_w, int k,
+                                                        int n_ff, size_t down_off, const block_q8_1* __restrict__ hq,
+                                                        float* __restrict__ out) {
+    __shared__ unsigned long long s_ptr[8];
+    __shared__ float s_w[8];
+    __shared__ uint32_t s_tab[TabWords<TD>::n > 0 ? TabWords<TD>::n : 1];
+    load_tab<TD>(s_tab);
+    if (threadIdx.x < 8) {
+        s_ptr[threadIdx.x] = (int) threadIdx.x < k ? plan_ptr[threadIdx.x] : 0ull;
+        s_w[threadIdx.x] = (int) threadIdx.x < k ? plan_w[threadIdx.x] : 0.0f;
+    }
+    __syncthreads();
+    const int lane = threadIdx.x & 31, warp = threadIdx.x >> 5;
+    const int r0 = (blockIdx.x * 8 + warp) * NR;
+    const size_t drb = rbytes<TD>(n_ff);
+    float m[NR];
+#pragma unroll
+    for (int j = 0; j < NR; ++j) m[j] = 0.0f;
+    for (int i = 0; i < k; ++i) {
+        float s[NR];
+        if (s_ptr[i] != 0ull) {
+            const uint8_t* rows[NR];
+#pragma unroll
+            for (int j = 0; j < NR; ++j) rows[j] = (const uint8_t*) s_ptr[i] + down_off + (size_t) (r0 + j) * drb;
+            rows_dot<TD, NR>(rows, hq + (size_t) i * (n_ff / 32), n_ff, lane, s_tab, s);
+        } else {
+#pragma unroll
+            for (int j = 0; j < NR; ++j) s[j] = 0.0f;
+        }
+#pragma unroll
+        for (int j = 0; j < NR; ++j) m[j] += s_w[i] * s[j];
+    }
+    if (lane == 0)
+#pragma unroll
+        for (int j = 0; j < NR; ++j) out[r0 + j] = m[j] + 0.0f;
+}
+}  // namespace
+
+bool lane_down(int d_type, const unsigned long long* plan_ptr, const float* plan_w, int k, int n_embd, int n_ff,
+               size_t down_off, const void* hq, float* out, hipStream_t s) {
+    constexpr int NR = DOWN_ROWS;
+    if (n_embd % (8 * NR) != 0) return false;
+    const int blocks = n_embd / (8 * NR);
+    const auto* H = (const block_q8_1*) hq;
+    switch (d_type) {
+#define LANE_DN(T) \
+        case T: lane_down_kernel<T, NR><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out); break;
+        LANE_DN(16) LANE_DN(18) LANE_DN(19) LANE_DN(23) LANE_DN(10) LANE_DN(11) LANE_DN(17) LANE_DN(22) LANE_DN(21)
+        LANE_DN(29) LANE_DN(12) LANE_DN(13) LANE_DN(14) LANE_DN(39)
+#undef LANE_DN
+        default: return false;
+    }
+    return hipGetLastError() == hipSuccess;
+}
+__global__ void lane_poke_kernel() {}
+void lane_poke(hipStream_t s) { lane_poke_kernel<<<1, 32, 0, s>>>(); }
+}  // namespace strata::kernels::glmf
+
+namespace {
+constexpr size_t kQ8 = 36;
+struct Range {
+    const uint8_t* host;
+    size_t bytes;
+    uint8_t* dev;
+};
+struct Plan {                         // host-mapped: the kernels read it in place
+    unsigned long long ptr[8];
+    float w[8];
+    int cpu_flag;
+};
+struct Lane {
+    bool open = false;
+    int n_embd = 0, n_ff = 0;
+    hipStream_t s = nullptr;
+    float *x_h = nullptr, *out_h = nullptr, *x_d = nullptr, *out_d = nullptr;
+    Plan *plan_h = nullptr, *plan_d = nullptr;
+    void *xq = nullptr, *hq = nullptr;
+    std::vector<Range> ranges;
+    std::mutex mu;
+};
+Lane L;
+
+void say(char* err, int n, const char* what, hipError_t e) {
+    if (err != nullptr && n > 0) std::snprintf(err, (size_t) n, "%s: %s", what, hipGetErrorString(e));
+}
+}  // namespace
+
+extern "C" {
+
+__attribute__((visibility("default"))) int abyss_igpu_version(void) { return ABYSS_IGPU_API; }
+
+__attribute__((visibility("default"))) int abyss_igpu_open(int n_embd, int n_ff, char* err, int err_n) {
+    std::lock_guard<std::mutex> lk(L.mu);
+    if (L.open) return 0;
+    int n = 0;
+    hipError_t e = hipGetDeviceCount(&n);
+    if (e != hipSuccess || n < 1) {
+        say(err, err_n, "no HIP device", e == hipSuccess ? hipErrorNoDevice : e);
+        return -1;
+    }
+    hipSetDeviceFlags(hipDeviceScheduleSpin);   // the service thread waits ~0.1 ms a call: spin, not sleep
+    if ((e = hipSetDevice(0)) != hipSuccess) { say(err, err_n, "hipSetDevice", e); return -1; }
+    L.n_embd = n_embd;
+    L.n_ff = n_ff;
+    const auto hm = [&](void** p, size_t b) { return hipHostMalloc(p, b, hipHostMallocMapped); };
+    if ((e = hipStreamCreateWithFlags(&L.s, hipStreamNonBlocking)) != hipSuccess ||
+        (e = hm((void**) &L.x_h, (size_t) n_embd * sizeof(float))) != hipSuccess ||
+        (e = hm((void**) &L.out_h, (size_t) n_embd * sizeof(float))) != hipSuccess ||
+        (e = hm((void**) &L.plan_h, sizeof(Plan))) != hipSuccess ||
+        (e = hipMalloc(&L.xq, (size_t) n_embd / 32 * kQ8)) != hipSuccess ||
+        (e = hipMalloc(&L.hq, (size_t) 8 * n_ff / 32 * kQ8)) != hipSuccess) {
+        say(err, err_n, "iGPU lane buffers", e);
+        return -1;
+    }
+    hipHostGetDevicePointer((void**) &L.x_d, L.x_h, 0);
+    hipHostGetDevicePointer((void**) &L.out_d, L.out_h, 0);
+    hipHostGetDevicePointer((void**) &L.plan_d, L.plan_h, 0);
+    std::memset(L.plan_h, 0, sizeof(Plan));
+    L.open = true;
+    return 0;
+}
+
+__attribute__((visibility("default"))) int abyss_igpu_register(const void* host, size_t bytes, char* err, int err_n) {
+    std::lock_guard<std::mutex> lk(L.mu);
+    if (!L.open) { say(err, err_n, "iGPU lane not open", hipErrorNotInitialized); return -1; }
+    hipError_t e = hipHostRegister(const_cast<void*>(host), bytes, hipHostRegisterMapped);
+    if (e != hipSuccess) { say(err, err_n, "hipHostRegister", e); return -1; }
+    void* d = nullptr;
+    if ((e = hipHostGetDevicePointer(&d, const_cast<void*>(host), 0)) != hipSuccess) {
+        say(err, err_n, "hipHostGetDevicePointer", e);
+        return -1;
+    }
+    L.ranges.push_back({(const uint8_t*) host, bytes, (uint8_t*) d});
+    return 0;
+}
+
+__attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d_type, int n_embd, int n_ff,
+                                                              size_t down_off, float limit, int ne,
+                                                              const void* const* blobs, const float* w,
+                                                              const float* x, float* out) {
+    if (!L.open || ne < 1 || ne > 8 || n_embd > L.n_embd || n_ff > L.n_ff) return 1;
+    for (int i = 0; i < ne; ++i) {
+        const uint8_t* b = (const uint8_t*) blobs[i];
+        unsigned long long d = 0ull;
+        for (const Range& r : L.ranges)
+            if (b >= r.host && b < r.host + r.bytes) {
+                d = (unsigned long long) (r.dev + (b - r.host));
+                break;
+            }
+        if (d == 0ull) return 1;
+        L.plan_h->ptr[i] = d;
+        L.plan_h->w[i] = w[i];
+    }
+    for (int i = ne; i < 8; ++i) { L.plan_h->ptr[i] = 0ull; L.plan_h->w[i] = 0.0f; }
+    L.plan_h->cpu_flag = 0;
+    std::memcpy(L.x_h, x, (size_t) n_embd * sizeof(float));
+    gf::MoeDev md;
+    md.plan_ptr = L.plan_d->ptr;
+    md.plan_w = L.plan_d->w;
+    md.cpu_flag = &L.plan_d->cpu_flag;
+    gf::quantize_q8_1(L.x_d, L.xq, n_embd, L.s);
+    gf::moe_gate_up(gu_type, md, ne, n_embd, n_ff, limit, L.xq, L.hq, nullptr, 0, nullptr, 0, nullptr, L.s);
+    if (!gf::lane_down(d_type, L.plan_d->ptr, L.plan_d->w, ne, n_embd, n_ff, down_off, L.hq, L.out_d, L.s))
+        gf::moe_down(d_type, md, ne, n_embd, n_ff, down_off, L.hq, nullptr, L.out_d, L.s);
+    const hipError_t e = hipStreamSynchronize(L.s);
+    if (e != hipSuccess) {
+        std::fprintf(stderr, "iGPU lane: %s\n", hipGetErrorString(e));
+        return -1;
+    }
+    std::memcpy(out, L.out_h, (size_t) n_embd * sizeof(float));
+    return 0;
+}
+
+__attribute__((visibility("default"))) void abyss_igpu_poke(void) {
+    if (L.open && hipStreamQuery(L.s) == hipSuccess) gf::lane_poke(L.s);
+}
+
+__attribute__((visibility("default"))) void abyss_igpu_close(void) {
+    std::lock_guard<std::mutex> lk(L.mu);
+    if (!L.open) return;
+    hipStreamSynchronize(L.s);
+    for (const Range& r : L.ranges) hipHostUnregister(const_cast<uint8_t*>(r.host));
+    L.ranges.clear();
+    hipFree(L.xq);
+    hipFree(L.hq);
+    hipHostFree(L.x_h);
+    hipHostFree(L.out_h);
+    hipHostFree(L.plan_h);
+    hipStreamDestroy(L.s);
+    L.open = false;
+}
+
+}  // extern "C"

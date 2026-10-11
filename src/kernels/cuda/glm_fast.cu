@@ -1032,6 +1032,86 @@ __global__ void __launch_bounds__(256) mv_kernel_t(const __grid_constant__ MvBat
     if (lane == 0) J.y[row] = J.alpha * s + (J.bias ? J.bias[row] : 0.0f);
 }
 
+// ... and against NC activations at once (a verify window's tokens): the weight row is read once, every column's
+// q8_1 blocks at xq + c * n_in / 32, its outputs at y + c * n_out (columns contiguous, as native_mmvq's)
+template<int T, int NC>
+__global__ void __launch_bounds__(256) mvn_kernel_t(const __grid_constant__ MvBatch b) {
+    const int bid = blockIdx.x;
+    int ji = 0;
+    while (ji < b.n - 1 && bid >= b.blk_end[ji]) ++ji;
+    const MvJob& J = b.j[ji];
+    const int blk0 = ji ? b.blk_end[ji - 1] : 0;
+    const int row = (bid - blk0) * MV_ROWS + (threadIdx.x >> 5);
+    const int lane = threadIdx.x & 31;
+    if (row >= J.n_out) return;
+    using Fm = F<T>;
+    const uint8_t* w = (const uint8_t*) J.w + (size_t) row * rbytes<T>(J.n_in);
+    const block_q8_1* x = (const block_q8_1*) J.xq;
+    const int nb = J.n_in / Fm::qk, xs = J.xs ? J.xs : J.n_in / 32;
+    const size_t ys = J.ys ? (size_t) J.ys : (size_t) J.n_out;
+    float acc[NC];
+#pragma unroll
+    for (int c = 0; c < NC; ++c) acc[c] = 0.0f;
+    for (int k = lane; k < nb * Fm::ipb; k += 32) {
+        const int kbx = k / Fm::ipb, iqs = Fm::step * (k % Fm::ipb);
+#pragma unroll
+        for (int c = 0; c < NC; ++c) acc[c] += Fm::dot(w, x + (size_t) c * xs + kbx * (Fm::qk / 32), kbx, iqs);
+    }
+#pragma unroll
+    for (int c = 0; c < NC; ++c) {
+        const float v = warp_sum(acc[c]);
+        if (lane == 0) J.y[(size_t) c * ys + row] = J.alpha * v + (J.bias ? J.bias[row] : 0.0f);
+    }
+}
+
+// BF16 / F32 rows against NC float activations (xf + c * n_in)
+template<int NC>
+__global__ void __launch_bounds__(256) mvn_kernel_f(const __grid_constant__ MvBatch b) {
+    const int bid = blockIdx.x;
+    int ji = 0;
+    while (ji < b.n - 1 && bid >= b.blk_end[ji]) ++ji;
+    const MvJob& J = b.j[ji];
+    const int blk0 = ji ? b.blk_end[ji - 1] : 0;
+    const int row = (bid - blk0) * MV_ROWS + (threadIdx.x >> 5);
+    const int lane = threadIdx.x & 31;
+    if (row >= J.n_out) return;
+    const size_t xs = J.xs ? (size_t) J.xs : (size_t) J.n_in, ys = J.ys ? (size_t) J.ys : (size_t) J.n_out;
+    float acc[NC];
+#pragma unroll
+    for (int c = 0; c < NC; ++c) acc[c] = 0.0f;
+    if (J.type == kTypeBF16) {
+        const uint4* r8 = (const uint4*) ((const uint16_t*) J.w + (size_t) row * J.n_in);
+        for (int k = lane; k < J.n_in / 8; k += 32) {
+            const uint4 wv = r8[k];
+            const float w0 = __uint_as_float(wv.x << 16), w1 = __uint_as_float(wv.x & 0xffff0000u);
+            const float w2 = __uint_as_float(wv.y << 16), w3 = __uint_as_float(wv.y & 0xffff0000u);
+            const float w4 = __uint_as_float(wv.z << 16), w5 = __uint_as_float(wv.z & 0xffff0000u);
+            const float w6 = __uint_as_float(wv.w << 16), w7 = __uint_as_float(wv.w & 0xffff0000u);
+#pragma unroll
+            for (int c = 0; c < NC; ++c) {
+                const float4* x4 = (const float4*) (J.xf + (size_t) c * xs);
+                const float4 a = x4[2 * k], bb = x4[2 * k + 1];
+                acc[c] += w0 * a.x + w1 * a.y + w2 * a.z + w3 * a.w + w4 * bb.x + w5 * bb.y + w6 * bb.z + w7 * bb.w;
+            }
+        }
+    } else {   // F32
+        const float4* r4 = (const float4*) ((const float*) J.w + (size_t) row * J.n_in);
+        for (int k = lane; k < J.n_in / 4; k += 32) {
+            const float4 a = r4[k];
+#pragma unroll
+            for (int c = 0; c < NC; ++c) {
+                const float4 xx = ((const float4*) (J.xf + (size_t) c * xs))[k];
+                acc[c] += a.x * xx.x + a.y * xx.y + a.z * xx.z + a.w * xx.w;
+            }
+        }
+    }
+#pragma unroll
+    for (int c = 0; c < NC; ++c) {
+        const float v = warp_sum(acc[c]);
+        if (lane == 0) J.y[(size_t) c * ys + row] = J.alpha * v + (J.bias ? J.bias[row] : 0.0f);
+    }
+}
+
 __global__ void quantize_kernel(const float* __restrict__ x, block_q8_1* __restrict__ y, int n) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= n) return;   // n % 32 == 0: whole warps only
@@ -2346,7 +2426,7 @@ __global__ void moe_wait_kernel(MoeDev d, int n_embd) {
     if (tid == 0) s_need = *d.wait_seq;
     __syncthreads();
     if (s_need == 0) return;
-    const MoeResponse* r = (const MoeResponse*) d.resp;
+    const MoeResponse* r = (const MoeResponse*) d.resp + (s_need % kCpuAnswers);   // (the host answers seq there)
     if (tid == 0) {
         // spin on the host's answer (bounded: a dead host must not hang the GPU forever - ~60 s)
         const long long t0 = clock64();
@@ -2376,7 +2456,7 @@ __global__ void moe_cpu_wait_kernel(MoeDev d, int n_embd, float* out) {
     if (tid == 0) s_need = *d.cpu_seq;
     __syncthreads();
     if (s_need == 0) return;
-    const CpuAnswer* r = (const CpuAnswer*) d.cpu_ans;
+    const CpuAnswer* r = (const CpuAnswer*) d.cpu_ans + (s_need % kCpuAnswers);
     if (tid == 0) {
         const long long t0 = clock64();   // bounded like moe_wait (~60 s)
         while (r->seq != s_need) {
@@ -3051,6 +3131,57 @@ size_t row_bytes(int type, int64_t n_in) {
         case 39: return (size_t) (n_in / 32) * sizeof(block_mxfp4);
         default: return 0;
     }
+}
+
+bool mvn_supported(int type) {
+    return type == 8 || type == 12 || type == 13 || type == 14 || type == kTypeBF16 || type == kTypeF32;
+}
+
+bool mvn(const MvJob* jobs, int n, int nc, cudaStream_t s) {
+    if (nc == 1) return mv(jobs, n, s);
+    if (n <= 0 || n > kMaxMvJobs || nc < 1 || nc > 4) return false;
+    for (int i = 0; i < n; ++i)
+        if (!mvn_supported(jobs[i].type)) {
+            std::fprintf(stderr, "glm_fast mvn: type %d unsupported\n", jobs[i].type);
+            return false;
+        }
+    // one launch per type present (as mv's typed kernels), each compiled for the column count
+    constexpr int kTypes[] = {14, 8, 12, 13, kTypeBF16};
+    bool done[kMaxMvJobs] = {};
+    for (const int T : kTypes) {
+        MvBatch b{};
+        int acc = 0, m = 0;
+        for (int i = 0; i < n; ++i)
+            if (!done[i] && (jobs[i].type == T || (T == kTypeBF16 && jobs[i].type == kTypeF32))) {
+                b.j[m] = jobs[i];
+                acc += (jobs[i].n_out + MV_ROWS - 1) / MV_ROWS;
+                b.blk_end[m++] = acc;
+                done[i] = true;
+            }
+        if (m == 0) continue;
+        b.n = m;
+#define GF_MVN(TT)                                                                      \
+        switch (nc) {                                                                   \
+            case 2: mvn_kernel_t<TT, 2><<<acc, 256, 0, s>>>(b); break;                  \
+            case 3: mvn_kernel_t<TT, 3><<<acc, 256, 0, s>>>(b); break;                  \
+            default: mvn_kernel_t<TT, 4><<<acc, 256, 0, s>>>(b); break;                 \
+        }
+        switch (T) {
+            case 14: GF_MVN(14) break;
+            case 8: GF_MVN(8) break;
+            case 12: GF_MVN(12) break;
+            case 13: GF_MVN(13) break;
+            default:
+                switch (nc) {
+                    case 2: mvn_kernel_f<2><<<acc, 256, 0, s>>>(b); break;
+                    case 3: mvn_kernel_f<3><<<acc, 256, 0, s>>>(b); break;
+                    default: mvn_kernel_f<4><<<acc, 256, 0, s>>>(b); break;
+                }
+        }
+#undef GF_MVN
+    }
+    launch_check("mvn");
+    return true;
 }
 
 bool mv(const MvJob* jobs, int n, cudaStream_t s) {

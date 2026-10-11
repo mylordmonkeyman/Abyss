@@ -31,6 +31,7 @@ Abyss は [Project Maya](https://github.com/mw00/project-maya)（MIT）をコピ
 | CUDA | 13.3 | `nvcc` を含む |
 | コンパイラ | g++ 13 | CUDA が受け付けるバージョン |
 | Python | 3.12 | Abyss のフォルダ内の `.venv` |
+| ROCm（任意） | 7（`hipcc`） | AMD APU の内蔵 GPU が RAM 層のエキスパートを計算する（下の「iGPU レーン」）。なければ CPU が計算する |
 
 `./abyss.sh`（Maya のインストーラの名前を変えたもの）は、今も Maya の GLM-5.3-Flash を入れるためのもの。
 DeepSeek V4 は `./setup-deepseek.sh`（次の節）か、その後の手順を手で行って準備する。
@@ -95,6 +96,9 @@ unzip -q /tmp/llama.zip -d third_party && mv third_party/llama.cpp-$C third_part
   -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DSTRATA_GGML_DIR=$PWD/third_party/llama.cpp
 .venv/bin/cmake --build build --target strata -j 16
 ```
+
+ROCm の `hipcc` が入っていれば、`build/libabyss_igpu.so`（下の「iGPU レーン」）も一緒にビルドされる
+（対象は既定で `-DSTRATA_IGPU_ARCH=gfx1151`。`-DSTRATA_IGPU_LANE=OFF` で作らない）。
 
 初回のビルドは数分。変更後は変わった部分だけを再コンパイルする。RTX 50 では `120` ではなく `120a` を使う
 （MXFP4 のカーネルが Blackwell 専用の FP4 MMA 命令を使い、`120` ではコンパイルできない）。
@@ -225,12 +229,13 @@ cd ~/llm/apps/Abyss
 埋め、空き RAM から pinned の RAM 層を確保し、足りない分は必要なときに SSD から読む。使ったエキスパートを
 `<pack>/expert_usage.txt` に記録し、次の起動ではそれを先に読み込む。
 
-RTX 5090 + RAM 94 GB での実測（UD-Q2_K_XL、コンテキスト 65536、全エキスパートが VRAM 23 GB + RAM 70 GB に載った状態）:
+RTX 5090 + Ryzen AI Max+ 395（RAM 94 GB）での実測（UD-Q2_K_XL、コンテキスト 65536、全エキスパートが
+VRAM 23 GB + RAM 70 GB に載った状態、iGPU レーンあり）:
 
 | | |
 | --- | --- |
-| 生成（1,500 トークン前後の応答） | 約 57 tok/s |
-| 生成（短い応答） | 37〜56 tok/s |
+| 生成（1,500 トークン前後の応答） | 約 73 tok/s（CPU だけなら約 56） |
+| 生成（コーディングの prompt 20 本、各 800 トークンまで） | 約 66 tok/s。`STRATA_DS4_SPEC=1` で約 78 |
 | prompt（5.6K トークン） | 約 1,000〜1,090 tok/s |
 | prompt（18K トークン） | 約 1,700 tok/s |
 | 起動（重み + エキスパートの読み込み） | 約 1 分 |
@@ -238,6 +243,18 @@ RTX 5090 + RAM 94 GB での実測（UD-Q2_K_XL、コンテキスト 65536、全�
 
 起動直後や、メモリがモデルより少ない環境では、エキスパートを SSD から読むので遅くなる。RAM 層のエキスパートは、
 一部を CPU が計算し、残りを GPU が PCIe 経由で取り寄せる。その配分は起動時に測って決める。
+
+**iGPU レーン。** AMD の APU（Ryzen AI Max+ 395 の Radeon 8060S）では、内蔵 GPU が CPU と同じメモリを約 240 GB/s
+で読める（CPU のスレッドは約 75 GB/s）。ROCm が入っていて `libabyss_igpu.so` がビルドされていれば、エンジンは
+起動時に RAM 層を内蔵 GPU に登録し、RAM 層のエキスパートを CPU の代わりに内蔵 GPU で計算する（コピーはしない）。
+どちらで計算するかは起動時に両方を測って決め、ログに出す（`iGPU lane: an expert 0.046 ms vs 0.107 on the CPU's
+16 threads`）。CPU のほうが速い場合や、ライブラリか HIP のデバイスがない場合は CPU で計算する。
+
+**投機デコード（`STRATA_DS4_SPEC`）。** この GGUF にはドラフトモデルがないが、応答は prompt や応答の前のほうに
+出てきた並び（コード、ファイルパス、ツール呼び出し）を繰り返すことが多い。`STRATA_DS4_SPEC=1` にすると、直近
+3 トークンが前に出てきた場所を探し、その次のトークンを候補として次の 1 トークンと一緒に 1 回で確かめ、モデルの
+答えと一致すれば採用する。出力は使わない場合と同じで（同じロジットに同じサンプラー）、速さだけが変わる。
+コーディングの prompt で +12%（候補の 77〜83% が採用）、文章ではほぼ変わらない（採用は約 50%）。
 
 ## 設定項目
 
@@ -256,6 +273,9 @@ RTX 5090 + RAM 94 GB での実測（UD-Q2_K_XL、コンテキスト 65536、全�
 | `STRATA_GLM_USAGE` | `<pack>/expert_usage.txt` | 起動をまたいで残すエキスパートの使用記録。`0` で無効 |
 | `STRATA_GLM_NO_REUSE` | オフ | `1`: 会話を再利用しない |
 | `STRATA_GLM_THINK_RESERVE` | 1024 | （サーバー）思考が回答のために必ず残すトークン数 |
+| `STRATA_GLM_IGPU` | 自動 | iGPU レーン。`libabyss_igpu.so` と HIP のデバイスがあり、CPU より速ければ使う。`0` で使わない、`1` で遅くても使う。`STRATA_GLM_IGPU_LIB=<パス>` で別のライブラリ |
+| `STRATA_DS4_SPEC` | 0（なし） | prompt と応答から作る投機デコード。1 回に試す候補トークン数（1〜3。実測では 1 が最速） |
+| `STRATA_DS4_SPEC_MIN` | 3 | 候補を探すときに一致させるトークン数（2〜4） |
 
 コンテキスト長は `--max-context` で決める。DeepSeek V4 の学習は 1M トークンだが、確認したのは 65536。アテンションの
 キャッシュは小さい（65536 で 0.44 GB）が、prompt 用のバッファはコンテキストに比例して増える。
@@ -280,7 +300,8 @@ RTX 5090 + RAM 94 GB での実測（UD-Q2_K_XL、コンテキスト 65536、全�
 
 ## 制限
 
-- 投機デコードはない。この GGUF には MTP ブロックがなく、DeepSeek の DSpark（ドラフトモデル）には未対応。
+- ドラフトモデルはない。この GGUF には MTP ブロックがなく、DeepSeek の DSpark（ドラフトモデル）には未対応。
+  投機デコードは文章自体から候補を作る（`STRATA_DS4_SPEC`）。
 - 会話のディスク保存（`STRATA_GLM_SLOTS`）は DeepSeek V4 では無効。直前の会話の再利用は動く。
 - 画像は扱わない（ここでは DeepSeek V4 Flash はテキストのみ）。
 - 確認したのは GPU 1 枚だけ。Maya の複数 GPU への層の分割は、DeepSeek V4 では未確認。

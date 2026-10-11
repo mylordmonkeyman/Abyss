@@ -56,6 +56,7 @@
 #include <windows.h>
 #endif
 #ifdef __linux__
+#include <dlfcn.h>
 #include <sched.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
@@ -734,11 +735,11 @@ bool Glm5Model::fast_setup(std::string& err) {
     F->md.ring = dp;
     F->route_error_h = (volatile int*) (F->ring_h + gf::kRingSize);
     F->md.route_error = (volatile int*) ((gf::MoeRequest*) dp + gf::kRingSize);
-    if (cudaHostAlloc(&hp, sizeof(gf::MoeResponse), cudaHostAllocMapped) != cudaSuccess) {
+    if (cudaHostAlloc(&hp, gf::kCpuAnswers * sizeof(gf::MoeResponse), cudaHostAllocMapped) != cudaSuccess) {
         err = "glm fast: the routing response did not allocate";
         return false;
     }
-    std::memset(hp, 0, sizeof(gf::MoeResponse));
+    std::memset(hp, 0, gf::kCpuAnswers * sizeof(gf::MoeResponse));
     F->resp_h = (gf::MoeResponse*) hp;
     cudaHostGetDevicePointer(&dp, hp, 0);
     F->md.resp = dp;
@@ -1270,7 +1271,9 @@ bool Glm5Model::fast_setup(std::string& err) {
         F->upd_gen.assign(F->upd_at.size(), 0u);
         // disk reads: three slices per expert in parallel; pinned staging for when the RAM tier has no free slot
         F->workers.reset(new Workers(8));
-        F->stage.assign((size_t) std::max(8, g.n_exp_used), nullptr);   // (fast_warm streams 8 at a time)
+        // (fast_warm streams 8 at a time; the service's disk misses take a set of 8 per in-flight route, by its seq
+        // modulo kCpuAnswers - a verify window has several routes of a layer answered before the device reads them)
+        F->stage.assign((size_t) std::max(8, g.n_exp_used) * gf::kCpuAnswers, nullptr);
         for (auto& sbuf : F->stage)
             if (cudaHostAlloc((void**) &sbuf, sstride, cudaHostAllocPortable) != cudaSuccess) {
                 err = "glm fast: pinned disk staging did not allocate";
@@ -1322,6 +1325,64 @@ bool Glm5Model::fast_setup(std::string& err) {
 // ---------------------------------------------------------------- the CPU lane
 // ne RAM-tier experts of layer il (blob[i]: [gate | up | down] as in the tiers) on the CPU pool: out = sum_i w[i] *
 // expert_i(x), in i order.  Gate/up rows then down rows, each split in row chunks across the pool and the caller.
+// ---- the iGPU LANE (STRATA_GLM_IGPU, default auto): libabyss_igpu.so (beside the executable, or STRATA_GLM_IGPU_LIB) opened on
+//      the first HIP device - an APU's integrated GPU - and the RAM tier registered with it, so the lane's calls read
+//      the pinned slots in place (Ryzen AI Max+ 395: ~240 GB/s against the CPU threads' ~75).  Any failure: the CPU lane.
+void Glm5Model::fast_igpu_setup() {
+#ifdef __linux__
+    FastState* F = fast_;
+    // unset: on when the library and a HIP device are there (and the calibration finds it faster than the CPU); 0 off;
+    // 1 on even when slower.  Asked for (set) and unavailable: the reason is printed; auto and unavailable: silent
+    const char* on = getenv("STRATA_GLM_IGPU");
+    if ((on != nullptr && std::atoi(on) == 0) || F->igpu_lib != nullptr || n_parts_ >= 2) return;
+    const bool asked = on != nullptr;
+    std::string path;
+    if (const char* lp = getenv("STRATA_GLM_IGPU_LIB")) {
+        path = lp;
+    } else {
+        char b[4096];
+        const ssize_t n = readlink("/proc/self/exe", b, sizeof b - 1);
+        if (n > 0) {
+            b[n] = 0;
+            path = b;
+            path = path.substr(0, path.rfind('/') + 1);
+        }
+        path += "libabyss_igpu.so";
+    }
+    if (!asked && access(path.c_str(), R_OK) != 0) return;   // not built here
+    void* lib = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+    const auto fail = [&](const std::string& why) {
+        std::fprintf(stderr, "glm fast: CUDA%d iGPU lane off (%s) - the CPU lane computes\n", dev_, why.c_str());
+        if (lib != nullptr) dlclose(lib);
+    };
+    if (lib == nullptr) return fail(std::string("dlopen ") + path + ": " + dlerror());
+    auto ver = (abyss_igpu_version_fn) dlsym(lib, "abyss_igpu_version");
+    auto op = (abyss_igpu_open_fn) dlsym(lib, "abyss_igpu_open");
+    auto rg = (abyss_igpu_register_fn) dlsym(lib, "abyss_igpu_register");
+    auto ex = (abyss_igpu_experts_fn) dlsym(lib, "abyss_igpu_experts");
+    if (ver == nullptr || op == nullptr || rg == nullptr || ex == nullptr || ver() != ABYSS_IGPU_API)
+        return fail("interface mismatch: rebuild libabyss_igpu.so");
+    char e[256] = {0};
+    if (op(g_.n_embd, g_.n_ff_exp, e, (int) sizeof e) != 0) return fail(e);
+    const auto t0 = std::chrono::steady_clock::now();
+    size_t bytes = 0;
+    for (const auto& R : F->rc) {
+        if (R.base == nullptr || R.n <= 0) continue;
+        if (rg(R.base, (size_t) R.n * R.stride, e, (int) sizeof e) != 0) {
+            if (auto cl = (abyss_igpu_close_fn) dlsym(lib, "abyss_igpu_close")) cl();
+            return fail(e);
+        }
+        bytes += (size_t) R.n * R.stride;
+    }
+    F->igpu_lib = lib;
+    F->igpu_experts = ex;
+    F->igpu_poke = (abyss_igpu_poke_fn) dlsym(lib, "abyss_igpu_poke");
+    std::fprintf(stderr, "glm fast: CUDA%d iGPU lane on (%s): the RAM tier's %.2f GB registered in %.0f ms\n", dev_,
+                 path.c_str(), (double) bytes / 1073741824.0,
+                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+#endif
+}
+
 void Glm5Model::fast_cpu_experts(int il, int ne, const uint8_t* const* blob, const float* w, const float* x, float* out) {
     FastState* F = fast_;
     const Glm5Geometry& g = g_;
@@ -1329,6 +1390,19 @@ void Glm5Model::fast_cpu_experts(int il, int ne, const uint8_t* const* blob, con
     const auto& nf = F->cpu_fmt[(size_t) il];
     namespace kc = strata::kernels::cpu;
     const int n_ff = g.n_ff_exp, n_embd = g.n_embd;
+    if (F->igpu_experts != nullptr) {   // the iGPU lane: the same sum from the registered RAM tier
+        const int rc = F->igpu_experts(Ly.gu_type, Ly.d_type, n_embd, n_ff, Ly.down_off, g.swiglu_exp, ne,
+                                       (const void* const*) blob, w, x, out);
+        if (rc == 0) {
+            F->igpu_calls.fetch_add(1, std::memory_order_relaxed);
+            return;
+        }
+        if (rc < 0) {
+            std::fprintf(stderr, "glm fast: CUDA%d iGPU lane failed - the CPU lane takes over\n", dev_);
+            F->igpu_experts = nullptr;
+        }
+        F->igpu_falls.fetch_add(1, std::memory_order_relaxed);
+    }
     // one job per pool thread: a contiguous run of the call's rows, the experts' gate/up rows end to end (then the
     // down rows likewise), the weighted sum after.  Each thread streams its share in one piece - 2-socket Xeon, 5
     // Q3_K experts from DRAM, 40 threads: 0.154 ms an expert vs 0.201 with 32/64-row jobs claimed in turn (the short
@@ -1558,6 +1632,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
         if (il_cal < 0 && F->cpu_fmt[(size_t) il].n_ff > 0) il_cal = il;
     }
     if (il_cal < 0) return true;
+    fast_igpu_setup();
     if (const char* ck = getenv("STRATA_GLM_CPU_LANE_CHECK"))   // the check's layer (below)
         if (std::atoi(ck) > 0 && std::atoi(ck) < (int) F->cpu_fmt.size() && F->cpu_fmt[(size_t) std::atoi(ck)].n_ff > 0)
             il_cal = std::atoi(ck);
@@ -1582,12 +1657,12 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     const int n_sets = (int) cal_all.size() / n_cal;   // (fewer than 64 held: the sets repeat sooner)
     auto cal_set = [&](int i) { return cal_all.data() + (size_t) (i % n_sets) * n_cal; };
     void* hp = nullptr;
-    if (cudaHostAlloc(&hp, sizeof(gf::CpuAnswer), cudaHostAllocMapped) != cudaSuccess ||
+    if (cudaHostAlloc(&hp, gf::kCpuAnswers * sizeof(gf::CpuAnswer), cudaHostAllocMapped) != cudaSuccess ||
         cudaMalloc((void**) &F->cpu_seq_d, 64) != cudaSuccess) {
         err = "glm fast: the CPU lane's buffers did not allocate";
         return false;
     }
-    std::memset(hp, 0, sizeof(gf::CpuAnswer));
+    std::memset(hp, 0, gf::kCpuAnswers * sizeof(gf::CpuAnswer));
     cudaMemset(F->cpu_seq_d, 0, 64);
     F->cpu_ans_h = (gf::CpuAnswer*) hp;
     void* dp = nullptr;
@@ -1613,25 +1688,45 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     for (int i = 0; i < g.n_embd; ++i) x[(size_t) i] = 0.01f * (float) ((i * 37) % 101 - 50);
     const float w4[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     int set = 0;
-    for (const auto tw = std::chrono::steady_clock::now();
-         std::chrono::steady_clock::now() - tw < std::chrono::milliseconds(100);)
-        fast_cpu_experts(il_cal, n_cal, cal_set(set++), w4, x.data(), out.data());
     constexpr int kCalReps = 48;
-    std::vector<double> c_runs;
-    c_runs.reserve(kCalReps);
-    for (int rep = 0; rep < kCalReps; ++rep) {
-        const uint8_t* const* cals = cal_set(set++);
-        const auto t0 = std::chrono::steady_clock::now();
-        fast_cpu_experts(il_cal, n_cal, cals, w4, x.data(), out.data());
-        c_runs.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+    const bool cal_verbose = getenv("STRATA_GLM_CPU_CAL_VERBOSE") != nullptr;
+    const auto time_lane = [&](const char* who) {
+        for (const auto tw = std::chrono::steady_clock::now();
+             std::chrono::steady_clock::now() - tw < std::chrono::milliseconds(100);)
+            fast_cpu_experts(il_cal, n_cal, cal_set(set++), w4, x.data(), out.data());
+        std::vector<double> c_runs;
+        c_runs.reserve(kCalReps);
+        for (int rep = 0; rep < kCalReps; ++rep) {
+            const uint8_t* const* cals = cal_set(set++);
+            const auto t0 = std::chrono::steady_clock::now();
+            fast_cpu_experts(il_cal, n_cal, cals, w4, x.data(), out.data());
+            c_runs.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+        }
+        std::sort(c_runs.begin(), c_runs.end());
+        const double mean = std::accumulate(c_runs.begin(), c_runs.end(), 0.0) / kCalReps / n_cal;
+        const double med = 0.5 * (c_runs[kCalReps / 2 - 1] + c_runs[kCalReps / 2]) / n_cal;   // an expert's share
+        if (cal_verbose)
+            std::fprintf(stderr, "glm fast: CUDA%d %s lane calibration: an expert min %.3f / median %.3f / mean %.3f / "
+                                 "max %.3f ms (%d runs of %d)\n", dev_, who, c_runs.front() / n_cal, med, mean,
+                         c_runs.back() / n_cal, kCalReps, n_cal);
+        return med;
+    };
+    // the CPU's own time (the prompt path stages experts to the CPU threads by it, whatever computes the decode's lane),
+    // then the iGPU lane's: it keeps the decode's lane only when it is the faster (STRATA_GLM_IGPU=1: always)
+    const abyss_igpu_experts_fn igpu = F->igpu_experts;
+    F->igpu_experts = nullptr;
+    const double cpu_ms = time_lane("CPU");
+    double c_ms = cpu_ms;
+    if (igpu != nullptr) {
+        F->igpu_experts = igpu;
+        const double ig_ms = time_lane("iGPU");
+        const char* on = getenv("STRATA_GLM_IGPU");
+        const bool keep = ig_ms < cpu_ms || (on != nullptr && std::atoi(on) == 1);
+        std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: an expert %.3f ms vs %.3f on the CPU's %d threads -> %s\n",
+                     dev_, ig_ms, cpu_ms, threads, keep ? "the iGPU computes the lane" : "the CPU (faster here)");
+        if (keep) c_ms = ig_ms;
+        else F->igpu_experts = nullptr;
     }
-    std::sort(c_runs.begin(), c_runs.end());
-    const double c_mean = std::accumulate(c_runs.begin(), c_runs.end(), 0.0) / kCalReps / n_cal;
-    double c_ms = 0.5 * (c_runs[kCalReps / 2 - 1] + c_runs[kCalReps / 2]) / n_cal;   // an expert's share of a call
-    if (getenv("STRATA_GLM_CPU_CAL_VERBOSE") != nullptr)
-        std::fprintf(stderr, "glm fast: CUDA%d CPU lane calibration: an expert min %.3f / median %.3f / mean %.3f / max "
-                             "%.3f ms (%d runs of %d)\n", dev_, c_runs.front() / n_cal, c_ms, c_mean,
-                     c_runs.back() / n_cal, kCalReps, n_cal);
     const size_t blob = F->L[(size_t) il_cal].blob;
     cudaEvent_t e0 = nullptr, e1 = nullptr;
     cudaEventCreate(&e0);
@@ -1691,7 +1786,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     }
     cudaEventDestroy(e0);
     cudaEventDestroy(e1);
-    F->cpu_c_ms = c_ms;   // (the prompt path splits its staged experts by them too)
+    F->cpu_c_ms = cpu_ms;   // (the prompt path splits its staged experts by them too: the CPU's own)
     F->cpu_p_ms = p_ms;
     F->cpu_ps_ms = ps_ms;
     // the split: k of f to the host minimises max(PCIe (f - k) p, lane overhead + k c); ties keep the PCIe lane.  p is
@@ -2189,6 +2284,15 @@ void Glm5Model::fast_destroy() {
                      (unsigned long long) F->kda_graphs.replays,
                      (unsigned long long) F->kda_graphs.invalidations);
     F->kda_graphs.clear();   // before the graph's buffers and streams are freed
+#ifdef __linux__
+    if (F->igpu_lib != nullptr) {   // (unregisters the RAM tier before it is freed)
+        if (F->igpu_falls.load() > 0)
+            std::fprintf(stderr, "glm fast: iGPU lane: %llu calls, %llu left to the CPU\n",
+                         (unsigned long long) F->igpu_calls.load(), (unsigned long long) F->igpu_falls.load());
+        if (auto cl = (abyss_igpu_close_fn) dlsym(F->igpu_lib, "abyss_igpu_close")) cl();
+        F->igpu_experts = nullptr;
+    }
+#endif
     for (auto& R : F->rc)
         if (R.base && R.registered) numa_pinned_free(R.base, (size_t) R.n * R.stride);
         else if (R.base) cudaFreeHost(R.base);
@@ -2327,6 +2431,7 @@ void Glm5Model::fast_service() {
         return v ? std::max(0, std::atoi(v)) : 200;
     }();
     auto last_route = std::chrono::steady_clock::now();
+    auto igpu_route = last_route, igpu_poked = last_route;   // the iGPU lane's keep-alive (below)
     int idle = 0;                        // 0 spinning, 1 short sleeps, 2 long sleeps
     unsigned int polls = 0;
 #if defined(_WIN32) && defined(STRATA_USE_HIP)
@@ -2373,6 +2478,15 @@ void Glm5Model::fast_service() {
                         idle = 2;
                 } else {
                     cpu_relax();
+                    // the iGPU lane: a no-op kernel every 50 us within 20 ms of a route keeps its clocks up
+                    if (F->igpu_poke != nullptr && (polls & 63u) == 0) {
+                        const auto now = std::chrono::steady_clock::now();
+                        if (now - igpu_poked > std::chrono::microseconds(50) &&
+                            now - igpu_route < std::chrono::milliseconds(20)) {
+                            F->igpu_poke();
+                            igpu_poked = now;
+                        }
+                    }
                     if (kIdleMs > 0 && (++polls & 4095u) == 0 &&
                         std::chrono::steady_clock::now() - last_route > std::chrono::milliseconds(kIdleMs))
                         idle = 1;
@@ -2384,6 +2498,7 @@ void Glm5Model::fast_service() {
             idle = 0;
             last_route = std::chrono::steady_clock::now();
         }
+        if (F->igpu_poke != nullptr) igpu_route = std::chrono::steady_clock::now();
         std::atomic_thread_fence(std::memory_order_acquire);
         if (rq->error != 0) {
             F->processed.fetch_add(1, std::memory_order_release);
@@ -2564,7 +2679,7 @@ void Glm5Model::fast_service() {
                         dst[m] = R.base + (size_t) rs * R.stride;
                         if ((promo >> mi[m]) & 1u) R.key[(size_t) rs] = -1;   // a pure staging use: freed at the boundary
                     } else {
-                        dst[m] = F->stage[(size_t) m];
+                        dst[m] = F->stage[(size_t) (next % gf::kCpuAnswers) * std::max(8, g.n_exp_used) + m];
                     }
                 }
                 // each part in chunks across the workers: the O_DIRECT bounce copy of a whole part was ~0.4 ms of the
@@ -2588,7 +2703,7 @@ void Glm5Model::fast_service() {
                                                 std::chrono::steady_clock::now() - tw).count(),
                                             std::memory_order_relaxed);
                 }
-                gf::MoeResponse* Rp = F->resp_h;
+                gf::MoeResponse* Rp = F->resp_h + (next % gf::kCpuAnswers);
                 Rp->ptr_mask = 0;
                 Rp->n_upd = 0;
                 Rp->cpu = 0;
@@ -2624,9 +2739,10 @@ void Glm5Model::fast_service() {
                     blob[ne] = (const uint8_t*) rq->cpu_src[i];
                     w[ne++] = rq->w[i];
                 }
-            fast_cpu_experts(rq->layer, ne, blob, w, rq->x, F->cpu_ans_h->part);
+            gf::CpuAnswer* ans = F->cpu_ans_h + (next % gf::kCpuAnswers);
+            fast_cpu_experts(rq->layer, ne, blob, w, rq->x, ans->part);
             std::atomic_thread_fence(std::memory_order_release);
-            F->cpu_ans_h->seq = next;
+            ans->seq = next;
             F->cpu_experts.fetch_add((uint64_t) ne, std::memory_order_relaxed);
             F->cpu_routes.fetch_add(1, std::memory_order_relaxed);
             F->cpu_us.fetch_add((uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(

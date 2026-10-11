@@ -42,14 +42,22 @@ inside the 3000-token test.
 
 | | Abyss | llama.cpp (`-ot exps=CPU`) |
 | --- | --- | --- |
-| Decode, answers of ~1,500 tokens | ~57 tok/s (v1.0: 48) | 5-7 tok/s |
-| Decode, short answers | 37-56 tok/s | 5-7 tok/s |
+| Decode, answers of ~1,500 tokens | ~73 tok/s with the iGPU lane (v1.1: 56-57, v1.0: 48) | 5-7 tok/s |
+| Decode, 20 coding prompts (up to 800 tokens) | ~66 tok/s, ~78 with `STRATA_DS4_SPEC=1` (v1.1: 51) | 5-7 tok/s |
 | Prompt, 5.6K tokens (server) | ~1,000-1,090 tok/s (v1.0: ~690) | 3-6 tok/s (short prompts) |
 | Prompt, 18K tokens (server) | ~1,700 tok/s | - |
 
 v1.1.0's speed work (CHANGELOG): the token-path attention split over key chunks (flash-decoding), a lighter route
 kernel and CPU-answer read, the prompt path's CPU rows by the AVX-512 i-quant kernels, and an adaptive prestage. The
 validation above was repeated after it: 3000 tokens KL 0.0091 (CPU lane on), 2499 + 500 KL 0.0054.
+
+v1.2.0 (CHANGELOG): the RAM-tier experts on the Ryzen AI Max+ 395's integrated GPU (the iGPU lane, gfx1151 through
+ROCm, `src/igpu/`) instead of its CPU threads - 0.046 against 0.107 ms an expert, and the same numbers as the RTX 5090's
+kernels (relative L2 0.00000 between them; 0.0137 against a double reference, the CPU lane's 0.0265). 3000 tokens one
+by one: KL 0.0093 against llama.cpp, 14.8 ms a token (CPU lane: 20.9). And speculative decoding with drafts from the
+text itself (`STRATA_DS4_SPEC`, `src/core/dsv4_verify.cu`): a window of 1 + k tokens runs as k + 1 staggered streams
+(a token's attention of a layer overlaps the previous token's experts of that layer); the window and the token path
+give the same logits (KL 0.000000 with every expert on the GPU, `STRATA_GLM_SCORE_VERIFY=<T>`).
 
 ## Build and pack
 
@@ -63,7 +71,8 @@ validation above was repeated after it: 3000 tokens KL 0.0091 (CPU lane on), 249
 
 ## Not done yet
 
-- The MTP / DSpark draft (the GGUF has no MTP block; DSpark needs its own model) - no speculative decode.
+- The MTP / DSpark draft (the GGUF has no MTP block; DSpark needs its own model) - speculative decoding drafts from
+  the prompt and the answer instead (n-gram lookup, `STRATA_DS4_SPEC`).
 - File conversation slots (`STRATA_GLM_SLOTS`) - off for deepseek4; the live snapshot works.
 - Images.
 - Further prompt-path tuning: on PCIe Gen4 x4 the expert copies still take most of a prompt's time.

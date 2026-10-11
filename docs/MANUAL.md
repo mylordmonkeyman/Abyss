@@ -31,6 +31,7 @@ installer) is kept under [docs/maya/](maya/README.md).
 | CUDA | 13.3 | with `nvcc` |
 | Compiler | g++ 13 | a version your CUDA accepts |
 | Python | 3.12 | a private `.venv` in the Abyss folder |
+| ROCm (optional) | 7 (`hipcc`) | an AMD APU's integrated GPU computes the RAM-tier experts (the iGPU lane, below); without it the CPU does |
 
 `./abyss.sh` (Maya's installer, renamed) still installs Maya's GLM-5.3-Flash models. DeepSeek V4 is set up with
 `./setup-deepseek.sh` (next section), or by hand with the steps after it.
@@ -96,6 +97,9 @@ unzip -q /tmp/llama.zip -d third_party && mv third_party/llama.cpp-$C third_part
   -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DSTRATA_GGML_DIR=$PWD/third_party/llama.cpp
 .venv/bin/cmake --build build --target strata -j 16
 ```
+
+With ROCm's `hipcc` installed, the build also makes `build/libabyss_igpu.so` (the iGPU lane, below;
+`-DSTRATA_IGPU_ARCH=gfx1151` is the default target, `-DSTRATA_IGPU_LANE=OFF` skips it).
 
 The first build takes a few minutes; after a change only what changed is compiled again. Use `120a`, not `120`, on
 RTX 50: the MXFP4 kernels use Blackwell's FP4 MMA instructions, which `120` cannot compile.
@@ -226,12 +230,13 @@ The engine fills the GPU's free VRAM with experts (after the dense weights, 6.2 
 prompt buffers), sizes a pinned RAM tier from the free RAM, and reads the rest from the SSD when needed. It records
 which experts you use (`<pack>/expert_usage.txt`) and loads those first next time.
 
-Measured on one RTX 5090 + 94 GB RAM (UD-Q2_K_XL, context 65536, every expert in VRAM 23 GB + RAM 70 GB):
+Measured on one RTX 5090 + Ryzen AI Max+ 395 with 94 GB RAM (UD-Q2_K_XL, context 65536, every expert in VRAM 23 GB +
+RAM 70 GB; the iGPU lane on):
 
 | | |
 | --- | --- |
-| Decode, answers of ~1,500 tokens | ~57 tok/s |
-| Decode, short answers | 37-56 tok/s |
+| Decode, answers of ~1,500 tokens | ~73 tok/s (CPU lane only: ~56) |
+| Decode, 20 coding prompts (up to 800 tokens) | ~66 tok/s; ~78 with `STRATA_DS4_SPEC=1` |
 | Prompt, 5.6K tokens | ~1,000-1,090 tok/s |
 | Prompt, 18K tokens | ~1,700 tok/s |
 | Start-up (weights + expert warm-up) | ~1 min |
@@ -239,6 +244,18 @@ Measured on one RTX 5090 + 94 GB RAM (UD-Q2_K_XL, context 65536, every expert in
 
 The first prompts after a start, or with less memory than the model, read experts from the SSD and are slower. The
 CPU computes part of the RAM-tier experts while the GPU copies others over PCIe; the split is measured at start.
+
+**The iGPU lane.** On an AMD APU (Ryzen AI Max+ 395: Radeon 8060S) the integrated GPU reads the same RAM as the CPU,
+at ~240 GB/s against the CPU threads' ~75. With ROCm installed (the build then makes `libabyss_igpu.so`), the engine
+registers its RAM tier with the iGPU at start and lets it compute the RAM-tier experts instead of the CPU threads -
+the experts are not copied. The start-up log says which lane it chose and why (`iGPU lane: an expert 0.046 ms vs 0.107
+on the CPU's 16 threads`); it keeps the CPU when that is faster, and when the library or a HIP device is missing.
+
+**Speculative decoding (`STRATA_DS4_SPEC`).** The GGUF has no draft model, but the answer often repeats what is in the
+prompt or earlier in the answer (code, file paths, tool calls). With `STRATA_DS4_SPEC=1` the engine looks up the last 3
+tokens' earlier occurrence, checks the token that followed it together with the next one in one pass, and keeps it
+when the model agrees. The output is the same as without it (the same sampler on the same logits); only the time per
+token changes. Coding prompts: +12% (77-83% of the drafts accepted); prose: about even (~50% accepted).
 
 ## Settings
 
@@ -257,6 +274,9 @@ Environment variables for the engine, in the config's `"env"` block (all of Maya
 | `STRATA_GLM_USAGE` | `<pack>/expert_usage.txt` | your expert usage between starts; `0` = off |
 | `STRATA_GLM_NO_REUSE` | off | `1`: no conversation reuse |
 | `STRATA_GLM_THINK_RESERVE` | 1024 | (server) tokens a thinking block always leaves for the answer |
+| `STRATA_GLM_IGPU` | auto | the iGPU lane: on when `libabyss_igpu.so` and a HIP device are there and it is faster than the CPU; `0` off, `1` on even when slower. `STRATA_GLM_IGPU_LIB=<path>`: another library |
+| `STRATA_DS4_SPEC` | 0 (off) | speculative decoding from the prompt and the answer: draft tokens a step (1-3; 1 is the fastest measured) |
+| `STRATA_DS4_SPEC_MIN` | 3 | the tokens a draft's lookup matches (2-4) |
 
 `--max-context` sets the context. DeepSeek V4 is trained for 1M tokens; 65536 is tested. The attention caches are small
 (0.44 GB at 65536), but the prompt path's buffers grow with the context.
@@ -282,7 +302,8 @@ KL 0.009 over 3000 tokens, with the same next-token accuracy.
 
 ## Limitations
 
-- No speculative decoding: this GGUF has no MTP block, and DSpark (DeepSeek's drafter) is not supported.
+- No draft model: this GGUF has no MTP block, and DSpark (DeepSeek's drafter) is not supported - speculative decoding
+  drafts from the text itself (`STRATA_DS4_SPEC`).
 - Conversation slots on disk (`STRATA_GLM_SLOTS`) are off for DeepSeek V4; the live reuse of the last conversation works.
 - No images (DeepSeek V4 Flash is text-only here).
 - One GPU tested; Maya's layer split across GPUs is untested with DeepSeek V4.

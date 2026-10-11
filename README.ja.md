@@ -32,6 +32,7 @@ Abyss は [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Fla
 
 - **284B の MoE を GPU 1 枚で** — 層ごとに 256 個あるエキスパートを VRAM・pinned RAM・SSD に分けて置く。どれを先に載せるかは使い方から学ぶ
 - **生成は llama.cpp の 5〜10 倍**（同じ GGUF・同じマシン）。長い prompt はまとめ処理で約 1,000〜1,700 tok/s
+- **AMD APU の内蔵 GPU を 2 本目のレーンに** — Ryzen AI Max では Radeon の内蔵 GPU が RAM 層のエキスパートをその場で計算する（ROCm。起動時に CPU より速ければ使う）
 - **llama.cpp と照合済み** — 3,000 トークンで次トークンの的中率が同じ（KL 0.009）
 - **DeepSeek V4 のアテンションを全部実装** — スライディングウィンドウ、CSA/HCA 圧縮 KV、インデクサの top-512、sinks
 - **思考とツール呼び出し** — 思考レベル `none` / `low` / `high` / `max`、DeepSeek の DSML 形式のツール呼び出し（同時呼び出しも可）
@@ -41,12 +42,12 @@ Abyss は [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Fla
 ## 📊 性能
 
 unsloth の [DeepSeek-V4-Flash-0731-GGUF](https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF) `UD-Q2_K_XL`
-（96.8 GB）、RTX 5090（32 GB）+ RAM 94 GB、Linux:
+（96.8 GB）、RTX 5090（32 GB）+ Ryzen AI Max+ 395（RAM 94 GB、iGPU レーンあり）、Linux:
 
 | | Abyss | llama.cpp（エキスパートは CPU） |
 | --- | :---: | :---: |
-| 生成（1,500 トークン前後の応答） | **約 57 tok/s** | 5〜7 tok/s |
-| 生成（短い応答） | 37〜56 tok/s | 5〜7 tok/s |
+| 生成（1,500 トークン前後の応答） | **約 73 tok/s**（CPU だけなら約 56） | 5〜7 tok/s |
+| 生成（コーディングの prompt、800 トークンまで） | **約 66 tok/s**、`STRATA_DS4_SPEC=1` で約 78 | 5〜7 tok/s |
 | prompt（5.6K トークン） | **約 1,000〜1,090 tok/s** | – |
 | prompt（18K トークン） | **約 1,700 tok/s** | – |
 | 起動（重み + エキスパートの読み込み） | 約 1 分 | 約 50 秒 |
@@ -93,7 +94,7 @@ curl http://127.0.0.1:8082/v1/chat/completions -H 'Content-Type: application/jso
 | GPU | NVIDIA。確認したのは RTX 5090 32 GB |
 | メモリ | 全エキスパートをメモリに置くには VRAM + RAM が約 100 GB 以上（少なくても SSD から読んで動く） |
 | ディスク | 空き約 100 GB の NVMe SSD |
-| ツール | CUDA 13.x（`nvcc`）、g++、Python 3.10 以上 |
+| ツール | CUDA 13.x（`nvcc`）、g++、Python 3.10 以上。AMD APU の iGPU レーンには ROCm 7（`hipcc`、任意） |
 
 ## 🧠 しくみ
 

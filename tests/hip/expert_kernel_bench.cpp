@@ -55,6 +55,7 @@ int block_bytes(int t) {
     switch (t) {
         case 14: return sizeof(block_q6_K);
         case 16: return sizeof(block_iq2_xxs);
+        case 17: return sizeof(block_iq2_xs);
         case 18: return sizeof(block_iq3_xxs);
         case 22: return sizeof(block_iq2_s);
         default: std::abort();
@@ -226,6 +227,7 @@ bool run(int gu_type, int dn_type, bool parity_only, bool shared_mode, bool swee
         x = activation(EMB, rng, c == 4); xq.put(x.data(), x.size());
         const float limit = c == 5 ? 1e9f : 10.f;
         auto gu = [&](V v, int pool, void* dst, float* sh_dst) {
+            if (v == V::baseline && gu_type == 17) v = V::production;   // IQ2_XS: no tuned variants
             bench::gate_up(v, gu_type, plans[pool], k, EMB, FF, limit, xq.p, dst,
                           use_shared ? sh_weights.p : nullptr, 14, sh_hq.p, FF, sh_dst, s);
         };
@@ -294,7 +296,8 @@ int main(int argc, char** argv) {
                 prop.name, prop.gcnArchName, free_bytes / 1048576., CALLS, ROUNDS);
     hipStream_t stream;
     check(hipStreamCreate(&stream), "stream create");
-    bool ok = run(16, 22, parity_only, shared_mode, sweep, stream);
+    bool ok = run(17, 18, parity_only, shared_mode, sweep, stream);   // DeepSeek V4 Flash UD-Q2_K_XL
+    ok &= run(16, 22, parity_only, shared_mode, sweep, stream);
     ok &= run(16, 18, parity_only, shared_mode, sweep, stream);
     if (parity_only) { ok &= run(18, 16, true, shared_mode, sweep, stream); ok &= run(22, 22, true, shared_mode, sweep, stream); }
     check(hipStreamDestroy(stream), "stream destroy");

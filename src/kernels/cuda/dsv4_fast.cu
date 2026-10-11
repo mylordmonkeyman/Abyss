@@ -867,7 +867,7 @@ void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, 
 
 void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint16_t* comp, const int* comp_sel,
             int n_comp, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p, float* out,
-            cudaStream_t s) {
+            cudaStream_t s, int lane) {
     const int n = n_raw + n_comp;
     const float scale = 1.0f / sqrtf((float) head_dim);
     // STRATA_DS4_ATTN=1: the one-block-a-head kernel (A/B); STRATA_DS4_ATTN_CHECK=1: both, compared every 997th call
@@ -896,22 +896,24 @@ void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint
     int ck = (n * hb + 2 * nsm - 1) / (2 * nsm);
     ck = std::min(256, std::max(AS_TILE, (ck + AS_TILE - 1) / AS_TILE * AS_TILE));
     const int S = (n + ck - 1) / ck;
-    static float* part[16] = {};
-    static size_t part_n[16] = {};
+    static float* parts[16][4] = {};
+    static size_t parts_n[16][4] = {};
     int dev = 0;
     cudaGetDevice(&dev);
     const size_t need = (size_t) n_head * std::max(S, 64) * (head_dim + 2);
-    if (dev < 0 || dev >= 16) { old(out); return; }
-    if (part_n[dev] < need) {
-        if (part[dev]) cudaFree(part[dev]);
-        if (cudaMalloc(&part[dev], need * sizeof(float)) != cudaSuccess) { part[dev] = nullptr; part_n[dev] = 0; old(out); return; }
-        part_n[dev] = need;
+    if (dev < 0 || dev >= 16 || lane < 0 || lane >= 4) { old(out); return; }
+    float*& pt = parts[dev][lane];
+    size_t& pn = parts_n[dev][lane];
+    if (pn < need) {
+        if (pt) cudaFree(pt);
+        if (cudaMalloc(&pt, need * sizeof(float)) != cudaSuccess) { pt = nullptr; pn = 0; old(out); return; }
+        pn = need;
     }
     attend_split_kernel<<<dim3((unsigned) hb, (unsigned) S), 256, 0, s>>>(q, raw, ring, n_raw, comp,
                                                                                       comp_sel, n_comp, p, scale, ck, S,
-                                                                                      part[dev]);
+                                                                                      pt);
     check("attend_split");
-    attend_combine_kernel<<<n_head, 256, 0, s>>>(part[dev], S, sinks, n_rot, rope, p, out);
+    attend_combine_kernel<<<n_head, 256, 0, s>>>(pt, S, sinks, n_rot, rope, p, out);
     check("attend_combine");
     if (chk) {
         static long calls = 0;

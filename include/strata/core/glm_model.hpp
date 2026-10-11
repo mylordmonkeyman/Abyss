@@ -359,10 +359,22 @@ public:
     // ---- deepseek4 (src/core/dsv4_fast_path.cu)
     void* dsv4_state_ = nullptr;                           // the window rings, compressed caches and compressor rings
     size_t dsv4_state_bytes_ = 0;
+    // deepseek4: the raw window ring's rows - the window (n_swa) plus kSpecSlack, so a verify window's rejected tokens
+    // (positions past the committed ones) never overwrite a key a later query still reads: rolling them back is then
+    // only the position (the compressor rings and compressed caches are rewritten in order anyway)
+    static constexpr int kSpecSlack = 4;
+    int ds_ring_ = 0;
     bool dsv4_alloc(std::string& err);                     // in fast_setup: the caches for max_ctx_, carved per layer
     bool dsv4_bind(std::string& err);                      // in fast_setup: the per-layer weights
     bool fast_dsv4_attn(int il, int64_t p, std::string& err);   // one attention mixer (x -> mixer) at position p
     bool dsv4_head(std::string& err);                      // the hyper-connection head -> head_x / head_xq
+    void* vb_ = nullptr;                                   // the verify window's buffers (dsv4_verify.cu)
+    bool verify_alloc(std::string& err);
+    // columns tb .. tb + n - 1 on stream s (the batched window: all of them on the compute stream; the pipelined one:
+    // a token on its own stream; verify_moe's route waits for wait_ev and records done_ev when they are set)
+    bool verify_attn(int il, int64_t p0, int tb, int n, cudaStream_t s, std::string& err);
+    bool verify_moe(int il, int tb, int n, const std::vector<int32_t>& toks, cudaStream_t s, cudaEvent_t wait_ev,
+                    cudaEvent_t done_ev, std::string& err);
     // the conversation snapshot's deepseek4 state: every layer's window ring and compressor rings (the compressed
     // caches are append-only by position - a row is written exactly when it becomes visible - so the position alone
     // restores them, as glm5-next's DSA caches)
@@ -403,6 +415,7 @@ public:
     bool fast_warm(std::string& err);                      // load-time: stream every expert into the tiers
     bool fast_cpu_lane_setup(std::string& err);            // STRATA_GLM_CPU_LANE: the pool, its calibration, the split
     void fast_cpu_experts(int il, int ne, const uint8_t* const* blob, const float* w, const float* x, float* out);
+    void fast_igpu_setup();   // the iGPU lane (STRATA_GLM_IGPU, src/igpu)
     // ---- the NextN (MTP) draft block (the last half carries it; layer index n_layers)
     int mtp_il_ = -1;                                      // its layer index here, -1: not on this half
     int mtp_src_ = -1;                                     // the shard of STRATA_GLM_MTP_GGUF's block, -1: the model's
@@ -437,6 +450,20 @@ public:
     /// same tokens the token-at-a-time loop would produce for the same samples.  The sequence state is left for the
     /// next request to restore (snapshot) or reset.
     bool spec_ready() const;
+    /// deepseek4's verify window (src/core/dsv4_verify.cu): `toks` (1..kVerifyMax) through every layer at once from
+    /// position(), each token's logits kept; position() advances by toks.size().  By default the tokens run staggered,
+    /// a CUDA stream each (a token's attention of a layer overlaps the previous token's RAM-tier experts of it);
+    /// STRATA_DS4_SPEC_PIPE=0 batches them on one stream (the dense GEMVs read once, every route issued before the
+    /// first answer is awaited).  verify_argmax(i): the greedy token after toks[i];
+    /// verify_sample(i): the sampler on those logits.  spec_rewind(pos): drop the window's tail (positions >= pos):
+    /// only the position moves (kSpecSlack keeps the window ring's older keys).
+    static constexpr int kVerifyMax = 4;
+    bool verify_ready() const;
+    bool verify(const std::vector<int32_t>& toks, std::string& err);
+    int verify_argmax(int i) const;
+    int verify_sample(int i, strata::kernels::SamplerParams& sp, std::string& err);
+    bool verify_logits(int i, std::vector<float>& out, std::string& err);   // column i's logits to the host
+    void spec_rewind(int64_t pos) { pos_ = pos; }
     bool decode_spec(strata::kernels::SamplerParams& sp, int64_t max_new, const std::function<bool(int)>& emit,
                      int64_t& produced, std::string& err);
     uint64_t spec_steps_ = 0, spec_hits_ = 0;              // speculative positions, accepted
