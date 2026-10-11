@@ -3315,6 +3315,23 @@ void moe_prefetch(const MoeDev& d, size_t blob_bytes, cudaStream_t s) {
     launch_check("moe_prefetch");
 }
 
+__global__ void __launch_bounds__(256) zero_copy_kernel(const uint4* __restrict__ s, uint4* __restrict__ t, size_t n16) {
+    for (size_t j = blockIdx.x * (size_t) blockDim.x + threadIdx.x; j < n16; j += (size_t) gridDim.x * blockDim.x)
+        t[j] = s[j];
+}
+
+void zero_copy(const void* src, void* dst, size_t bytes, cudaStream_t s) {
+    static int sms = 0;
+    if (sms == 0) {
+        int dev = 0;
+        cudaGetDevice(&dev);
+        cudaDeviceGetAttribute(&sms, cudaDevAttrMultiProcessorCount, dev);
+        if (sms <= 0) sms = 80;
+    }
+    zero_copy_kernel<<<sms, 256, 0, s>>>((const uint4*) src, (uint4*) dst, (bytes + 15) / 16);   // (moe_fetch's grid)
+    launch_check("zero_copy");
+}
+
 void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s) {
     static int sms = 0;
     if (sms == 0) {

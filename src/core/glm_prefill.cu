@@ -984,7 +984,13 @@ bool Glm5Model::prefill_lend(std::string& err) {
     PrefillState* S = pf_;
     if (F == nullptr || S == nullptr || S->lent) return true;
     cudaSetDevice(dev_);
+    const uint64_t moved0 = S->moved, dropped0 = S->dropped;
     if (!lend_tail(S->need, S->moved, S->dropped, err)) return false;
+    static const bool verbose = getenv("STRATA_GLM_PREFILL_VERBOSE") != nullptr;
+    if (verbose)
+        std::fprintf(stderr, "glm prefill: CUDA%d lends %.0f MB of the expert pool for %d tokens: %llu experts leave "
+                             "VRAM (%llu of them moved over colder ones)\n", dev_, S->need / 1048576.0, S->T_bound,
+                     (unsigned long long) (S->dropped - dropped0), (unsigned long long) (S->moved - moved0));
     // the borrowed memory holds expert bytes: what the prompt path reads before writing is set up again
     mmq::iota(S->iota, (int64_t) S->T_bound * g_.n_exp_used, F->cs);
     for (int b = 0; b < PrefillState::NG; ++b) cudaEventRecord(S->ev_free[b], F->cs);

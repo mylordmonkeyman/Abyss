@@ -7,6 +7,25 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.1.2 - 2026-10-11
+
+The CPU lane no longer sends an expert over PCIe on a start whose calibration came out a little slow. GLM-5.3-Flash
+(Maya-S-v2-IQ2_XXS, 8 experts a token) on a Ryzen AI Max+ 395 + RTX 5090 on PCIe Gen4 x4 got "of 8 RAM-tier experts
+the CPU takes 7" on about one start in three, and decoded 25% slower until the next start (forced, 1,000 tokens:
+33.7 ms a token with 7 of 8 on the CPU, 26.9 with all 8; VRAM hits 43% vs 61%).
+
+- **The split is planned with the decode's own PCIe path**: a RAM-tier expert reaches the GPU by `moe_fetch`'s SMs
+  reading host memory, not by the copy engine the calibration timed - 1.12 ms against 1.04 an expert on that link.
+  The calibration now times both and plans with the slower one. All 8 stay on the CPU up to 0.135 ms an expert
+  there (0.125 before; this machine times 0.105-0.126).
+- **The CPU's time is the median of 48 runs** instead of the mean of 16.
+  `STRATA_GLM_CPU_CAL_VERBOSE=1` prints the calibration's spread and both PCIe timings.
+- `STRATA_GLM_PREFILL_VERBOSE=1` also prints what a prompt borrows from the expert pool and how many experts leave
+  VRAM for it.
+
+GLM-5.3-Flash runs on Abyss as on Maya: 2,000 tokens scored one by one give the same log-probabilities as Maya
+1.0.24's engine (KL 0.000000), at 27.1 ms a token against Maya's 29.3.
+
 ## v1.1.1 - 2026-10-11
 
 `/health` says which server this is: `"service": "abyss"` (Strata's says `"strata"`). Abyss and Maya answer the same

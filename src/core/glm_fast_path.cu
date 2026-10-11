@@ -30,6 +30,7 @@
 #endif
 
 #include <algorithm>
+#include <numeric>
 #include <cctype>
 #include <array>
 #include <atomic>
@@ -1604,7 +1605,10 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
         F->cpu_pin = pin_cpus;
     }
     // ---- calibration, each lane alone: the CPU after 100 ms of the same work (an idle CPU's clocks take tens of ms to
-    //      ramp up - a decode keeps them up), then the mean of 16 runs
+    //      ramp up - a decode keeps them up), then the MEDIAN of 48 runs.  The mean of 16 swung with a few slow runs
+    //      (the warm-up's last copies, a preempted worker): a Ryzen AI Max+ 395 timed an expert anywhere from 0.092 to
+    //      0.159 ms on one model, and the slow readings sent the 8th of 8 RAM-tier experts over PCIe Gen4 x4 - a
+    //      decode ~10% slower until the next start
     std::vector<float> x((size_t) g.n_embd), out((size_t) g.n_embd);
     for (int i = 0; i < g.n_embd; ++i) x[(size_t) i] = 0.01f * (float) ((i * 37) % 101 - 50);
     const float w4[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -1612,14 +1616,22 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     for (const auto tw = std::chrono::steady_clock::now();
          std::chrono::steady_clock::now() - tw < std::chrono::milliseconds(100);)
         fast_cpu_experts(il_cal, n_cal, cal_set(set++), w4, x.data(), out.data());
-    double c_ms = 0.0;
-    for (int rep = 0; rep < 16; ++rep) {
+    constexpr int kCalReps = 48;
+    std::vector<double> c_runs;
+    c_runs.reserve(kCalReps);
+    for (int rep = 0; rep < kCalReps; ++rep) {
         const uint8_t* const* cals = cal_set(set++);
         const auto t0 = std::chrono::steady_clock::now();
         fast_cpu_experts(il_cal, n_cal, cals, w4, x.data(), out.data());
-        c_ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        c_runs.push_back(std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
     }
-    c_ms /= 16.0 * n_cal;   // an expert's share of a call
+    std::sort(c_runs.begin(), c_runs.end());
+    const double c_mean = std::accumulate(c_runs.begin(), c_runs.end(), 0.0) / kCalReps / n_cal;
+    double c_ms = 0.5 * (c_runs[kCalReps / 2 - 1] + c_runs[kCalReps / 2]) / n_cal;   // an expert's share of a call
+    if (getenv("STRATA_GLM_CPU_CAL_VERBOSE") != nullptr)
+        std::fprintf(stderr, "glm fast: CUDA%d CPU lane calibration: an expert min %.3f / median %.3f / mean %.3f / max "
+                             "%.3f ms (%d runs of %d)\n", dev_, c_runs.front() / n_cal, c_ms, c_mean,
+                     c_runs.back() / n_cal, kCalReps, n_cal);
     const size_t blob = F->L[(size_t) il_cal].blob;
     cudaEvent_t e0 = nullptr, e1 = nullptr;
     cudaEventCreate(&e0);
@@ -1642,6 +1654,26 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
         if (rep >= 8) p_ms += ms;
     }
     p_ms /= 16.0;
+    // ... and the decode's own PCIe path: moe_fetch's SMs reading the host-mapped blob (zero copy), not the copy engine.
+    // On PCIe Gen4 x4 (Ryzen AI Max+ 395 + RTX 5090) it is slower than the DMA copy above, and a split planned on the
+    // DMA time sent the 8th of 8 RAM-tier experts over PCIe where the CPU alone was ~10% faster a token
+    std::vector<float> z_runs;
+    for (int rep = 0; rep < 24; ++rep) {
+        cudaEventRecord(e0, F->cs);
+        gf::zero_copy(cal, F->scratch, blob, F->cs);
+        cudaEventRecord(e1, F->cs);
+        cudaEventSynchronize(e1);
+        float ms = 0.0f;
+        if (rep >= 8 && cudaEventElapsedTime(&ms, e0, e1) == cudaSuccess && ms > 0.0f) z_runs.push_back(ms);
+    }
+    double pz_ms = p_ms;
+    if (!z_runs.empty()) {
+        std::sort(z_runs.begin(), z_runs.end());
+        pz_ms = z_runs[z_runs.size() / 2];
+    }
+    if (getenv("STRATA_GLM_CPU_CAL_VERBOSE") != nullptr)
+        std::fprintf(stderr, "glm fast: CUDA%d CPU lane calibration: an expert over PCIe %.3f ms by the copy engine, %.3f "
+                             "ms the decode's way (SMs reading host memory)\n", dev_, p_ms, pz_ms);
     // ... and its streaming rate - copies back to back, the way the prompt path stages experts (a 3090 on PCIe 3.0 x8:
     // 2.09 ms for one copy, 1.57 a copy in a stream): the prompt's CPU / PCIe split plans with this one
     double ps_ms = p_ms;
@@ -1662,8 +1694,10 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     F->cpu_c_ms = c_ms;   // (the prompt path splits its staged experts by them too)
     F->cpu_p_ms = p_ms;
     F->cpu_ps_ms = ps_ms;
-    // the split: k of f to the host minimises max(PCIe (f - k) p, lane overhead + k c); ties keep the PCIe lane
+    // the split: k of f to the host minimises max(PCIe (f - k) p, lane overhead + k c); ties keep the PCIe lane.  p is
+    // the decode's own PCIe path (zero copy, above), the slower of the two timings
     const double over_ms = 0.04;
+    const double pd_ms = std::max(p_ms, pz_ms);
     unsigned long long plan = 0;
     std::string tab;
     const char* pv = getenv("STRATA_GLM_CPU_PLAN");
@@ -1677,9 +1711,9 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
         } else if (share >= 0.0) {
             k = f - (int) std::lround(share * f);
         } else {
-            double best = p_ms * f;
+            double best = pd_ms * f;
             for (int kk = 1; kk <= f; ++kk) {
-                const double t = std::max(p_ms * (f - kk), over_ms + c_ms * kk);
+                const double t = std::max(pd_ms * (f - kk), over_ms + c_ms * kk);
                 if (t < best - 1e-9) {
                     best = t;
                     k = kk;
@@ -1691,7 +1725,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     }
     if (plan == 0ull) {
         std::fprintf(stderr, "glm fast: CUDA%d CPU lane off: an expert %.3f ms on the CPU vs %.3f ms over PCIe\n", dev_,
-                     c_ms, p_ms);
+                     c_ms, pd_ms);
         F->cpu_pool.reset();
         return true;
     }
@@ -1716,7 +1750,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
                  : pin_cpus.empty() ? ""
                  : (" on " + std::to_string(pin_cpus.size()) + " CPUs of its own" +
                     (pin_node >= 0 ? " (NUMA node " + std::to_string(pin_node) + ")" : std::string())).c_str(),
-                 c_ms, p_ms, tab.c_str());
+                 c_ms, pd_ms, tab.c_str());
     // STRATA_GLM_CPU_LANE_CHECK=1: the calibration expert on one normalised input three ways - the device's decode
     // kernels, the CPU lane, and a double-precision reference from ggml's dequantised rows - and their distances
     if (getenv("STRATA_GLM_CPU_LANE_CHECK") != nullptr) {

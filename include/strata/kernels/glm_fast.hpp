@@ -239,6 +239,9 @@ void moe_prefetch(const MoeDev& d, size_t blob_bytes, cudaStream_t s);
 void moe_wait(const MoeDev& d, int n_embd, cudaStream_t s);
 /// Copies every planned expert with a fetch source from the RAM tier (host-mapped) into its VRAM slot.
 void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s);
+/// One host-mapped blob copied into VRAM the way moe_fetch copies a RAM-tier expert (SMs reading over PCIe, not the
+/// copy engine): the CPU lane's calibration times the decode's own PCIe path with it.
+void zero_copy(const void* src, void* dst, size_t bytes, cudaStream_t s);
 /// The routed gate/up rows of the planned (resident) experts, the clamped swiglu, the q8_1 of h; and (sh_down and
 /// sh_out given) the shared expert's down rows over its h in sh_hq into sh_out, by extra blocks of the same launch.
 void moe_gate_up(int gu_type, const MoeDev& d, int k, int n_embd, int n_ff, float limit, const void* xq, void* hq,
