@@ -7,6 +7,24 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.1 - 2026-10-12
+
+**The iGPU lane no longer freezes a decode for seconds.** v1.3.0's pieces did not prevent it: after the host had been
+idle for hours, single lane calls took 0.7-18 s again (five in ~1,000 tokens), and the decode waited for each. The
+kernel driver can hold the iGPU's queues that long (re-validating registered memory); the cause outside the engine is
+still open (it did not reproduce on demand: refilled page cache, pressure from reading 87 GB, engine restarts).
+- A lane call now has a deadline (`STRATA_GLM_IGPU_TIMEOUT_MS`, 20 ms; a call is ~0.05-0.3 ms; 0: wait as before). A late
+  call is left running and the CPU lane computes that layer's experts, and every call after it until the late one has
+  finished; then the iGPU takes them again. The log says both: `iGPU lane: a call is still running after 20 ms ...` and
+  `... the late call finished after N ms; M calls went to the CPU meanwhile`. The CPU's sum is the CPU lane's (within
+  rounding of the iGPU's).
+- Checked with an injected 3 s hold (`ABYSS_IGPU_TEST_STALL=<ms>:<every n calls>`, test only), 500 sampled tokens:
+  20.81 ms/token waiting for it, 16.25 with the deadline (4,967 calls on the CPU meanwhile); 14.85 without a hold, as
+  before.
+- Measured and left out: writing the between-token table edits and the embedding where the GPU reads them in place
+  (no small copies, no host wait): the GPU's reads queue behind the tier's 8 MB expert copies on PCIe Gen4 x4 the same
+  way, and 20 swe-bench prompts decoded at 13.05 ms/token against 13.04.
+
 ## v1.3.0 - 2026-10-12
 
 DeepSeek V4 Flash writes code ~13% faster by default: the n-gram speculative decoding of v1.2.0 is now on. Measured on

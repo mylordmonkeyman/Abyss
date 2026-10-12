@@ -8,6 +8,7 @@
 #include <hip/hip_runtime.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -78,6 +79,12 @@ bool lane_down(int d_type, const unsigned long long* plan_ptr, const float* plan
 }
 __global__ void lane_poke_kernel() {}
 void lane_poke(hipStream_t s) { lane_poke_kernel<<<1, 32, 0, s>>>(); }
+// ABYSS_IGPU_TEST_STALL (test only): spins `ticks` of the device's wall clock, standing in for a queue the kernel
+// driver holds while it re-validates registered memory
+__global__ void lane_stall_kernel(unsigned long long ticks) {
+    const unsigned long long t0 = wall_clock64();
+    while (wall_clock64() - t0 < ticks) {}
+}
 }  // namespace strata::kernels::glmf
 
 namespace {
@@ -101,6 +108,11 @@ struct Lane {
     void *xq = nullptr, *hq = nullptr;
     std::vector<Range> ranges;
     std::mutex mu;
+    // A call that has not finished by its deadline is left running and answered by the CPU lane (return 1); the calls
+    // after it go to the CPU too until it has (the queue may be held for seconds - see abyss_igpu_experts)
+    bool pending = false;
+    std::chrono::steady_clock::time_point t_pend;
+    unsigned long long on_cpu = 0;
 };
 Lane L;
 
@@ -168,6 +180,21 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
                                                               const void* const* blobs, const float* w,
                                                               const float* x, float* out) {
     if (!L.open || ne < 1 || ne > 8 || n_embd > L.n_embd || n_ff > L.n_ff) return 1;
+    // A late call still owns the buffers and the queue: the CPU takes this one, until it is done.  The kernel driver
+    // can hold the iGPU's queues for seconds while it faults registered memory in again (seen: 0.7-18 s, a few times
+    // after the host had been idle for hours; kernel log "svm_range_restore_work / amdgpu_amdkfd_restore_userptr_worker
+    // hogged CPU"), and a decode waited all of it for one layer's experts.
+    if (L.pending) {
+        if (hipStreamQuery(L.s) != hipSuccess) {
+            ++L.on_cpu;
+            return 1;
+        }
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - L.t_pend).count();
+        std::fprintf(stderr, "iGPU lane: the late call finished after %.0f ms; %llu calls went to the CPU meanwhile\n", ms,
+                     L.on_cpu);
+        L.pending = false;
+        L.on_cpu = 0;
+    }
     for (int i = 0; i < ne; ++i) {
         const uint8_t* b = (const uint8_t*) blobs[i];
         unsigned long long d = 0ull;
@@ -189,7 +216,38 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
     gf::moe_gate_up(gu_type, md, ne, n_embd, n_ff, limit, L.xq, L.hq, nullptr, 0, nullptr, 0, nullptr, L.s);
     if (!gf::lane_down(d_type, L.plan_d->ptr, L.plan_d->w, ne, n_embd, n_ff, down_off, L.hq, L.out_d, L.s))
         gf::moe_down(d_type, md, ne, n_embd, n_ff, down_off, L.hq, nullptr, L.out_d, L.s);
-    const hipError_t e = hipStreamSynchronize(L.s);
+    static const unsigned long long stall_ticks = [] {
+        const char* v = getenv("ABYSS_IGPU_TEST_STALL");   // "<ms>:<every n calls>"
+        int rate = 0;
+        if (v == nullptr || hipDeviceGetAttribute(&rate, hipDeviceAttributeWallClockRate, 0) != hipSuccess) return 0ull;
+        return (unsigned long long) (std::atof(v) * (double) rate);   // rate: kHz
+    }();
+    static const unsigned long long stall_every = [] {
+        const char* v = getenv("ABYSS_IGPU_TEST_STALL");
+        const char* c = v ? std::strchr(v, ':') : nullptr;
+        return c ? std::max(1ull, std::strtoull(c + 1, nullptr, 10)) : 0ull;
+    }();
+    static unsigned long long n_calls = 0;
+    if (stall_ticks > 0 && stall_every > 0 && ++n_calls % stall_every == 0)
+        gf::lane_stall_kernel<<<1, 32, 0, L.s>>>(stall_ticks);
+    // wait (spinning: a call is ~0.05-0.3 ms) up to the deadline, STRATA_GLM_IGPU_TIMEOUT_MS (20; 0: no deadline)
+    static const double timeout_ms = [] {
+        const char* v = getenv("STRATA_GLM_IGPU_TIMEOUT_MS");
+        return v != nullptr ? std::max(0.0, std::atof(v)) : 20.0;
+    }();
+    const auto t0 = std::chrono::steady_clock::now();
+    hipError_t e;
+    while ((e = hipStreamQuery(L.s)) == hipErrorNotReady) {
+        if (timeout_ms > 0.0 &&
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count() > timeout_ms) {
+            L.pending = true;
+            L.t_pend = t0;
+            L.on_cpu = 0;
+            std::fprintf(stderr, "iGPU lane: a call is still running after %.0f ms - the CPU lane takes the calls until "
+                                 "it finishes\n", timeout_ms);
+            return 1;
+        }
+    }
     if (e != hipSuccess) {
         std::fprintf(stderr, "iGPU lane: %s\n", hipGetErrorString(e));
         return -1;
