@@ -7,6 +7,32 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.0 - 2026-10-12
+
+DeepSeek V4 Flash writes code ~13% faster by default: the n-gram speculative decoding of v1.2.0 is now on. Measured on
+an RTX 5090 on PCIe Gen4 x4 + Ryzen AI Max+ 395 (iGPU lane), unsloth UD-Q2_K_XL, per-request medians:
+
+| | v1.2.2 (`STRATA_DS4_SPEC=0`) | v1.3.0 |
+| --- | --- | --- |
+| Decode, 20 swe-bench prompts | 14.69 ms/token (68.1 tok/s) | 13.04 (76.7 tok/s) |
+| Decode, two ~1,500-token prose answers | 13.82 ms/token (72.4 tok/s) | 13.77 (72.6 tok/s) |
+
+- **Speculative decoding on by default** (`STRATA_DS4_SPEC=1`; `=0` off, `=2`/`3` drafts more), behind a gate: the
+  request's acceptance and the window / single-token times as running means, and a proposal is dropped while
+  (1 + k p) t_one < t_win (every 16th still runs). Code is accepted 84-85%, prose ~52%; here the gate measured neutral
+  (it guards machines where a window costs more, e.g. the CPU lane alone). `STRATA_DS4_SPEC_GATE=0`: no gate.
+  `ds4 spec:` in the log counts the gated proposals. The output follows the same distribution as without it.
+- **The iGPU lane registers the RAM tier in ~256 MB pieces** (`STRATA_GLM_IGPU_CHUNK_MB`, 0: one range a RAM class).
+  The kernel driver keeps a registered range in step with the page tables without pinning it, and a change to any of
+  its pages stops the iGPU's queues until the whole range is faulted in again: with one 69 GB range a token waited
+  10+ s about once a request on a fragmented host (kernel log: `svm_range_restore_work` /
+  `amdgpu_amdkfd_restore_userptr_worker hogged CPU`), and registering it took 0.4-13 s (283 pieces: 0.4-1.3 s). The
+  stalls did not reproduce afterwards with either form, so the pieces bound the damage rather than proving a cure; a
+  lane call over 500 ms now prints `iGPU lane: a call took N ms`. Decode unchanged (14.70 ms/token).
+- Measured and left out: CUDA graphs for the token path. nsys of a sampled decode: 13.92 ms/token, the GPU idle 0.90
+  of them - ~976 inter-kernel gaps of 0.5 us (0.50 ms, what a graph could shrink, ~2%) and ~0.4 ms between tokens
+  (argmax -> host -> the next token's table edits and embedding), which a graph does not touch.
+
 ## v1.2.2 - 2026-10-12
 
 **DeepSeek V4 GGUFs with F16 projections** (antirez's deepseek-v4-gguf, and huihui-ai's abliterated copies such as
