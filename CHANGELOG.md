@@ -7,6 +7,28 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.2.1 - 2026-10-12
+
+**Route tail skip (opt-in, from Strata 0.1.42's `STRATA_ROUTE_TAIL_SKIP`):** `STRATA_GLM_TAIL_SKIP=<r>` leaves a
+route's experts from rank r + 1 on (of deepseek4's 6) out when they are not in VRAM: no PCIe pull, no CPU / iGPU lane,
+no disk wait; the route's other experts keep the router's weights. `STRATA_GLM_TAIL_SKIP_W=<share>` leaves out (also)
+those whose share of the route's probability is below it. The token path and the verify window both; not the
+hash-routed layers (ids in hash order) nor the draft block (`STRATA_GLM_MTP_KEEP`, as before). Off when the pool holds
+90% or more of the experts (`STRATA_GLM_TAIL_SKIP_MAX_CACHED=<percent>`). It changes the answers, so it is off by
+default; `glm stat` shows the skipped experts a token. Measured on an RTX 5090 on PCIe Gen4 x4 + Ryzen AI Max+ 395,
+UD-Q2_K_XL (VRAM holds 27.7% of the experts), 20 swe-bench prompts, per-request medians:
+
+| | CPU lane (`STRATA_GLM_IGPU=0`) | iGPU lane (default) | KL vs off, 3000 tokens | ppl |
+| --- | --- | --- | --- | --- |
+| off | 19.18 ms/token (52.2 tok/s) | 14.80 (67.6) | - | 6.365 |
+| `STRATA_GLM_TAIL_SKIP=5` (rank 6) | 17.97 (55.6, +6%) | 14.83 (67.4) | 0.0141 | 6.414 |
+| `STRATA_GLM_TAIL_SKIP_W=0.11` | - | 14.42 (69.3, +3%) | 0.0156 | 6.396 |
+| `STRATA_GLM_TAIL_SKIP=4` (ranks 5-6) | 16.55 (60.4, +16%) | 13.86 (72.2, +7%) | 0.0226 | 6.409 |
+
+For scale: this engine against llama.cpp on the same file is KL 0.0096; the run twice, 0.000000. With 6 experts a
+route each carries more of the token than Strata's 10 do (its KL was 0.003-0.006): try it where the CPU lane is the
+bottleneck (no iGPU, a slow CPU), and measure.
+
 ## v1.2.0 - 2026-10-11
 
 DeepSeek V4 Flash decodes ~30% faster on a Ryzen AI Max+ 395: its integrated GPU computes the RAM-tier experts that

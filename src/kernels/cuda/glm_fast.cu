@@ -2067,13 +2067,14 @@ struct RouteArgs {
     const float* ahead_bias[kAhead];
     int n_ahead;
     int skip_from;              // experts not in VRAM at route rank >= skip_from are left out (no fetch, no wait):
-                                // the draft block (0: all of them; >= k: none)
+                                // the draft block's, and the trunk's ROUTE TAIL SKIP (0: all of them; >= k: none)
     unsigned long long cpu_plan;   // the CPU LANE: of f RAM-tier experts, (plan >> 4 f) & 15 go to the host (0: off)
     int promote_min;            // STRATA_GLM_PROMOTE_MIN: keep a fetched expert only when its aged route count
                                 // clears this; 0 keeps the old rule (a spare, if one is free)
     int pf_rank;                // STRATA_GLM_PREFETCH_RANK: prefetch only the prediction's first pf_rank ranks
     int gating;                 // 0: sigmoid (glm5-next), 1: sqrt(softplus) (deepseek4)
     const int* hash_ids;        // deepseek4's hash-routed layers: the token's k expert ids (no selection)
+    float skip_w;               // ... and those not in VRAM whose share of the route's probability is below skip_w
 };
 // the router's per-expert probability
 __device__ __forceinline__ float route_score(float x, int gating) {
@@ -2258,7 +2259,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         }
         return;
     }
-    __shared__ unsigned int s_fetch, s_promo, s_cpu;
+    __shared__ unsigned int s_fetch, s_promo, s_cpu, s_skip;
     __shared__ unsigned long long s_pp[8], s_cs[8];
     __shared__ int s_npf, s_pfid[8];
     __shared__ unsigned long long s_pfptr[8];
@@ -2266,7 +2267,11 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         double sum = 0.0;
         for (int i = 0; i < a.k; ++i) sum += (double) s_p[s_ids[i]];
         const float inv = (float) (a.norm_w ? 1.0 / fmax(sum, 6.103515625e-5) : 1.0);
-        unsigned int mask = 0, fetch = 0, promo = 0, cpu = 0;
+        // the entries a miss leaves out: rank >= skip_from, or a share of the route's probability below skip_w
+        unsigned int cut = 0;
+        for (int i = 0; i < a.k; ++i)
+            if (i >= a.skip_from || (a.skip_w > 0.0f && (double) s_p[s_ids[i]] < (double) a.skip_w * sum)) cut |= 1u << i;
+        unsigned int mask = 0, fetch = 0, promo = 0, cpu = 0, skip = 0;
         unsigned long long* rtab = a.d.tab + a.d.n_keys;
         unsigned long long* spares = a.d.tab + 2 * (size_t) a.d.n_keys + (size_t) a.layer * kSpares;
         int next_spare = 0;
@@ -2279,7 +2284,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             unsigned int rcnt[8];
             for (int i = 0; i < a.k; ++i) {
                 const unsigned int c = s_cnt[i];
-                if (i < a.skip_from && s_tab[i] == 0ull && s_rtab[i] != 0ull) {
+                if (((cut >> i) & 1u) == 0u && s_tab[i] == 0ull && s_rtab[i] != 0ull) {
                     ri[f_ram] = i;
                     rcnt[f_ram++] = c;
                 }
@@ -2300,8 +2305,10 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             unsigned long long src = 0ull;
             s_pp[i] = 0ull;
             s_cs[i] = 0ull;
-            if (ptr == 0ull && i >= a.skip_from) {
-                // left out: the expert kernels skip a null plan entry (a draft only has to be a good guess)
+            if (ptr == 0ull && ((cut >> i) & 1u)) {
+                // left out: the expert kernels skip a null plan entry (a draft only has to be a good guess; a trunk
+                // route's low-ranked expert adds little to the token)
+                skip |= 1u << i;
             } else if (ptr == 0ull) {
                 src = s_rtab[i];
                 if (src != 0ull && ((host_set >> i) & 1u)) {
@@ -2338,6 +2345,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         s_fetch = fetch;
         s_promo = promo;
         s_cpu = cpu;
+        s_skip = skip;
         // PREFETCH: the predicted experts of the next layer that are not in VRAM but are in the RAM tier claim
         // that layer's spares now (one spare stays for its real misses); the side stream copies them while this
         // layer and the next one's attention compute, and the next route sees them as resident.  Only the
@@ -2392,6 +2400,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         rq->fetch_mask = s_fetch;
         rq->promo_mask = s_promo;
         rq->cpu_mask = s_cpu;
+        rq->skip_mask = s_skip;
         for (int i = 0; i < a.k; ++i) {
             rq->ids[i] = s_ids[i];
             rq->w[i] = s_w[i];
@@ -3402,11 +3411,11 @@ void moe_route(const float* logits, const float* bias, int n_expert, int k, floa
                int n_ff_sh, void* sh_hq, cudaStream_t s, const float* pred_logits, const float* pred_bias,
                int max_prefetch, const float* ahead_logits, const float* const* ahead_bias, int n_ahead,
                int skip_from, unsigned long long cpu_plan, int promote_min, int pf_rank, int gating,
-               const int* hash_ids) {
+               const int* hash_ids, float skip_w) {
     RouteArgs a{logits, bias, n_expert, k, w_scale, norm_w ? 1 : 0, layer, x, n_embd, d,
                 sh_gate, sh_up, sh_limit, n_ff_sh, (block_q8_1*) sh_hq, pred_logits, pred_bias, max_prefetch,
                 ahead_logits, {}, 0, skip_from, d.cpu_seq != nullptr ? cpu_plan : 0ull, promote_min,
-                pf_rank > 0 ? pf_rank : k, gating, hash_ids};
+                pf_rank > 0 ? pf_rank : k, gating, hash_ids, skip_w};
     if (ahead_logits != nullptr && ahead_bias != nullptr && n_expert <= 512) {
         a.n_ahead = std::min(n_ahead, kAhead);
         for (int i = 0; i < a.n_ahead; ++i) a.ahead_bias[i] = ahead_bias[i];

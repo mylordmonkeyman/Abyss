@@ -363,8 +363,9 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
         gf::moe_route(V->rlog + (size_t) t * g.n_expert, Ly.router_bias, g.n_expert, k, g.w_scale, g.norm_w != 0, il,
                       V->x + (size_t) t * E, E, V->md[(size_t) t], V->sh_g + (size_t) t * FFs,
                       V->sh_u + (size_t) t * FFs, g.swiglu_shexp, FFs, (uint8_t*) V->sh_hq + (size_t) t * (FFs / 32) * kQ8,
-                      s, nullptr, nullptr, 0, nullptr, nullptr, 0, 8, lane ? F->cpu_plan : 0ull, promote_min, pf_rank,
-                      g.gating, Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) toks[(size_t) t] * k : nullptr);
+                      s, nullptr, nullptr, 0, nullptr, nullptr, 0, fast_skip_from(il), lane ? F->cpu_plan : 0ull, promote_min, pf_rank,
+                      g.gating, Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) toks[(size_t) t] * k : nullptr,
+                      fast_skip_w(il));
         ++F->expected;
     }
     // ... then each token's resident experts (its own plan and h) ...

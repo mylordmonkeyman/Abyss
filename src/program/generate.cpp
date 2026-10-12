@@ -1731,14 +1731,14 @@ static int glm_pack_generate(const Options& o) {
             std::fprintf(stderr,
                          "glm stat: decode %.2f ms/tok (%.2f tok/s) | vram hit %.2f%% | ram fetches %.2f/tok | "
                          "disk %.2f reads/tok in %.2f waits/tok, %.2f ms/tok | promotions %.2f/tok | cpu lane %.2f/tok "
-                         "in %.2f ms/tok | prompt %.1f ms/tok | vram %lld/%lld ram %lld/%lld\n",
+                         "in %.2f ms/tok | tail skip %.2f/tok | prompt %.1f ms/tok | vram %lld/%lld ram %lld/%lld\n",
                          decode_ms / n, 1000.0 * n / decode_ms,
                          100.0 * (double) d_hits / (double) std::max<uint64_t>(1, d_hits + d_miss),
                          (double) (st2.ram_hits - st1.ram_hits) / n, (double) (st2.disk_reads - st1.disk_reads) / n,
                          (double) (st2.miss_layers - st1.miss_layers) / n, (st2.disk_ms - st1.disk_ms) / n,
                          (double) (st2.promotions - st1.promotions) / n,
                          (double) (st2.cpu_experts - st1.cpu_experts) / n, (st2.cpu_ms - st1.cpu_ms) / n,
-                         prompt_ms / (double) std::max<size_t>(1, prompt.size()), (long long) st2.pool_used,
+                         (double) (st2.tail_skips - st1.tail_skips) / n, prompt_ms / (double) std::max<size_t>(1, prompt.size()), (long long) st2.pool_used,
                          (long long) st2.pool_slots, (long long) st2.ram_used, (long long) st2.ram_slots);
             if (model.spec_steps_ > spec0)
                 std::fprintf(stderr, "glm spec: %llu of %llu drafts accepted (%.1f%%)\n",

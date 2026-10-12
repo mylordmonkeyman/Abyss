@@ -216,6 +216,7 @@ struct MoeRequest {
     unsigned int cpu_mask;       // the CPU LANE: RAM-tier experts the host computes (the device skips them) ...
     unsigned long long cpu_src[8];   // ... their RAM-tier blobs
     float x[4096];               // the FFN input, written only when cpu_mask != 0
+    unsigned int skip_mask;      // experts left out (not in VRAM at rank >= skip_from): neither computed nor waited for
 };
 /// The host's answer to a request with misses.
 struct MoeResponse {
@@ -230,6 +231,7 @@ struct MoeResponse {
 };
 /// Router (sigmoid + bias, stable top-k, normalised weights - router_sigmoid's arithmetic; gating 1: deepseek4's
 /// sqrt(softplus) probabilities, hash_ids: the k ids of a hash-routed layer instead of a selection), the plan
+/// (skip_from / skip_w: experts not in VRAM at rank >= skip_from or with a weight share below skip_w are left out)
 /// lookup in `tab`, the request publish, and the shared expert's swiglu + q8_1.
 void moe_route(const float* logits, const float* bias, int n_expert, int k, float w_scale, bool norm_w,
                int layer, const float* x, int n_embd, const MoeDev& d, const float* sh_gate, const float* sh_up,
@@ -237,7 +239,7 @@ void moe_route(const float* logits, const float* bias, int n_expert, int k, floa
                const float* pred_bias = nullptr, int max_prefetch = 0, const float* ahead_logits = nullptr,
                const float* const* ahead_bias = nullptr, int n_ahead = 0, int skip_from = 8,
                unsigned long long cpu_plan = 0, int promote_min = 0, int pf_rank = 0, int gating = 0,
-               const int* hash_ids = nullptr);
+               const int* hash_ids = nullptr, float skip_w = 0.0f);
 /// The CPU LANE's split: of f RAM-tier experts in a route, cpu_take(plan, f) go to the host (4 bits per f, f = 0..8).
 inline int cpu_take(unsigned long long plan, int f) { return (int) ((plan >> (4 * f)) & 15ull); }
 /// Waits (on the device) for the host's CPU-lane answer of the last route when it had CPU experts, then adds it to

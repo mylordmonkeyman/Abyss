@@ -1062,6 +1062,7 @@ bool Glm5Model::fast_setup(std::string& err) {
         F->pred_of.assign((size_t) NL, std::array<int, 8>{-1, -1, -1, -1, -1, -1, -1, -1});
         std::fprintf(stderr, "glm fast: CUDA%d layers [%d,%d) expert pool %.2f GB, %d-%d slots/layer (%lld total)\n",
                      dev_, l0_, l1_, (double) tot / 1073741824.0, nmin, nmax, (long long) F->pool_slots);
+        fast_tail_skip_setup();
         if (getenv("STRATA_GLM_TIMING") != nullptr) {
             std::string sl;
             for (int il = l0_; il < lt_; ++il)
@@ -2389,6 +2390,7 @@ Glm5Model::FastStats Glm5Model::fast_stats() const {
         s.disk_reads += F->disk_reads.load();
         s.promotions += F->promotions.load();
         s.cpu_experts += F->cpu_experts.load();
+        s.tail_skips += F->tail_skips.load();
         s.cpu_ms += (double) F->cpu_us.load() / 1000.0;
         s.miss_ms += (double) F->miss_us.load() / 1000.0;
         s.disk_ms += (double) F->disk_us.load() / 1000.0;
@@ -2510,6 +2512,9 @@ void Glm5Model::fast_service() {
             const int il = rq->layer;
             const unsigned int miss = rq->miss_mask, fetch = rq->fetch_mask, promo = rq->promo_mask;
             const unsigned int cpu = rq->cpu_mask;   // the CPU lane's experts: not in VRAM, computed below
+            const unsigned int skip = rq->skip_mask;   // left out (the draft block's misses, the trunk's tail skip)
+            if (skip != 0u && il != mtp_il_)
+                F->tail_skips.fetch_add((uint64_t) std::popcount(skip), std::memory_order_relaxed);
             auto& P = F->lp[(size_t) il];
             auto& R = F->rc[(size_t) F->layer_rc[(size_t) il]];
             ++F->clock;
@@ -2531,6 +2536,7 @@ void Glm5Model::fast_service() {
                 if (F->cnt[(size_t) key] < (1u << 24)) ++F->cnt[(size_t) key];
                 if (++F->usage[(size_t) key] >= (1u << 30))
                     for (auto& u : F->usage) u >>= 1;
+                if ((skip >> i) & 1u) continue;   // not computed: neither a hit nor a miss (its count above stays)
                 const bool resident = (((miss | fetch | cpu) >> i) & 1u) == 0;
                 if (resident) {
                     const int s = F->slot_of[(size_t) key];
@@ -3438,6 +3444,57 @@ static int mtp_skip_from() {
     return v;
 }
 
+// ROUTE TAIL SKIP (Strata 0.1.42's STRATA_ROUTE_TAIL_SKIP, per route here): STRATA_GLM_TAIL_SKIP=<r> leaves a trunk
+// route's experts from rank r on (0-based: r = 4 drops ranks 5 and 6 of deepseek4's 6) out when they are not in
+// VRAM - no PCIe pull, no CPU lane, no disk wait; the route's other experts keep the router's weights.
+// STRATA_GLM_TAIL_SKIP_W=<share> leaves out (also) those whose share of the route's probability is below it.  Not on
+// the hash-routed layers (their ids come in hash order, not by score) nor the draft block (its own rule).  0 / >= k:
+// off.  Off when the pool holds 90% or more of the experts (nothing to gain; STRATA_GLM_TAIL_SKIP_MAX_CACHED=<percent>
+// moves that line).
+void Glm5Model::fast_tail_skip_setup() {
+    FastState* F = fast_;
+    const Glm5Geometry& g = g_;
+    F->tail_skip = 8;
+    F->tail_skip_w = 0.0f;
+    const char* v = getenv("STRATA_GLM_TAIL_SKIP");
+    const char* vw = getenv("STRATA_GLM_TAIL_SKIP_W");
+    int r = v != nullptr ? std::atoi(v) : 0;
+    if (r <= 0 || r >= g.n_exp_used) r = 8;
+    const float w = vw != nullptr ? std::max(0.0f, std::min(1.0f, (float) std::atof(vw))) : 0.0f;
+    if (r == 8 && w <= 0.0f) return;
+    int64_t n = 0;
+    for (int il = l0_; il < l1_; ++il)
+        if (F->L[(size_t) il].moe) n += g.n_expert;
+    const double held = n > 0 ? 100.0 * (double) F->pool_slots / (double) n : 100.0;
+    const char* mc = getenv("STRATA_GLM_TAIL_SKIP_MAX_CACHED");
+    const double max_cached = mc != nullptr ? std::atof(mc) : 90.0;
+    if (held >= max_cached) {
+        std::fprintf(stderr, "glm fast: CUDA%d route tail skip off: VRAM holds %.1f%% of the experts (>= %.0f%%)\n",
+                     dev_, held, max_cached);
+        return;
+    }
+    F->tail_skip = r;
+    F->tail_skip_w = w;
+    std::string rule;
+    if (r < 8) rule = "at rank " + std::to_string(r + 1) + " of " + std::to_string(g.n_exp_used) + " and below";
+    if (w > 0.0f) {
+        char b[64];
+        std::snprintf(b, sizeof b, "%sbelow %.3f of the route's weight", r < 8 ? " or " : "", (double) w);
+        rule += b;
+    }
+    std::fprintf(stderr, "glm fast: CUDA%d route tail skip: experts not in VRAM %s are left out (VRAM holds %.1f%% of "
+                         "the experts)\n", dev_, rule.c_str(), held);
+}
+
+int Glm5Model::fast_skip_from(int il) const {
+    if (il == mtp_il_) return mtp_skip_from();
+    return fast_->L[(size_t) il].tid2eid != nullptr ? 8 : fast_->tail_skip;
+}
+
+float Glm5Model::fast_skip_w(int il) const {
+    return il == mtp_il_ || fast_->L[(size_t) il].tid2eid != nullptr ? 0.0f : fast_->tail_skip_w;
+}
+
 bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     FastState* F = fast_;
     const Glm5Geometry& g = g_;
@@ -3489,9 +3546,9 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     gf::moe_route(F->rlog, Ly.router_bias, g.n_expert, g.n_exp_used, g.w_scale, g.norm_w != 0, il, F->x,
                   g.n_embd, md, F->sh_g, F->sh_u, g.swiglu_shexp, FFs, F->sh_hq, s,
                   pred ? F->plog : nullptr, pred ? F->L[(size_t) il + 1].router_bias : nullptr,
-                  pred ? F->max_pf : 0, n_ah > 0 ? F->alog : nullptr, ah_bias, n_ah, il == mtp_il_ ? mtp_skip_from() : 8,
+                  pred ? F->max_pf : 0, n_ah > 0 ? F->alog : nullptr, ah_bias, n_ah, fast_skip_from(il),
                   lane ? F->cpu_plan : 0ull, promote_min, pf_rank, g.gating,
-                  Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) F->cur_tok * g.n_exp_used : nullptr);
+                  Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) F->cur_tok * g.n_exp_used : nullptr, fast_skip_w(il));
     if (F->prof_on) F->mark("moe_route");
     ++F->expected;
     // the side stream copies the next layer's predicted experts while this layer computes.  STRATA_GLM_PREFETCH_AT:

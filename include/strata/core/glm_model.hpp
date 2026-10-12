@@ -131,7 +131,7 @@ public:
     /// Live counters of the fast path (both halves summed), for the driver's STAT lines.
     struct FastStats {
         uint64_t tokens = 0, hits = 0, misses = 0, miss_layers = 0;
-        uint64_t ram_hits = 0, disk_reads = 0, promotions = 0, cpu_experts = 0;
+        uint64_t ram_hits = 0, disk_reads = 0, promotions = 0, cpu_experts = 0, tail_skips = 0;
         double ms = 0, miss_ms = 0, disk_ms = 0, cpu_ms = 0;
         int64_t pool_slots = 0, pool_used = 0, ram_slots = 0, ram_used = 0;
         double pool_gb = 0, ram_gb = 0;
@@ -391,6 +391,9 @@ public:
     bool fast_dsa(int il, int64_t p, std::string& err);     // one DSA mixer (x -> mixer)
     bool fast_moe(int il, bool& pf_pending, std::string& err);   // one MoE FFN (x -> ffn)
     void fast_service();
+    void fast_tail_skip_setup();   // STRATA_GLM_TAIL_SKIP: the rank the trunk's routes leave missing experts out from
+    int fast_skip_from(int il) const;   // that rank for layer il's route (the draft block's own, 8 = none)
+    float fast_skip_w(int il) const;    // STRATA_GLM_TAIL_SKIP_W: the weight share below which it leaves them out
     // gate / up / down of one expert from the shards (or its chunk-th of n_chunks pieces)
     void fast_read_part(int il, int e, int role, uint8_t* blob, int chunk = 0, int n_chunks = 1);
     void fast_ahead_route(int il, const int* ids, unsigned int miss, const short (*ahead)[8]);   // LOOKAHEAD
