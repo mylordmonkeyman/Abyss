@@ -154,7 +154,12 @@ __attribute__((visibility("default"))) int abyss_igpu_register(const void* host,
         say(err, err_n, "hipHostGetDevicePointer", e);
         return -1;
     }
-    L.ranges.push_back({(const uint8_t*) host, bytes, (uint8_t*) d});
+    // kept sorted by host address: a call looks its experts up by binary search (the RAM tier is registered in a few
+    // hundred pieces)
+    const Range nr{(const uint8_t*) host, bytes, (uint8_t*) d};
+    L.ranges.insert(std::upper_bound(L.ranges.begin(), L.ranges.end(), nr,
+                                     [](const Range& a, const Range& b) { return a.host < b.host; }),
+                    nr);
     return 0;
 }
 
@@ -166,11 +171,9 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
     for (int i = 0; i < ne; ++i) {
         const uint8_t* b = (const uint8_t*) blobs[i];
         unsigned long long d = 0ull;
-        for (const Range& r : L.ranges)
-            if (b >= r.host && b < r.host + r.bytes) {
-                d = (unsigned long long) (r.dev + (b - r.host));
-                break;
-            }
+        auto it = std::upper_bound(L.ranges.begin(), L.ranges.end(), b,
+                                   [](const uint8_t* p, const Range& r) { return p < r.host; });
+        if (it != L.ranges.begin() && b < (--it)->host + it->bytes) d = (unsigned long long) (it->dev + (b - it->host));
         if (d == 0ull) return 1;
         L.plan_h->ptr[i] = d;
         L.plan_h->w[i] = w[i];

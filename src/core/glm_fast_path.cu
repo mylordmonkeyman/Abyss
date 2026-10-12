@@ -1366,20 +1366,35 @@ void Glm5Model::fast_igpu_setup() {
     char e[256] = {0};
     if (op(g_.n_embd, g_.n_ff_exp, e, (int) sizeof e) != 0) return fail(e);
     const auto t0 = std::chrono::steady_clock::now();
-    size_t bytes = 0;
+    // Registered in pieces of whole experts, ~STRATA_GLM_IGPU_CHUNK_MB (256) each: the kernel driver keeps a host
+    // range in step with the CPU's page tables (it does not pin it), and any change to one of its pages - the kernel
+    // compacting memory around it, for one - stops the iGPU's queues until the WHOLE range is faulted in again: with
+    // one 69 GB range a decode token waited 10+ s about once a request on a fragmented host (the kernel log:
+    // "svm_range_restore_work / amdgpu_amdkfd_restore_userptr_worker hogged CPU"), and registering it took 0.4-13 s
+    // against ~0.4-1.3 s in 283 pieces.  0: one range a RAM class, as before.
+    static const size_t chunk_mb = [] {
+        const char* v = getenv("STRATA_GLM_IGPU_CHUNK_MB");
+        return v != nullptr ? (size_t) std::max(0, std::atoi(v)) : (size_t) 256;
+    }();
+    size_t bytes = 0, pieces = 0;
     for (const auto& R : F->rc) {
         if (R.base == nullptr || R.n <= 0) continue;
-        if (rg(R.base, (size_t) R.n * R.stride, e, (int) sizeof e) != 0) {
-            if (auto cl = (abyss_igpu_close_fn) dlsym(lib, "abyss_igpu_close")) cl();
-            return fail(e);
+        const size_t per = chunk_mb == 0 ? (size_t) R.n : std::max<size_t>(1, (chunk_mb << 20) / R.stride);
+        for (size_t s0 = 0; s0 < (size_t) R.n; s0 += per) {
+            const size_t ns = std::min(per, (size_t) R.n - s0);
+            if (rg(R.base + s0 * R.stride, ns * R.stride, e, (int) sizeof e) != 0) {
+                if (auto cl = (abyss_igpu_close_fn) dlsym(lib, "abyss_igpu_close")) cl();
+                return fail(e);
+            }
+            ++pieces;
         }
         bytes += (size_t) R.n * R.stride;
     }
     F->igpu_lib = lib;
     F->igpu_experts = ex;
     F->igpu_poke = (abyss_igpu_poke_fn) dlsym(lib, "abyss_igpu_poke");
-    std::fprintf(stderr, "glm fast: CUDA%d iGPU lane on (%s): the RAM tier's %.2f GB registered in %.0f ms\n", dev_,
-                 path.c_str(), (double) bytes / 1073741824.0,
+    std::fprintf(stderr, "glm fast: CUDA%d iGPU lane on (%s): the RAM tier's %.2f GB registered (%zu pieces) in %.0f ms\n",
+                 dev_, path.c_str(), (double) bytes / 1073741824.0, pieces,
                  std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
 #endif
 }
@@ -1392,8 +1407,19 @@ void Glm5Model::fast_cpu_experts(int il, int ne, const uint8_t* const* blob, con
     namespace kc = strata::kernels::cpu;
     const int n_ff = g.n_ff_exp, n_embd = g.n_embd;
     if (F->igpu_experts != nullptr) {   // the iGPU lane: the same sum from the registered RAM tier
+        const auto ti = std::chrono::steady_clock::now();
         const int rc = F->igpu_experts(Ly.gu_type, Ly.d_type, n_embd, n_ff, Ly.down_off, g.swiglu_exp, ne,
                                        (const void* const*) blob, w, x, out);
+        // a call is ~0.1-0.3 ms; one that waits for the kernel driver to fault a registered range in again (the stall
+        // STRATA_GLM_IGPU_CHUNK_MB bounds) says so, at most once a second
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - ti).count();
+        if (ms > 500.0) {
+            static std::atomic<int64_t> last{0};
+            const int64_t now_s = std::chrono::duration_cast<std::chrono::seconds>(ti.time_since_epoch()).count();
+            if (last.exchange(now_s) != now_s)
+                std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: a call took %.0f ms (the kernel driver re-validating "
+                                     "registered RAM?)\n", dev_, ms);
+        }
         if (rc == 0) {
             F->igpu_calls.fetch_add(1, std::memory_order_relaxed);
             return;
