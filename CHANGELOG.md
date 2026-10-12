@@ -7,6 +7,26 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.2.2 - 2026-10-12
+
+**DeepSeek V4 GGUFs with F16 projections** (antirez's deepseek-v4-gguf, and huihui-ai's abliterated copies such as
+`huihui-ai/Huihui-DeepSeek-V4-Flash-0731-abliterated-GGUF` `DeepSeek-V4-Flash-Q2-0731.gguf`: IQ2_XXS gate/up, Q2_K
+down, Q8_0 attention, F16 router and small projections) pack and run:
+- `tools/iq_pack.py --compat-bf16` rounds an F16 router and the F16 projections the GEMVs serve (the compressors', the
+  indexer's q_b) to BF16, and widens the F16 rows read as F32 (indexer.proj, the compressors' ape) to F32 (lossless).
+  token_embd stays F16 (its rows are dequantized on the host). unsloth's packs are unchanged.
+- The engine serves a deepseek4 pack's BF16 rows on the BF16 GEMV where a quantized projection was expected, and reads
+  F16 rows of dense.bin.
+- These files say `nextn_predict_layers 1` but ship no draft block: a last block with hyper-connections is a trunk
+  layer (pack and engine), so all 43 layers run.
+
+Measured on an RTX 5090 on PCIe Gen4 x4 + Ryzen AI Max+ 395 with the huihui-ai Q2 file (80.8 GiB): KL against llama.cpp
+on the same file 0.0075 over 3000 tokens (unsloth UD-Q2_K_XL: 0.0096), ppl 6.32 on the same text (UD-Q2_K_XL: 6.37);
+decode on 20 swe-bench prompts 14.63 ms/token (68.4 tok/s; UD-Q2_K_XL 14.80); VRAM holds 3,397 of its experts (3,010).
+The unsloth pack's output is the same as before (KL 0.00001, the CPU lane's split). Set up by hand for now:
+`.venv/bin/python tools/iq_pack.py --gguf <file> --out <dir>/pack-dsv4 --compat-bf16`, then a copy of
+`abyss-dsv4-q2_k_xl.json` / `run-abyss-dsv4-q2_k_xl.sh` pointing at that pack.
+
 ## v1.2.1 - 2026-10-12
 
 **Route tail skip (opt-in, from Strata 0.1.42's `STRATA_ROUTE_TAIL_SKIP`):** `STRATA_GLM_TAIL_SKIP=<r>` leaves a

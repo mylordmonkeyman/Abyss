@@ -494,6 +494,9 @@ bool Glm5Geometry::from_gguf_dsv4(const strata::GgufFile& g, Glm5Geometry& out, 
     out.n_embd = (int) num("embedding_length", 4096);
     const int block_count = (int) num("block_count", 43);
     out.nextn = (int) num("nextn_predict_layers", 0);
+    // antirez's deepseek-v4-gguf (and huihui-ai's copies) say nextn_predict_layers 1 but ship no draft block: their
+    // last block is a trunk layer (it has the hyper-connections a NextN block lacks), so it counts as one
+    if (out.nextn > 0 && g.find("blk." + std::to_string(block_count - 1) + ".hc_attn_fn.weight") != nullptr) out.nextn = 0;
     out.n_layers = block_count - out.nextn;
     out.n_head = (int) num("attention.head_count", 64);
     out.head_dim = (int) num("attention.key_length", 512);
@@ -2409,6 +2412,11 @@ bool strata::core::Glm5Model::load_pack(const std::string& pack_dir, int64_t max
             }
             { cudaError_t e_ = cudaMemcpy((uint8_t*) w_arena_ + at, raw.data(), (size_t) r.bytes, cudaMemcpyHostToDevice); if (e_ != cudaSuccess) { err = std::string("pack: ") + cudaGetErrorString(e_); return false; } }
             w16_[r.name] = (const uint16_t*) ((uint8_t*) w_arena_ + at);
+            // deepseek4: a projection the GEMVs serve (the compressors', the indexer's q_b) that the GGUF stored as F16
+            // comes as a BF16 row (iq_pack.py --compat-bf16) and runs on the BF16 GEMV
+            if (g_.dsv4())
+                ws_map_[r.name] = strata::core::WSlot{nullptr, strata::kernels::glmf::kTypeBF16, (const void*) ((uint8_t*) w_arena_ + at),
+                                                      (int64_t) t->shape[0], (int64_t) (t->shape.size() > 1 ? t->shape[1] : 1)};
             at += (r.bytes + 255u) & ~(uint64_t) 255u;
             continue;
         }
@@ -2490,6 +2498,16 @@ bool strata::core::Glm5Model::load_pack(const std::string& pack_dir, int64_t max
                 err = "pack: short read on dense.bin for " + r.name;
                 return false;
             }
+        } else if (r.kind == "5") {
+            // F16 rows in dense.bin (a GGUF that stores them F16): widened to F32
+            raw.resize((size_t) r.bytes);
+            dense.seekg((long long) r.offset);
+            dense.read((char*) raw.data(), (long long) r.bytes);
+            if (!dense || r.bytes != n_f32 * 2) {
+                err = "pack: short read on dense.bin for " + r.name;
+                return false;
+            }
+            ggml_get_type_traits(GGML_TYPE_F16)->to_float(raw.data(), host.data(), (int64_t) n_f32);
         } else {
             err = "pack: unsupported dense kind '" + r.kind + "' for " + r.name;
             return false;

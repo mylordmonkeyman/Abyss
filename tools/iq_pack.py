@@ -101,6 +101,13 @@ GLM5NEXT_NATIVE_OK = (
 # stored (indexer.proj and the compressors' ape/norm are read as F32)
 DEEPSEEK4_BF16 = ("hc_attn_fn.weight", "hc_ffn_fn.weight")
 DEEPSEEK4_BF16_GLOBAL = {"output_hc_fn.weight"}
+# GGUFs that store the small projections as F16 (antirez's deepseek-v4-gguf, huihui-ai's abliterated copies; unsloth's
+# are BF16 / Q8_0 / F32): --compat-bf16 rounds the router and the projections the engine serves by GEMV to BF16, and
+# widens the rows it reads as F32 (indexer.proj, the compressors' ape) to F32 - lossless.  token_embd stays F16 (the
+# engine dequantizes its rows on the host from the shard).
+DEEPSEEK4_F16_TO_BF16 = ("ffn_gate_inp.weight", "attn_compressor_kv.weight", "attn_compressor_gate.weight",
+                         "indexer_compressor_kv.weight", "indexer_compressor_gate.weight", "indexer.attn_q_b.weight")
+DEEPSEEK4_F16_TO_F32 = ("indexer.proj.weight", "attn_compressor_ape.weight", "indexer_compressor_ape.weight")
 DEEPSEEK4_NATIVE_OK = (
     "attn_q_a.weight", "attn_q_b.weight", "attn_kv.weight", "attn_output_a.weight", "attn_output_b.weight",
     "attn_compressor_kv.weight", "attn_compressor_gate.weight",
@@ -114,7 +121,8 @@ ARCHITECTURES = ("qwen4exp", "glm5-next", "glm5next", "deepseek4")   # unsloth s
 
 def needs_bf16(name: str, type_name: str, arch: str = "qwen4exp") -> bool:
     if arch == "deepseek4":
-        return name in DEEPSEEK4_BF16_GLOBAL or (name.startswith("blk.") and name.endswith(DEEPSEEK4_BF16))
+        return name in DEEPSEEK4_BF16_GLOBAL or (name.startswith("blk.") and name.endswith(DEEPSEEK4_BF16)) or (
+            type_name == "F16" and name.startswith("blk.") and name.endswith(DEEPSEEK4_F16_TO_BF16))
     if arch in ("glm5-next", "glm5next"):
         # glm5-next has no PLE and no output_hc; its F32 router stays F32 (the runner reads it
         # as F32 by config), so ONLY the listed projections take the BF16 path.
@@ -242,9 +250,15 @@ def index_standalone(src, out, model: Model, compat_bf16: bool = False, arch: st
                 return 1
             ne0, ne1 = index_shape(t.shape)
             convert = compat_bf16 and needs_bf16(t.name, t.type_name, arch) and t.type_name != "BF16"
+            widen = (compat_bf16 and arch == "deepseek4" and t.type_name == "F16" and name.startswith("blk.")
+                     and name.endswith(DEEPSEEK4_F16_TO_F32))
             if t.type_name in FLOAT or convert:
                 raw = tensor_bytes(mm, g, t).tobytes()
-                if convert:
+                if widen:
+                    raw = np.frombuffer(raw, dtype=np.float16).astype(np.float32).tobytes()
+                    kind = "2"
+                    converted.append({"name": t.name, "source_type": t.type_name, "bytes": len(raw), "to": "F32"})
+                elif convert:
                     raw = bf16_bytes(np.frombuffer(raw, dtype=np.uint8), t.type_name)
                     kind = "4"
                     converted.append({"name": t.name, "source_type": t.type_name, "bytes": len(raw)})
@@ -401,8 +415,16 @@ def main() -> int:
         if trunk < 1:
             print("%s: block_count %d - nextn %d leaves no trunk" % (arch, block_count, nextn))
             return 1
-        print("%s: block_count %d, nextn %d -> trunk layers 0..%d" % (arch, block_count, nextn, trunk - 1))
     model = Model(src)
+    if arch == "deepseek4" and trunk is not None and trunk < block_count and \
+            "blk.%d.hc_attn_fn.weight" % (block_count - 1) in model.where:
+        # antirez's deepseek-v4-gguf (huihui-ai's copies too) says nextn_predict_layers 1 but ships no draft block:
+        # the last block has the hyper-connections a NextN block lacks, so it is a trunk layer
+        print("%s: nextn_predict_layers %d but blk.%d is a trunk layer (no draft block in the file)"
+              % (arch, block_count - trunk, block_count - 1))
+        trunk = block_count
+    if trunk is not None:
+        print("%s: block_count %d -> trunk layers 0..%d" % (arch, block_count, trunk - 1))
     T = {n: w[1] for n, w in model.where.items()}
     if len(model.paths) > 1:
         print("model shards: " + ", ".join(p.name for p in model.paths))
