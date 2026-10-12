@@ -994,11 +994,16 @@ static int glm_pack_generate(const Options& o) {
         std::signal(SIGPIPE, SIG_IGN);
     }
 #endif
-    // STRATA_DS4_SPEC=<k> (1..3): deepseek4's n-gram speculative decode with k drafted tokens a window;
-    // STRATA_DS4_SPEC_MIN=<n> (2..4, default 3): the suffix length that must match
+    // STRATA_DS4_SPEC=<k> (1..3, default 1; 0 off): deepseek4's n-gram speculative decode with k drafted tokens a
+    // window; STRATA_DS4_SPEC_MIN=<n> (2..4, default 3): the suffix length that must match.  STRATA_DS4_SPEC_GATE=0:
+    // every proposal goes through a window (the gate below off)
     const int spec_k = [] {
         const char* v = std::getenv("STRATA_DS4_SPEC");
-        return v ? std::max(0, std::min(strata::core::Glm5Model::kVerifyMax - 1, std::atoi(v))) : 0;
+        return v ? std::max(0, std::min(strata::core::Glm5Model::kVerifyMax - 1, std::atoi(v))) : 1;
+    }();
+    const bool spec_gate = [] {
+        const char* v = std::getenv("STRATA_DS4_SPEC_GATE");
+        return v == nullptr || std::atoi(v) != 0;
     }();
     const int spec_min = [] {
         const char* v = std::getenv("STRATA_DS4_SPEC_MIN");
@@ -1619,8 +1624,13 @@ static int glm_pack_generate(const Options& o) {
             tok = model.forced(tok);
             sp.counter += 1;
             std::vector<int32_t> draft, win;
-            int64_t n_win = 0, n_one = 0, n_draft = 0, n_acc = 0;
+            int64_t n_win = 0, n_one = 0, n_draft = 0, n_acc = 0, n_gated = 0, n_prop = 0;
             double ms_win = 0.0, ms_one = 0.0;   // the windows' and the single tokens' time (forward / verify + sample)
+            // THE GATE: a window costs more than one token (RTX 5090 + iGPU lane, k 1: 19.8 against 14.6 ms) and pays
+            // only when enough of its drafts are accepted - code 74-83%, prose ~50%, break-even ~36% there.  This
+            // request's acceptance and both times as running means: a proposal goes through a window while
+            // (1 + k p) t_one > t_win, else it is dropped (every 16th still runs, to keep p current)
+            double g_p = 0.6, g_one = 0.0, g_win = 0.0;
             const auto ms_since = [](std::chrono::steady_clock::time_point a) {
                 return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - a).count();
             };
@@ -1634,6 +1644,11 @@ static int glm_pack_generate(const Options& o) {
                 const int64_t p0 = model.position();
                 const int room = (int) std::min<int64_t>(spec_k, o.max_context - p0 - 1);
                 dr.propose(room, draft);
+                if (!draft.empty() && spec_gate && g_one > 0.0 && g_win > 0.0 &&
+                    (1.0 + g_p * (double) draft.size()) * g_one < g_win && (++n_prop & 15) != 0) {
+                    draft.clear();
+                    ++n_gated;
+                }
                 const auto tw = std::chrono::steady_clock::now();
                 if (draft.empty()) {
                     ++n_one;
@@ -1648,7 +1663,9 @@ static int glm_pack_generate(const Options& o) {
                     }
                     tok = model.forced(tok);
                     sp.counter += 1;
-                    ms_one += ms_since(tw);
+                    const double m1 = ms_since(tw);
+                    ms_one += m1;
+                    g_one = g_one > 0.0 ? 0.9 * g_one + 0.1 * m1 : m1;
                     continue;
                 }
                 win.assign(1, (int32_t) tok);
@@ -1684,15 +1701,19 @@ static int glm_pack_generate(const Options& o) {
                     ++kept;
                 }
                 model.spec_rewind(p0 + kept);
-                ms_win += ms_since(tw);
+                const double mw = ms_since(tw);
+                ms_win += mw;
+                g_win = g_win > 0.0 ? 0.9 * g_win + 0.1 * mw : mw;
+                g_p = 0.9 * g_p + 0.1 * (double) (kept - 1) / (double) draft.size();
                 if (stopped) break;
                 tok = next;
             }
             std::fprintf(stderr, "ds4 spec: k %d, n-gram %d: %lld windows (%lld drafted, %lld accepted = %.0f%%) and "
-                                 "%lld single tokens; %.1f ms a window, %.1f a single token\n", spec_k, spec_min,
-                         (long long) n_win, (long long) n_draft, (long long) n_acc,
+                                 "%lld single tokens (%lld proposals gated); %.1f ms a window, %.1f a single token\n",
+                         spec_k, spec_min, (long long) n_win, (long long) n_draft, (long long) n_acc,
                          100.0 * (double) n_acc / (double) std::max<int64_t>(1, n_draft), (long long) n_one,
-                         ms_win / (double) std::max<int64_t>(1, n_win), ms_one / (double) std::max<int64_t>(1, n_one));
+                         (long long) n_gated, ms_win / (double) std::max<int64_t>(1, n_win),
+                         ms_one / (double) std::max<int64_t>(1, n_one));
         } else {
             for (;;) {
                 if (stop_req.load()) {
