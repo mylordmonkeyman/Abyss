@@ -7,6 +7,35 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.8 - 2026-10-14
+
+Fix: the iGPU lane was off whenever the server picked a GPU other than nvidia-smi's 0 (`"gpu": [1]`, or a split such
+as `[1, 0]`). The server sets `CUDA_VISIBLE_DEVICES` to choose the NVIDIA cards, and ROCm's HIP reads it too when
+`HIP_VISIBLE_DEVICES` is unset. So HIP saw no device ("no ROCm-capable device is detected") and the RAM-tier experts
+went to the CPU threads. Before it opens the lane, the engine now sets `HIP_VISIBLE_DEVICES` to the iGPU (HIP's 0, or
+`STRATA_GLM_IGPU_DEVICE`) when neither it nor `ROCR_VISIBLE_DEVICES` is set.
+
+Measured on the first two-card setup: RTX 5090 (PCIe Gen4 x4) + RTX 3090 in a USB4 enclosure (~3.8 GB/s, 2.1 ms an
+expert) + Ryzen AI Max+ 395. Server, second run of each prompt, prompt / decode tok/s:
+
+| setup | 8K | 32K |
+|---|---|---|
+| RTX 5090 + iGPU | 1,683 / 58.5 | 2,876 / 65.9 |
+| RTX 5090 alone | 1,356 / 48.6 | 2,728 / 56.0 |
+| RTX 5090 + RTX 3090 + iGPU (split 27/16) | 1,506 / 54.9 | 1,985 / 56.7 |
+| RTX 5090 + RTX 3090 | 1,046 / 48.1 | 1,594 / 48.7 |
+| RTX 3090 + iGPU | 756 / 37.1 | 1,129 / 37.0 |
+
+- With this fix, the split gains +44% prompt (8K) and +14% decode from the iGPU. It still trails one RTX 5090 with
+  the iGPU.
+  - VRAM hit rises from 82% to 91%, but the 3090's 16 layers and the hop between the cards cost more than the
+    RAM-tier experts saved (decode 15.2 -> 17.6 ms a token).
+  - A split has no n-gram speculative decoding.
+  - Its prompt path has no prestage (each part's pool is not lent to it).
+  - The 3090's USB4 link is slow (2.1 ms an expert against 1.2).
+- The USB4 enclosure dropped off the bus once under a 32K prompt ("GPU lost from the bus"). CUDA did not come back
+  until a reboot.
+
 ## v1.3.7 - 2026-10-14
 
 DeepSeek V4 Flash on several NVIDIA GPUs (layer split): a routing fix, the iGPU lane for every part, and setup for two
