@@ -774,6 +774,109 @@ __global__ void __launch_bounds__(256) idx_score_batch_kernel(const float* __res
         if (j < ld) score[(size_t) t * ld + j] = j < n_vis ? acc[i] : -INFINITY;
     }
 }
+// The same scores on tensor cores (sm_80+, 64 heads), as the decode kernel idx_score_mma_kernel computes them: a warp
+// holds 2 x 16 K rows as A fragments for a tile of 32 tokens, each token's Q split into hi + lo FP16 B fragments in
+// shared memory (double buffered: the next token converts while this one multiplies). Rows a token does not see are
+// left unwritten (the select reads n_vis of them). 177 -> 21.6 ms for 4096 tokens at 120k on an RTX 5090.
+constexpr int IBM_WARPS = 8, IBM_RG = 2, IBM_TT = 32, IBM_ROWS = IBM_WARPS * IBM_RG * 16;
+constexpr int IBM_SMEM = 2 * 2048 * (int) sizeof(uint4);
+__device__ __forceinline__ void ibm_load_q(uint4* sb, float* sw, const float* __restrict__ q, const float* __restrict__ w) {
+    for (int i = threadIdx.x; i < 2048; i += IBM_WARPS * 32) {   // [n tile 8][k step 8][lane 32], as s_b above
+        const int ln = i & 31, ks = (i >> 5) & 7, nt = i >> 8;
+        const float* qn = q + (nt * 8 + (ln >> 2)) * 128 + ks * 16 + (ln & 3) * 2;
+        const float2 v01 = *reinterpret_cast<const float2*>(qn), v89 = *reinterpret_cast<const float2*>(qn + 8);
+        const float v[4] = {v01.x, v01.y, v89.x, v89.y};
+        __half h[4], l[4];
+#pragma unroll
+        for (int t = 0; t < 4; ++t) {
+            h[t] = __float2half_rn(v[t]);
+            l[t] = __float2half_rn(v[t] - __half2float(h[t]));
+        }
+        sb[i] = make_uint4(idx_h2(h[0], h[1]), idx_h2(h[2], h[3]), idx_h2(l[0], l[1]), idx_h2(l[2], l[3]));
+    }
+    if (threadIdx.x < 64) sw[threadIdx.x] = w[threadIdx.x];
+}
+__global__ void __launch_bounds__(IBM_WARPS * 32) idx_score_batch_mma_kernel(const float* __restrict__ iq,
+                                                                             const uint16_t* __restrict__ K,
+                                                                             const float* __restrict__ w, int ratio,
+                                                                             int p0, int T, float* __restrict__ score,
+                                                                             int ld) {
+    extern __shared__ uint4 s_bq[];   // [2][2048]
+    __shared__ float s_wq[2][64];
+    const int t0 = blockIdx.y * IBM_TT, j0 = blockIdx.x * IBM_ROWS;
+    const int tn = min(IBM_TT, T - t0);
+    int tf = 0;   // the tile's first token that sees row j0
+    while (tf < tn && (p0 + t0 + tf + 1) / ratio <= j0) ++tf;
+    if (tf >= tn) return;
+    const int lane = threadIdx.x & 31, g = lane >> 2, t4 = lane & 3;
+    const int wrow = j0 + (threadIdx.x >> 5) * IBM_RG * 16;
+    const int nrow = (p0 + t0 + tn) / ratio;   // the most rows a token of the tile sees
+    unsigned a[IBM_RG][8][4];
+#pragma unroll
+    for (int r = 0; r < IBM_RG; ++r) {
+        const int ra = wrow + r * 16 + g, rb = ra + 8;
+        const unsigned* Ka = reinterpret_cast<const unsigned*>(K + (size_t) ra * 128);
+        const unsigned* Kb = reinterpret_cast<const unsigned*>(K + (size_t) rb * 128);
+#pragma unroll
+        for (int ks = 0; ks < 8; ++ks) {
+            const int c = ks * 8 + t4;
+            a[r][ks][0] = ra < nrow ? Ka[c] : 0u;
+            a[r][ks][1] = rb < nrow ? Kb[c] : 0u;
+            a[r][ks][2] = ra < nrow ? Ka[c + 4] : 0u;
+            a[r][ks][3] = rb < nrow ? Kb[c + 4] : 0u;
+        }
+    }
+    ibm_load_q(s_bq, s_wq[0], iq + (size_t) (t0 + tf) * 64 * 128, w + (size_t) (t0 + tf) * 64);
+    for (int i = tf; i < tn; ++i) {
+        const int buf = (i - tf) & 1;
+        __syncthreads();
+        if (i + 1 < tn)
+            ibm_load_q(s_bq + (buf ^ 1) * 2048, s_wq[buf ^ 1], iq + (size_t) (t0 + i + 1) * 64 * 128,
+                       w + (size_t) (t0 + i + 1) * 64);
+        const int t = t0 + i, n_vis = (p0 + t + 1) / ratio;
+        if (wrow >= n_vis) continue;
+        const uint4* sb = s_bq + buf * 2048;
+        const float* sw = s_wq[buf];
+        float sa[IBM_RG], sc[IBM_RG];
+#pragma unroll
+        for (int r = 0; r < IBM_RG; ++r) sa[r] = sc[r] = 0.0f;
+#pragma unroll
+        for (int nt = 0; nt < 8; ++nt) {
+            float d[IBM_RG][4];
+#pragma unroll
+            for (int r = 0; r < IBM_RG; ++r) d[r][0] = d[r][1] = d[r][2] = d[r][3] = 0.0f;
+#pragma unroll
+            for (int ks = 0; ks < 8; ++ks) {
+                const uint4 b = sb[(nt * 8 + ks) * 32 + lane];
+#pragma unroll
+                for (int r = 0; r < IBM_RG; ++r) {
+                    idx_mma16816(d[r], a[r][ks], b.x, b.y);
+                    idx_mma16816(d[r], a[r][ks], b.z, b.w);
+                }
+            }
+            const float w0 = sw[nt * 8 + t4 * 2], w1 = sw[nt * 8 + t4 * 2 + 1];
+#pragma unroll
+            for (int r = 0; r < IBM_RG; ++r) {
+                sa[r] += fmaxf(d[r][0], 0.0f) * w0 + fmaxf(d[r][1], 0.0f) * w1;
+                sc[r] += fmaxf(d[r][2], 0.0f) * w0 + fmaxf(d[r][3], 0.0f) * w1;
+            }
+        }
+        float* out = score + (size_t) t * ld;
+#pragma unroll
+        for (int r = 0; r < IBM_RG; ++r) {
+            float x = sa[r], y = sc[r];
+            x += __shfl_xor_sync(0xffffffffu, x, 1);
+            x += __shfl_xor_sync(0xffffffffu, x, 2);
+            y += __shfl_xor_sync(0xffffffffu, y, 1);
+            y += __shfl_xor_sync(0xffffffffu, y, 2);
+            const int ra = wrow + r * 16 + g, rb = ra + 8;
+            if (t4 == 0) {
+                if (ra < n_vis) out[ra] = x;
+                if (rb < n_vis) out[rb] = y;
+            }
+        }
+    }
+}
 __global__ void __launch_bounds__(1024) idx_select_batch_kernel(const float* __restrict__ score, int ld, int ratio, int p0,
                                                                 int top_k, int* __restrict__ sel) {
     const int t = blockIdx.x;
@@ -938,26 +1041,36 @@ void q_prep(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, flo
     check("q_prep");
 }
 
+// the tensor-core indexer kernels: sm_80+ in a CUDA build, 64 heads, unless STRATA_DS4_IDX=1. The first call on a
+// device also lets the batch kernel take its 64 KB of shared memory there.
+static bool idx_use_mma(int idx_heads) {
+    static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
+#if !defined(__HIPCC__) && !defined(STRATA_USE_HIP)
+    if (warp_only || idx_heads != 64) return false;
+    static int state[64] = {};   // per device: 0 unknown, 1 yes, -1 no
+    int dev = 0;
+    cudaGetDevice(&dev);
+    if (dev < 0 || dev >= 64) return false;
+    if (state[dev] == 0) {
+        int major = 0;
+        const bool ok = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, dev) == cudaSuccess &&
+                        major >= 8 &&
+                        cudaFuncSetAttribute(idx_score_batch_mma_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize,
+                                             IBM_SMEM) == cudaSuccess;
+        state[dev] = ok ? 1 : -1;
+    }
+    return state[dev] == 1;
+#else
+    (void) warp_only;
+    (void) idx_heads;
+    return false;
+#endif
+}
 void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, int idx_dim, int n_vis, int top_k,
              float* score, int* sel, cudaStream_t s) {
     if (n_vis <= 0) return;
     (void) idx_dim;   // 128 (the kernels' layout)
-    // the tensor-core kernel: sm_80+ in a CUDA build, 64 heads, unless STRATA_DS4_IDX=1
-    static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
-    bool mma = false;
-#if !defined(__HIPCC__) && !defined(STRATA_USE_HIP)
-    if (!warp_only && idx_heads == 64) {
-        static int cc_major[64] = {};
-        int dev = 0;
-        cudaGetDevice(&dev);
-        if (dev >= 0 && dev < 64) {
-            if (cc_major[dev] == 0 && cudaDeviceGetAttribute(&cc_major[dev], cudaDevAttrComputeCapabilityMajor, dev) != cudaSuccess)
-                cc_major[dev] = -1;
-            mma = cc_major[dev] >= 8;
-        }
-    }
-#endif
-    if (mma) {
+    if (idx_use_mma(idx_heads)) {
         idx_score_mma_kernel<<<(n_vis + IDXM_WARPS * 16 - 1) / (IDXM_WARPS * 16), IDXM_WARPS * 32, 0, s>>>(iq, K, w, n_vis,
                                                                                                          score);
         check("idx_score_mma");
@@ -1104,9 +1217,15 @@ void indexer_batch(const float* iq, const uint16_t* K, const float* w, int idx_h
                    float* score, int ld, int* sel, cudaStream_t s) {
     const int max_vis = (p0 + T) / ratio;
     if (T <= 0 || max_vis <= 0) return;
-    const dim3 grid((unsigned) ((max_vis + IRT - 1) / IRT), (unsigned) ((T + IQT - 1) / IQT));
-    idx_score_batch_kernel<<<grid, 256, 0, s>>>(iq, K, w, idx_heads, ratio, p0, T, score, ld);
-    check("idx_score_batch");
+    if (idx_use_mma(idx_heads)) {
+        const dim3 grid((unsigned) ((max_vis + IBM_ROWS - 1) / IBM_ROWS), (unsigned) ((T + IBM_TT - 1) / IBM_TT));
+        idx_score_batch_mma_kernel<<<grid, IBM_WARPS * 32, IBM_SMEM, s>>>(iq, K, w, ratio, p0, T, score, ld);
+        check("idx_score_batch_mma");
+    } else {
+        const dim3 grid((unsigned) ((max_vis + IRT - 1) / IRT), (unsigned) ((T + IQT - 1) / IQT));
+        idx_score_batch_kernel<<<grid, 256, 0, s>>>(iq, K, w, idx_heads, ratio, p0, T, score, ld);
+        check("idx_score_batch");
+    }
     idx_select_batch_kernel<<<T, 1024, 0, s>>>(score, ld, ratio, p0, top_k, sel);
     check("idx_select_batch");
 }
