@@ -253,8 +253,8 @@ Radeon 8060S（gfx1151）。
   `/opt/rocm` の ROCm 7 を使う。エンジンは `build-hip/strata` にビルドされ、設定に `"backend": "hip"` が入る。
 - **確認済みの範囲:** Radeon 8060S（gfx1151）だけで動かし、CUDA 版との KL がぶれの範囲内（0.005）だった。
   単体の GPU（RX 7900 など）ではまだ動かしていない。
-- **速くなる部分:** indexer のスコア計算は RDNA の WMMA を使う（decode も prompt も、gfx11 / gfx12）。prompt の
-  attention はまだ従来のカーネル。`STRATA_DS4_IDX=1` で indexer を従来のカーネルに戻せる。
+- **速くなる部分:** indexer のスコア計算と prompt の attention は RDNA の WMMA を使う（gfx11 / gfx12）。
+  `STRATA_DS4_IDX=1` で indexer を、`STRATA_DS4_ATTN=1` で attention を従来のカーネルに戻せる。
 - **制限:** NVIDIA との組み合わせ（1 つのプロセスで CUDA と HIP の両方）には対応していない。
 
 ## メモリと速度

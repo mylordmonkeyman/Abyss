@@ -254,8 +254,8 @@ the Ryzen AI Max's Radeon 8060S (gfx1151).
   in `/opt/rocm`. The engine is built in `build-hip/strata`, and the config gets `"backend": "hip"`.
 - **What has been checked:** it ran on the Radeon 8060S (gfx1151) alone, with KL against the CUDA build within the
   run-to-run spread (0.005). It has not run on a discrete card such as an RX 7900 yet.
-- **What is faster:** the indexer's scores use RDNA's WMMA (decode and prompt, gfx11 / gfx12). The prompt attention
-  still uses the older kernel. `STRATA_DS4_IDX=1` keeps the older indexer kernels.
+- **What is faster:** the indexer's scores and the prompt attention use RDNA's WMMA (gfx11 / gfx12).
+  `STRATA_DS4_IDX=1` keeps the older indexer kernels, and `STRATA_DS4_ATTN=1` the older attention.
 - **Limits:** mixing it with NVIDIA in one process (CUDA and HIP together) is not supported.
 
 ## Memory and speed

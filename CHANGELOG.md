@@ -7,6 +7,22 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.11 - 2026-10-14
+
+On AMD (HIP), the prompt path's attention runs on RDNA's WMMA too (gfx11 / gfx12), as the CUDA path's has since
+v1.3.5.
+- `attend_batch_wmma_kernel`: a block takes one token and 16 heads, and each of its 8 waves owns 64 of the 512 dims.
+  Per tile of 16 keys: the keys go into LDS as FP16, and each wave computes its QK partial with Q as FP16 hi + lo.
+  Q is scaled into FP16's range by a power of two per head and wave, as glm_batch.cu's `mla_attn_wmma2_kernel` does.
+  The partials are summed for the online softmax, whose max and sum start from the sink. P goes into P.V as FP16
+  hi + lo. Then the output is normalised and de-roped.
+- Radeon 8060S, 1,024 tokens at 30K: 37.0 -> 15.3 ms per CSA layer, 18.5 -> 10.0 ms per HCA layer. Relative RMS
+  against the old kernel: 4e-6. `STRATA_DS4_ATTN=1` keeps the old kernel, and the WMMA check no longer depends on
+  `STRATA_DS4_IDX`.
+- In the engine (Radeon 8060S alone, a 7K prompt): `ds4_attn` 6.5 -> 3.0 s, prompt 143 -> 154 tok/s. On the APU the
+  prompt is bound by the experts (part of them read from the SSD). KL against the RTX 5090 build over the next 1,000
+  tokens: 0.0050 (the old kernel: 0.0058).
+
 ## v1.3.10 - 2026-10-14
 
 DeepSeek V4 Flash runs on AMD Radeon (HIP, experimental). There is also a race fix in the indexer's top-k select,

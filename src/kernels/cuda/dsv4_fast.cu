@@ -1361,6 +1361,137 @@ __global__ void __launch_bounds__(128) attend_batch_mma_kernel(const float* __re
     for (int i = tid; i < ABM_H * D / 4; i += blockDim.x) og[i] = reinterpret_cast<const float4*>(s_o)[i];
 }
 
+#if defined(STRATA_USE_HIP)
+// The prompt path's attention on RDNA's WMMA (HIP, gfx11 / gfx12; the HIP counterpart of attend_batch_mma_kernel, as
+// glm_batch.cu's mla_attn_wmma2_kernel): a block = one token x 16 heads, 8 waves, wave w owns
+// dims [64w, 64w + 64) of Q, K (= V) and O. Per tile of 16 keys: the keys into LDS (FP16), each wave's QK partial
+// over its 64 dims (Q as FP16 hi + lo, scaled by a power of two per head and wave into FP16's range), the partials
+// summed for the online softmax (the sink seeds the max and the sum), P as FP16 hi + lo for P.V on the wave's dims.
+// Then normalise, de-rope (V = K carries the rotation) and write. Radeon 8060S, 1,024 tokens at 30k: 37.0 -> 15.3 ms
+// (CSA layers), 18.5 -> 10.0 (HCA), rel. RMS 4e-6 against the kernel above. STRATA_DS4_ATTN=1: the kernel above.
+constexpr int AW_H = 16;
+__global__ void __launch_bounds__(256) attend_batch_wmma_kernel(const float* __restrict__ q, const uint16_t* __restrict__ keys,
+                                                                int n_hist, int n_swa, const uint16_t* __restrict__ comp,
+                                                                const int* __restrict__ sel, int top_k, int ratio,
+                                                                const float* __restrict__ sinks, int n_head, int n_rot,
+                                                                Rope rope, int p0, float scale, float* __restrict__ out) {
+    constexpr int D = 512;
+    __shared__ __align__(16) _Float16 sl[16][D];
+    __shared__ __align__(16) _Float16 ph[16][16], pl[16][16];
+    __shared__ float scores[8][16][16], qi[8][16];
+    __shared__ float sm[16], denom[16], rescale[16];
+    __shared__ const uint16_t* rows[16];
+    __shared__ float s_o[AW_H][D];
+    const int tid = threadIdx.x, lane = tid & 31, wave = tid >> 5, l16 = lane & 15, hi = lane >> 4;
+    const int t = blockIdx.x, h0 = blockIdx.y * AW_H, p = p0 + t;
+    const int n_raw = min(p + 1, n_swa);
+    const int raw0 = p - n_raw + 1 - (p0 - n_hist);
+    int n_c = 0;
+    if (ratio == 128) n_c = (p + 1) / 128;
+    else if (ratio == 4) n_c = min(top_k, (p + 1) / 4);
+    const int n = n_raw + n_c;
+    // Q: head l16, dims [64 wave, +64), scaled into FP16's range (the scale's inverse undoes it on the scores)
+    const float* qr = q + ((size_t) t * n_head + h0 + l16) * D + wave * 64;
+    float mx = 0.0f;
+#pragma unroll
+    for (int k = 0; k < 64; ++k) mx = fmaxf(mx, fabsf(qr[k]));
+    int ex = 0;
+    if (mx > 0.0f) { frexpf(mx, &ex); ex = max(-60, min(60, 14 - ex)); }
+    const float f = ldexpf(1.0f, ex);
+    if (hi == 0) qi[wave][l16] = ldexpf(1.0f, -ex);
+    iw_h16 qh[4], ql[4];
+#pragma unroll
+    for (int k = 0; k < 4; ++k)
+#pragma unroll
+        for (int j = 0; j < 16; ++j) {
+            const float v = qr[16 * k + j] * f;
+            qh[k][j] = (_Float16) v;
+            ql[k][j] = (_Float16) (v - (float) qh[k][j]);
+        }
+    iw_f8 acc[4] = {};
+    if (tid < 16) { sm[tid] = sinks[h0 + tid]; denom[tid] = 1.0f; }
+    for (int s0 = 0; s0 < n; s0 += 16) {
+        __syncthreads();
+        if (tid < 16) {
+            const int j = s0 + tid;
+            rows[tid] = j >= n ? nullptr
+                        : j < n_raw ? keys + (size_t) (raw0 + j) * D
+                                    : comp + (size_t) (ratio == 4 ? sel[(size_t) t * top_k + (j - n_raw)] : j - n_raw) * D;
+        }
+        __syncthreads();
+        for (int i = tid; i < 16 * D / 8; i += 256) {
+            const int r = i / (D / 8), col = (i % (D / 8)) * 8;
+            *reinterpret_cast<uint4*>(&sl[r][col]) = rows[r] == nullptr ? make_uint4(0u, 0u, 0u, 0u)
+                                                                         : *reinterpret_cast<const uint4*>(rows[r] + col);
+        }
+        __syncthreads();
+        iw_f8 dot = {};
+#pragma unroll
+        for (int k = 0; k < 4; ++k) {
+            const iw_h16 b = *reinterpret_cast<const iw_h16*>(&sl[l16][wave * 64 + 16 * k]);
+            dot = iw_wmma(qh[k], b, dot);
+            dot = iw_wmma(ql[k], b, dot);
+        }
+#pragma unroll
+        for (int i = 0; i < 8; ++i) {
+            const int row = iw_row(i, hi);
+            scores[wave][row][l16] = dot[i] * qi[wave][row];
+        }
+        __syncthreads();
+        {   // the online softmax: head r, key col
+            const int r = tid >> 4, col = tid & 15;
+            float v = 0.0f;
+#pragma unroll
+            for (int w = 0; w < 8; ++w) v += scores[w][r][col];
+            v = s0 + col < n ? v * scale : -INFINITY;
+            float m = v;
+#pragma unroll
+            for (int o = 8; o > 0; o >>= 1) m = fmaxf(m, __shfl_xor(m, o, 32));
+            const float old_m = sm[r], new_m = fmaxf(old_m, m);
+            const float pv = v == -INFINITY ? 0.0f : expf(v - new_m);
+            float sum = pv;
+#pragma unroll
+            for (int o = 8; o > 0; o >>= 1) sum += __shfl_xor(sum, o, 32);
+            const _Float16 phv = (_Float16) pv;
+            ph[r][col] = phv;
+            pl[r][col] = (_Float16) (pv - (float) phv);
+            __syncthreads();   // (every thread has read sm[r] before it changes)
+            if (col == 0) {
+                const float sc = expf(old_m - new_m);
+                rescale[r] = sc;
+                denom[r] = denom[r] * sc + sum;
+                sm[r] = new_m;
+            }
+        }
+        __syncthreads();
+        const iw_h16 a_hi = *reinterpret_cast<const iw_h16*>(ph[l16]), a_lo = *reinterpret_cast<const iw_h16*>(pl[l16]);
+#pragma unroll
+        for (int nt = 0; nt < 4; ++nt) {
+#pragma unroll
+            for (int i = 0; i < 8; ++i) acc[nt][i] *= rescale[iw_row(i, hi)];
+            iw_h16 b;
+#pragma unroll
+            for (int k = 0; k < 16; ++k) b[k] = sl[k][wave * 64 + nt * 16 + l16];
+            acc[nt] = iw_wmma(a_hi, b, acc[nt]);
+            acc[nt] = iw_wmma(a_lo, b, acc[nt]);
+        }
+    }
+    __syncthreads();
+#pragma unroll
+    for (int nt = 0; nt < 4; ++nt)
+#pragma unroll
+        for (int i = 0; i < 8; ++i) {
+            const int r = iw_row(i, hi);
+            s_o[r][wave * 64 + nt * 16 + l16] = acc[nt][i] / denom[r];
+        }
+    __syncthreads();
+    for (int i = tid; i < AW_H * (n_rot / 2); i += 256) rope_pair(s_o[i / (n_rot / 2)], D, n_rot, rope, p, false, i % (n_rot / 2));
+    __syncthreads();
+    float4* og = reinterpret_cast<float4*>(out + ((size_t) t * n_head + h0) * D);
+    for (int i = tid; i < AW_H * D / 4; i += 256) og[i] = reinterpret_cast<const float4*>(&s_o[0][0])[i];
+}
+#endif
+
 __global__ void to_f16_kernel(const float* __restrict__ x, uint16_t* __restrict__ y, int64_t n) {
     for (int64_t i = (int64_t) blockIdx.x * blockDim.x + threadIdx.x; i < n; i += (int64_t) gridDim.x * blockDim.x)
         y[i] = __half_as_ushort(__float2half(x[i]));
@@ -1437,9 +1568,13 @@ static bool idx_use_mma(int idx_heads) {
 }
 #if defined(STRATA_USE_HIP)
 // HIP: the WMMA kernels on gfx11 / gfx12 (RDNA3 / 3.5 / 4; gfx1103 has no WMMA), 64 heads, unless STRATA_DS4_IDX=1
+static bool hip_wmma_arch();
 static bool idx_use_wmma(int idx_heads) {
     static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
-    if (warp_only || idx_heads != 64) return false;
+    return !warp_only && idx_heads == 64 && hip_wmma_arch();
+}
+// the current device has RDNA's wave32 WMMA (gfx11 / gfx12; gfx1103 has none)
+static bool hip_wmma_arch() {
     static int state[64] = {};   // per device: 0 unknown, 1 yes, -1 no
     int dev = 0;
     if (hipGetDevice(&dev) != hipSuccess || dev < 0 || dev >= 64) return false;
@@ -1667,6 +1802,16 @@ void attend_batch(const float* q, const uint16_t* keys, int n_hist, int n_swa, c
                   int top_k, int ratio, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p0,
                   int T, float* out, cudaStream_t s) {
     if (T <= 0) return;
+#if defined(STRATA_USE_HIP)
+    static const bool old_attn = [] { const char* v = getenv("STRATA_DS4_ATTN"); return v && std::atoi(v) == 1; }();
+    if (!old_attn && head_dim == 512 && n_head % AW_H == 0 && n_rot <= 512 && hip_wmma_arch()) {
+        attend_batch_wmma_kernel<<<dim3((unsigned) T, (unsigned) (n_head / AW_H)), 256, 0, s>>>(
+            q, keys, n_hist, n_swa, comp, sel, top_k, ratio, sinks, n_head, n_rot, rope, p0, 1.0f / sqrtf((float) head_dim),
+            out);
+        check("attend_batch_wmma");
+        return;
+    }
+#endif
     if (attn_use_mma(n_head, head_dim)) {
         attend_batch_mma_kernel<<<dim3((unsigned) T, (unsigned) (n_head / ABM_H)), 128, 0, s>>>(
             q, keys, n_hist, n_swa, comp, sel, top_k, ratio, sinks, n_head, n_rot, rope, p0, 1.0f / sqrtf((float) head_dim),

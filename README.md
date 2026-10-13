@@ -144,8 +144,8 @@ Teacher-forced logits against llama.cpp on the same GGUF (`tools/dsv4_logits_dum
 - [ ] Windows for DeepSeek V4 (Linux tested)
 - [ ] Multi-GPU for DeepSeek V4: the layer split runs (RTX 5090 + RTX 3090 measured); V100 builds with CUDA 12 (not
   yet run on one)
-- [ ] AMD (HIP): runs on the Radeon 8060S with WMMA indexer kernels (`--backend hip`); discrete Radeon cards and the
-  prompt attention's WMMA kernel still to come
+- [ ] AMD (HIP): runs on the Radeon 8060S with WMMA indexer and prompt-attention kernels (`--backend hip`); discrete
+  Radeon cards still to come
 - [ ] Prompt-path tuning (staging RAM-tier experts dominates long prompts)
 
 ## 🙏 Credits
