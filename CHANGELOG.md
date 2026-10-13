@@ -7,6 +7,23 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.3 - 2026-10-13
+
+The indexer's top-k select is faster, with the same result: DeepSeek V4 Flash decodes ~0.3 ms per token faster at any
+context length (the CSA layers' `ds_index` 8K 0.75 -> 0.47 ms/token, 125K 1.18 -> 0.85). GLM's DSA select uses the same
+code and gets the same speedup.
+- `src/kernels/cuda/dsa_topk.cuh` (one block of 1,024 threads; 2K keys 18 -> 12 us, 31K 35 -> 25, RTX 5090):
+  - three radix passes of 12, 12 and 8 bits (was four of 8). The cut-off bin is found by a block scan, not a serial
+    walk by thread 0.
+  - the winners above the cut are collected with coalesced reads, in any order. The keys equal to the cut are too when
+    all of them are taken; otherwise the first ones in pool order are taken, as before.
+  - each winner's rank is a count of the winners larger than it (the values are distinct). The bitonic sort and its 45
+    barriers are gone.
+- The same cells as before: 2,000 random cases (up to 40K keys, top 1-1,024, kpool 1 and 4, heavy ties, negatives,
+  zeros) match the old code exactly. `glm_dsa_parity`, `glm_layer_parity` and `glm_model_test` pass. KL against
+  llama.cpp (3,000 tokens) 0.0092, within run-to-run noise (0.0087-0.0093). HIP builds keep the old version (the new
+  one assumes 32-lane warps).
+
 ## v1.3.2 - 2026-10-13
 
 **DeepSeek V4 Flash decodes long contexts faster: 125K tokens ~58 -> ~66 tok/s (+14%).** The decode slowed with the
