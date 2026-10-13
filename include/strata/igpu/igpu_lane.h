@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#define ABYSS_IGPU_API 1   // abyss_igpu_version() of this interface
+#define ABYSS_IGPU_API 2   // abyss_igpu_version() of this interface
 
 typedef int (*abyss_igpu_version_fn)(void);
 /// The first HIP device; n_embd / n_ff: the largest of the model (buffers).  0 ok, else err holds why.
@@ -23,6 +23,16 @@ typedef int (*abyss_igpu_register_fn)(const void* host, size_t bytes, char* err,
 /// < 0 an error (the lane should stop).
 typedef int (*abyss_igpu_experts_fn)(int gu_type, int d_type, int n_embd, int n_ff, size_t down_off, float limit, int ne,
                                      const void* const* blobs, const float* w, const float* x, float* out);
+/// Forget a range registered by abyss_igpu_register (before the host frees it).
+typedef void (*abyss_igpu_unregister_fn)(const void* host);
+/// The prompt path's experts on the iGPU (glm_fast's light row kernels): expert i (blob blobs[i], registered) over the
+/// rows [r0[i], r0[i] + nr[i]) of [rlo, rhi); row r is token row_tok[r] of x (n_tok rows of n_embd floats).  Gate/up,
+/// the clamped swiglu, down: out row r (ld floats apart, ld >= max(n_embd, 2 n_ff)) = expert(x[row_tok[r]]), unweighted.
+/// row_tok, x and out are host memory registered with abyss_igpu_register.  Synchronous.  0 ok; 1 not here (a type
+/// without the kernels, memory not registered, the lane busy: compute it elsewhere); < 0 an error.
+typedef int (*abyss_igpu_rows_fn)(int gu_type, int d_type, int n_embd, int n_ff, size_t down_off, float limit, int ne,
+                                  const void* const* blobs, const int* r0, const int* nr, const int* row_tok,
+                                  const float* x, int n_tok, int rlo, int rhi, float* out, int ld);
 /// A no-op kernel when the lane is idle: called every ~50 us while a decode runs, it keeps the iGPU's clocks up -
 /// after 0.3 ms idle a one-expert call took 103 us instead of 57 (Radeon 8060S, power_dpm "auto").
 typedef void (*abyss_igpu_poke_fn)(void);

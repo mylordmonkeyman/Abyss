@@ -268,10 +268,12 @@ void moe_down(int d_type, const MoeDev& d, int k, int n_embd, int n_ff, size_t d
 /// [r0, r0 + nr) of the sorted rows (token row_tok[r]), all inside [rlo, rhi).  x: the chunk's n_tok token rows
 /// (n_embd floats).  Gate/up then swiglu (limit) then down, the down rows into out rows (ld floats apart; out also
 /// holds the gate/up rows in between).  Scratch: xq for n_tok x n_embd q8_1, hq for (rhi - rlo) x n_ff q8_1.
+/// ptrs (device, n entries): expert i's blob address instead of base + slot * stride (the iGPU lane's RAM tier).
 /// False: a type without the light kernels (the caller keeps MMQ for them).
 bool rows_experts(int gu_type, int d_type, const uint8_t* base, size_t stride, size_t down_off, const int* light, int n,
                   const int* row_tok, const float* x, int n_tok, int n_embd, int n_ff, float limit, int rlo, int rhi,
-                  void* xq_scratch, void* hq_scratch, float* out, int ld, cudaStream_t s);
+                  void* xq_scratch, void* hq_scratch, float* out, int ld, cudaStream_t s,
+                  const unsigned long long* ptrs = nullptr);
 
 /// tab[keys[i]] = vals[i] for i < n (the expert-table edits the host queues between tokens).
 void tab_update(unsigned long long* tab, const int* keys, const unsigned long long* vals, int n, cudaStream_t s);

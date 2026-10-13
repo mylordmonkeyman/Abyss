@@ -7,6 +7,31 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.6 - 2026-10-14
+
+**The prompt's RAM-tier experts run on the APU's integrated GPU: DeepSeek V4 Flash reads an 8K prompt ~1,310 -> ~1,830
+tok/s (+40%), 16K ~1,800 -> ~2,440 (+35%), 32K ~2,990 -> ~3,170 (Ryzen AI Max+ 395 + RTX 5090, one prompt, engine
+time).** A short prompt was bound by the experts that live in RAM. Each one either crossed PCIe Gen4 x4 to the RTX
+5090 (~1.2 ms) or was computed by the 16 CPU threads (~1.2 ms for ~20 rows), while the iGPU sat idle during prompts.
+- `abyss_igpu_rows` (libabyss_igpu.so, interface 2) computes the experts the prompt plan gives the host on the
+  iGPU. It uses glm_fast's light row kernels and reads the RAM tier in place: ~20 rows in ~0.22 ms against ~1.2 ms on
+  the CPU threads. The kernels gain IQ2_XS (DeepSeek V4's gate/up type) and a per-expert address table. The planner
+  costs these experts at the iGPU's rate (its own learned per-row time and a 0.045 ms fixed cost), so it gives the
+  iGPU more of them. A call it cannot take, or a layer type without the kernels (the two MXFP4-down layers), goes to
+  the CPU threads as before. `STRATA_GLM_PREFILL_IGPU=0` keeps the CPU threads.
+- Only the host rows' activations go down to RAM, gathered on the GPU after the plan, instead of the chunk's whole x.
+  For a 32K chunk that is ~70 MB instead of 537 MB per layer. The iGPU's cost per row at 32K dropped from 51 to 12 us.
+- Fix: the prestage count's adaptation read the prestage events after the next layer's prestage had recorded them
+  again. They were never ready, so the count stayed at the buffer's cap (91 experts a layer at 8K) whatever the lanes
+  did. It is now measured before that, and it also lowers the count when the copies are the later lane while some
+  experts were staged after the plan. With the iGPU, the first prompt starts from 32 experts per 8K tokens (24-40
+  measured best); a second prompt starts from what the first learned.
+- Server (`/v1/chat/completions`, prompt speed, two runs): 8K 1,565 / 1,638 tok/s (v1.3.5: ~1,170), 32K 2,939 / 2,943
+  (v1.3.5: ~2,630). Decode unchanged (62-66 tok/s).
+- KL on the prompt path: 3,000 tokens against llama.cpp 0.0089. 60K prompt, last 1,000 tokens against the v1.3.1
+  reference: 0.0032 (the run-to-run spread is 0.0030-0.0036). Without the iGPU (`STRATA_GLM_PREFILL_IGPU=0`): 8K
+  ~1,330 tok/s, the same as v1.3.5.
+
 ## v1.3.5 - 2026-10-14
 
 **DeepSeek V4 Flash reads long prompts faster again: 125K tokens ~1,770 -> ~2,540 tok/s (+44%), 32K ~2,060 ->

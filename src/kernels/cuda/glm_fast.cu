@@ -2759,8 +2759,8 @@ __device__ __forceinline__ void dwm(const uint8_t* row, int kbx, int iqs, const 
 // one 32-value sub-block decoded (dwm's first half), then dotted with any number of activations
 struct Dec {
     int g[8];
-    float a, b;   // IQ1_S: d1q, delta; IQ3_XXS / IQ2_XXS: d, -
-    int ls;
+    float a, b;   // IQ1_S: d1q, delta; IQ3_XXS / IQ2_XXS / IQ2_XS: d, -
+    int ls, ls1;  // IQ2_XS: the two halves' scales
 };
 template<int T>
 __device__ __forceinline__ void dec_sub(const uint8_t* row, int kbx, int iqs, const uint32_t* tab, Dec& o) {
@@ -2793,6 +2793,22 @@ __device__ __forceinline__ void dec_sub(const uint8_t* row, int kbx, int iqs, co
         }
         o.ls = aux32 >> 28;
         o.a = __half2float(bq3->d);
+    } else if constexpr (T == 17) {   // IQ2_XS (dw<17>'s decode)
+        const block_iq2_xs* bq2 = (const block_iq2_xs*) row + kbx;
+        const int2 q2_packed = make_int2(get_int_b2(bq2->qs, iqs + 0), get_int_b2(bq2->qs, iqs + 1));
+        const uint16_t* q2 = (const uint16_t*) &q2_packed;
+#pragma unroll
+        for (int l0 = 0; l0 < 8; l0 += 2) {
+            const uint2 grid_pos = ((const uint2*) tab)[q2[l0 / 2] & 0x1FF];
+            const uint32_t signs = unpack_ksigns(q2[l0 / 2] >> 9);
+            const int signs0 = __vcmpne4(signs & 0x08040201, 0);
+            const int signs1 = __vcmpne4(signs & 0x80402010, 0);
+            o.g[l0] = (int) __vsub4(grid_pos.x ^ signs0, signs0);
+            o.g[l0 + 1] = (int) __vsub4(grid_pos.y ^ signs1, signs1);
+        }
+        o.ls = bq2->scales[iqs / 2] & 0x0F;
+        o.ls1 = bq2->scales[iqs / 2] >> 4;
+        o.a = __half2float(bq2->d);
     } else {
         const block_iq2_xxs* bq2 = (const block_iq2_xxs*) row + kbx;
         const int q2 = get_int_b2(bq2->qs, iqs);
@@ -2813,6 +2829,14 @@ __device__ __forceinline__ void dec_sub(const uint8_t* row, int kbx, int iqs, co
 }
 template<int T>
 __device__ __forceinline__ float dec_dot(const Dec& o, const XV& x) {
+    if constexpr (T == 17) {
+        int s0 = 0, s1 = 0;
+#pragma unroll
+        for (int i = 0; i < 4; ++i) s0 = __dp4a(o.g[i], x.u[i], s0);
+#pragma unroll
+        for (int i = 4; i < 8; ++i) s1 = __dp4a(o.g[i], x.u[i], s1);
+        return o.a * x.d * ((s0 * o.ls + s1 * o.ls1 + (s0 + s1) / 2) / 4);
+    }
     int sumi = 0;
 #pragma unroll
     for (int i = 0; i < 8; ++i) sumi = __dp4a(o.g[i], x.u[i], sumi);
@@ -2880,7 +2904,7 @@ __device__ __forceinline__ void rows_multi(const uint8_t* const* rows, int n_in,
 
 // light[i] = {slot, r0, nr}: grid (n_ff / 32, n); 16 warps x (1 gate + 1 up row)... as the decode kernel: 2 + 2
 template<int TG>
-__global__ void __launch_bounds__(GU_WARPS * 32) rows_gate_up_kernel(const uint8_t* __restrict__ base, size_t stride,
+__global__ void __launch_bounds__(GU_WARPS * 32) rows_gate_up_kernel(const uint8_t* __restrict__ base, size_t stride, const unsigned long long* __restrict__ ptrs,
                                                                      const int* __restrict__ light,
                                                                      const int* __restrict__ row_tok,
                                                                      const block_q8_1* __restrict__ xq, int n_embd,
@@ -2890,7 +2914,7 @@ __global__ void __launch_bounds__(GU_WARPS * 32) rows_gate_up_kernel(const uint8
     load_tab<TG>(s_tab);
     __syncthreads();
     const int slot = light[3 * i], R0 = light[3 * i + 1], NR = light[3 * i + 2];
-    const uint8_t* blob = base + (size_t) slot * stride;
+    const uint8_t* blob = ptrs != nullptr ? (const uint8_t*) ptrs[i] : base + (size_t) slot * stride;
     const size_t rb = rbytes<TG>(n_embd);
     constexpr int RPW = GU_ROWS / GU_WARPS;
     const uint8_t* rows[2 * RPW];
@@ -2932,7 +2956,7 @@ __global__ void rows_swiglu_q8_kernel(const float* __restrict__ gu, int ld, int 
 
 // the down rows: grid (n_embd / 32, n); 16 warps x 2 rows; out row r (ld floats) cols [0, n_embd)
 template<int TD>
-__global__ void __launch_bounds__(GU_WARPS * 32) rows_down_kernel(const uint8_t* __restrict__ base, size_t stride,
+__global__ void __launch_bounds__(GU_WARPS * 32) rows_down_kernel(const uint8_t* __restrict__ base, size_t stride, const unsigned long long* __restrict__ ptrs,
                                                                   size_t down_off, const int* __restrict__ light,
                                                                   const block_q8_1* __restrict__ hq, int rlo, int n_ff,
                                                                   int n_embd, float* __restrict__ out, int ld) {
@@ -2941,7 +2965,7 @@ __global__ void __launch_bounds__(GU_WARPS * 32) rows_down_kernel(const uint8_t*
     load_tab<TD>(s_tab);
     __syncthreads();
     const int slot = light[3 * i], R0 = light[3 * i + 1], NR = light[3 * i + 2];
-    const uint8_t* blob = base + (size_t) slot * stride + down_off;
+    const uint8_t* blob = (ptrs != nullptr ? (const uint8_t*) ptrs[i] : base + (size_t) slot * stride) + down_off;
     const size_t rb = rbytes<TD>(n_ff);
     constexpr int RPW = 2;
     const uint8_t* rows[RPW];
@@ -3626,8 +3650,9 @@ void down(Variant v, int type, const MoeDev& d, int k, int n_embd, int n_ff, siz
 
 bool rows_experts(int gu_type, int d_type, const uint8_t* base, size_t stride, size_t down_off, const int* light, int n,
                   const int* row_tok, const float* x, int n_tok, int n_embd, int n_ff, float limit, int rlo, int rhi,
-                  void* xq_scratch, void* hq_scratch, float* out, int ld, cudaStream_t s) {
-    const auto ok = [](int t) { return t == 16 || t == 18 || t == 19; };
+                  void* xq_scratch, void* hq_scratch, float* out, int ld, cudaStream_t s,
+                  const unsigned long long* ptrs) {
+    const auto ok = [](int t) { return t == 16 || t == 17 || t == 18 || t == 19; };
     if (!ok(gu_type) || !ok(d_type) || n_embd % 256 || n_ff % (GU_ROWS) || n_embd % (GU_WARPS * 2)) return false;
     if (n <= 0 || rhi <= rlo) return true;
     auto* xq = (block_q8_1*) xq_scratch;
@@ -3636,16 +3661,18 @@ bool rows_experts(int gu_type, int d_type, const uint8_t* base, size_t stride, s
                                                                                                  n_embd, xq);
     const dim3 ggu((unsigned) (n_ff / GU_ROWS), (unsigned) n), gdn((unsigned) (n_embd / (GU_WARPS * 2)), (unsigned) n);
     switch (gu_type) {
-        case 16: rows_gate_up_kernel<16><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, light, row_tok, xq, n_embd, n_ff, out, ld); break;
-        case 18: rows_gate_up_kernel<18><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, light, row_tok, xq, n_embd, n_ff, out, ld); break;
-        default: rows_gate_up_kernel<19><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, light, row_tok, xq, n_embd, n_ff, out, ld); break;
+        case 16: rows_gate_up_kernel<16><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, light, row_tok, xq, n_embd, n_ff, out, ld); break;
+        case 17: rows_gate_up_kernel<17><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, light, row_tok, xq, n_embd, n_ff, out, ld); break;
+        case 18: rows_gate_up_kernel<18><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, light, row_tok, xq, n_embd, n_ff, out, ld); break;
+        default: rows_gate_up_kernel<19><<<ggu, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, light, row_tok, xq, n_embd, n_ff, out, ld); break;
     }
     rows_swiglu_q8_kernel<<<(unsigned) (((int64_t) (rhi - rlo) * (n_ff / 32) * 32 + 255) / 256), 256, 0, s>>>(
         out, ld, rlo, rhi, n_ff, limit, hq);
     switch (d_type) {
-        case 16: rows_down_kernel<16><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
-        case 19: rows_down_kernel<19><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
-        default: rows_down_kernel<18><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
+        case 16: rows_down_kernel<16><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
+        case 17: rows_down_kernel<17><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
+        case 19: rows_down_kernel<19><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
+        default: rows_down_kernel<18><<<gdn, GU_WARPS * 32, 0, s>>>(base, stride, ptrs, down_off, light, hq, rlo, n_ff, n_embd, out, ld); break;
     }
     launch_check("rows_experts");
     return true;

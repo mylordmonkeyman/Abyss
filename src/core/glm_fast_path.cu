@@ -1393,6 +1393,10 @@ void Glm5Model::fast_igpu_setup() {
     F->igpu_lib = lib;
     F->igpu_experts = ex;
     F->igpu_poke = (abyss_igpu_poke_fn) dlsym(lib, "abyss_igpu_poke");
+    F->igpu_rows = (abyss_igpu_rows_fn) dlsym(lib, "abyss_igpu_rows");
+    F->igpu_reg = rg;
+    F->igpu_unreg = (abyss_igpu_unregister_fn) dlsym(lib, "abyss_igpu_unregister");
+    if (F->igpu_unreg == nullptr) F->igpu_rows = nullptr;
     std::fprintf(stderr, "glm fast: CUDA%d iGPU lane on (%s): the RAM tier's %.2f GB registered (%zu pieces) in %.0f ms\n",
                  dev_, path.c_str(), (double) bytes / 1073741824.0, pieces,
                  std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
@@ -2318,6 +2322,9 @@ void Glm5Model::fast_destroy() {
                          (unsigned long long) F->igpu_calls.load(), (unsigned long long) F->igpu_falls.load());
         if (auto cl = (abyss_igpu_close_fn) dlsym(F->igpu_lib, "abyss_igpu_close")) cl();
         F->igpu_experts = nullptr;
+        F->igpu_rows = nullptr;
+        F->igpu_reg = nullptr;
+        F->igpu_unreg = nullptr;
     }
 #endif
     for (auto& R : F->rc)

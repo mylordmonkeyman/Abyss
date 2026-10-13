@@ -122,6 +122,15 @@ KdaBufs carve_kda(Carve& c, size_t T, const Glm5Geometry& g) {
     return b;
 }
 
+// dst row r = src row tok[r] (n floats each): the host experts' x rows, gathered before they go down
+__global__ void gather_rows(const float* __restrict__ src, const int* __restrict__ tok, int rows, int n,
+                            float* __restrict__ dst) {
+    const int r = blockIdx.x;
+    if (r >= rows) return;
+    const float4* a = reinterpret_cast<const float4*>(src + (size_t) tok[r] * n);
+    float4* b = reinterpret_cast<float4*>(dst + (size_t) r * n);
+    for (int i = threadIdx.x; i < n / 4; i += blockDim.x) b[i] = a[i];
+}
 #if defined(STRATA_USE_HIP)
 // The MLA batched products in FP16 with every head's tokens contiguous (hipBLAS picks far faster kernels than for the
 // F32 ones).  The prompt attention has three paths: the rocWMMA kernel on FP16 q_abs (f16q), the wave32 WMMA kernel on
@@ -417,12 +426,19 @@ struct Glm5Model::PrefillState {
     float* x_h = nullptr;
     size_t x_h_n = 0;
     int* rt_h = nullptr;
+    int* id_h = nullptr;      // 0, 1, 2, ..: the iGPU's row -> token map when x went down gathered (into out_h)
+    bool x_gathered = false;  // this layer's host rows' x is in out_h (row r = the host's row r), not x_h
     float* out_h = nullptr;
     size_t rows_h_n = 0;
     std::vector<uint8_t> c_act, c_hq, c_pack;
     std::vector<float> c_ff;
     uint64_t cpu_experts = 0, cpu_rows = 0;
     double ms_cpu = 0, row_ms = 0.05;   // row_ms: the host's cost of a row, learned (the split's estimate)
+    // the host experts on the iGPU (abyss_igpu_rows): its own cost of a row (learned) and of an expert; the host
+    // buffers it reads and writes (registered with it)
+    double row_ms_ig = 0.009, fix_ms_ig = 0.045;
+    uint64_t ig_experts = 0, ig_rows = 0;
+    std::vector<const void*> ig_reg;
     // the split's balance, learned: the host's estimates times kappa, nudged each layer by the host's time over the
     // copy stream's (ev_c0 .. ev_c1: the staged copies) - the two lanes should end together
     double kappa = 1.0;
@@ -1255,8 +1271,12 @@ void Glm5Model::prefill_destroy() {
         for (cudaEvent_t e : {t.start, t.plan, t.pre, t.c1, t.end})
             if (e) cudaEventDestroy(e);
     if (S->xs) cudaStreamSynchronize(S->xs);
+    if (fast_ && fast_->igpu_unreg)
+        for (const void* p : S->ig_reg) fast_->igpu_unreg(p);
+    S->ig_reg.clear();
     if (S->x_h) cudaFreeHost(S->x_h);
     if (S->rt_h) cudaFreeHost(S->rt_h);
+    if (S->id_h) cudaFreeHost(S->id_h);
     if (S->out_h) cudaFreeHost(S->out_h);
     if (S->ev_x) cudaEventDestroy(S->ev_x);
     if (S->ev_out) cudaEventDestroy(S->ev_out);
@@ -1640,6 +1660,19 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         while (il < l1_ && !F->L[(size_t) il].moe) ++il;
         return il;
     };
+    // whether layer il's host experts go to the iGPU (abyss_igpu_rows: glm_fast's light row kernels on the APU's
+    // integrated GPU, reading the RAM tier in place - an expert of ~20 rows 0.22 ms against ~1.2 on the 16 CPU
+    // threads, Radeon 8060S).  STRATA_GLM_PREFILL_IGPU=0: the CPU threads.  A call it cannot take: the CPU threads.
+    static const bool pf_igpu = [] {
+        const char* v = getenv("STRATA_GLM_PREFILL_IGPU");
+        return v == nullptr || std::atoi(v) != 0;
+    }();
+    const auto igpu_lane = [&](int il) {
+        const auto& Ly = F->L[(size_t) il];
+        const auto ok = [](int t) { return t == 16 || t == 17 || t == 18 || t == 19; };
+        return pf_igpu && F->igpu_rows != nullptr && ok(Ly.gu_type) && ok(Ly.d_type) && 2 * g.n_ff_exp <= E &&
+               E % 256 == 0;
+    };
     const auto prestage = [&](int il) {
         S->pre_layer = -1;
         S->pre_e.clear();
@@ -1689,8 +1722,10 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                                                                 S->ev_pdone.size() * PrefillState::kPreEv));
         // (deepseek4 before its first lesson: 64 experts for a 5.6K-token chunk, the cap from ~14K tokens on - the best
         // fixed counts measured there, so a server's first prompt does not pay the whole buffer)
+        // (with the iGPU taking the host's experts, ~5x the CPU threads' rate: 32 for 8K tokens - 24 to 40 measured best)
+        const double first = igpu_lane(il) ? 32.0 / 8000.0 : 64.0 / 5600.0;
         const double rate = S->pre_rate[Ly.recr ? 0 : 1] > 0.0 ? S->pre_rate[Ly.recr ? 0 : 1]
-                                                                 : (adapt && g.arch == 1 ? 64.0 / 5600.0 : 0.0);
+                                                                 : (adapt && g.arch == 1 ? first : 0.0);
         const int want = !adapt || rate <= 0.0 ? cap : std::max(std::min(cap, 16), std::min(cap, (int) std::lround(rate * T)));
         const int n = (int) std::min<size_t>((size_t) want, cand.size());
         if (n == 0) return;
@@ -1730,19 +1765,49 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             ok = cudaStreamCreateWithFlags(&S->xs, cudaStreamNonBlocking) == cudaSuccess &&
                  cudaEventCreateWithFlags(&S->ev_x, cudaEventDisableTiming) == cudaSuccess &&
                  cudaEventCreateWithFlags(&S->ev_out, cudaEventDisableTiming) == cudaSuccess;
+        // (the iGPU reads x and the rows' tokens and writes the outputs in place: registered with it)
+        const auto unreg = [&](const void* p) {
+            if (p == nullptr) return;
+            const auto it = std::find(S->ig_reg.begin(), S->ig_reg.end(), p);
+            if (it == S->ig_reg.end()) return;
+            if (F->igpu_unreg) F->igpu_unreg(p);
+            S->ig_reg.erase(it);
+        };
+        const auto reg = [&](const void* p, size_t bytes) {
+            if (F->igpu_rows == nullptr || F->igpu_reg == nullptr || p == nullptr) return;
+            char e[256] = {0};
+            if (F->igpu_reg(p, bytes, e, (int) sizeof e) == 0) S->ig_reg.push_back(p);
+            else std::fprintf(stderr, "glm prefill: the iGPU cannot read a host buffer (%s) - the CPU threads compute\n", e);
+        };
         if (ok && S->x_h_n < (size_t) T * E) {
+            unreg(S->x_h);
             if (S->x_h) cudaFreeHost(S->x_h);
             S->x_h_n = (size_t) T * E;
             ok = cudaHostAlloc((void**) &S->x_h, S->x_h_n * sizeof(float), cudaHostAllocDefault) == cudaSuccess;
+            if (ok) reg(S->x_h, S->x_h_n * sizeof(float));
         }
         if (ok && S->rows_h_n < (size_t) cpu_nrows) {
+            unreg(S->rt_h);
+            unreg(S->id_h);
+            unreg(S->out_h);
             if (S->rt_h) cudaFreeHost(S->rt_h);
+            if (S->id_h) cudaFreeHost(S->id_h);
             if (S->out_h) cudaFreeHost(S->out_h);
+            S->id_h = nullptr;
             // (what this layer needs and a quarter more, at most a chunk's routes: T x K rows of n_embd floats
             // would be 2 GB of pinned memory at 16K tokens)
             S->rows_h_n = std::min((size_t) T * K, (size_t) cpu_nrows + (size_t) cpu_nrows / 4 + 64);
             ok = cudaHostAlloc((void**) &S->rt_h, S->rows_h_n * sizeof(int), cudaHostAllocDefault) == cudaSuccess &&
                  cudaHostAlloc((void**) &S->out_h, S->rows_h_n * E * sizeof(float), cudaHostAllocDefault) == cudaSuccess;
+            if (ok && F->igpu_rows != nullptr &&
+                cudaHostAlloc((void**) &S->id_h, S->rows_h_n * sizeof(int), cudaHostAllocDefault) == cudaSuccess) {
+                for (size_t r = 0; r < S->rows_h_n; ++r) S->id_h[r] = (int) r;
+                reg(S->id_h, S->rows_h_n * sizeof(int));
+            }
+            if (ok) {
+                reg(S->rt_h, S->rows_h_n * sizeof(int));
+                reg(S->out_h, S->rows_h_n * E * sizeof(float));
+            }
         }
         return ok;
     };
@@ -1930,8 +1995,10 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         dump_row("ffn_norm-" + std::to_string(il), S->x, E);
         // the CPU lane's x (this layer's FFN input) goes down now, under the shared expert and the routing - not
         // after the plan, where the host's experts waited for it (~40 ms of a 16K chunk's 260 MB)
+        // (not when the iGPU takes them: after the plan only their rows go down, gathered - a 32K chunk's whole x is
+        // 537 MB, ~80 ms over PCIe Gen4 x4, against ~70 MB for a layer's ~4K host rows)
         bool x_down = false;
-        if (Ly.moe && cpu_lane(il)) {
+        if (Ly.moe && cpu_lane(il) && !(igpu_lane(il) && S->id_h != nullptr)) {
             if (!cpu_bufs(0)) {
                 err = "glm prefill: the CPU experts' host buffers did not allocate";
                 return false;
@@ -2130,7 +2197,9 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             static const char* row_env = getenv("STRATA_GLM_PREFILL_CPU_ROW_MS");
             // the planning cost of a row: the env's, else learned from the layers before (their host time less an
             // expert's weights each, over their rows; one 3090 beside 2x Xeon 6152: ~0.056 ms)
-            const double row_ms = row_env != nullptr ? std::atof(row_env) : S->row_ms;
+            const bool ig = igpu_lane(il);
+            const double row_ms = row_env != nullptr ? std::atof(row_env) : ig ? S->row_ms_ig : S->row_ms;
+            const double fix_ms = ig ? S->fix_ms_ig : 2.0 * F->cpu_c_ms;
             if (cpu_lane(il)) {
                 std::vector<size_t> ram_i;
                 int n_pcie = 0;
@@ -2162,7 +2231,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 for (size_t i : ram_i) {
                     // (an expert's fixed cost is about twice the lane's one-token expert: its weights, and the
                     // multi-row kernel's unpacking of every row)
-                    const double c = S->kappa * (2.0 * F->cpu_c_ms + row_ms * S->h_counts[staged[i].e]);
+                    const double c = S->kappa * (fix_ms + row_ms * S->h_counts[staged[i].e]);
                     if (t_cpu + c > t_pcie - p_ms) break;
                     if (cpu_rows_taken + S->h_counts[staged[i].e] > cpu_cap) break;
                     cpu_rows_taken += S->h_counts[staged[i].e];
@@ -2221,7 +2290,15 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             }
             cudaEventRecord(S->ev_x, s);   // the scatter (and x) are done up to here
             cudaStreamWaitEvent(S->xs, S->ev_x, 0);
-            if (!x_down) cudaMemcpyAsync(S->x_h, S->x, (size_t) T * E * sizeof(float), cudaMemcpyDeviceToHost, S->xs);
+            S->x_gathered = !x_down && igpu_lane(il) && S->id_h != nullptr;
+            if (S->x_gathered) {   // (OUTPc: the host rows' outputs come back into it later, after the combine read it)
+                gather_rows<<<(unsigned) cpu_nrows, 256, 0, s>>>(S->x, M.row_tok + cpu_r0, cpu_nrows, E, M.OUTPc);
+                cudaEventRecord(S->ev_x, s);
+                cudaStreamWaitEvent(S->xs, S->ev_x, 0);
+                cudaMemcpyAsync(S->out_h, M.OUTPc, (size_t) cpu_nrows * E * sizeof(float), cudaMemcpyDeviceToHost, S->xs);
+            } else if (!x_down) {
+                cudaMemcpyAsync(S->x_h, S->x, (size_t) T * E * sizeof(float), cudaMemcpyDeviceToHost, S->xs);
+            }
             cudaMemcpyAsync(S->rt_h, M.row_tok + cpu_r0, (size_t) cpu_nrows * sizeof(int), cudaMemcpyDeviceToHost, S->xs);
         }
         S->mark("plan", s);
@@ -2469,209 +2546,221 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             const int ncx = (int) cpu_set.size();
             std::vector<int> r_of((size_t) ncx);   // each expert's first row in the CPU segment
             for (int j = 0; j < ncx; ++j) r_of[(size_t) j] = S->h_base[cpu_set[(size_t) j].e] - cpu_r0;
-            F->cpu_pool->run(cpu_nrows, [&](int r) {
-                kc::native_quant_act(nf, S->x_h + (size_t) S->rt_h[r] * E, S->c_act.data() + (size_t) r * kA);
-            });
-            // experts with enough rows take the multi-row AVX-512 kernel (a weight row unpacked once for all of them,
-            // ~2x ggml's per-pair dots from 8 rows on - kq_avx512.hpp); their activations packed once each
-            static const bool kq_on = [] {
-                const char* v = getenv("STRATA_GLM_KQ");
-                return kc::kq_avx512_ok() && (v == nullptr || std::atoi(v) != 0);
-            }();
-            const auto kq_use = [&](int type, int act_type, int cnt) {
-                return kq_on && kc::kq_type_ok(type) && act_type == 15 /* Q8_K */ && cnt >= (type == 11 ? 8 : 12);
-            };
-            // the i-quant rows (IQ2_XXS/XS/S, IQ3_XXS/S) of an expert with 2+ rows: the AVX-512 multi-token kernel
-            // (iq_avx512.cpp, a weight block decoded once for 4 tokens) - DeepSeek V4's IQ2_XS gate/up and IQ3_XXS
-            // down on a Ryzen AI Max+ 395, one thread: 1.2 ms a token through an expert by ggml's dots, 0.52 from 4
-            // tokens on.  STRATA_GLM_PREFILL_IQ512=0: ggml's (A/B)
-            static const bool iq_on = [] {
-                const char* v = getenv("STRATA_GLM_PREFILL_IQ512");
-                return kc::cpu_avx512_ok() && (v == nullptr || std::atoi(v) != 0);
-            }();
-            const auto iq_use = [&](int type, int act_type, int cnt) {
-                return iq_on && kc::iq512_supported(type) && act_type == 15 /* Q8_K */ && cnt >= 2;
-            };
-            std::vector<size_t> off_a((size_t) ncx, SIZE_MAX), off_h((size_t) ncx, SIZE_MAX);
-            size_t pack_a = 0, pack_h = 0;
-            for (int j = 0; j < ncx; ++j) {
-                const int cnt = S->h_counts[cpu_set[(size_t) j].e];
-                if (kq_use(nf.gu_type, nf.gu_act, cnt)) {
-                    off_a[(size_t) j] = pack_a;
-                    pack_a += (kc::kq_act_bytes(cnt, E) + 63) & ~(size_t) 63;
-                }
-                if (kq_use(nf.d_type, nf.d_act, cnt)) {
-                    off_h[(size_t) j] = pack_h;
-                    pack_h += (kc::kq_act_bytes(cnt, nff) + 63) & ~(size_t) 63;
-                }
-            }
-            if (S->c_pack.size() < pack_a + pack_h + 64) S->c_pack.resize(pack_a + pack_h + 64);
-            uint8_t* pk = (uint8_t*) (((uintptr_t) S->c_pack.data() + 63) & ~(uintptr_t) 63);
-            uint8_t* pk_h = pk + pack_a;
-            const auto pack = [&](bool gu) {
-                F->cpu_pool->run(ncx, [&](int j) {
-                    const size_t off = gu ? off_a[(size_t) j] : off_h[(size_t) j];
-                    if (off == SIZE_MAX) return;
-                    const int cnt = S->h_counts[cpu_set[(size_t) j].e], b = r_of[(size_t) j];
-                    thread_local std::vector<const void*> a;
-                    a.resize((size_t) cnt);
-                    for (int t = 0; t < cnt; ++t)
-                        a[(size_t) t] = gu ? (const void*) (S->c_act.data() + (size_t) (b + t) * kA)
-                                           : (const void*) (S->c_hq.data() + (size_t) (b + t) * kH);
-                    kc::kq_pack_act(a.data(), cnt, gu ? E : nff, (gu ? pk : pk_h) + off);
-                });
-            };
-            if (pack_a > 0) pack(true);
-            F->cpu_pool->run(ncx * (nff / kGu), [&](int job) {
-                const int j = job % ncx, r0 = (job / ncx) * kGu, b = r_of[(size_t) j];
-                const int cnt = S->h_counts[cpu_set[(size_t) j].e];
-                const uint8_t* blob = cpu_set[(size_t) j].ram;
-                if (off_a[(size_t) j] != SIZE_MAX) {
-                    // gate and up rows [r0, r0 + kGu) for every row of the expert, then the clamped swiglu
-                    thread_local std::vector<float> gu_t;
-                    thread_local std::vector<float*> go, uo;
-                    gu_t.resize((size_t) 2 * cnt * kGu);
-                    go.resize((size_t) cnt);
-                    uo.resize((size_t) cnt);
-                    for (int t = 0; t < cnt; ++t) {
-                        go[(size_t) t] = gu_t.data() + (size_t) t * kGu;
-                        uo[(size_t) t] = gu_t.data() + (size_t) (cnt + t) * kGu;
-                    }
-                    const void* pa = pk + off_a[(size_t) j];
-                    kc::kq_rows_packed(nf.gu_type, blob + (size_t) r0 * nf.gu_row, nf.gu_row, E, pa, cnt, go.data(), 0,
-                                       kGu);
-                    kc::kq_rows_packed(nf.gu_type, blob + Ly.gu_bytes + (size_t) r0 * nf.gu_row, nf.gu_row, E, pa,
-                                       cnt, uo.data(), 0, kGu);
-                    const float lim = g.swiglu_exp;
-                    for (int t = 0; t < cnt; ++t) {
-                        float* ff = S->c_ff.data() + (size_t) (b + t) * nff + r0;
-                        for (int r = 0; r < kGu; ++r) {
-                            const float gg = std::fmin(go[(size_t) t][r], lim);
-                            const float uu = std::fmin(std::fmax(uo[(size_t) t][r], -lim), lim);
-                            ff[r] = (gg / (1.f + std::exp(-gg))) * uu;
-                        }
-                    }
-                    return;
-                }
-                thread_local std::vector<const void*> a;
-                thread_local std::vector<float*> o;
-                a.resize((size_t) cnt);
-                o.resize((size_t) cnt);
-                for (int t = 0; t < cnt; ++t) {
-                    a[(size_t) t] = S->c_act.data() + (size_t) (b + t) * kA;
-                    o[(size_t) t] = S->c_ff.data() + (size_t) (b + t) * nff;
-                }
-                if (iq_use(nf.gu_type, nf.gu_act, cnt)) {
-                    // gate and up rows [r0, r0 + kGu) for every token of the expert, then the clamped swiglu
-                    thread_local std::vector<float> gu_t;
-                    thread_local std::vector<float*> go, uo;
-                    gu_t.resize((size_t) 2 * cnt * kGu);
-                    go.resize((size_t) cnt);
-                    uo.resize((size_t) cnt);
-                    for (int t = 0; t < cnt; ++t) {
-                        go[(size_t) t] = gu_t.data() + (size_t) t * kGu;
-                        uo[(size_t) t] = gu_t.data() + (size_t) (cnt + t) * kGu;
-                    }
-                    kc::iq512_rows(nf.gu_type, blob + (size_t) r0 * nf.gu_row, nf.gu_row, E, a.data(), cnt, go.data(),
-                                   0, kGu);
-                    kc::iq512_rows(nf.gu_type, blob + Ly.gu_bytes + (size_t) r0 * nf.gu_row, nf.gu_row, E, a.data(),
-                                   cnt, uo.data(), 0, kGu);
-                    const float lim = g.swiglu_exp;
-                    const bool clamp = lim != std::numeric_limits<float>::infinity();
-                    for (int t = 0; t < cnt; ++t)
-                        for (int r = 0; r < kGu; ++r) {
-                            float gg = go[(size_t) t][r], uu = uo[(size_t) t][r];
-                            if (clamp) {
-                                gg = std::fmin(gg, lim);
-                                uu = std::fmin(std::fmax(uu, -lim), lim);
-                            }
-                            o[(size_t) t][r0 + r] = (gg / (1.f + std::exp(-gg))) * uu;
-                        }
-                    return;
-                }
-                kc::native_gu_rows_split(nf, blob, blob + Ly.gu_bytes, a.data(), cnt, o.data(), r0, r0 + kGu,
-                                         g.swiglu_exp);
-            });
-            F->cpu_pool->run(cpu_nrows, [&](int r) {
-                kc::native_quant_h(nf, S->c_ff.data() + (size_t) r * nff, S->c_hq.data() + (size_t) r * kH);
-            });
-            if (pack_h > 0) pack(false);
-            // the down rows in two parts: the first part's outputs (about two thirds of the rows) go up on the copy
-            // stream while the second part computes
-            int j_split = ncx;
-            for (int j = 0; j < ncx; ++j)
-                if (r_of[(size_t) j] >= cpu_nrows * 2 / 3) {
-                    j_split = j;
-                    break;
-                }
-            const auto down = [&](int j0, int j1) {
-              const int nj = j1 - j0;
-              if (nj <= 0) return;
-              F->cpu_pool->run(nj * (E / kDn), [&](int job) {
-                const int j = j0 + job % nj, r0 = (job / nj) * kDn, b = r_of[(size_t) j];
-                const int cnt = S->h_counts[cpu_set[(size_t) j].e];
-                thread_local std::vector<const void*> h;
-                thread_local std::vector<float*> o;
-                h.resize((size_t) cnt);
-                o.resize((size_t) cnt);
-                const uint8_t* down = cpu_set[(size_t) j].ram + Ly.down_off;
-                if (off_h[(size_t) j] != SIZE_MAX) {
-                    for (int t = 0; t < cnt; ++t) o[(size_t) t] = S->out_h + (size_t) (b + t) * E + r0;
-                    kc::kq_rows_packed(nf.d_type, down + (size_t) r0 * nf.d_row, nf.d_row, nff, pk_h + off_h[(size_t) j],
-                                       cnt, o.data(), 0, kDn);
-                    return;
-                }
-                for (int t = 0; t < cnt; ++t) {
-                    h[(size_t) t] = S->c_hq.data() + (size_t) (b + t) * kH;
-                    o[(size_t) t] = S->out_h + (size_t) (b + t) * E;
-                }
-                if (iq_use(nf.d_type, nf.d_act, cnt)) {   // (out[t][r] for r in [r0, r0 + kDn), as the split's)
-                    kc::iq512_rows(nf.d_type, down, nf.d_row, nff, h.data(), cnt, o.data(), r0, r0 + kDn);
-                    return;
-                }
-                kc::native_down_rows_split(nf, down, h.data(), cnt, o.data(), r0, r0 + kDn);
-              });
-            };
             const auto up = [&](int ra, int rb) {
                 if (rb > ra)
                     cudaMemcpyAsync(M.OUTPc + (size_t) ra * E, S->out_h + (size_t) ra * E,
                                     (size_t) (rb - ra) * E * sizeof(float), cudaMemcpyHostToDevice, F->copy);
             };
-            const int r_split = j_split < ncx ? r_of[(size_t) j_split] : cpu_nrows;
-            down(0, j_split);
-            up(0, r_split);
-            down(j_split, ncx);
-            up(r_split, cpu_nrows);
+            // the iGPU first: the whole set in one call, the outputs straight into out_h
+            bool on_igpu = false;
+            if (igpu_lane(il)) {
+                std::vector<const void*> bl((size_t) ncx);
+                std::vector<int> nr((size_t) ncx);
+                for (int j = 0; j < ncx; ++j) {
+                    bl[(size_t) j] = cpu_set[(size_t) j].ram;
+                    nr[(size_t) j] = S->h_counts[cpu_set[(size_t) j].e];
+                }
+                // (gathered: x row r is out_h row r, read before the outputs overwrite it)
+                const int rc = S->x_gathered
+                    ? F->igpu_rows(Ly.gu_type, Ly.d_type, E, nff, Ly.down_off, g.swiglu_exp, ncx, bl.data(), r_of.data(),
+                                   nr.data(), S->id_h, S->out_h, cpu_nrows, 0, cpu_nrows, S->out_h, E)
+                    : F->igpu_rows(Ly.gu_type, Ly.d_type, E, nff, Ly.down_off, g.swiglu_exp, ncx, bl.data(), r_of.data(),
+                                   nr.data(), S->rt_h, S->x_h, T, 0, cpu_nrows, S->out_h, E);
+                if (rc == 0) {
+                    on_igpu = true;
+                    S->ig_experts += (uint64_t) ncx;
+                    S->ig_rows += (uint64_t) cpu_nrows;
+                    up(0, cpu_nrows);
+                } else if (rc < 0) {
+                    std::fprintf(stderr, "glm prefill: the iGPU failed on the prompt's experts - the CPU threads compute\n");
+                    F->igpu_rows = nullptr;
+                }
+            }
+            if (!on_igpu) {
+                F->cpu_pool->run(cpu_nrows, [&](int r) {
+                    const float* xr = S->x_gathered ? S->out_h + (size_t) r * E : S->x_h + (size_t) S->rt_h[r] * E;
+                    kc::native_quant_act(nf, xr, S->c_act.data() + (size_t) r * kA);
+                });
+                // experts with enough rows take the multi-row AVX-512 kernel (a weight row unpacked once for all of them,
+                // ~2x ggml's per-pair dots from 8 rows on - kq_avx512.hpp); their activations packed once each
+                static const bool kq_on = [] {
+                    const char* v = getenv("STRATA_GLM_KQ");
+                    return kc::kq_avx512_ok() && (v == nullptr || std::atoi(v) != 0);
+                }();
+                const auto kq_use = [&](int type, int act_type, int cnt) {
+                    return kq_on && kc::kq_type_ok(type) && act_type == 15 /* Q8_K */ && cnt >= (type == 11 ? 8 : 12);
+                };
+                // the i-quant rows (IQ2_XXS/XS/S, IQ3_XXS/S) of an expert with 2+ rows: the AVX-512 multi-token kernel
+                // (iq_avx512.cpp, a weight block decoded once for 4 tokens) - DeepSeek V4's IQ2_XS gate/up and IQ3_XXS
+                // down on a Ryzen AI Max+ 395, one thread: 1.2 ms a token through an expert by ggml's dots, 0.52 from 4
+                // tokens on.  STRATA_GLM_PREFILL_IQ512=0: ggml's (A/B)
+                static const bool iq_on = [] {
+                    const char* v = getenv("STRATA_GLM_PREFILL_IQ512");
+                    return kc::cpu_avx512_ok() && (v == nullptr || std::atoi(v) != 0);
+                }();
+                const auto iq_use = [&](int type, int act_type, int cnt) {
+                    return iq_on && kc::iq512_supported(type) && act_type == 15 /* Q8_K */ && cnt >= 2;
+                };
+                std::vector<size_t> off_a((size_t) ncx, SIZE_MAX), off_h((size_t) ncx, SIZE_MAX);
+                size_t pack_a = 0, pack_h = 0;
+                for (int j = 0; j < ncx; ++j) {
+                    const int cnt = S->h_counts[cpu_set[(size_t) j].e];
+                    if (kq_use(nf.gu_type, nf.gu_act, cnt)) {
+                        off_a[(size_t) j] = pack_a;
+                        pack_a += (kc::kq_act_bytes(cnt, E) + 63) & ~(size_t) 63;
+                    }
+                    if (kq_use(nf.d_type, nf.d_act, cnt)) {
+                        off_h[(size_t) j] = pack_h;
+                        pack_h += (kc::kq_act_bytes(cnt, nff) + 63) & ~(size_t) 63;
+                    }
+                }
+                if (S->c_pack.size() < pack_a + pack_h + 64) S->c_pack.resize(pack_a + pack_h + 64);
+                uint8_t* pk = (uint8_t*) (((uintptr_t) S->c_pack.data() + 63) & ~(uintptr_t) 63);
+                uint8_t* pk_h = pk + pack_a;
+                const auto pack = [&](bool gu) {
+                    F->cpu_pool->run(ncx, [&](int j) {
+                        const size_t off = gu ? off_a[(size_t) j] : off_h[(size_t) j];
+                        if (off == SIZE_MAX) return;
+                        const int cnt = S->h_counts[cpu_set[(size_t) j].e], b = r_of[(size_t) j];
+                        thread_local std::vector<const void*> a;
+                        a.resize((size_t) cnt);
+                        for (int t = 0; t < cnt; ++t)
+                            a[(size_t) t] = gu ? (const void*) (S->c_act.data() + (size_t) (b + t) * kA)
+                                               : (const void*) (S->c_hq.data() + (size_t) (b + t) * kH);
+                        kc::kq_pack_act(a.data(), cnt, gu ? E : nff, (gu ? pk : pk_h) + off);
+                    });
+                };
+                if (pack_a > 0) pack(true);
+                F->cpu_pool->run(ncx * (nff / kGu), [&](int job) {
+                    const int j = job % ncx, r0 = (job / ncx) * kGu, b = r_of[(size_t) j];
+                    const int cnt = S->h_counts[cpu_set[(size_t) j].e];
+                    const uint8_t* blob = cpu_set[(size_t) j].ram;
+                    if (off_a[(size_t) j] != SIZE_MAX) {
+                        // gate and up rows [r0, r0 + kGu) for every row of the expert, then the clamped swiglu
+                        thread_local std::vector<float> gu_t;
+                        thread_local std::vector<float*> go, uo;
+                        gu_t.resize((size_t) 2 * cnt * kGu);
+                        go.resize((size_t) cnt);
+                        uo.resize((size_t) cnt);
+                        for (int t = 0; t < cnt; ++t) {
+                            go[(size_t) t] = gu_t.data() + (size_t) t * kGu;
+                            uo[(size_t) t] = gu_t.data() + (size_t) (cnt + t) * kGu;
+                        }
+                        const void* pa = pk + off_a[(size_t) j];
+                        kc::kq_rows_packed(nf.gu_type, blob + (size_t) r0 * nf.gu_row, nf.gu_row, E, pa, cnt, go.data(), 0,
+                                           kGu);
+                        kc::kq_rows_packed(nf.gu_type, blob + Ly.gu_bytes + (size_t) r0 * nf.gu_row, nf.gu_row, E, pa,
+                                           cnt, uo.data(), 0, kGu);
+                        const float lim = g.swiglu_exp;
+                        for (int t = 0; t < cnt; ++t) {
+                            float* ff = S->c_ff.data() + (size_t) (b + t) * nff + r0;
+                            for (int r = 0; r < kGu; ++r) {
+                                const float gg = std::fmin(go[(size_t) t][r], lim);
+                                const float uu = std::fmin(std::fmax(uo[(size_t) t][r], -lim), lim);
+                                ff[r] = (gg / (1.f + std::exp(-gg))) * uu;
+                            }
+                        }
+                        return;
+                    }
+                    thread_local std::vector<const void*> a;
+                    thread_local std::vector<float*> o;
+                    a.resize((size_t) cnt);
+                    o.resize((size_t) cnt);
+                    for (int t = 0; t < cnt; ++t) {
+                        a[(size_t) t] = S->c_act.data() + (size_t) (b + t) * kA;
+                        o[(size_t) t] = S->c_ff.data() + (size_t) (b + t) * nff;
+                    }
+                    if (iq_use(nf.gu_type, nf.gu_act, cnt)) {
+                        // gate and up rows [r0, r0 + kGu) for every token of the expert, then the clamped swiglu
+                        thread_local std::vector<float> gu_t;
+                        thread_local std::vector<float*> go, uo;
+                        gu_t.resize((size_t) 2 * cnt * kGu);
+                        go.resize((size_t) cnt);
+                        uo.resize((size_t) cnt);
+                        for (int t = 0; t < cnt; ++t) {
+                            go[(size_t) t] = gu_t.data() + (size_t) t * kGu;
+                            uo[(size_t) t] = gu_t.data() + (size_t) (cnt + t) * kGu;
+                        }
+                        kc::iq512_rows(nf.gu_type, blob + (size_t) r0 * nf.gu_row, nf.gu_row, E, a.data(), cnt, go.data(),
+                                       0, kGu);
+                        kc::iq512_rows(nf.gu_type, blob + Ly.gu_bytes + (size_t) r0 * nf.gu_row, nf.gu_row, E, a.data(),
+                                       cnt, uo.data(), 0, kGu);
+                        const float lim = g.swiglu_exp;
+                        const bool clamp = lim != std::numeric_limits<float>::infinity();
+                        for (int t = 0; t < cnt; ++t)
+                            for (int r = 0; r < kGu; ++r) {
+                                float gg = go[(size_t) t][r], uu = uo[(size_t) t][r];
+                                if (clamp) {
+                                    gg = std::fmin(gg, lim);
+                                    uu = std::fmin(std::fmax(uu, -lim), lim);
+                                }
+                                o[(size_t) t][r0 + r] = (gg / (1.f + std::exp(-gg))) * uu;
+                            }
+                        return;
+                    }
+                    kc::native_gu_rows_split(nf, blob, blob + Ly.gu_bytes, a.data(), cnt, o.data(), r0, r0 + kGu,
+                                             g.swiglu_exp);
+                });
+                F->cpu_pool->run(cpu_nrows, [&](int r) {
+                    kc::native_quant_h(nf, S->c_ff.data() + (size_t) r * nff, S->c_hq.data() + (size_t) r * kH);
+                });
+                if (pack_h > 0) pack(false);
+                // the down rows in two parts: the first part's outputs (about two thirds of the rows) go up on the copy
+                // stream while the second part computes
+                int j_split = ncx;
+                for (int j = 0; j < ncx; ++j)
+                    if (r_of[(size_t) j] >= cpu_nrows * 2 / 3) {
+                        j_split = j;
+                        break;
+                    }
+                const auto down = [&](int j0, int j1) {
+                  const int nj = j1 - j0;
+                  if (nj <= 0) return;
+                  F->cpu_pool->run(nj * (E / kDn), [&](int job) {
+                    const int j = j0 + job % nj, r0 = (job / nj) * kDn, b = r_of[(size_t) j];
+                    const int cnt = S->h_counts[cpu_set[(size_t) j].e];
+                    thread_local std::vector<const void*> h;
+                    thread_local std::vector<float*> o;
+                    h.resize((size_t) cnt);
+                    o.resize((size_t) cnt);
+                    const uint8_t* down = cpu_set[(size_t) j].ram + Ly.down_off;
+                    if (off_h[(size_t) j] != SIZE_MAX) {
+                        for (int t = 0; t < cnt; ++t) o[(size_t) t] = S->out_h + (size_t) (b + t) * E + r0;
+                        kc::kq_rows_packed(nf.d_type, down + (size_t) r0 * nf.d_row, nf.d_row, nff, pk_h + off_h[(size_t) j],
+                                           cnt, o.data(), 0, kDn);
+                        return;
+                    }
+                    for (int t = 0; t < cnt; ++t) {
+                        h[(size_t) t] = S->c_hq.data() + (size_t) (b + t) * kH;
+                        o[(size_t) t] = S->out_h + (size_t) (b + t) * E;
+                    }
+                    if (iq_use(nf.d_type, nf.d_act, cnt)) {   // (out[t][r] for r in [r0, r0 + kDn), as the split's)
+                        kc::iq512_rows(nf.d_type, down, nf.d_row, nff, h.data(), cnt, o.data(), r0, r0 + kDn);
+                        return;
+                    }
+                    kc::native_down_rows_split(nf, down, h.data(), cnt, o.data(), r0, r0 + kDn);
+                  });
+                };
+                const int r_split = j_split < ncx ? r_of[(size_t) j_split] : cpu_nrows;
+                down(0, j_split);
+                up(0, r_split);
+                down(j_split, ncx);
+                up(r_split, cpu_nrows);
+            }
             cudaEventRecord(S->ev_out, F->copy);
             cudaStreamWaitEvent(s, S->ev_out, 0);   // (the combine reads them; the next layer's x overwrites x after)
-            prestage(next_moe(il + 1));
-            const double dt = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tc).count();
-            S->cpu_experts += (uint64_t) ncx;
-            S->cpu_rows += (uint64_t) cpu_nrows;
-            S->ms_cpu += dt;
-            if (S->trace) {
-                S->tr[(size_t) il].dcpu = dt;
-                S->tr[(size_t) il].dl =
-                    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tp).count();
-            }
-            if (cpu_nrows >= 64)   // (a layer with a few rows says little about the per-row cost)
-                S->row_ms = 0.5 * S->row_ms +
-                            0.5 * std::max(0.005, (dt - 2.0 * (double) ncx * F->cpu_c_ms) / (double) cpu_nrows);
-            // the balance: when the copy stream's staged copies ended against when the host's experts did, both from
-            // the plan's start (prestage copies it still owed and x's way down included)
-            if (n_staged_pcie > 0) {
-                const double dl = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tp).count();
-                cudaEventSynchronize(S->ev_c1);
-                float pc = 0.0f;
-                if (cudaEventElapsedTime(&pc, S->ev_c0, S->ev_c1) == cudaSuccess && pc > 1.0f && dl > 1.0)
-                    S->kappa = std::min(4.0, std::max(0.25, S->kappa * std::min(1.25, std::max(0.8, std::sqrt(dl / pc)))));
-            }
+            // (the host's time, from the plan and from its experts' start, before any wait on the copies below)
+            const auto th = std::chrono::steady_clock::now();
+            const double dt = std::chrono::duration<double, std::milli>(th - tc).count();
+            const double dl_host = std::chrono::duration<double, std::milli>(th - tp).count();
             // the prestage count: the copy stream idle before the plan (the copies landed early) -> as many more as
             // that time moves; every other expert on the CPU and it still done before the copies -> fewer by the
             // difference; else (the plan balanced the two) the same
-            // (not the chunk's first MoE layer: its copies had the dense layers before it too)
+            // (not the chunk's first MoE layer: its copies had the dense layers before it too).  Measured before the next
+            // layer's prestage is queued: it records the same events (ev_pstart, ev_pready) again, and read after it
+            // they were not ready - the count stayed at the buffer's cap whatever the lanes did
             if (pre_n > 0 && il != next_moe(l0_)) {
-                const double dl = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tp).count();
+                const double dl = dl_host;
                 cudaEventSynchronize(S->ev_c1);
                 float landed = 0.0f, pc = 0.0f, pt = 0.0f;
                 if (cudaEventElapsedTime(&landed, S->ev_c0, S->ev_pready) == cudaSuccess &&
@@ -2682,10 +2771,33 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                     const double pm = S->copy_ms > 0.0 ? S->copy_ms : 1.6;
                     double nn = pre_n;
                     if (landed < -3.0f) nn = pre_n + 0.8 * (-landed) / pm;
-                    else if (n_staged_pcie == 0 && dl + 5.0 < pc) nn = pre_n - 0.8 * (pc - dl) / pm;
+                    else if (dl + 5.0 < pc) nn = pre_n - 0.8 * (pc - dl) / pm;
                     double& r = S->pre_rate[Ly.recr ? 0 : 1];
                     r = r > 0.0 ? 0.5 * r + 0.5 * nn / T : nn / T;
                 }
+            }
+            prestage(next_moe(il + 1));
+            S->cpu_experts += (uint64_t) ncx;
+            S->cpu_rows += (uint64_t) cpu_nrows;
+            S->ms_cpu += dt;
+            if (S->trace) {
+                S->tr[(size_t) il].dcpu = dt;
+                S->tr[(size_t) il].dl = dl_host;
+            }
+            if (cpu_nrows >= 64 && on_igpu)   // (a layer with a few rows says little about the per-row cost)
+                S->row_ms_ig = 0.5 * S->row_ms_ig +
+                               0.5 * std::max(0.002, (dt - (double) ncx * S->fix_ms_ig) / (double) cpu_nrows);
+            else if (cpu_nrows >= 64)
+                S->row_ms = 0.5 * S->row_ms +
+                            0.5 * std::max(0.005, (dt - 2.0 * (double) ncx * F->cpu_c_ms) / (double) cpu_nrows);
+            // the balance: when the copy stream's staged copies ended against when the host's experts did, both from
+            // the plan's start (prestage copies it still owed and x's way down included)
+            if (n_staged_pcie > 0) {
+                const double dl = dl_host;
+                cudaEventSynchronize(S->ev_c1);
+                float pc = 0.0f;
+                if (cudaEventElapsedTime(&pc, S->ev_c0, S->ev_c1) == cudaSuccess && pc > 1.0f && dl > 1.0)
+                    S->kappa = std::min(4.0, std::max(0.25, S->kappa * std::min(1.25, std::max(0.8, std::sqrt(dl / pc)))));
             }
         }
         S->mark("moe_staged", s);
@@ -3101,7 +3213,7 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
     for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) m->pf_->tokens += n;
     static const bool verbose = getenv("STRATA_GLM_PREFILL_VERBOSE") != nullptr;
     if (verbose) {
-        uint64_t sr = 0, sv = 0, sd = 0, rr = 0, rs = 0, ce = 0, cr = 0, pi = 0, ph = 0, pr = 0;
+        uint64_t sr = 0, sv = 0, sd = 0, rr = 0, rs = 0, ce = 0, cr = 0, pi = 0, ph = 0, pr = 0, ige = 0, igr = 0;
         double plan = 0, mc = 0;
         for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
             sr += m->pf_->staged_ram;
@@ -3116,12 +3228,16 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
             pi += m->pf_->pre_issued;
             ph += m->pf_->pre_hit;
             pr += m->pf_->pre_rows;
+            ige += m->pf_->ig_experts;
+            igr += m->pf_->ig_rows;
         }
         std::fprintf(stderr, "glm prefill: %lld tokens in %.1f ms (%.2f ms/token, %.0f tok/s) | staged experts: %llu vram, %llu "
-                             "ram, %llu disk, %llu on the CPU (%llu rows, %.0f ms; split kappa %.2f, %.3f ms a row), %llu prestaged "
+                             "ram, %llu disk, %llu on the host (%llu rows, %.0f ms; %llu experts / %llu rows of them on the iGPU, %.4f ms a "
+                             "row; split kappa %.2f, %.3f ms a CPU row), %llu prestaged "
                              "(%llu routed, %llu rows) | rows resident %.1f%% | plan %.1f ms (cumulative)\n",
                      (long long) n, ms, ms / (double) n, 1000.0 * (double) n / ms, (unsigned long long) sv,
-                     (unsigned long long) sr, (unsigned long long) sd, (unsigned long long) ce, (unsigned long long) cr, mc, pf_->kappa,
+                     (unsigned long long) sr, (unsigned long long) sd, (unsigned long long) ce, (unsigned long long) cr, mc,
+                     (unsigned long long) ige, (unsigned long long) igr, pf_->row_ms_ig, pf_->kappa,
                      pf_->row_ms, (unsigned long long) pi, (unsigned long long) ph, (unsigned long long) pr,
                      100.0 * (double) rr / (double) std::max<uint64_t>(1, rr + rs), plan);
     }

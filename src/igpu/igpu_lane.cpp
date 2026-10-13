@@ -108,6 +108,12 @@ struct Lane {
     void *xq = nullptr, *hq = nullptr;
     std::vector<Range> ranges;
     std::mutex mu;
+    // abyss_igpu_rows: the experts' table (host-mapped) and the scratch, grown as needed
+    unsigned long long* rptr_h = nullptr;
+    int* rlight_h = nullptr;
+    int r_cap = 0;
+    void *rxq = nullptr, *rhq = nullptr;
+    size_t rxq_b = 0, rhq_b = 0;
     // A call that has not finished by its deadline is left running and answered by the CPU lane (return 1); the calls
     // after it go to the CPU too until it has (the queue may be held for seconds - see abyss_igpu_experts)
     bool pending = false;
@@ -116,6 +122,13 @@ struct Lane {
 };
 Lane L;
 
+// the device address of p inside a registered range, or 0
+unsigned long long dev_of(const void* p) {
+    const uint8_t* b = (const uint8_t*) p;
+    auto it = std::upper_bound(L.ranges.begin(), L.ranges.end(), b, [](const uint8_t* q, const Range& r) { return q < r.host; });
+    if (it != L.ranges.begin() && b < (--it)->host + it->bytes) return (unsigned long long) (it->dev + (b - it->host));
+    return 0ull;
+}
 void say(char* err, int n, const char* what, hipError_t e) {
     if (err != nullptr && n > 0) std::snprintf(err, (size_t) n, "%s: %s", what, hipGetErrorString(e));
 }
@@ -256,6 +269,77 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
     return 0;
 }
 
+__attribute__((visibility("default"))) void abyss_igpu_unregister(const void* host) {
+    std::lock_guard<std::mutex> lk(L.mu);
+    if (!L.open) return;
+    for (size_t i = 0; i < L.ranges.size(); ++i)
+        if (L.ranges[i].host == (const uint8_t*) host) {
+            hipStreamSynchronize(L.s);
+            hipHostUnregister(const_cast<void*>(host));
+            L.ranges.erase(L.ranges.begin() + (long) i);
+            return;
+        }
+}
+
+__attribute__((visibility("default"))) int abyss_igpu_rows(int gu_type, int d_type, int n_embd, int n_ff,
+                                                           size_t down_off, float limit, int ne,
+                                                           const void* const* blobs, const int* r0, const int* nr,
+                                                           const int* row_tok, const float* x, int n_tok, int rlo,
+                                                           int rhi, float* out, int ld) {
+    if (!L.open || ne < 1 || rhi <= rlo || ld < n_embd || ld < 2 * n_ff) return 1;
+    if (L.pending) {   // a late decode call still holds the queue (abyss_igpu_experts)
+        if (hipStreamQuery(L.s) != hipSuccess) return 1;
+        L.pending = false;
+    }
+    const unsigned long long xd = dev_of(x), td = dev_of(row_tok), od = dev_of(out);
+    if (xd == 0ull || td == 0ull || od == 0ull || dev_of(x + (size_t) n_tok * n_embd - 1) != xd + ((size_t) n_tok * n_embd - 1) * sizeof(float) ||
+        dev_of(out + (size_t) rhi * ld - 1) != od + ((size_t) rhi * ld - 1) * sizeof(float))
+        return 1;
+    hipError_t e = hipSuccess;
+    if (ne > L.r_cap) {
+        if (L.rptr_h) hipHostFree(L.rptr_h);
+        if (L.rlight_h) hipHostFree(L.rlight_h);
+        L.rptr_h = nullptr;
+        L.rlight_h = nullptr;
+        L.r_cap = 0;
+        if ((e = hipHostMalloc((void**) &L.rptr_h, (size_t) ne * sizeof(unsigned long long), hipHostMallocMapped)) != hipSuccess ||
+            (e = hipHostMalloc((void**) &L.rlight_h, (size_t) ne * 3 * sizeof(int), hipHostMallocMapped)) != hipSuccess)
+            return -1;
+        L.r_cap = ne;
+    }
+    const size_t xq_b = (size_t) n_tok * (n_embd / 32) * kQ8, hq_b = (size_t) (rhi - rlo) * (n_ff / 32) * kQ8;
+    const auto grow = [&](void*& p, size_t& have, size_t need) {
+        if (need <= have) return hipSuccess;
+        if (p) hipFree(p);
+        p = nullptr;
+        have = 0;
+        const hipError_t r = hipMalloc(&p, need + need / 4);
+        if (r == hipSuccess) have = need + need / 4;
+        return r;
+    };
+    if ((e = grow(L.rxq, L.rxq_b, xq_b)) != hipSuccess || (e = grow(L.rhq, L.rhq_b, hq_b)) != hipSuccess) return -1;
+    for (int i = 0; i < ne; ++i) {
+        const unsigned long long d = dev_of(blobs[i]);
+        if (d == 0ull) return 1;
+        L.rptr_h[i] = d;
+        L.rlight_h[3 * i] = i;
+        L.rlight_h[3 * i + 1] = r0[i];
+        L.rlight_h[3 * i + 2] = nr[i];
+    }
+    unsigned long long pd = 0ull, ld_d = 0ull;
+    hipHostGetDevicePointer((void**) &pd, L.rptr_h, 0);
+    hipHostGetDevicePointer((void**) &ld_d, L.rlight_h, 0);
+    if (!gf::rows_experts(gu_type, d_type, nullptr, 0, down_off, (const int*) ld_d, ne, (const int*) td,
+                          (const float*) xd, n_tok, n_embd, n_ff, limit, rlo, rhi, L.rxq, L.rhq, (float*) od, ld, L.s,
+                          (const unsigned long long*) pd))
+        return 1;
+    if ((e = hipStreamSynchronize(L.s)) != hipSuccess) {
+        std::fprintf(stderr, "iGPU lane (prompt rows): %s\n", hipGetErrorString(e));
+        return -1;
+    }
+    return 0;
+}
+
 __attribute__((visibility("default"))) void abyss_igpu_poke(void) {
     if (L.open && hipStreamQuery(L.s) == hipSuccess) gf::lane_poke(L.s);
 }
@@ -268,6 +352,15 @@ __attribute__((visibility("default"))) void abyss_igpu_close(void) {
     L.ranges.clear();
     hipFree(L.xq);
     hipFree(L.hq);
+    if (L.rxq) hipFree(L.rxq);
+    if (L.rhq) hipFree(L.rhq);
+    if (L.rptr_h) hipHostFree(L.rptr_h);
+    if (L.rlight_h) hipHostFree(L.rlight_h);
+    L.rxq = L.rhq = nullptr;
+    L.rxq_b = L.rhq_b = 0;
+    L.rptr_h = nullptr;
+    L.rlight_h = nullptr;
+    L.r_cap = 0;
     hipHostFree(L.x_h);
     hipHostFree(L.out_h);
     hipHostFree(L.plan_h);
