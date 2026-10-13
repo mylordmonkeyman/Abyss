@@ -238,6 +238,90 @@ __global__ void __launch_bounds__(IDX_WARPS * 32) idx_score_kernel(const float* 
     }
     if (lane == 0) score[j] = acc;
 }
+// The same scores on tensor cores (sm_80+, 64 heads): K[n x 128] . Q^T as mma.sync m16n8k16, a warp 16 rows x the 64
+// heads. Q (F32) goes in as two FP16 halves, hi + lo, so the products keep ~22 bits of q (the K rows are FP16 already);
+// a score differs from the warp kernel's in its summation order only (~1e-6 relative). 84 -> 12 us at 31k rows (125k
+// tokens), 13 -> 7 at 2k, on an RTX 5090. STRATA_DS4_IDX=1: the warp kernel above (A/B).
+#if defined(__HIPCC__) || defined(STRATA_USE_HIP)   // AMD: no mma.sync; the host keeps the warp kernel
+#define STRATA_DS4_IDX_SM80 0
+#elif !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800
+#define STRATA_DS4_IDX_SM80 1
+#else
+#define STRATA_DS4_IDX_SM80 0
+#endif
+constexpr int IDXM_WARPS = 8;
+__device__ __forceinline__ void idx_mma16816(float* d, const unsigned* a, unsigned b0, unsigned b1) {
+#if !STRATA_DS4_IDX_SM80
+    __trap();
+#else
+    asm volatile("mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
+                 "{%0,%1,%2,%3};\n"
+                 : "+f"(d[0]), "+f"(d[1]), "+f"(d[2]), "+f"(d[3])
+                 : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]), "r"(b0), "r"(b1));
+#endif
+}
+__device__ __forceinline__ unsigned idx_h2(__half x, __half y) {   // x in the low half
+    return (unsigned) __half_as_ushort(x) | ((unsigned) __half_as_ushort(y) << 16);
+}
+__global__ void __launch_bounds__(IDXM_WARPS * 32) idx_score_mma_kernel(const float* __restrict__ iq,
+                                                                        const uint16_t* __restrict__ K,
+                                                                        const float* __restrict__ w, int n_vis,
+                                                                        float* __restrict__ score) {
+    // Q's B fragments in fragment order, [n tile 8][k step 8][lane 32] x {hi k, k+1 | hi k+8, k+9 | lo .. | lo ..}
+    __shared__ uint4 s_b[8 * 8 * 32];
+    __shared__ float s_w[64];
+    for (int i = threadIdx.x; i < 8 * 8 * 32; i += blockDim.x) {
+        const int ln = i & 31, ks = (i >> 5) & 7, nt = i >> 8;
+        const float* qn = iq + (nt * 8 + (ln >> 2)) * 128 + ks * 16 + (ln & 3) * 2;
+        const float v[4] = {qn[0], qn[1], qn[8], qn[9]};
+        __half h[4], l[4];
+#pragma unroll
+        for (int t = 0; t < 4; ++t) {
+            h[t] = __float2half_rn(v[t]);
+            l[t] = __float2half_rn(v[t] - __half2float(h[t]));
+        }
+        s_b[i] = make_uint4(idx_h2(h[0], h[1]), idx_h2(h[2], h[3]), idx_h2(l[0], l[1]), idx_h2(l[2], l[3]));
+    }
+    if (threadIdx.x < 64) s_w[threadIdx.x] = w[threadIdx.x];
+    __syncthreads();
+    const int lane = threadIdx.x & 31, g = lane >> 2, t4 = lane & 3;
+    const int row0 = (blockIdx.x * IDXM_WARPS + (threadIdx.x >> 5)) * 16;
+    if (row0 >= n_vis) return;
+    const int ra = row0 + g, rb = ra + 8;   // the A fragment's rows (and the accumulator's)
+    const unsigned* Ka = reinterpret_cast<const unsigned*>(K + (size_t) ra * 128);
+    const unsigned* Kb = reinterpret_cast<const unsigned*>(K + (size_t) rb * 128);
+    unsigned a[8][4];
+#pragma unroll
+    for (int ks = 0; ks < 8; ++ks) {
+        const int c = ks * 8 + t4;   // in pairs of halves
+        a[ks][0] = ra < n_vis ? Ka[c] : 0u;
+        a[ks][1] = rb < n_vis ? Kb[c] : 0u;
+        a[ks][2] = ra < n_vis ? Ka[c + 4] : 0u;
+        a[ks][3] = rb < n_vis ? Kb[c + 4] : 0u;
+    }
+    float sa = 0.0f, sb = 0.0f;
+#pragma unroll
+    for (int nt = 0; nt < 8; ++nt) {
+        float d[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+#pragma unroll
+        for (int ks = 0; ks < 8; ++ks) {
+            const uint4 b = s_b[(nt * 8 + ks) * 32 + lane];
+            idx_mma16816(d, a[ks], b.x, b.y);
+            idx_mma16816(d, a[ks], b.z, b.w);
+        }
+        const float w0 = s_w[nt * 8 + t4 * 2], w1 = s_w[nt * 8 + t4 * 2 + 1];
+        sa += fmaxf(d[0], 0.0f) * w0 + fmaxf(d[1], 0.0f) * w1;
+        sb += fmaxf(d[2], 0.0f) * w0 + fmaxf(d[3], 0.0f) * w1;
+    }
+    sa += __shfl_xor_sync(0xffffffffu, sa, 1);
+    sa += __shfl_xor_sync(0xffffffffu, sa, 2);
+    sb += __shfl_xor_sync(0xffffffffu, sb, 1);
+    sb += __shfl_xor_sync(0xffffffffu, sb, 2);
+    if (t4 == 0) {
+        if (ra < n_vis) score[ra] = sa;
+        if (rb < n_vis) score[rb] = sb;
+    }
+}
 __global__ void __launch_bounds__(1024) idx_select_kernel(const float* __restrict__ score, int n_vis, int top,
                                                           int* __restrict__ sel) {
     strata::kernels::dsa::select_top_pools(score, n_vis, top, 1, sel);
@@ -857,7 +941,30 @@ void q_prep(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, flo
 void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, int idx_dim, int n_vis, int top_k,
              float* score, int* sel, cudaStream_t s) {
     if (n_vis <= 0) return;
-    (void) idx_dim;   // 128 (the kernel's layout)
+    (void) idx_dim;   // 128 (the kernels' layout)
+    // the tensor-core kernel: sm_80+ in a CUDA build, 64 heads, unless STRATA_DS4_IDX=1
+    static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
+    bool mma = false;
+#if !defined(__HIPCC__) && !defined(STRATA_USE_HIP)
+    if (!warp_only && idx_heads == 64) {
+        static int cc_major[64] = {};
+        int dev = 0;
+        cudaGetDevice(&dev);
+        if (dev >= 0 && dev < 64) {
+            if (cc_major[dev] == 0 && cudaDeviceGetAttribute(&cc_major[dev], cudaDevAttrComputeCapabilityMajor, dev) != cudaSuccess)
+                cc_major[dev] = -1;
+            mma = cc_major[dev] >= 8;
+        }
+    }
+#endif
+    if (mma) {
+        idx_score_mma_kernel<<<(n_vis + IDXM_WARPS * 16 - 1) / (IDXM_WARPS * 16), IDXM_WARPS * 32, 0, s>>>(iq, K, w, n_vis,
+                                                                                                         score);
+        check("idx_score_mma");
+        idx_select_kernel<<<1, 1024, 0, s>>>(score, n_vis, std::min(top_k, n_vis), sel);
+        check("idx_select");
+        return;
+    }
     const size_t sm = (size_t) (idx_heads * 128 + idx_heads) * sizeof(float);
     idx_score_kernel<<<(n_vis + IDX_WARPS - 1) / IDX_WARPS, IDX_WARPS * 32, sm, s>>>(iq, K, w, idx_heads, n_vis, score);
     check("idx_score");

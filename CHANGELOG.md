@@ -7,6 +7,26 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.2 - 2026-10-13
+
+**DeepSeek V4 Flash decodes long contexts faster: 125K tokens ~58 -> ~66 tok/s (+14%).** The decode slowed with the
+context because of the lightning indexer. Its score kernel (one warp per compressed row, the 64 heads reduced one by
+one with shuffles) took 84 us per CSA layer at 125K (31K rows), ~2.7 ms per token over the 21 CSA layers. The expert
+side (VRAM hit ~80%, the CPU/iGPU lanes) does not change with the context.
+- The scores now run on tensor cores (sm_80+, CUDA builds): K[n x 128] . Q^T as `mma.sync` m16n8k16, a warp per 16 rows
+  x the 64 heads. Q goes in as two FP16 halves (hi + lo), so it keeps ~22 bits; the K rows are FP16 already. 84 -> 12
+  us at 31K rows, 13 -> 7 at 2K (RTX 5090). `STRATA_DS4_IDX=1` keeps the old kernel (A/B). AMD and pre-sm_80 cards keep
+  the old kernel.
+- Profile (`STRATA_GLM_PROF`, GPU time, 125K): `ds_index` 2.68 -> 1.18 ms/token, total 17.83 -> 16.29. Most of what is
+  left is the top-512 select (~41 us per layer at 31K rows).
+- Server, 1,024 generated tokens, two runs each, old -> new: 125K 56.0 / 59.3 -> 65.2 / 66.1 tok/s; 32K 66.9 / 67.1 ->
+  69.0 / 69.5; 8K unchanged (65-69). Prompt speed unchanged (the prompt path's indexer is a separate kernel).
+- Accuracy: against llama.cpp (3,000 tokens one at a time) KL 0.0087 (old kernel 0.0088), the same top token 94.7%. At
+  60K (prefill, then 1,000 tokens scored), new against old KL 0.0030, while two runs of the old kernel differ by
+  0.0034 (the CPU/GPU split of the experts varies between runs).
+- Measured on the same machine: llama.cpp (bed0a8566, `-ngl 99 -ncmoe 32 -lm none`) decodes this GGUF at 28-30 tok/s
+  (0-32K) and reads prompts at 78 tok/s (ubatch 512) to 660 (ubatch 8192).
+
 ## v1.3.1 - 2026-10-12
 
 **The iGPU lane no longer freezes a decode for seconds.** v1.3.0's pieces did not prevent it: after the host had been
