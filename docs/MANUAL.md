@@ -239,11 +239,24 @@ experts in VRAM, so the second card's VRAM holds more of them.
 - **What has been checked:** a two-part split on one GPU (`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
   STRATA_GLM_DEVS=0,0`, for testing). The prompt and decode results match the unsplit model (KL within the
   run-to-run spread). Speed on two physical GPUs has not been measured yet.
-- **Limits:** a split has no n-gram speculative decoding. AMD GPUs, and mixing them with NVIDIA, are not supported.
+- **Limits:** a split has no n-gram speculative decoding. AMD GPUs: see "AMD GPUs" below.
 - **V100 (sm_70):** CUDA 13 cannot compile for the V100, so install CUDA 12 (12.9) and build with
   `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` (CUDA 12.9 also builds an RTX 50's `120a`). The sm_70
   build has been checked to compile; it has not run on a V100 yet. The newer tensor-core kernels (the indexer and the
   prompt attention) need sm_80 or newer, so a V100 uses the older ones.
+
+## AMD GPUs (HIP, experimental)
+
+DeepSeek V4 also runs on AMD Radeon cards: the RX 7900 XT / XTX (gfx1100), the RX 9070 / AI PRO R9700 (gfx1201) and
+the Ryzen AI Max's Radeon 8060S (gfx1151).
+
+- **Setup:** `./setup-deepseek.sh --backend hip` (chosen by itself when there is no NVIDIA GPU). On Linux it uses ROCm 7
+  in `/opt/rocm`. The engine is built in `build-hip/strata`, and the config gets `"backend": "hip"`.
+- **What has been checked:** it ran on the Radeon 8060S (gfx1151) alone, with KL against the CUDA build within the
+  run-to-run spread (0.005). It has not run on a discrete card such as an RX 7900 yet.
+- **What is faster:** the indexer's scores use RDNA's WMMA (decode and prompt, gfx11 / gfx12). The prompt attention
+  still uses the older kernel. `STRATA_DS4_IDX=1` keeps the older indexer kernels.
+- **Limits:** mixing it with NVIDIA in one process (CUDA and HIP together) is not supported.
 
 ## Memory and speed
 

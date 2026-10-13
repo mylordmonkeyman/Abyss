@@ -7,6 +7,34 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.10 - 2026-10-14
+
+DeepSeek V4 Flash runs on AMD Radeon (HIP, experimental). There is also a race fix in the indexer's top-k select,
+which CUDA builds have had since v1.3.3.
+- Fix (CUDA and HIP): the select's cut-off search read `s_need` in the same phase in which the thread that found the
+  bin rewrites it. A thread of another warp that read it late could take a second bin, so a token's cells came out
+  with a slot unset. On a Radeon 8060S this showed up when a token took all of its rows (n_vis 494, top 494): the
+  last cell held garbage, and the prompt attention made an illegal access. `need` is now read with the prefix and
+  the mask, before the search. No such failure had been seen on CUDA. 2,000 random cases still match the old code
+  exactly on both backends. KL on the RTX 5090: 0.0050 (run-to-run spread 0.0050).
+- The HIP build links again:
+  - MXFP4 (DeepSeek V4's down rows) is added to the HIP MMQ instances.
+  - The engine library links the prefill library (`strata::prefill::Gemm`) on HIP.
+- `./setup-deepseek.sh --backend hip` sets up an AMD card: abyss.py's HIP checks, ROCm and build for gfx1100,
+  gfx1201 and gfx1151 build `build-hip/strata`, and the config gets `"backend": "hip"` with abyss.py's HIP
+  settings. It is chosen by itself when there is no NVIDIA GPU.
+- On HIP the indexer uses RDNA's WMMA (gfx11 / gfx12; `STRATA_DS4_IDX=1` keeps the older kernels), with Q as FP16
+  hi + lo as on CUDA. Radeon 8060S:
+  - decode: 1,121 -> 174 us at 31K rows (a 125K context), 95 -> 23 at 2K;
+  - prompt: 1,024 tokens at 120K, 214 -> 36.5 ms. Q is converted to FP16 hi / lo in place once, and the waves read
+    it without LDS (through LDS, a token at a time: 143 ms);
+  - the scores match the SIMT kernels within 3e-6.
+- The new top-k select (v1.3.3) now runs on HIP too (wave32 only, which the HIP backend requires): 34 -> 14 us at 2K
+  keys, 61 -> 27 at 31K, with the same cells.
+- Checked on the Radeon 8060S alone (`build-hip/strata`; a 3K prompt, then 1,000 tokens scored against the RTX 5090
+  build): KL 0.0052. The prompt was 94 -> 120 tok/s; the experts dominate a prompt that short. Discrete Radeon cards
+  have not been run yet, and the prompt attention still uses the older kernel on HIP.
+
 ## v1.3.9 - 2026-10-14
 
 The engine builds for the V100 (sm_70). It has not run on a V100 yet.

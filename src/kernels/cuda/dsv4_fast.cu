@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 namespace strata::kernels::dsv4 {
@@ -322,6 +323,89 @@ __global__ void __launch_bounds__(IDXM_WARPS * 32) idx_score_mma_kernel(const fl
         if (rb < n_vis) score[rb] = sb;
     }
 }
+#if defined(STRATA_USE_HIP)
+// The same scores on RDNA's WMMA (gfx11 / gfx12, wave32; HIP builds): a wave = 16 K rows x the 64 heads, K (FP16) x
+// Q^T with Q as FP16 hi + lo (two WMMAs, F32 accumulate), as idx_score_mma_kernel. Radeon 8060S (gfx1151): 1121 ->
+// 174 us at 31k rows, 95 -> 23 at 2k, the scores within 6e-6 of the warp kernel's. STRATA_DS4_IDX=1: the warp kernel.
+using iw_h16 = _Float16 __attribute__((ext_vector_type(16)));
+using iw_f8 = float __attribute__((ext_vector_type(8)));
+__device__ __forceinline__ iw_f8 iw_wmma(iw_h16 a, iw_h16 b, iw_f8 c) {
+#if defined(__gfx1100__) || defined(__gfx1101__) || defined(__gfx1102__) || defined(__gfx1150__) || defined(__gfx1151__)
+    return __builtin_amdgcn_wmma_f32_16x16x16_f16_w32(a, b, c);
+#elif defined(__gfx1200__) || defined(__gfx1201__)
+    using h8 = _Float16 __attribute__((ext_vector_type(8)));
+    const int k0 = (threadIdx.x & 31) / 16 * 8;
+    h8 aa, bb;
+#pragma unroll
+    for (int i = 0; i < 8; ++i) { aa[i] = a[k0 + i]; bb[i] = b[k0 + i]; }
+    return __builtin_amdgcn_wmma_f32_16x16x16_f16_w32_gfx12(aa, bb, c);
+#else
+    __builtin_trap();
+    return c;
+#endif
+}
+__device__ __forceinline__ int iw_row(int i, int hi) {   // the accumulator's element i of half `hi`: its row
+#if defined(__gfx1200__) || defined(__gfx1201__)
+    return 8 * hi + i;
+#else
+    return 2 * i + hi;
+#endif
+}
+constexpr int IW_WAVES = 8;
+__global__ void __launch_bounds__(IW_WAVES * 32) idx_score_wmma_kernel(const float* __restrict__ iq,
+                                                                       const uint16_t* __restrict__ K,
+                                                                       const float* __restrict__ w, int n_vis,
+                                                                       float* __restrict__ score) {
+    __shared__ __align__(32) _Float16 s_qh[64][128], s_ql[64][128];
+    __shared__ float s_w[64];
+    for (int i = threadIdx.x; i < 64 * 128; i += blockDim.x) {
+        const float v = iq[i];
+        const _Float16 h = (_Float16) v;
+        s_qh[i / 128][i % 128] = h;
+        s_ql[i / 128][i % 128] = (_Float16) (v - (float) h);
+    }
+    if (threadIdx.x < 64) s_w[threadIdx.x] = w[threadIdx.x];
+    __syncthreads();
+    const int lane = threadIdx.x & 31, l16 = lane & 15, hi = lane >> 4;
+    const int row0 = (blockIdx.x * IW_WAVES + (threadIdx.x >> 5)) * 16;
+    if (row0 >= n_vis) return;
+    const int ra = min(row0 + l16, n_vis - 1);   // (rows past the end: a valid row's, never written)
+    const uint4* kr = reinterpret_cast<const uint4*>(K + (size_t) ra * 128);
+    float s[8];
+#pragma unroll
+    for (int i = 0; i < 8; ++i) s[i] = 0.0f;
+#pragma unroll
+    for (int nt = 0; nt < 4; ++nt) {
+        iw_f8 d = {};
+#pragma unroll
+        for (int ks = 0; ks < 8; ++ks) {
+            union { uint4 u[2]; iw_h16 v; } a;
+            a.u[0] = kr[ks * 2];
+            a.u[1] = kr[ks * 2 + 1];
+            const iw_h16 bh = *reinterpret_cast<const iw_h16*>(&s_qh[nt * 16 + l16][ks * 16]);
+            const iw_h16 bl = *reinterpret_cast<const iw_h16*>(&s_ql[nt * 16 + l16][ks * 16]);
+            d = iw_wmma(a.v, bh, d);
+            d = iw_wmma(a.v, bl, d);
+        }
+        const float wh = s_w[nt * 16 + l16];
+#pragma unroll
+        for (int i = 0; i < 8; ++i) s[i] += fmaxf(d[i], 0.0f) * wh;
+    }
+#pragma unroll
+    for (int i = 0; i < 8; ++i) {   // the 16 heads of each half-wave
+        s[i] += __shfl_xor(s[i], 1, 32);
+        s[i] += __shfl_xor(s[i], 2, 32);
+        s[i] += __shfl_xor(s[i], 4, 32);
+        s[i] += __shfl_xor(s[i], 8, 32);
+    }
+    if (l16 == 0)
+#pragma unroll
+        for (int i = 0; i < 8; ++i) {
+            const int r = row0 + iw_row(i, hi);
+            if (r < n_vis) score[r] = s[i];
+        }
+}
+#endif
 __global__ void __launch_bounds__(1024) idx_select_kernel(const float* __restrict__ score, int n_vis, int top,
                                                           int* __restrict__ sel) {
     strata::kernels::dsa::select_top_pools(score, n_vis, top, 1, sel);
@@ -877,12 +961,110 @@ __global__ void __launch_bounds__(IBM_WARPS * 32) idx_score_batch_mma_kernel(con
         }
     }
 }
+#if defined(STRATA_USE_HIP)
+// The prompt path's scores on WMMA (HIP, gfx11 / gfx12): Q converted once (iwb_prep: each 128-float row -> 128 FP16 hi
+// + 128 FP16 lo, in place - the same 512 bytes; the indexer is its last reader), then a wave holds 2 x 16 K rows as A
+// fragments for a tile of 32 tokens and reads the B fragments straight from the converted Q (L1/L2: no LDS, no
+// barrier). Rows a token does not see are left unwritten. 1,024 tokens at 120k on a Radeon 8060S: 214 -> 36.5 ms
+// (prep 0.24), within 3e-6 of the SIMT kernel's scores. (Q through LDS a token at a time: 143 ms.)
+constexpr int IWB2_WAVES = 8, IWB2_RG = 2, IWB2_TT = 32, IWB2_ROWS = IWB2_WAVES * IWB2_RG * 16;
+__global__ void __launch_bounds__(256) iwb_prep_kernel(float* __restrict__ iq, int rows) {
+    const int r = blockIdx.x * 8 + (threadIdx.x >> 5), lane = threadIdx.x & 31;
+    if (r >= rows) return;
+    float* x = iq + (size_t) r * 128;
+    const float4 v = reinterpret_cast<const float4*>(x)[lane];
+    const float f[4] = {v.x, v.y, v.z, v.w};
+    _Float16 h[4], l[4];
+#pragma unroll
+    for (int i = 0; i < 4; ++i) {
+        h[i] = (_Float16) f[i];
+        l[i] = (_Float16) (f[i] - (float) h[i]);
+    }
+    __builtin_amdgcn_wave_barrier();   // (every lane has read its floats before any writes: one wave a row)
+    _Float16* o = reinterpret_cast<_Float16*>(x);
+#pragma unroll
+    for (int i = 0; i < 4; ++i) {
+        o[lane * 4 + i] = h[i];
+        o[128 + lane * 4 + i] = l[i];
+    }
+}
+__global__ void __launch_bounds__(IWB2_WAVES * 32) idx_score_batch_wmma2_kernel(const float* __restrict__ iqp,
+                                                                                const uint16_t* __restrict__ K,
+                                                                                const float* __restrict__ w, int ratio,
+                                                                                int p0, int T, float* __restrict__ score,
+                                                                                int ld) {
+    const int t0 = blockIdx.y * IWB2_TT, j0 = blockIdx.x * IWB2_ROWS;
+    const int tn = min(IWB2_TT, T - t0);
+    const int lane = threadIdx.x & 31, l16 = lane & 15, hi = lane >> 4;
+    const int wrow = j0 + (threadIdx.x >> 5) * IWB2_RG * 16;
+    const int nrow = (p0 + t0 + tn) / ratio;
+    if (wrow >= nrow) return;
+    iw_h16 a[IWB2_RG][8];
+#pragma unroll
+    for (int g = 0; g < IWB2_RG; ++g) {
+        const int ra = min(wrow + g * 16 + l16, nrow - 1);
+        const uint4* kr = reinterpret_cast<const uint4*>(K + (size_t) ra * 128);
+#pragma unroll
+        for (int ks = 0; ks < 8; ++ks) {
+            union { uint4 u[2]; iw_h16 v; } x;
+            x.u[0] = kr[ks * 2];
+            x.u[1] = kr[ks * 2 + 1];
+            a[g][ks] = x.v;
+        }
+    }
+    for (int i = 0; i < tn; ++i) {
+        const int t = t0 + i, n_vis = (p0 + t + 1) / ratio;
+        if (wrow >= n_vis) continue;
+        const _Float16* q = reinterpret_cast<const _Float16*>(iqp + (size_t) t * 64 * 128);   // [head][hi 128 | lo 128]
+        const float* wt = w + (size_t) t * 64;
+        float s[IWB2_RG][8];
+#pragma unroll
+        for (int g = 0; g < IWB2_RG; ++g)
+#pragma unroll
+            for (int r = 0; r < 8; ++r) s[g][r] = 0.0f;
+#pragma unroll
+        for (int nt = 0; nt < 4; ++nt) {
+            const _Float16* qh = q + (size_t) (nt * 16 + l16) * 256;
+            iw_f8 d[IWB2_RG] = {};
+#pragma unroll
+            for (int ks = 0; ks < 8; ++ks) {
+                const iw_h16 bh = *reinterpret_cast<const iw_h16*>(qh + ks * 16);
+                const iw_h16 bl = *reinterpret_cast<const iw_h16*>(qh + 128 + ks * 16);
+#pragma unroll
+                for (int g = 0; g < IWB2_RG; ++g) {
+                    d[g] = iw_wmma(a[g][ks], bh, d[g]);
+                    d[g] = iw_wmma(a[g][ks], bl, d[g]);
+                }
+            }
+            const float wh = wt[nt * 16 + l16];
+#pragma unroll
+            for (int g = 0; g < IWB2_RG; ++g)
+#pragma unroll
+                for (int r = 0; r < 8; ++r) s[g][r] += fmaxf(d[g][r], 0.0f) * wh;
+        }
+        float* out = score + (size_t) t * ld;
+#pragma unroll
+        for (int g = 0; g < IWB2_RG; ++g)
+#pragma unroll
+            for (int r = 0; r < 8; ++r) {
+                float x = s[g][r];
+                x += __shfl_xor(x, 1, 32);
+                x += __shfl_xor(x, 2, 32);
+                x += __shfl_xor(x, 4, 32);
+                x += __shfl_xor(x, 8, 32);
+                const int j = wrow + g * 16 + iw_row(r, hi);
+                if (l16 == 0 && j < n_vis) out[j] = x;
+            }
+    }
+}
+#endif
 __global__ void __launch_bounds__(1024) idx_select_batch_kernel(const float* __restrict__ score, int ld, int ratio, int p0,
                                                                 int top_k, int* __restrict__ sel) {
     const int t = blockIdx.x;
     const int n_vis = (p0 + t + 1) / ratio;
     if (n_vis <= 0) return;
     strata::kernels::dsa::select_top_pools(score + (size_t) t * ld, n_vis, min(top_k, n_vis), 1, sel + (size_t) t * top_k);
+
 }
 
 // 8 heads of one token per block, online softmax over tiles of 32 keys (the sink seeds the max and the sum)
@@ -1253,10 +1435,42 @@ static bool idx_use_mma(int idx_heads) {
     return false;
 #endif
 }
+#if defined(STRATA_USE_HIP)
+// HIP: the WMMA kernels on gfx11 / gfx12 (RDNA3 / 3.5 / 4; gfx1103 has no WMMA), 64 heads, unless STRATA_DS4_IDX=1
+static bool idx_use_wmma(int idx_heads) {
+    static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
+    if (warp_only || idx_heads != 64) return false;
+    static int state[64] = {};   // per device: 0 unknown, 1 yes, -1 no
+    int dev = 0;
+    if (hipGetDevice(&dev) != hipSuccess || dev < 0 || dev >= 64) return false;
+    if (state[dev] == 0) {
+        hipDeviceProp_t p{};
+        bool ok = hipGetDeviceProperties(&p, dev) == hipSuccess;
+        if (ok) {
+            const std::string a = p.gcnArchName;
+            const std::string base = a.substr(0, a.find(':'));
+            ok = base == "gfx1100" || base == "gfx1101" || base == "gfx1102" || base == "gfx1150" || base == "gfx1151" ||
+                 base == "gfx1200" || base == "gfx1201";
+        }
+        state[dev] = ok ? 1 : -1;
+    }
+    return state[dev] == 1;
+}
+#endif
 void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, int idx_dim, int n_vis, int top_k,
              float* score, int* sel, cudaStream_t s) {
     if (n_vis <= 0) return;
     (void) idx_dim;   // 128 (the kernels' layout)
+#if defined(STRATA_USE_HIP)
+    if (idx_use_wmma(idx_heads)) {
+        idx_score_wmma_kernel<<<(n_vis + IW_WAVES * 16 - 1) / (IW_WAVES * 16), IW_WAVES * 32, 0, s>>>(iq, K, w, n_vis,
+                                                                                                     score);
+        check("idx_score_wmma");
+        idx_select_kernel<<<1, 1024, 0, s>>>(score, n_vis, std::min(top_k, n_vis), sel);
+        check("idx_select");
+        return;
+    }
+#endif
     if (idx_use_mma(idx_heads)) {
         idx_score_mma_kernel<<<(n_vis + IDXM_WARPS * 16 - 1) / (IDXM_WARPS * 16), IDXM_WARPS * 32, 0, s>>>(iq, K, w, n_vis,
                                                                                                          score);
@@ -1400,10 +1614,22 @@ void q_prep_batch(float* q, int n_head, int head_dim, int n_rot, const Rope& rop
                                                                         idx_dim, comp_rope, p0, eps);
     check("q_prep_batch");
 }
-void indexer_batch(const float* iq, const uint16_t* K, const float* w, int idx_heads, int ratio, int p0, int T, int top_k,
+void indexer_batch(float* iq, const uint16_t* K, const float* w, int idx_heads, int ratio, int p0, int T, int top_k,
                    float* score, int ld, int* sel, cudaStream_t s) {
     const int max_vis = (p0 + T) / ratio;
     if (T <= 0 || max_vis <= 0) return;
+#if defined(STRATA_USE_HIP)
+    if (idx_use_wmma(idx_heads)) {
+        iwb_prep_kernel<<<(unsigned) ((T * 64 + 7) / 8), 256, 0, s>>>(iq, T * 64);
+        check("iwb_prep");
+        const dim3 grid((unsigned) ((max_vis + IWB2_ROWS - 1) / IWB2_ROWS), (unsigned) ((T + IWB2_TT - 1) / IWB2_TT));
+        idx_score_batch_wmma2_kernel<<<grid, IWB2_WAVES * 32, 0, s>>>(iq, K, w, ratio, p0, T, score, ld);
+        check("idx_score_batch_wmma");
+        idx_select_batch_kernel<<<T, 1024, 0, s>>>(score, ld, ratio, p0, top_k, sel);
+        check("idx_select_batch");
+        return;
+    }
+#endif
     if (idx_use_mma(idx_heads)) {
         const dim3 grid((unsigned) ((max_vis + IBM_ROWS - 1) / IBM_ROWS), (unsigned) ((T + IBM_TT - 1) / IBM_TT));
         idx_score_batch_mma_kernel<<<grid, IBM_WARPS * 32, IBM_SMEM, s>>>(iq, K, w, ratio, p0, T, score, ld);

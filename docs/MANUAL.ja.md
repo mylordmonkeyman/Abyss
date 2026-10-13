@@ -238,12 +238,24 @@ NVIDIA の GPU が 2 枚以上あれば、層を分けて載せられる（layer
 - **確認済みの範囲:** 1 枚の GPU の上で 2 つに分けた形（`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
   STRATA_GLM_DEVS=0,0`、試験用）で、prompt と decode の結果が分けない場合と一致すること（KL がぶれの範囲内）。
   2 枚の GPU での速度はまだ測っていない。
-- **制限:** 分けているときは、n-gram の先読み（speculative decode）が使えない。AMD の GPU や、NVIDIA との組み合わせには
-  対応していない。
+- **制限:** 分けているときは、n-gram の先読み（speculative decode）が使えない。AMD の GPU は下の「AMD の GPU」を参照。
 - **V100（sm_70）:** CUDA 13 は V100 向けにコンパイルできないので、CUDA 12（12.9）を入れて
   `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` でビルドする（CUDA 12.9 は RTX 50 の `120a` も作れる）。
   sm_70 でのビルドは通ることを確かめた。V100 の実機ではまだ動かしていない。tensor core を使う新しいカーネル
   （indexer、prompt の attention）は sm_80 以上が条件で、V100 では従来のカーネルを使う。
+
+## AMD の GPU（HIP、試験的）
+
+AMD の Radeon でも動く。対象は RX 7900 XT / XTX（gfx1100）、RX 9070 / AI PRO R9700（gfx1201）、Ryzen AI Max の
+Radeon 8060S（gfx1151）。
+
+- **セットアップ:** `./setup-deepseek.sh --backend hip`（NVIDIA の GPU がなければ自動で HIP を選ぶ）。Linux では
+  `/opt/rocm` の ROCm 7 を使う。エンジンは `build-hip/strata` にビルドされ、設定に `"backend": "hip"` が入る。
+- **確認済みの範囲:** Radeon 8060S（gfx1151）だけで動かし、CUDA 版との KL がぶれの範囲内（0.005）だった。
+  単体の GPU（RX 7900 など）ではまだ動かしていない。
+- **速くなる部分:** indexer のスコア計算は RDNA の WMMA を使う（decode も prompt も、gfx11 / gfx12）。prompt の
+  attention はまだ従来のカーネル。`STRATA_DS4_IDX=1` で indexer を従来のカーネルに戻せる。
+- **制限:** NVIDIA との組み合わせ（1 つのプロセスで CUDA と HIP の両方）には対応していない。
 
 ## メモリと速度
 

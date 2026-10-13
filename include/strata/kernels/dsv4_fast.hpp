@@ -124,9 +124,10 @@ void compress_batch(const BatchComp* comps, int n_comp, int p0, int T, int n_rot
 void q_prep_batch(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, float* iq, int idx_heads,
                   int idx_dim, const Rope& comp_rope, int p0, int T, float eps, cudaStream_t s);
 
-/// The lightning indexer per token t (its visible rows: (p0 + t + 1) / ratio): scores into score[t][ld] (-inf past
-/// the visible rows), its top min(top_k, visible) rows into sel[t][top_k].
-void indexer_batch(const float* iq, const uint16_t* K, const float* w, int idx_heads, int ratio, int p0, int T, int top_k,
+/// The lightning indexer per token t (its visible rows: (p0 + t + 1) / ratio): scores into score[t][ld] (the
+/// visible rows; the tensor-core kernels leave the rest unwritten), its top min(top_k, visible) rows into
+/// sel[t][top_k].  iq is scratch afterwards: the HIP WMMA path converts it to FP16 hi / lo in place.
+void indexer_batch(float* iq, const uint16_t* K, const float* w, int idx_heads, int ratio, int p0, int T, int top_k,
                    float* score, int ld, int* sel, cudaStream_t s);
 
 /// Attention per token t at p = p0 + t over its window (keys rows of positions max(0, p - n_swa + 1) .. p) and its

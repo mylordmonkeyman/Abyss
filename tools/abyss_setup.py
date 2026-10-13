@@ -157,7 +157,39 @@ def build_engine(arch: str | None, gpus, nvcc_arg: str | None = None) -> Path:
     return exe
 
 
-def write_config(name: str, pack: Path, ctx: int, port: int, rewrite: bool, gpus=None) -> tuple[Path, Path]:
+def hip_engine(a):
+    """AMD (--backend hip): the GPU check, ROCm and the engine (build-hip/strata) by abyss.py's HIP helpers (Maya's
+    installer: gfx1100, gfx1201, gfx1151; system ROCm 7 on Linux).  Returns (gpus, the config's extra fields)."""
+    import argparse as _ap
+    sys.path.insert(0, str(ROOT))
+    import abyss as M   # noqa: E402  (constants and functions only)
+    M.select_build_backend("hip")
+    pc = M.check_hip_pc(_ap.Namespace(gpu=a.gpu, gpus=a.gpus if a.gpus != "all" else None, check=False, yes=a.yes))
+    llama = Path(S.get_llama_cpp())
+    src = S.source_hash(S.ENGINE_SOURCES)
+    meta = M.read_json(M.STAMP)
+    if not (M.EXE.exists() and meta.get("backend") == "hip" and meta.get("src") == src
+            and meta.get("archs") == pc["archs"] and meta.get("rocm") == pc["rocm"]):
+        meta = M.compile_engine_hip(pc, llama, src)
+    else:
+        S.ok(f"HIP engine already compiled: {M.EXE}")
+    gpus = pc["gpus"]
+    # (as abyss.py's HIP configs: room for the desktop, one card unless two are chosen, an APU's prompt budget)
+    env = {"STRATA_GLM_RESERVE_MB": "3072", "STRATA_GLM_RAM_HEADROOM_GB": "16"}
+    if len(gpus) == 1:
+        env["STRATA_GLM_SPLIT"] = "0"
+    if any(M.hip_unified_memory(g) for g in gpus):
+        env.update({"STRATA_GLM_RESERVE_MB": "1024", "STRATA_GLM_PREFILL_SUB": "1024",
+                    "STRATA_GLM_PREFILL_MB": "6144" if S.ram_gb() >= 96 else "4096"})
+    elif min(g.get("vram_gb", 0) for g in gpus) >= 20:
+        env.update({"STRATA_GLM_PREFILL_SUB": "1024", "STRATA_GLM_PREFILL_MB": "4096"})
+    extra = {"exe": str(M.EXE), "backend": "hip", "gpu": [g["index"] for g in gpus],
+             "lib_dirs": (meta or {}).get("lib_dirs") or [], "env": env}
+    return gpus, extra
+
+
+def write_config(name: str, pack: Path, ctx: int, port: int, rewrite: bool, gpus=None,
+                 extra: dict | None = None) -> tuple[Path, Path]:
     cfg = ROOT / f"abyss-{name}.json"
     run = ROOT / f"run-abyss-{name}.sh"
     if cfg.exists() and not rewrite:
@@ -174,6 +206,7 @@ def write_config(name: str, pack: Path, ctx: int, port: int, rewrite: bool, gpus
             "sampling": {"temperature": 1.0, "top_p": 0.95},
             "port": port,
             "log": str(ROOT / f"abyss-{name}.log"),
+            **(extra or {}),
         }, indent=1) + "\n", encoding="utf-8")
         S.ok(f"{cfg.name} written (context {ctx}, port {port})")
     py = ROOT / ".venv" / "bin" / "python"
@@ -218,6 +251,8 @@ def main() -> int:
     ap.add_argument("--tools-dir", default=str(ROOT.parent / "Abyss-tools"), help="the tools folder (default: Abyss-tools beside Abyss)")
     ap.add_argument("--context", type=int, default=65536, help="the context in tokens (default 65536)")
     ap.add_argument("--port", type=int, default=8082)
+    ap.add_argument("--backend", choices=("cuda", "hip"), help="cuda (NVIDIA) or hip (AMD: RX 7900 XT / XTX, RX 9070 / "
+                    "AI PRO R9700, Ryzen AI Max's Radeon 8060S; ROCm 7). Default: cuda when an NVIDIA GPU is there, else hip")
     ap.add_argument("--gpu", type=int, help="the GPU, as nvidia-smi numbers it (default: the one with the most VRAM)")
     ap.add_argument("--gpus", help="several GPUs for a layer split, as nvidia-smi numbers them (\"0,1\"; the first is "
                                    "the main card), or \"all\": every NVIDIA GPU (default: one GPU, --gpu)")
@@ -239,20 +274,27 @@ def main() -> int:
     mdir = data / "models" / REPO / quant
 
     S.step(1, "the PC")
-    gpu = S.gpu_info(a.gpu)
-    if gpu is None:
-        S.fail("no NVIDIA GPU found (nvidia-smi)", "Abyss's DeepSeek V4 path runs on NVIDIA GPUs")
-    gpus = [gpu]
-    if a.gpus:
+    gpu = S.gpu_info(a.gpu) if a.backend != "hip" else None
+    backend = a.backend or ("cuda" if gpu is not None else "hip" if S.amd_gpus() else None)
+    if backend is None:
+        S.fail("no NVIDIA or supported AMD GPU found", "Abyss runs on NVIDIA GPUs (CUDA), or AMD ones with --backend hip")
+    hip_extra = None
+    if backend == "hip":
+        gpus, hip_extra = hip_engine(a)
+        S.ok(f"RAM {S.ram_gb():.0f} GB")
+    if backend == "cuda" and gpu is None:
+        S.fail("no NVIDIA GPU found (nvidia-smi)", "with an AMD GPU: --backend hip")
+    gpus = [gpu] if backend == "cuda" else gpus
+    if a.gpus and backend == "cuda":
         found = {g["index"]: g for g in S.gpus()}
         want = sorted(found) if a.gpus.strip() == "all" else [int(x) for x in a.gpus.split(",") if x.strip()]
         missing = [i for i in want if i not in found]
         if missing:
             S.fail(f"there is no GPU {missing[0]}: " + ", ".join(f"{i} = {g['name']}" for i, g in found.items()))
         gpus = [found[i] for i in want]
-    for g in gpus:
+    for g in gpus if backend == "cuda" else []:
         S.ok(f"GPU {g['index']}: {g['name']}, {g['vram_gb']:.0f} GB, compute capability {g['arch']}")
-    if len(gpus) == 1 and gpu.get("count", 1) > 1:
+    if backend == "cuda" and len(gpus) == 1 and gpu.get("count", 1) > 1:
         S.say(f"  ({gpu['count']} NVIDIA GPUs here: --gpus all (or --gpus 0,1) splits the layers across them)")
     S.ok(f"RAM {S.ram_gb():.0f} GB (with VRAM, ~100 GB holds every expert of the 97 GB quant; less reads from the SSD)")
 
@@ -261,7 +303,8 @@ def main() -> int:
     S.ok(f"llama.cpp: {S.get_llama_cpp()}")
 
     S.step(3, "the engine")
-    build_engine(a.arch, gpus, a.nvcc)
+    if backend == "cuda":
+        build_engine(a.arch, gpus, a.nvcc)
 
     S.step(4, f"the model: {REPO} {quant}")
     files = quant_files(quant)
@@ -291,7 +334,8 @@ def main() -> int:
         S.ok(f"pack: {pack}")
 
     S.step(6, "the run config")
-    write_config(name, pack, a.context, a.port, a.rewrite_config, gpus if len(gpus) > 1 else None)
+    write_config(name, pack, a.context, a.port, a.rewrite_config, gpus if len(gpus) > 1 and backend == "cuda" else None,
+                 hip_extra)
 
     S.step(7, "Abyss-tools")
     make_tools(tools)

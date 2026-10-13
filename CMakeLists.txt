@@ -342,6 +342,11 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
   add_library(strata_prefill STATIC src/prefill/gemm.cu src/prefill/kernels.cu src/prefill/prefill.cpp)
   target_include_directories(strata_prefill PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${_strata_gpu_include_directories})
   target_link_libraries(strata_prefill PUBLIC strata_engine ${_strata_gpu_blas_target} ${_strata_gpu_runtime_target})
+  if(STRATA_ENABLE_HIP)
+    # glm_prefill.cu (strata_engine) multiplies with strata::prefill::Gemm on HIP (hipBLASLt): every target that links
+    # the engine alone (file_expert_source_test, hip_expert_cache_staging) needs the prefill library too
+    target_link_libraries(strata_engine PUBLIC strata_prefill)
+  endif()
   if(STRATA_ENABLE_HIP AND STRATA_HIPBLASLT_AVAILABLE)
     target_compile_definitions(strata_prefill PRIVATE STRATA_HIPBLASLT_AVAILABLE=1)
     target_link_libraries(strata_prefill PRIVATE roc::hipblaslt)
@@ -866,7 +871,7 @@ if(STRATA_NATIVE_EXPERTS)
       src/prefill/moe_mmq.cu
       src/prefill/ggml_cuda_host.cu
       "${_strata_mmq}/quantize.cu")
-    foreach(_t q2_0 iq2_xxs iq2_xs iq2_s iq3_xxs iq3_s iq4_nl iq4_xs q8_0 iq1_s q2_k q3_k q4_k q5_k q6_k)
+    foreach(_t q2_0 iq2_xxs iq2_xs iq2_s iq3_xxs iq3_s iq4_nl iq4_xs q8_0 iq1_s q2_k q3_k q4_k q5_k q6_k mxfp4)   # mxfp4: deepseek4 (moe_mmq.cu's case 39)
       list(APPEND _strata_mmq_sources "${_strata_mmq}/template-instances/mmq-instance-${_t}.cu")
     endforeach()
     set_source_files_properties(${_strata_mmq_sources} PROPERTIES LANGUAGE HIP)
