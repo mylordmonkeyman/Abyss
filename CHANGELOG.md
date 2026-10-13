@@ -7,6 +7,25 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.5 - 2026-10-14
+
+**DeepSeek V4 Flash reads long prompts faster again: 125K tokens ~1,770 -> ~2,540 tok/s (+44%), 32K ~2,060 ->
+~2,630, 64K ~1,970 -> ~2,740.** After v1.3.4 the attention was the largest part of a 125K prompt (`ds4_attn` 31 of 70 s
+of GPU time). Its kernel ran on the CUDA cores in FP32, a block per token and 8 heads, so each key was read 8 times
+per token.
+- The prompt path's attention now runs on tensor cores (`mma.sync` m16n8k16, `ldmatrix.trans` for P.V). A block takes
+  one token and 16 heads. Each of its 4 warps owns 128 of the 512 dims of Q, K (= V) and O. For each tile of 32 keys,
+  the warps' QK partials meet in shared memory for the online softmax, and P comes back for P.V. Q and P go in as FP16
+  hi + lo pairs, so the result keeps ~FP32 accuracy (relative RMS 2e-6 against the old kernel). 4,096 tokens at 120K
+  (RTX 5090): 26.7 -> 6.5 ms per CSA layer, 37.1 -> 8.9 ms per HCA layer. sm_80+ CUDA builds; `STRATA_DS4_ATTN=1`
+  keeps the old kernel; AMD keeps the old kernel.
+- Profile (`STRATA_GLM_PREFILL_PROF`, 125K prompt): `ds4_attn` 31.2 -> 7.9 s, GPU time 70 -> 48 s. The indexer (7.6
+  s) and the experts are now about the same size.
+- Server, prompt speed: 8K ~1,150 -> 1,170 (the experts dominate there), 32K 2,062 -> 2,632, 64K 1,965 -> 2,738, 125K
+  1,769 -> 2,539 tok/s. Decode unchanged.
+- KL on the prompt path, against llama.cpp over 3,000 tokens: 0.0091 (v1.3.4: 0.0093). 60K prompt, last 1,000 tokens
+  scored against the v1.3.1 reference: 0.0034 (the same as two runs of the old code).
+
 ## v1.3.4 - 2026-10-13
 
 **DeepSeek V4 Flash reads long prompts faster: 125K tokens ~1,010 -> ~1,770 tok/s (+75%), 32K ~1,650 -> ~2,060.** At

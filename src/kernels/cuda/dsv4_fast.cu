@@ -992,6 +992,193 @@ __global__ void __launch_bounds__(256) attend_batch_kernel(const float* __restri
         out[((size_t) t * n_head + h0 + i / D) * D + i % D] = s_q[i / D][i % D];
 }
 
+// The same attention on tensor cores (sm_80+, head_dim 512, 16 | n_head): a block = one token x 16 heads, warp w owns
+// dims [128w, 128w + 128) of Q, K (= V) and O, so each key is read once for 16 heads (the kernel above: once for 8).
+// Per tile of 32 keys: the warps load their slices, S partials (QK over 128 dims) meet in shared memory for the online
+// softmax, and P comes back for P.V on each warp's slice. Q and P go in as FP16 hi + lo pairs, so the result keeps
+// ~fp32 accuracy (rel. RMS 2e-6 against the kernel above). 4,096 tokens at 120k, RTX 5090: 26.7 -> 6.5 ms (CSA layers),
+// 37.1 -> 8.9 ms (HCA). STRATA_DS4_ATTN=1: the kernel above (A/B).
+__device__ __forceinline__ void abm_ldsm_t(const uint16_t* src, unsigned& b0, unsigned& b1, unsigned& b2, unsigned& b3) {
+#if !STRATA_DS4_IDX_SM80
+    (void) src;
+    b0 = b1 = b2 = b3 = 0u;
+    __trap();
+#else
+    const unsigned addr = (unsigned) __cvta_generic_to_shared(src);
+    asm volatile("ldmatrix.sync.aligned.m8n8.x4.trans.shared.b16 {%0,%1,%2,%3}, [%4];\n"
+                 : "=r"(b0), "=r"(b1), "=r"(b2), "=r"(b3)
+                 : "r"(addr));
+#endif
+}
+__device__ __forceinline__ unsigned abm_h2(float x, float y) {
+    const __half2 h = __floats2half2_rn(x, y);
+    return *reinterpret_cast<const unsigned*>(&h);
+}
+constexpr int ABM_H = 16, ABM_TILE = 32, ABM_KS = 136;   // heads a block, keys a tile, a key row's stride (halves)
+__global__ void __launch_bounds__(128) attend_batch_mma_kernel(const float* __restrict__ q, const uint16_t* __restrict__ keys,
+                                                               int n_hist, int n_swa, const uint16_t* __restrict__ comp,
+                                                               const int* __restrict__ sel, int top_k, int ratio,
+                                                               const float* __restrict__ sinks, int n_head, int n_rot,
+                                                               Rope rope, int p0, float scale, float* __restrict__ out) {
+    constexpr int D = 512;
+    __shared__ __align__(16) uint16_t s_k[4][ABM_TILE][ABM_KS];   // reused for O (16 x 512 floats) at the end
+    __shared__ float s_s[4][ABM_H][ABM_TILE + 1];
+    __shared__ __align__(16) uint16_t s_p[2][ABM_H][40];          // P hi, lo
+    __shared__ float s_scale[ABM_H], s_sum[ABM_H];
+    const int t = blockIdx.x, h0 = blockIdx.y * ABM_H, tid = threadIdx.x, lane = tid & 31, w = tid >> 5;
+    const int g = lane >> 2, t4 = lane & 3;
+    const int p = p0 + t;
+    const int n_raw = min(p + 1, n_swa);
+    const int raw0 = p - n_raw + 1 - (p0 - n_hist);
+    int n_c = 0;
+    if (ratio == 128) n_c = (p + 1) / 128;
+    else if (ratio == 4) n_c = min(top_k, (p + 1) / 4);
+    const int n = n_raw + n_c;
+    // Q's A fragments for this warp's dims: [k step 8][4], hi (and lo)
+    unsigned qa[8][4], ql[8][4];
+    {
+        const float* qg = q + ((size_t) t * n_head + h0 + g) * D + w * 128;
+        const float* qg8 = qg + 8 * D;
+#pragma unroll
+        for (int ks = 0; ks < 8; ++ks) {
+            const int c = ks * 16 + t4 * 2;
+            const float2 v[4] = {*reinterpret_cast<const float2*>(qg + c), *reinterpret_cast<const float2*>(qg8 + c),
+                                 *reinterpret_cast<const float2*>(qg + c + 8), *reinterpret_cast<const float2*>(qg8 + c + 8)};
+#pragma unroll
+            for (int r = 0; r < 4; ++r) {
+                qa[ks][r] = abm_h2(v[r].x, v[r].y);
+                {
+                    const float2 hv = __half22float2(*reinterpret_cast<const __half2*>(&qa[ks][r]));
+                    ql[ks][r] = abm_h2(v[r].x - hv.x, v[r].y - hv.y);
+                }
+            }
+        }
+    }
+    float o[16][4];
+#pragma unroll
+    for (int i = 0; i < 16; ++i) o[i][0] = o[i][1] = o[i][2] = o[i][3] = 0.0f;
+    // the softmax's state: thread tid owns head tid / 8 (all 8 threads of the group hold it)
+    const int sh = tid >> 3, sub = tid & 7;
+    float m = sinks[h0 + sh], sum = 1.0f;
+    for (int j0 = 0; j0 < n; j0 += ABM_TILE) {
+        // 1. this warp's slice of the tile's keys (zeros past the end)
+#pragma unroll 4
+        for (int i = lane; i < ABM_TILE * 16; i += 32) {
+            const int kk = i >> 4, ch = i & 15, j = j0 + kk;
+            uint4 v = make_uint4(0u, 0u, 0u, 0u);
+            if (j < n) {
+                const uint16_t* row = j < n_raw ? keys + (size_t) (raw0 + j) * D
+                                                : comp + (size_t) (ratio == 4 ? sel[(size_t) t * top_k + (j - n_raw)] : j - n_raw) * D;
+                v = *reinterpret_cast<const uint4*>(row + w * 128 + ch * 8);
+            }
+            *reinterpret_cast<uint4*>(&s_k[w][kk][ch * 8]) = v;
+        }
+        __syncwarp();
+        // 2. S partials over this warp's 128 dims: 16 heads x 32 keys
+#pragma unroll
+        for (int nt = 0; nt < 4; ++nt) {
+            float d[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+            const uint16_t* kr = &s_k[w][nt * 8 + g][t4 * 2];
+#pragma unroll
+            for (int ks = 0; ks < 8; ++ks) {
+                const unsigned b0 = *reinterpret_cast<const unsigned*>(kr + ks * 16);
+                const unsigned b1 = *reinterpret_cast<const unsigned*>(kr + ks * 16 + 8);
+                idx_mma16816(d, qa[ks], b0, b1);
+                idx_mma16816(d, ql[ks], b0, b1);
+            }
+            s_s[w][g][nt * 8 + t4 * 2] = d[0];
+            s_s[w][g][nt * 8 + t4 * 2 + 1] = d[1];
+            s_s[w][g + 8][nt * 8 + t4 * 2] = d[2];
+            s_s[w][g + 8][nt * 8 + t4 * 2 + 1] = d[3];
+        }
+        __syncthreads();
+        // 3. online softmax: head sh, keys sub + 8i
+        {
+            float l[4], tmax = -INFINITY;
+#pragma unroll
+            for (int i = 0; i < 4; ++i) {
+                const int kk = sub + 8 * i;
+                l[i] = j0 + kk < n ? (s_s[0][sh][kk] + s_s[1][sh][kk] + s_s[2][sh][kk] + s_s[3][sh][kk]) * scale : -INFINITY;
+                tmax = fmaxf(tmax, l[i]);
+            }
+            tmax = fmaxf(tmax, __shfl_xor_sync(0xffffffffu, tmax, 1));
+            tmax = fmaxf(tmax, __shfl_xor_sync(0xffffffffu, tmax, 2));
+            tmax = fmaxf(tmax, __shfl_xor_sync(0xffffffffu, tmax, 4));
+            const float mn = fmaxf(m, tmax), sc = expf(m - mn);
+            float ps = 0.0f;
+#pragma unroll
+            for (int i = 0; i < 4; ++i) {
+                const float e = expf(l[i] - mn);
+                const __half eh = __float2half_rn(e);
+                s_p[0][sh][sub + 8 * i] = __half_as_ushort(eh);
+                s_p[1][sh][sub + 8 * i] = __half_as_ushort(__float2half_rn(e - __half2float(eh)));
+                ps += e;
+            }
+            ps += __shfl_xor_sync(0xffffffffu, ps, 1);
+            ps += __shfl_xor_sync(0xffffffffu, ps, 2);
+            ps += __shfl_xor_sync(0xffffffffu, ps, 4);
+            sum = sum * sc + ps;
+            m = mn;
+            if (sub == 0) s_scale[sh] = sc;
+        }
+        __syncthreads();
+        // 4. O = O * scale + P . V over this warp's 128 dims
+        {
+            const float sa = s_scale[g], sb = s_scale[g + 8];
+#pragma unroll
+            for (int i = 0; i < 16; ++i) {
+                o[i][0] *= sa; o[i][1] *= sa; o[i][2] *= sb; o[i][3] *= sb;
+            }
+#pragma unroll
+            for (int ks = 0; ks < 2; ++ks) {
+                unsigned pa[4], pl[4];
+                const int c = ks * 16 + t4 * 2;
+                pa[0] = *reinterpret_cast<const unsigned*>(&s_p[0][g][c]);
+                pa[1] = *reinterpret_cast<const unsigned*>(&s_p[0][g + 8][c]);
+                pa[2] = *reinterpret_cast<const unsigned*>(&s_p[0][g][c + 8]);
+                pa[3] = *reinterpret_cast<const unsigned*>(&s_p[0][g + 8][c + 8]);
+                {
+                    pl[0] = *reinterpret_cast<const unsigned*>(&s_p[1][g][c]);
+                    pl[1] = *reinterpret_cast<const unsigned*>(&s_p[1][g + 8][c]);
+                    pl[2] = *reinterpret_cast<const unsigned*>(&s_p[1][g][c + 8]);
+                    pl[3] = *reinterpret_cast<const unsigned*>(&s_p[1][g + 8][c + 8]);
+                }
+                const int kr = ks * 16 + (lane & 7) + ((lane >> 3) & 1) * 8;
+#pragma unroll
+                for (int np = 0; np < 8; ++np) {   // two n tiles (16 dims) per ldmatrix
+                    unsigned b0, b1, b2, b3;
+                    abm_ldsm_t(&s_k[w][kr][np * 16 + (lane >> 4) * 8], b0, b1, b2, b3);
+                    idx_mma16816(o[2 * np], pa, b0, b1);
+                    idx_mma16816(o[2 * np + 1], pa, b2, b3);
+                    {
+                        idx_mma16816(o[2 * np], pl, b0, b1);
+                        idx_mma16816(o[2 * np + 1], pl, b2, b3);
+                    }
+                }
+            }
+        }
+        __syncthreads();
+    }
+    // 5. normalise, de-rope (V = K carries the rotation) and write
+    if (sub == 0) s_sum[sh] = sum;
+    __syncthreads();
+    float* s_o = reinterpret_cast<float*>(&s_k[0][0][0]);   // [16][512]
+    {
+        const float ra = 1.0f / s_sum[g], rb = 1.0f / s_sum[g + 8];
+#pragma unroll
+        for (int i = 0; i < 16; ++i) {
+            const int dcol = w * 128 + i * 8 + t4 * 2;
+            *reinterpret_cast<float2*>(&s_o[g * D + dcol]) = make_float2(o[i][0] * ra, o[i][1] * ra);
+            *reinterpret_cast<float2*>(&s_o[(g + 8) * D + dcol]) = make_float2(o[i][2] * rb, o[i][3] * rb);
+        }
+    }
+    __syncthreads();
+    for (int i = tid; i < ABM_H * (n_rot / 2); i += blockDim.x) rope_pair(s_o + (i / (n_rot / 2)) * D, D, n_rot, rope, p, false, i % (n_rot / 2));
+    __syncthreads();
+    float4* og = reinterpret_cast<float4*>(out + ((size_t) t * n_head + h0) * D);
+    for (int i = tid; i < ABM_H * D / 4; i += blockDim.x) og[i] = reinterpret_cast<const float4*>(s_o)[i];
+}
+
 __global__ void to_f16_kernel(const float* __restrict__ x, uint16_t* __restrict__ y, int64_t n) {
     for (int64_t i = (int64_t) blockIdx.x * blockDim.x + threadIdx.x; i < n; i += (int64_t) gridDim.x * blockDim.x)
         y[i] = __half_as_ushort(__float2half(x[i]));
@@ -1229,10 +1416,38 @@ void indexer_batch(const float* iq, const uint16_t* K, const float* w, int idx_h
     idx_select_batch_kernel<<<T, 1024, 0, s>>>(score, ld, ratio, p0, top_k, sel);
     check("idx_select_batch");
 }
+// the prompt path's tensor-core attention: sm_80+ in a CUDA build, head_dim 512, 16 | n_head, unless STRATA_DS4_ATTN=1
+static bool attn_use_mma(int n_head, int head_dim) {
+    static const bool old = [] { const char* v = getenv("STRATA_DS4_ATTN"); return v && std::atoi(v) == 1; }();
+#if !defined(__HIPCC__) && !defined(STRATA_USE_HIP)
+    if (old || head_dim != 512 || n_head % ABM_H != 0) return false;
+    static int state[64] = {};   // per device: 0 unknown, 1 yes, -1 no
+    int dev = 0;
+    cudaGetDevice(&dev);
+    if (dev < 0 || dev >= 64) return false;
+    if (state[dev] == 0) {
+        int major = 0;
+        state[dev] = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, dev) == cudaSuccess && major >= 8 ? 1 : -1;
+    }
+    return state[dev] == 1;
+#else
+    (void) old;
+    (void) n_head;
+    (void) head_dim;
+    return false;
+#endif
+}
 void attend_batch(const float* q, const uint16_t* keys, int n_hist, int n_swa, const uint16_t* comp, const int* sel,
                   int top_k, int ratio, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p0,
                   int T, float* out, cudaStream_t s) {
     if (T <= 0) return;
+    if (attn_use_mma(n_head, head_dim)) {
+        attend_batch_mma_kernel<<<dim3((unsigned) T, (unsigned) (n_head / ABM_H)), 128, 0, s>>>(
+            q, keys, n_hist, n_swa, comp, sel, top_k, ratio, sinks, n_head, n_rot, rope, p0, 1.0f / sqrtf((float) head_dim),
+            out);
+        check("attend_batch_mma");
+        return;
+    }
     attend_batch_kernel<<<dim3((unsigned) T, (unsigned) (n_head / AB_H)), 256, 0, s>>>(
         q, keys, n_hist, n_swa, comp, sel, top_k, ratio, sinks, n_head, n_rot, rope, p0, 1.0f / sqrtf((float) head_dim),
         out);
