@@ -1366,9 +1366,11 @@ bool Glm5Model::load_pack_env(const std::string& pack_dir, int64_t max_ctx, std:
     bool ok = devs.size() == bounds.size() + 1;
     for (size_t i = 0; ok && i < bounds.size(); ++i)
         ok = bounds[i] >= 1 && bounds[i] < g_.n_layers && (i == 0 || bounds[i] > bounds[i - 1]);
+    // STRATA_GLM_SPLIT_SAME=1 (test): the parts may share a device - a split's code paths on a one-GPU host
+    static const bool same_ok = getenv("STRATA_GLM_SPLIT_SAME") != nullptr;
     for (size_t i = 0; ok && i < devs.size(); ++i) {
         ok = devs[i] >= 0 && devs[i] < n_dev;
-        for (size_t j = 0; ok && j < i; ++j) ok = devs[i] != devs[j];
+        for (size_t j = 0; ok && j < i && !same_ok; ++j) ok = devs[i] != devs[j];
     }
     if (!ok) {
         err = "glm split: " + std::to_string(bounds.size()) + " boundaries (rising, 1.." +

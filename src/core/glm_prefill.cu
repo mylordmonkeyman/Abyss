@@ -3035,6 +3035,14 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
         gb::embed_rows(S->x, S->R, T, E, fast_->cs);
         return true;
     };
+    // a later part's copy of the chunk's token ids (deepseek4's hash-routed layers read them; embed() fills only the
+    // first part's): on its own stream, before its layers.  (A split whose later part starts below hash_layers routed
+    // those layers by whatever its buffer held.)
+    const auto toks_to = [&](Glm5Model* m, int c) {
+        if (m->pf_ == nullptr || m->pf_->toks_d == nullptr) return;
+        cudaMemcpyAsync(m->pf_->toks_d, tokens.data() + (int64_t) c * Tc, (size_t) chunk_len(c) * sizeof(int),
+                        cudaMemcpyHostToDevice, m->fast_->cs);
+    };
     std::vector<Glm5Model*> parts;
     for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) parts.push_back(m);
     const int np = (int) parts.size();
@@ -3061,6 +3069,7 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
                 cudaStreamWaitEvent(m->fast_->cs, SP->ev_hop, 0);
                 cudaMemcpyAsync(m->pf_->R, SP->hop_h, hop, cudaMemcpyHostToDevice, m->fast_->cs);
                 m->pos_ = p0;
+                toks_to(m, c);
                 std::vector<int32_t> nx;
                 if (m->mtp_il_ >= 0) next_of(c, nx);
                 if (!m->prefill_half(p0, T, err, nx.empty() ? nullptr : nx.data())) return false;
@@ -3140,6 +3149,7 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
                     }
                     cv.notify_all();
                     m->pos_ = p0;
+                    toks_to(m, c);
                     std::vector<int32_t> nx;
                     if (m->mtp_il_ >= 0) next_of(c, nx);
                     if (!m->prefill_half(p0, T, e2, nx.empty() ? nullptr : nx.data())) {

@@ -95,18 +95,41 @@ def verified(path: Path, sha: str) -> bool:
     return True
 
 
-def build_engine(arch: str | None, gpu) -> Path:
+def cuda_archs(arch: str | None, gpus) -> str:
+    """The CUDA architectures to compile for: --arch, else every chosen GPU's (RTX 50: 120a) - "86;120a" for an
+    RTX 3090 beside an RTX 5090."""
+    if arch:
+        return arch
+    out = []
+    for g in gpus:
+        cc = "120a" if g["arch"] == "120" else g["arch"]   # RTX 50: the MXFP4 MMQ kernels use Blackwell's FP4 MMA
+        if cc not in out:
+            out.append(cc)
+    return ";".join(sorted(out, key=lambda c: int(c.rstrip("a"))))
+
+
+def configured_archs() -> str | None:
+    cache = ROOT / "build" / "CMakeCache.txt"
+    if not cache.exists():
+        return None
+    for line in cache.read_text(errors="replace").splitlines():
+        if line.startswith("CMAKE_CUDA_ARCHITECTURES:"):
+            return line.split("=", 1)[1].strip()
+    return None
+
+
+def build_engine(arch: str | None, gpus) -> Path:
     exe = ROOT / "build" / "strata"
     cmake = ROOT / ".venv" / "bin" / "cmake"
     ninja = ROOT / ".venv" / "bin" / "ninja"
-    if not (ROOT / "build" / "build.ninja").exists():
+    cc = cuda_archs(arch, gpus)
+    # (configured again when the GPUs need other architectures: a second card of another generation)
+    if not (ROOT / "build" / "build.ninja").exists() or configured_archs() not in (None, cc):
         nvcc = shutil.which("nvcc") or "/usr/local/cuda/bin/nvcc"
         if not Path(nvcc).exists():
             S.fail("nvcc (the CUDA toolkit) was not found", "install the CUDA toolkit (12.8 or newer for RTX 50)")
-        cc = arch or gpu["arch"]
-        if cc == "120":
-            cc = "120a"                     # RTX 50: the MXFP4 MMQ kernels use Blackwell's FP4 MMA
-        S.say(f"  Configuring for {gpu['name']} (CUDA arch {cc}) ...")
+        names = " + ".join(g["name"] for g in gpus)
+        S.say(f"  Configuring for {names} (CUDA arch {cc}) ...")
         S.run([cmake, "-S", ROOT, "-B", ROOT / "build", "-G", "Ninja", f"-DCMAKE_MAKE_PROGRAM={ninja}",
                "-DCMAKE_BUILD_TYPE=Release", "-DSTRATA_ENABLE_CUDA=ON", f"-DCMAKE_CUDA_ARCHITECTURES={cc}",
                "-DSTRATA_NATIVE_EXPERTS=ON", "-DSTRATA_BUILD_TESTS=OFF", f"-DCMAKE_CUDA_COMPILER={nvcc}",
@@ -117,7 +140,7 @@ def build_engine(arch: str | None, gpu) -> Path:
     return exe
 
 
-def write_config(name: str, pack: Path, ctx: int, port: int, rewrite: bool) -> tuple[Path, Path]:
+def write_config(name: str, pack: Path, ctx: int, port: int, rewrite: bool, gpus=None) -> tuple[Path, Path]:
     cfg = ROOT / f"abyss-{name}.json"
     run = ROOT / f"run-abyss-{name}.sh"
     if cfg.exists() and not rewrite:
@@ -129,6 +152,8 @@ def write_config(name: str, pack: Path, ctx: int, port: int, rewrite: bool) -> t
             "cwd": str(ROOT),
             "tokenizer": str(pack / "tokenizer"),
             "model_name": "deepseek-v4-flash",
+            # (several: a layer split across them, the first the main card - serve/server.py adds --layer-split auto)
+            **({"gpu": [g["index"] for g in gpus]} if gpus else {}),
             "sampling": {"temperature": 1.0, "top_p": 0.95},
             "port": port,
             "log": str(ROOT / f"abyss-{name}.log"),
@@ -177,6 +202,8 @@ def main() -> int:
     ap.add_argument("--context", type=int, default=65536, help="the context in tokens (default 65536)")
     ap.add_argument("--port", type=int, default=8082)
     ap.add_argument("--gpu", type=int, help="the GPU, as nvidia-smi numbers it (default: the one with the most VRAM)")
+    ap.add_argument("--gpus", help="several GPUs for a layer split, as nvidia-smi numbers them (\"0,1\"; the first is "
+                                   "the main card), or \"all\": every NVIDIA GPU (default: one GPU, --gpu)")
     ap.add_argument("--arch", help="the CUDA architecture to compile for (default: the GPU's; 120a on RTX 50)")
     ap.add_argument("--download-model", action="store_true", help="download the model without asking")
     ap.add_argument("--yes", action="store_true", help="the defaults for every question (the download still needs --download-model)")
@@ -196,7 +223,18 @@ def main() -> int:
     gpu = S.gpu_info(a.gpu)
     if gpu is None:
         S.fail("no NVIDIA GPU found (nvidia-smi)", "Abyss's DeepSeek V4 path runs on NVIDIA GPUs")
-    S.ok(f"GPU {gpu['index']}: {gpu['name']}, {gpu['vram_gb']:.0f} GB, compute capability {gpu['arch']}")
+    gpus = [gpu]
+    if a.gpus:
+        found = {g["index"]: g for g in S.gpus()}
+        want = sorted(found) if a.gpus.strip() == "all" else [int(x) for x in a.gpus.split(",") if x.strip()]
+        missing = [i for i in want if i not in found]
+        if missing:
+            S.fail(f"there is no GPU {missing[0]}: " + ", ".join(f"{i} = {g['name']}" for i, g in found.items()))
+        gpus = [found[i] for i in want]
+    for g in gpus:
+        S.ok(f"GPU {g['index']}: {g['name']}, {g['vram_gb']:.0f} GB, compute capability {g['arch']}")
+    if len(gpus) == 1 and gpu.get("count", 1) > 1:
+        S.say(f"  ({gpu['count']} NVIDIA GPUs here: --gpus all (or --gpus 0,1) splits the layers across them)")
     S.ok(f"RAM {S.ram_gb():.0f} GB (with VRAM, ~100 GB holds every expert of the 97 GB quant; less reads from the SSD)")
 
     S.step(2, "Python packages and llama.cpp's source")
@@ -204,7 +242,7 @@ def main() -> int:
     S.ok(f"llama.cpp: {S.get_llama_cpp()}")
 
     S.step(3, "the engine")
-    build_engine(a.arch, gpu)
+    build_engine(a.arch, gpus)
 
     S.step(4, f"the model: {REPO} {quant}")
     files = quant_files(quant)
@@ -234,7 +272,7 @@ def main() -> int:
         S.ok(f"pack: {pack}")
 
     S.step(6, "the run config")
-    write_config(name, pack, a.context, a.port, a.rewrite_config)
+    write_config(name, pack, a.context, a.port, a.rewrite_config, gpus if len(gpus) > 1 else None)
 
     S.step(7, "Abyss-tools")
     make_tools(tools)

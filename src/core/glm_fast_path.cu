@@ -1335,7 +1335,9 @@ void Glm5Model::fast_igpu_setup() {
     // unset: on when the library and a HIP device are there (and the calibration finds it faster than the CPU); 0 off;
     // 1 on even when slower.  Asked for (set) and unavailable: the reason is printed; auto and unavailable: silent
     const char* on = getenv("STRATA_GLM_IGPU");
-    if ((on != nullptr && std::atoi(on) == 0) || F->igpu_lib != nullptr || n_parts_ >= 2) return;
+    // (a layer split's parts each open it: the library is one lane for the process - opened once, every part's RAM
+    // tier registered with it, one call at a time)
+    if ((on != nullptr && std::atoi(on) == 0) || F->igpu_lib != nullptr) return;
     const bool asked = on != nullptr;
     std::string path;
     if (const char* lp = getenv("STRATA_GLM_IGPU_LIB")) {

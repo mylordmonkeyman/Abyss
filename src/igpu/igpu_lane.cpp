@@ -193,6 +193,9 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
                                                               const void* const* blobs, const float* w,
                                                               const float* x, float* out) {
     if (!L.open || ne < 1 || ne > 8 || n_embd > L.n_embd || n_ff > L.n_ff) return 1;
+    // one caller at a time (a layer split's parts share the lane): busy -> the CPU takes this one, a decode does not wait
+    std::unique_lock<std::mutex> lk(L.mu, std::try_to_lock);
+    if (!lk.owns_lock()) return 1;
     // A late call still owns the buffers and the queue: the CPU takes this one, until it is done.  The kernel driver
     // can hold the iGPU's queues for seconds while it faults registered memory in again (seen: 0.7-18 s, a few times
     // after the host had been idle for hours; kernel log "svm_range_restore_work / amdgpu_amdkfd_restore_userptr_worker
@@ -286,6 +289,7 @@ __attribute__((visibility("default"))) int abyss_igpu_rows(int gu_type, int d_ty
                                                            const void* const* blobs, const int* r0, const int* nr,
                                                            const int* row_tok, const float* x, int n_tok, int rlo,
                                                            int rhi, float* out, int ld) {
+    std::lock_guard<std::mutex> lk(L.mu);   // (a split's parts share the lane: a prompt's call waits its turn)
     if (!L.open || ne < 1 || rhi <= rlo || ld < n_embd || ld < 2 * n_ff) return 1;
     if (L.pending) {   // a late decode call still holds the queue (abyss_igpu_experts)
         if (hipStreamQuery(L.s) != hipSuccess) return 1;

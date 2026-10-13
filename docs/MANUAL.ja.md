@@ -69,6 +69,7 @@ cd ~/llm/apps/Abyss
 | `--context N`, `--port N` | コンテキスト長（既定 65536）とポート（既定 8082） |
 | `--data-dir DIR`, `--tools-dir DIR` | Abyss-data と Abyss-tools を別の場所にする |
 | `--gpu N`, `--arch A` | 使う GPU、コンパイルする CUDA アーキテクチャ |
+| `--gpus 0,1`, `--gpus all` | 複数の GPU に層を分けて載せる（下の「複数の GPU」）。全 GPU のアーキテクチャをまとめてビルドする |
 | `--download-model`, `--yes` | 確認せずにダウンロード、すべての質問に既定値で答える |
 | `--rewrite-config` | `abyss-<名前>.json` を書き直す（なければ既存のものを残す） |
 | `--tools-only` | Abyss-tools だけを作る / 更新する |
@@ -222,6 +223,22 @@ cd ~/llm/apps/Abyss
 `strata.sh`（start / stop / log）を使うなら、Abyss のフォルダに起動スクリプトと設定を `run-<名前>.sh`,
 `strata-<名前>.json` の名前で置いて、`STRATA_DIR=~/llm/apps/Abyss ./strata.sh start <名前>` で起動する。
 起動スクリプトの中身は上の起動コマンド（`exec .venv/bin/python serve/server.py --engine strata "--config" "<設定>" "--port" "8082" "$@"`）。
+
+## 複数の GPU
+
+NVIDIA の GPU が 2 枚以上あれば、層を分けて載せられる（layer split）。各 GPU は自分の層のエキスパートだけを VRAM に置く。
+2 枚目の VRAM の分だけ、VRAM に載るエキスパートが増える。
+
+- **セットアップ:** `./setup-deepseek.sh --gpus 0,1` または `--gpus all`。設定に `"gpu": [0, 1]` が入り、サーバーが
+  `--layer-split auto` を付けて起動する。世代の違う GPU（例: RTX 5090 + RTX 3090）は、両方のアーキテクチャ
+  （`86;120a`）でビルドする。
+- **境目を手で決める:** 設定の `"layer_split": "22"`（2 枚目が担当する最初の層）。
+- **iGPU レーン:** 分けたときも使える。各 GPU の RAM 層を 1 つの iGPU が順番に計算する。
+- **確認済みの範囲:** 1 枚の GPU の上で 2 つに分けた形（`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
+  STRATA_GLM_DEVS=0,0`、試験用）で、prompt と decode の結果が分けない場合と一致すること（KL がぶれの範囲内）。
+  2 枚の GPU での速度はまだ測っていない。
+- **制限:** 分けているときは、n-gram の先読み（speculative decode）が使えない。V100 などの sm_70 はビルドできない
+  （sm_75 以上）。AMD の GPU や、NVIDIA との組み合わせには対応していない。
 
 ## メモリと速度
 

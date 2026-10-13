@@ -70,6 +70,7 @@ so it can be run again at any time:
 | `--context N`, `--port N` | the context (default 65536) and the port (default 8082) |
 | `--data-dir DIR`, `--tools-dir DIR` | other places for Abyss-data and Abyss-tools |
 | `--gpu N`, `--arch A` | the GPU, the CUDA architecture to compile for |
+| `--gpus 0,1`, `--gpus all` | split the layers across several GPUs (see "Several GPUs"); builds for every GPU's architecture |
 | `--download-model`, `--yes` | download without asking; the defaults for every question |
 | `--rewrite-config` | write `abyss-<name>.json` again (otherwise an existing one is kept) |
 | `--tools-only` | only create / update Abyss-tools |
@@ -223,6 +224,22 @@ in the browser, `--gpu 0` picks the GPU.
 If you use the `strata.sh` helper (start / stop / log), put a run script and the config into the Abyss folder under
 its naming (`run-<name>.sh`, `strata-<name>.json`) and point it there: `STRATA_DIR=~/llm/apps/Abyss ./strata.sh start <name>`.
 The run script is the start command above (`exec .venv/bin/python serve/server.py --engine strata "--config" "<config>" "--port" "8082" "$@"`).
+
+## Several GPUs
+
+With two or more NVIDIA GPUs the layers can be split across them (a layer split). Each GPU keeps only its own layers'
+experts in VRAM, so the second card's VRAM holds more of them.
+
+- **Setup:** `./setup-deepseek.sh --gpus 0,1` or `--gpus all`. The config gets `"gpu": [0, 1]`, and the server
+  starts the engine with `--layer-split auto`. GPUs of different generations (an RTX 5090 with an RTX 3090) are
+  built for both architectures (`86;120a`).
+- **Choosing the boundary:** `"layer_split": "22"` in the config (the second card's first layer).
+- **The iGPU lane:** it works with a split too. One iGPU computes every GPU's RAM tier, one call at a time.
+- **What has been checked:** a two-part split on one GPU (`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
+  STRATA_GLM_DEVS=0,0`, for testing). The prompt and decode results match the unsplit model (KL within the
+  run-to-run spread). Speed on two physical GPUs has not been measured yet.
+- **Limits:** a split has no n-gram speculative decoding. sm_70 cards such as the V100 do not build (sm_75 or
+  newer is needed). AMD GPUs, and mixing them with NVIDIA, are not supported.
 
 ## Memory and speed
 

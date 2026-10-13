@@ -7,6 +7,28 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.7 - 2026-10-14
+
+DeepSeek V4 Flash on several NVIDIA GPUs (layer split): a routing fix, the iGPU lane for every part, and setup for two
+cards. Checked as a two-part split on one RTX 5090. Speed on two physical cards has not been measured yet.
+- Fix: the prompt path's hash-routed layers (the first 3 of DeepSeek V4) read the chunk's token ids from a buffer that
+  only the first part filled. A later part starting below layer 3 routed those layers by whatever its buffer held:
+  with a split at layer 2, the KL against the unsplit model was 0.0078 instead of 0.0027. Each later part now gets the
+  ids on its own stream before its layers.
+- The iGPU lane (the decode's RAM-tier experts, and the prompt's host experts from v1.3.6) now runs with a split too.
+  Each part registers its RAM tier with the one lane. A decode call that finds the lane busy goes to the CPU, so it
+  never waits; a prompt call waits its turn. Two parts on one GPU, a 7K prompt: 917 -> 1,324 tok/s (+44%), scoring
+  4.5 -> 2.6 ms a token.
+- `./setup-deepseek.sh --gpus 0,1` (or `--gpus all`) builds for every chosen GPU's architecture (`86;120a` for an RTX
+  3090 beside an RTX 5090; a build for other architectures is configured again) and writes `"gpu": [0, 1]`, so the
+  server starts with `--layer-split auto`. Without it, setup picks one GPU as before and points to the option when
+  it finds more.
+- `STRATA_GLM_SPLIT_SAME=1` (test): the parts of a split may share a GPU (with `STRATA_GLM_DEVS=0,0` and
+  `STRATA_GLM_POOL_GB` to leave room for both). Splits 22 and 2 on one GPU match the unsplit model: KL 0.0037 /
+  0.0027 over 1,000 tokens after a 7K prompt (two unsplit runs: 0.0028).
+- docs/MANUAL: a "Several GPUs" section. Limits: a split has no n-gram speculative decoding; sm_70 (V100) does not
+  build; AMD is not supported.
+
 ## v1.3.6 - 2026-10-14
 
 **The prompt's RAM-tier experts run on the APU's integrated GPU: DeepSeek V4 Flash reads an 8K prompt ~1,310 -> ~1,830
