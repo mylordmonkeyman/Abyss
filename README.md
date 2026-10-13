@@ -142,8 +142,8 @@ Teacher-forced logits against llama.cpp on the same GGUF (`tools/dsv4_logits_dum
 - [ ] Speculative decoding (DSpark drafter; this GGUF has no MTP block)
 - [ ] Conversation slots on disk
 - [ ] Windows for DeepSeek V4 (Linux tested)
-- [ ] Multi-GPU for DeepSeek V4: the layer split runs (checked as two parts on one GPU); speed on two GPUs, V100
-  (sm_70) and AMD still to come
+- [ ] Multi-GPU for DeepSeek V4: the layer split runs (RTX 5090 + RTX 3090 measured); V100 builds with CUDA 12 (not
+  yet run on one); AMD still to come
 - [ ] Prompt-path tuning (staging RAM-tier experts dominates long prompts)
 
 ## 🙏 Credits

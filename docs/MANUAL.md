@@ -70,6 +70,7 @@ so it can be run again at any time:
 | `--context N`, `--port N` | the context (default 65536) and the port (default 8082) |
 | `--data-dir DIR`, `--tools-dir DIR` | other places for Abyss-data and Abyss-tools |
 | `--gpu N`, `--arch A` | the GPU, the CUDA architecture to compile for |
+| `--nvcc PATH` | the CUDA compiler to build with (a CUDA 12 one for a V100) |
 | `--gpus 0,1`, `--gpus all` | split the layers across several GPUs (see "Several GPUs"); builds for every GPU's architecture |
 | `--download-model`, `--yes` | download without asking; the defaults for every question |
 | `--rewrite-config` | write `abyss-<name>.json` again (otherwise an existing one is kept) |
@@ -238,8 +239,11 @@ experts in VRAM, so the second card's VRAM holds more of them.
 - **What has been checked:** a two-part split on one GPU (`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
   STRATA_GLM_DEVS=0,0`, for testing). The prompt and decode results match the unsplit model (KL within the
   run-to-run spread). Speed on two physical GPUs has not been measured yet.
-- **Limits:** a split has no n-gram speculative decoding. sm_70 cards such as the V100 do not build (sm_75 or
-  newer is needed). AMD GPUs, and mixing them with NVIDIA, are not supported.
+- **Limits:** a split has no n-gram speculative decoding. AMD GPUs, and mixing them with NVIDIA, are not supported.
+- **V100 (sm_70):** CUDA 13 cannot compile for the V100, so install CUDA 12 (12.9) and build with
+  `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` (CUDA 12.9 also builds an RTX 50's `120a`). The sm_70
+  build has been checked to compile; it has not run on a V100 yet. The newer tensor-core kernels (the indexer and the
+  prompt attention) need sm_80 or newer, so a V100 uses the older ones.
 
 ## Memory and speed
 

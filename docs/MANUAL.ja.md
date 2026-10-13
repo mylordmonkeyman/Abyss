@@ -69,6 +69,7 @@ cd ~/llm/apps/Abyss
 | `--context N`, `--port N` | コンテキスト長（既定 65536）とポート（既定 8082） |
 | `--data-dir DIR`, `--tools-dir DIR` | Abyss-data と Abyss-tools を別の場所にする |
 | `--gpu N`, `--arch A` | 使う GPU、コンパイルする CUDA アーキテクチャ |
+| `--nvcc PATH` | ビルドに使う CUDA コンパイラ（V100 には CUDA 12 のもの） |
 | `--gpus 0,1`, `--gpus all` | 複数の GPU に層を分けて載せる（下の「複数の GPU」）。全 GPU のアーキテクチャをまとめてビルドする |
 | `--download-model`, `--yes` | 確認せずにダウンロード、すべての質問に既定値で答える |
 | `--rewrite-config` | `abyss-<名前>.json` を書き直す（なければ既存のものを残す） |
@@ -237,8 +238,12 @@ NVIDIA の GPU が 2 枚以上あれば、層を分けて載せられる（layer
 - **確認済みの範囲:** 1 枚の GPU の上で 2 つに分けた形（`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
   STRATA_GLM_DEVS=0,0`、試験用）で、prompt と decode の結果が分けない場合と一致すること（KL がぶれの範囲内）。
   2 枚の GPU での速度はまだ測っていない。
-- **制限:** 分けているときは、n-gram の先読み（speculative decode）が使えない。V100 などの sm_70 はビルドできない
-  （sm_75 以上）。AMD の GPU や、NVIDIA との組み合わせには対応していない。
+- **制限:** 分けているときは、n-gram の先読み（speculative decode）が使えない。AMD の GPU や、NVIDIA との組み合わせには
+  対応していない。
+- **V100（sm_70）:** CUDA 13 は V100 向けにコンパイルできないので、CUDA 12（12.9）を入れて
+  `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` でビルドする（CUDA 12.9 は RTX 50 の `120a` も作れる）。
+  sm_70 でのビルドは通ることを確かめた。V100 の実機ではまだ動かしていない。tensor core を使う新しいカーネル
+  （indexer、prompt の attention）は sm_80 以上が条件で、V100 では従来のカーネルを使う。
 
 ## メモリと速度
 

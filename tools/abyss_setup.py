@@ -118,16 +118,33 @@ def configured_archs() -> str | None:
     return None
 
 
-def build_engine(arch: str | None, gpus) -> Path:
+def nvcc_major(nvcc: str) -> int:
+    """The CUDA toolkit's major version, from `nvcc --version` ("release 12.9, V12.9.86"); 0 when unknown."""
+    import re
+    import subprocess
+    try:
+        out = subprocess.run([nvcc, "--version"], capture_output=True, text=True, timeout=60).stdout
+    except OSError:
+        return 0
+    m = re.search(r"release (\d+)\.", out)
+    return int(m.group(1)) if m else 0
+
+
+def build_engine(arch: str | None, gpus, nvcc_arg: str | None = None) -> Path:
     exe = ROOT / "build" / "strata"
     cmake = ROOT / ".venv" / "bin" / "cmake"
     ninja = ROOT / ".venv" / "bin" / "ninja"
     cc = cuda_archs(arch, gpus)
     # (configured again when the GPUs need other architectures: a second card of another generation)
     if not (ROOT / "build" / "build.ninja").exists() or configured_archs() not in (None, cc):
-        nvcc = shutil.which("nvcc") or "/usr/local/cuda/bin/nvcc"
+        nvcc = nvcc_arg or shutil.which("nvcc") or "/usr/local/cuda/bin/nvcc"
         if not Path(nvcc).exists():
             S.fail("nvcc (the CUDA toolkit) was not found", "install the CUDA toolkit (12.8 or newer for RTX 50)")
+        # V100 (sm_70): CUDA 13 compiles for Turing (sm_75) and newer only - the V100 needs a CUDA 12 toolkit
+        # (12.9 builds sm_70 next to sm_120a, so a V100 beside an RTX 50 builds with it too)
+        if any(int(c.rstrip("a")) < 75 for c in cc.split(";")) and nvcc_major(nvcc) >= 13:
+            S.fail(f"{nvcc} is CUDA {nvcc_major(nvcc)}, which cannot compile for the V100 (compute capability 7.0)",
+                   "install a CUDA 12 toolkit (12.9) beside it and pass --nvcc /usr/local/cuda-12.9/bin/nvcc")
         names = " + ".join(g["name"] for g in gpus)
         S.say(f"  Configuring for {names} (CUDA arch {cc}) ...")
         S.run([cmake, "-S", ROOT, "-B", ROOT / "build", "-G", "Ninja", f"-DCMAKE_MAKE_PROGRAM={ninja}",
@@ -205,6 +222,8 @@ def main() -> int:
     ap.add_argument("--gpus", help="several GPUs for a layer split, as nvidia-smi numbers them (\"0,1\"; the first is "
                                    "the main card), or \"all\": every NVIDIA GPU (default: one GPU, --gpu)")
     ap.add_argument("--arch", help="the CUDA architecture to compile for (default: the GPU's; 120a on RTX 50)")
+    ap.add_argument("--nvcc", help="the CUDA compiler to build with (default: nvcc on PATH, else /usr/local/cuda); a V100 "
+                                   "needs a CUDA 12 one, e.g. /usr/local/cuda-12.9/bin/nvcc")
     ap.add_argument("--download-model", action="store_true", help="download the model without asking")
     ap.add_argument("--yes", action="store_true", help="the defaults for every question (the download still needs --download-model)")
     ap.add_argument("--rewrite-config", action="store_true", help="write abyss-<name>.json again")
@@ -242,7 +261,7 @@ def main() -> int:
     S.ok(f"llama.cpp: {S.get_llama_cpp()}")
 
     S.step(3, "the engine")
-    build_engine(a.arch, gpus)
+    build_engine(a.arch, gpus, a.nvcc)
 
     S.step(4, f"the model: {REPO} {quant}")
     files = quant_files(quant)

@@ -7,6 +7,22 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.9 - 2026-10-14
+
+The engine builds for the V100 (sm_70). It has not run on a V100 yet.
+- The floor drops from compute capability 7.5 to 7.0: in CMake's architecture check and in the device check at
+  start. The code below Ampere already took the fallbacks Turing uses (every arch switch in the kernels is at
+  sm_80: mma.sync, ldmatrix, cp.async), so nothing else had to change. The DeepSeek V4 path's BF16 projections run
+  as FP32 (`cublasSgemm`), not as cuBLAS BF16 GEMMs, which need sm_80.
+- CUDA 13 cannot compile for sm_70, so a V100 needs a CUDA 12 toolkit. `./setup-deepseek.sh --nvcc
+  /usr/local/cuda-12.9/bin/nvcc` builds with it. Setup stops with that advice when a chosen GPU is below sm_75 and
+  the nvcc it finds is CUDA 13. CUDA 12.9 also builds an RTX 50's `120a`, so a V100 beside an RTX 50 builds too.
+- Checked: the whole `strata` target compiles and links for `CMAKE_CUDA_ARCHITECTURES=70` with CUDA 12.9.86
+  (conda-forge). The usual CUDA 13.3 build (`86;120a`) is unchanged: 8K prompt 1,548 tok/s, decode 60.7 on the RTX
+  5090 + iGPU.
+- The tensor-core kernels from v1.3.2-1.3.5 (the indexer's scores, the prompt attention) need sm_80. A V100 keeps
+  the older kernels for them, as AMD does.
+
 ## v1.3.8 - 2026-10-14
 
 Fix: the iGPU lane was off whenever the server picked a GPU other than nvidia-smi's 0 (`"gpu": [1]`, or a split such
