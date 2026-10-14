@@ -7,6 +7,25 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.14 - 2026-10-14
+
+The iGPU lane no longer loses the decode to the CPU lane for a whole session because of one stall at startup.
+- At startup the lane is timed against the CPU threads and kept only when faster. When the kernel driver held the
+  iGPU's queue during that timing (re-validating the registered RAM tier: kernel log "svm_range_restore_work hogged
+  CPU"), the calls past the 20 ms deadline went to the CPU threads, so the "iGPU" median timed the CPU. Seen:
+  a call held 11 s right after the start, "an expert 0.129 ms vs 0.124 on the CPU -> the CPU", and DeepSeek V4
+  decoded at 41-49 tok/s for the whole session instead of ~80.
+- A timing now counts only when every call ran on the iGPU and none took 500 ms. Otherwise the lane is timed again
+  once it takes 16 calls in a row, for up to `STRATA_GLM_IGPU_CAL_WAIT_S` (60) seconds in all. If no clean timing
+  comes by then, the iGPU keeps the lane: each stalled call goes to the CPU threads anyway, and the lane is back at
+  full speed once the stalls stop. The split between the CPU and PCIe is then planned on the CPU's time.
+- The stalls came in bursts for a few minutes after a start (0.1-2.8 s each, while the kernel reclaimed and
+  compacted memory after the 90 GB tier warm-up) and then stopped.
+- Measured on an RTX 5090 (PCIe Gen4 x4) + Ryzen AI Max+ 395, DeepSeek V4 Flash UD-Q2_K_XL, greedy, 1,024-token
+  answers, prose / code, tok/s: the session stuck on the CPU lane 49.3 / 41.5; after the change, once the stalls
+  stopped, 83.7 / 81.8 and 81.0 / 82.9.
+  Tested with `ABYSS_IGPU_TEST_STALL=3000:300 STRATA_GLM_IGPU_CAL_WAIT_S=10`: the lane is timed again, then kept.
+
 ## v1.3.13 - 2026-10-14
 
 Decode is faster when the CPU / iGPU lane is on: the expert tiers swap far fewer experts between VRAM and RAM.

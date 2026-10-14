@@ -1734,6 +1734,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     int set = 0;
     constexpr int kCalReps = 48;
     const bool cal_verbose = getenv("STRATA_GLM_CPU_CAL_VERBOSE") != nullptr;
+    double cal_max = 0.0;   // the last timing's slowest run, an expert's share
     const auto time_lane = [&](const char* who) {
         for (const auto tw = std::chrono::steady_clock::now();
              std::chrono::steady_clock::now() - tw < std::chrono::milliseconds(100);)
@@ -1749,6 +1750,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
         std::sort(c_runs.begin(), c_runs.end());
         const double mean = std::accumulate(c_runs.begin(), c_runs.end(), 0.0) / kCalReps / n_cal;
         const double med = 0.5 * (c_runs[kCalReps / 2 - 1] + c_runs[kCalReps / 2]) / n_cal;   // an expert's share
+        cal_max = c_runs.back() / n_cal;
         if (cal_verbose)
             std::fprintf(stderr, "glm fast: CUDA%d %s lane calibration: an expert min %.3f / median %.3f / mean %.3f / "
                                  "max %.3f ms (%d runs of %d)\n", dev_, who, c_runs.front() / n_cal, med, mean,
@@ -1763,13 +1765,54 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     double c_ms = cpu_ms;
     if (igpu != nullptr) {
         F->igpu_experts = igpu;
-        const double ig_ms = time_lane("iGPU");
+        // A kernel-driver stall (see fast_cpu_experts) while the lane is timed sends its calls to the CPU threads past
+        // the 20 ms deadline, and the median then times the CPU: v1.3.13, a call held 11 s right after the start ->
+        // "an expert 0.129 ms vs 0.124 on the CPU" and the whole session decoded on the CPU lane, ~45 tok/s against
+        // ~75.  A timing counts only when every call ran on the iGPU and none took 500 ms; otherwise wait until the
+        // lane takes 16 calls in a row again and time it again, up to STRATA_GLM_IGPU_CAL_WAIT_S (60) in all.  No clean
+        // timing by then: the iGPU keeps the lane (each stalled call goes to the CPU threads anyway)
+        static const double wait_s = [] {
+            const char* v = getenv("STRATA_GLM_IGPU_CAL_WAIT_S");
+            return v != nullptr ? std::max(0.0, std::atof(v)) : 60.0;
+        }();
+        const auto tw0 = std::chrono::steady_clock::now();
+        const auto waited = [&] {
+            return std::chrono::duration<double>(std::chrono::steady_clock::now() - tw0).count();
+        };
+        double ig_ms = 0.0;
+        bool clean = false;
+        for (;;) {
+            const uint64_t f0 = F->igpu_falls.load();
+            ig_ms = time_lane("iGPU");
+            const uint64_t falls = F->igpu_falls.load() - f0;
+            clean = falls == 0 && cal_max * n_cal < 500.0;
+            if (clean || F->igpu_experts == nullptr || waited() >= wait_s) break;
+            std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: the timing hit a stall (%llu calls went to the CPU, the "
+                                 "slowest %.0f ms) - timing it again once it takes calls\n",
+                         dev_, (unsigned long long) falls, cal_max * n_cal);
+            for (int run = 0; run < 16 && F->igpu_experts != nullptr && waited() < wait_s;) {
+                const uint64_t c0 = F->igpu_calls.load();
+                fast_cpu_experts(il_cal, n_cal, cal_set(set++), w4, x.data(), out.data());
+                if (F->igpu_calls.load() > c0) {
+                    ++run;
+                } else {
+                    run = 0;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                }
+            }
+        }
         const char* on = getenv("STRATA_GLM_IGPU");
-        const bool keep = ig_ms < cpu_ms || (on != nullptr && std::atoi(on) == 1);
-        std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: an expert %.3f ms vs %.3f on the CPU's %d threads -> %s\n",
-                     dev_, ig_ms, cpu_ms, threads, keep ? "the iGPU computes the lane" : "the CPU (faster here)");
-        if (keep) c_ms = ig_ms;
-        else F->igpu_experts = nullptr;
+        const bool failed = F->igpu_experts == nullptr;
+        const bool keep = !failed && (!clean || ig_ms < cpu_ms || (on != nullptr && std::atoi(on) == 1));
+        if (clean || failed)
+            std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: an expert %.3f ms vs %.3f on the CPU's %d threads -> %s\n",
+                         dev_, ig_ms, cpu_ms, threads, keep ? "the iGPU computes the lane" : "the CPU (faster here)");
+        else
+            std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: no clean timing in %.0f s (the kernel driver stalling it) "
+                                 "- the iGPU computes the lane, a stalled call goes to the CPU's %d threads\n",
+                         dev_, waited(), threads);
+        if (keep && clean) c_ms = ig_ms;   // (not clean: the split below is planned on the CPU's time)
+        else if (!keep) F->igpu_experts = nullptr;
     }
     const size_t blob = F->L[(size_t) il_cal].blob;
     cudaEvent_t e0 = nullptr, e1 = nullptr;
