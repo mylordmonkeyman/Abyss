@@ -2075,6 +2075,8 @@ struct RouteArgs {
     int gating;                 // 0: sigmoid (glm5-next), 1: sqrt(softplus) (deepseek4)
     const int* hash_ids;        // deepseek4's hash-routed layers: the token's k expert ids (no selection)
     float skip_w;               // ... and those not in VRAM whose share of the route's probability is below skip_w
+    int early_x;                // 1: the request's x (16 KB, host-mapped) is written at the kernel's start, beside
+                                // the scores and the plan, instead of after them (STRATA_GLM_ROUTE_EARLY)
 };
 // the router's per-expert probability
 __device__ __forceinline__ float route_score(float x, int gating) {
@@ -2138,6 +2140,15 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
                          : a.d.route_error != nullptr   ? *a.d.route_error
                                                         : 0;
     if (tid == 0) bad = 0;
+    // EARLY X: this route's request slot is known now ((*seq + 1) % kRingSize: only this kernel moves seq, and routes
+    // are stream-ordered), so its x goes out over PCIe while the scores, the top-k and the plan run - it was ~4.4 us
+    // of scalar stores at the end, on the lane's critical path.  The system fence before seq below covers it
+    if (a.early_x) {
+        MoeRequest* rqe = (MoeRequest*) a.d.ring + ((*a.d.seq + 1) % kRingSize);
+        const float4* xs = (const float4*) a.x;
+        float4* xd = (float4*) rqe->x;
+        for (int e = tid; e < a.n_embd / 4; e += ROUTE_THREADS) xd[e] = xs[e];
+    }
     __syncthreads();
     // the CPU lane's frequency counts age: every 4096 routes all of them halve (the whole block, before any use)
     if (a.cpu_plan != 0ull && a.d.dcnt != nullptr && ((*a.d.seq + 1) & 4095u) == 0u)
@@ -2423,7 +2434,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     }
     __syncthreads();
     MoeRequest* rq = (MoeRequest*) a.d.ring + (s_seq % kRingSize);
-    if (s_cpu != 0u)
+    if (s_cpu != 0u && !a.early_x)
         for (int e = tid; e < a.n_embd; e += ROUTE_THREADS) rq->x[e] = a.x[e];
     if (tid == 0) {
         rq->layer = a.layer;
@@ -3487,7 +3498,15 @@ void moe_route(const float* logits, const float* bias, int n_expert, int k, floa
     RouteArgs a{logits, bias, n_expert, k, w_scale, norm_w ? 1 : 0, layer, x, n_embd, d,
                 sh_gate, sh_up, sh_limit, n_ff_sh, (block_q8_1*) sh_hq, pred_logits, pred_bias, max_prefetch,
                 ahead_logits, {}, 0, skip_from, d.cpu_seq != nullptr ? cpu_plan : 0ull, promote_min,
-                pf_rank > 0 ? pf_rank : k, gating, hash_ids, skip_w};
+                pf_rank > 0 ? pf_rank : k, gating, hash_ids, skip_w, 0};
+    // STRATA_GLM_ROUTE_EARLY=1: x written at the route kernel's start (float4, beside the scores and the plan);
+    // default 0: after the plan, as before - measured the same on an RTX 5090 + iGPU lane (the system fence, not the
+    // store, is what the request waits for): 3 x 2 answers, 83.4 / 85.6 against 83.6 / 91.2 tok/s
+    static const int early = [] {
+        const char* v = getenv("STRATA_GLM_ROUTE_EARLY");
+        return v != nullptr && std::atoi(v) != 0;
+    }();
+    a.early_x = early && (n_embd & 3) == 0 ? 1 : 0;
     if (ahead_logits != nullptr && ahead_bias != nullptr && n_expert <= 512) {
         a.n_ahead = std::min(n_ahead, kAhead);
         for (int i = 0; i < a.n_ahead; ++i) a.ahead_bias[i] = ahead_bias[i];

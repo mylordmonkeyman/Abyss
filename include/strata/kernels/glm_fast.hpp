@@ -217,7 +217,8 @@ struct MoeRequest {
     short ahead[kAhead][8];      // layer + 1 + d's router on this layer's FFN input: its top-k (-1: none)
     unsigned int cpu_mask;       // the CPU LANE: RAM-tier experts the host computes (the device skips them) ...
     unsigned long long cpu_src[8];   // ... their RAM-tier blobs
-    float x[4096];               // the FFN input, written only when cpu_mask != 0
+    alignas(16) float x[4096];   // the FFN input (16-byte stores; written at the kernel's start, or only when
+                                 // cpu_mask != 0 with STRATA_GLM_ROUTE_EARLY=0)
     unsigned int skip_mask;      // experts left out (not in VRAM at rank >= skip_from): neither computed nor waited for
 };
 /// The host's answer to a request with misses.
