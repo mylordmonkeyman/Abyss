@@ -7,6 +7,43 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.12 - 2026-10-14
+
+Speedups taken from Project Maya v1.1.2-v1.1.7 (mw00/project-maya). Abyss was copied from Maya v1.0.31. GLM-5.3-Flash
+and DeepSeek V4 both decode about 10% faster, and long GLM prompts run up to 16% faster.
+- **Sampler: top_k in linear time** (Maya #92). Before, the sampler re-scanned the vocabulary once for every one of
+  the top_k tokens. Now one histogram pass finds the k-th score, the tokens above it are ranked in shared memory, and
+  the draw chain runs on one thread. Maya measured 1.5 -> 0.07 ms a sample (top_k 20, RTX 4090); `top_k` 0 means 64,
+  which took 11 ms. The picks are the same, token for token (sampler_parity). With n-gram speculative decode on, a
+  sampled request samples every verified column, so it gains more there.
+- **The prompt path's experts compute the SwiGLU inside the MMQ gate/up product** (Maya #166,
+  `third_party/ggml/mmq-fused-swiglu.patch`, applied to a copy of ggml-cuda in the build tree). It writes T x n_ff
+  floats instead of T x 2 n_ff, and the separate SwiGLU kernel goes away. glm_mmq_glu_test: 14 types are
+  bit-identical where the product does not split K (RTX 5090 and 3090). Where it does split K, the floats round
+  differently. GLM KL against the old build is 0.0155; the old build against itself with the iGPU/CPU lanes on is
+  0.0172. DeepSeek V4 KL is 0.0043; its run-to-run spread is 0.0046. `STRATA_GLM_MMQ_GLU=0` gives the old kernel,
+  bit for bit.
+- **CPU experts** (Maya #154, #166):
+  - When several tokens share an expert (a prompt's CPU experts, verify windows), the CPU decodes each weight row
+    once for all of them (`STRATA_GLM_CPU_MT`). This covers IQ2_XXS/XS/S, IQ3_XXS, IQ3_S, IQ4_XS, Q4_K and Q5_K, which
+    includes DeepSeek V4's IQ2_XS gate/up and IQ3_XXS down.
+  - The one-token IQ3_S / IQ3_XXS rows are cheaper (`STRATA_GLM_CPU_1T`).
+  - Both give the same bits as ggml's dot. Each format is checked at first use, and native_rows_exact_test covers 8
+    formats.
+- From Maya, smaller items:
+  - INT8 latent cache (`--kv int8`): the prompt attention converts its records to FP16 for less, with the same bits
+    (glm_lat8_test: 0 differ).
+  - A new conversation's state is zeroed on the stream that reads it (Maya #133, Windows + AMD).
+  - Windows: the engine opts out of EcoQoS power throttling (Maya #114).
+  - Opt-in `STRATA_GLM_VRAM_EVICT=lru` and `STRATA_GLM_DISK_READERS=<n>`.
+- Measured on an RTX 5090 + Ryzen AI Max+ 395 (iGPU lane on), old build against new, server, sampled (temperature 1.0,
+  top_p 0.95):
+  - GLM-5.3-Flash Maya-S-v2, decode at 8K/16K: 51-55 -> 55-61 tok/s. Prompt: 8K 840 -> 875, 16K 1,478 -> 1,543,
+    32K 2,073 -> 2,398 tok/s.
+  - DeepSeek V4 Flash UD-Q2_K_XL, decode: 60-69 -> 67-77 tok/s. Prompt at 8K/16K: about +3%.
+- Not taken (for now): DFlash2, EXL3, `--parallel`, KV streaming and the conversation checkpoints. Notes are in
+  Abyss-tools/worklog/2026-10-14_maya-v1.1.7-review.md.
+
 ## v1.3.11 - 2026-10-14
 
 On AMD (HIP), the prompt path's attention runs on RDNA's WMMA too (gfx11 / gfx12), as the CUDA path's has since
