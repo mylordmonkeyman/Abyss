@@ -347,7 +347,13 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
             Ly.sh_gate.type, E, FFs};
     j[2] = {Ly.sh_up.q, (uint8_t*) V->xq + tb * q8e, nullptr, V->sh_u + (size_t) tb * FFs, nullptr, 1.0f,
             Ly.sh_up.type, E, FFs};
-    if (!gf::mvn(j, 3, T, s)) { err = "deepseek4 verify: router / shared expert"; return false; }
+    // the shared expert's gate/up after the routes, as the token path does (fast_moe, STRATA_GLM_SH_LATE)
+    static const bool sh_late = [] {
+        const char* v = getenv("STRATA_GLM_SH_LATE");
+        return v == nullptr || std::atoi(v) != 0;
+    }();
+    const bool late = sh_late && FFs > 0;
+    if (!gf::mvn(j, late ? 1 : 3, T, s)) { err = "deepseek4 verify: router / shared expert"; return false; }
     const bool lane = F->cpu_plan != 0ull && F->cpu_fmt[(size_t) il].n_ff > 0;
     static const int promote_min = [] {
         const char* v = getenv("STRATA_GLM_PROMOTE_MIN");
@@ -361,12 +367,18 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
     if (wait_ev != nullptr) cudaStreamWaitEvent(s, wait_ev, 0);
     for (int t = tb; t < tb + T; ++t) {
         gf::moe_route(V->rlog + (size_t) t * g.n_expert, Ly.router_bias, g.n_expert, k, g.w_scale, g.norm_w != 0, il,
-                      V->x + (size_t) t * E, E, V->md[(size_t) t], V->sh_g + (size_t) t * FFs,
-                      V->sh_u + (size_t) t * FFs, g.swiglu_shexp, FFs, (uint8_t*) V->sh_hq + (size_t) t * (FFs / 32) * kQ8,
+                      V->x + (size_t) t * E, E, V->md[(size_t) t], late ? nullptr : V->sh_g + (size_t) t * FFs,
+                      late ? nullptr : V->sh_u + (size_t) t * FFs, g.swiglu_shexp, late ? 0 : FFs,
+                      (uint8_t*) V->sh_hq + (size_t) t * (FFs / 32) * kQ8,
                       s, nullptr, nullptr, 0, nullptr, nullptr, 0, fast_skip_from(il), lane ? F->cpu_plan : 0ull, promote_min, pf_rank,
                       g.gating, Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) toks[(size_t) t] * k : nullptr,
                       fast_skip_w(il));
         ++F->expected;
+    }
+    if (late) {
+        if (!gf::mvn(j + 1, 2, T, s)) { err = "deepseek4 verify: shared expert"; return false; }
+        gf::sh_swiglu(V->sh_g + (size_t) tb * FFs, V->sh_u + (size_t) tb * FFs, g.swiglu_shexp, T * FFs,
+                      (uint8_t*) V->sh_hq + (size_t) tb * (FFs / 32) * kQ8, s);
     }
     // ... then each token's resident experts (its own plan and h) ...
     for (int t = tb; t < tb + T; ++t) {
