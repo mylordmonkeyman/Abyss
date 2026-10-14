@@ -1412,7 +1412,7 @@ __global__ void __launch_bounds__(HC_THREADS) hc3_kernel(const __grid_constant__
     unsigned long long* ctr = (unsigned long long*) a.counter;
     __shared__ float sR[4][HC2_EB];
     __shared__ float sred[32];
-    __shared__ float smix[HC_MIX + 1];
+    __shared__ float smix[HC_MIX + 11];
     __shared__ float s_pre[4];
     __shared__ float s_mixed[HC2_EB];
     // the weights first: warp w owns mix rows w, w + 8, w + 16; per row and stream segment d a lane loads the 4 bf16
@@ -1459,9 +1459,21 @@ __global__ void __launch_bounds__(HC_THREADS) hc3_kernel(const __grid_constant__
     }
     ss = block_sum(ss, sred);
     if (tid == 0) part[(size_t) HC_MIX * nb + b] = ss;
+    if (a.gram) {
+        // the streams' Gram partials <R_s, R_t> (s <= t: 10) over this block's 128 values, one pair a warp - the
+        // mixed vector's norm is sum_s sum_t pre_s pre_t <R_s, R_t>, so phase 3 needs no barrier of its own
+        const int gs[10] = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3}, gt[10] = {0, 1, 2, 3, 1, 2, 3, 2, 3, 3};
+        for (int pr = warp; pr < 10; pr += 8) {
+            float g = 0.0f;
+            for (int j = lane; j < HC2_EB; j += 32) g += sR[gs[pr]][j] * sR[gt[pr]][j];
+            g = warp_sum(g);
+            if (lane == 0) part[(size_t) (HC_MIX + 1 + pr) * nb + b] = g;
+        }
+    }
     grid_barrier(ctr, nb);
-    // the 25 totals: warp w reduces rows w, w + 8, w + 16 (and warp 0 row 24), one partial per lane
-    for (int m = warp; m < HC_MIX + 1; m += 8) {
+    // the 25 (+ 10 Gram) totals: warp w reduces rows w, w + 8, ..., one partial per lane
+    const int n_rows = a.gram ? HC_MIX + 11 : HC_MIX + 1;
+    for (int m = warp; m < n_rows; m += 8) {
         const float v = lane < (int) nb ? __ldcg(&part[(size_t) m * nb + lane]) : 0.0f;
         const float t = warp_sum(v);
         if (lane == 0) smix[m] = t;
@@ -1509,11 +1521,20 @@ __global__ void __launch_bounds__(HC_THREADS) hc3_kernel(const __grid_constant__
         s_mixed[tid] = acc;
         ss2 = acc * acc;
     }
-    ss2 = block_sum(ss2, sred);
-    float* part2 = a.part + (size_t) (HC_MIX + 1) * nb;
-    if (tid == 0) part2[b] = ss2;
-    grid_barrier(ctr, nb);
-    const float tot = warp_sum(lane < (int) nb ? __ldcg(&part2[lane]) : 0.0f);
+    float tot;
+    if (a.gram) {
+        const int gs[10] = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3}, gt[10] = {0, 1, 2, 3, 1, 2, 3, 2, 3, 3};
+        tot = 0.0f;
+#pragma unroll
+        for (int pr = 0; pr < 10; ++pr)
+            tot += (gs[pr] == gt[pr] ? 1.0f : 2.0f) * s_pre[gs[pr]] * s_pre[gt[pr]] * smix[HC_MIX + 1 + pr];
+    } else {
+        ss2 = block_sum(ss2, sred);
+        float* part2 = a.part + (size_t) (HC_MIX + 1) * nb;
+        if (tid == 0) part2[b] = ss2;
+        grid_barrier(ctr, nb);
+        tot = warp_sum(lane < (int) nb ? __ldcg(&part2[lane]) : 0.0f);
+    }
     const float inv2 = rsqrtf(tot / (float) n_embd + a.norm_eps);
     if (tid < HC2_EB) {
         const int e = e0 + tid;
@@ -3309,7 +3330,9 @@ bool mv(const MvJob* jobs, int n, cudaStream_t s) {
     // rest to the generic one; the jobs are independent, so their order does not matter
     static const bool typed = getenv("STRATA_GLM_MV_GENERIC") == nullptr;
     // STRATA_GLM_MV_SPLIT: 0 one warp a row always; 2 / 4 that split for every typed launch; unset: 4 warps a row
-    // under 256 blocks, 2 under 1,024 (mv_kernel_ts)
+    // under 256 blocks (mv_kernel_ts).  nsys on an RTX 5090: the 128-block Q5_K q_a 4.3 -> 3.0 us and the 192-block
+    // HCA projections 6.3 -> 5.3, but the 512-block wo_b stays ~23.5 (1.5 TB/s is its long rows' ceiling) and the
+    // 512-block Q5_K shared gate/up got slower (8.4 -> 9.3: the dot's arithmetic, not latency) - so only the small ones
     static const int split_env = [] { const char* v = getenv("STRATA_GLM_MV_SPLIT"); return v ? std::atoi(v) : -1; }();
     constexpr int kTyped[] = {14, 8, 12, 13};
     bool done[kMaxMvJobs] = {};
@@ -3326,8 +3349,7 @@ bool mv(const MvJob* jobs, int n, cudaStream_t s) {
                 }
             if (m == 0) continue;
             b.n = m;
-            const int split = split_env >= 0 ? (split_env == 2 || split_env == 4 ? split_env : 1)
-                              : acc < 256 ? 4 : acc < 1024 ? 2 : 1;
+            const int split = split_env >= 0 ? (split_env == 2 || split_env == 4 ? split_env : 1) : acc < 256 ? 4 : 1;
             if (split > 1) {   // the block ranges at MV_ROWS / split rows a block
                 const int rpb = MV_ROWS / split;
                 acc = 0;
@@ -3387,7 +3409,11 @@ void hc(const HcArgs& a, cudaStream_t s) {
             mode = 3;
     }
     if (mode == 3) {
-        hc3_kernel<<<a.n_embd / HC2_EB, HC_THREADS, 0, s>>>(a);
+        HcArgs g3 = a;
+        // (nsys on an RTX 5090: 8.5 -> 8.1 us a launch; the sums round differently, so off unless asked)
+        static const bool gram = [] { const char* v = getenv("STRATA_GLM_HC_GRAM"); return v != nullptr && std::atoi(v) != 0; }();
+        g3.gram = gram ? 1 : 0;
+        hc3_kernel<<<a.n_embd / HC2_EB, HC_THREADS, 0, s>>>(g3);
         launch_check("hc3");
         return;
     }

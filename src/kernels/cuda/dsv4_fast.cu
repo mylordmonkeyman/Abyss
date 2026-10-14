@@ -573,9 +573,24 @@ __global__ void __launch_bounds__(256) attend_split_kernel(const float* __restri
     }
 }
 
+// one value a lane -> one q8_1 block a warp (glm_fast's q8_1_store_warp, the same bits)
+__device__ __forceinline__ void q8_1_store_warp_ds(float v, block_q8_1* dst, int lane) {
+    const float amax = warp_max(fabsf(v));
+    const float sum = warp_sum(v);
+    const float d = fminf(amax / 127.0f, 65504.0f);
+    const int8_t q = amax == 0.0f ? 0 : (int8_t) fmaxf(-127.0f, fminf(127.0f, roundf(v / d)));
+    dst->qs[lane] = q;
+    if (lane == 0) dst->ds = make_half2(d, fmaxf(-65504.0f, fminf(65504.0f, sum)));
+}
+__global__ void oq_kernel(const float* __restrict__ x, block_q8_1* __restrict__ y, int n) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) q8_1_store_warp_ds(x[i], y + i / 32, threadIdx.x & 31);
+}
+
 __global__ void __launch_bounds__(256) attend_combine_kernel(const float* __restrict__ part, int S,
                                                              const float* __restrict__ sinks, int n_rot, Rope rope,
-                                                             int p, float* __restrict__ out) {
+                                                             int p, float* __restrict__ out,
+                                                             block_q8_1* __restrict__ oq) {
     constexpr int D = 512;
     __shared__ float s_o[D];
     const int h = blockIdx.x, tid = threadIdx.x;
@@ -598,6 +613,12 @@ __global__ void __launch_bounds__(256) attend_combine_kernel(const float* __rest
     if (tid < n_rot / 2) rope_pair(s_o, D, n_rot, rope, p, false, tid);
     __syncthreads();
     for (int i = tid; i < D; i += 256) out[(size_t) h * D + i] = s_o[i];
+    if (oq != nullptr) {   // the head's 16 q8_1 blocks, two a warp (the separate quantize launch's bits)
+        const int w = tid >> 5, lane = tid & 31;
+#pragma unroll
+        for (int b = 0; b < 2; ++b)
+            q8_1_store_warp_ds(s_o[(2 * w + b) * 32 + lane], oq + (size_t) h * (D / 32) + 2 * w + b, lane);
+    }
 }
 
 // ---------------------------------------------------------------- the hyper-connection head
@@ -1623,9 +1644,17 @@ void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, 
 
 void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint16_t* comp, const int* comp_sel,
             int n_comp, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p, float* out,
-            cudaStream_t s, int lane) {
+            cudaStream_t s, int lane, void* oq) {
     const int n = n_raw + n_comp;
     const float scale = 1.0f / sqrtf((float) head_dim);
+    // STRATA_DS4_OQ_FUSE (default 1): out's q8_1 written by the combine kernel's epilogue; 0: a separate launch
+    static const bool oq_fuse = [] { const char* v = getenv("STRATA_DS4_OQ_FUSE"); return v == nullptr || std::atoi(v) != 0; }();
+    const auto oq_separate = [&] {
+        if (oq == nullptr) return;
+        const int no = n_head * head_dim;
+        oq_kernel<<<(no + 255) / 256, 256, 0, s>>>(out, (block_q8_1*) oq, no);
+        check("oq");
+    };
     // STRATA_DS4_ATTN=1: the one-block-a-head kernel (A/B); STRATA_DS4_ATTN_CHECK=1: both, compared every 997th call
     static const int mode = [] { const char* v = getenv("STRATA_DS4_ATTN"); return v ? std::atoi(v) : 0; }();
     static const bool chk = getenv("STRATA_DS4_ATTN_CHECK") != nullptr;
@@ -1639,7 +1668,7 @@ void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint
                                                                             n_comp, sinks, n_rot, rope, p, scale, o);
         check("attend");
     };
-    if (mode == 1 || head_dim != 512 || n_head % AS_H != 0) { old(out); return; }
+    if (mode == 1 || head_dim != 512 || n_head % AS_H != 0) { old(out); oq_separate(); return; }
     // the partials: [n_head][S][2 + 512] floats, per device, grown when a longer context needs more chunks
     // the chunk: about two blocks an SM (n_head / 8 x S blocks), in whole tiles, 16..256 keys
     static const int nsm = [] {
@@ -1657,20 +1686,22 @@ void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint
     int dev = 0;
     cudaGetDevice(&dev);
     const size_t need = (size_t) n_head * std::max(S, 64) * (head_dim + 2);
-    if (dev < 0 || dev >= 16 || lane < 0 || lane >= 4) { old(out); return; }
+    if (dev < 0 || dev >= 16 || lane < 0 || lane >= 4) { old(out); oq_separate(); return; }
     float*& pt = parts[dev][lane];
     size_t& pn = parts_n[dev][lane];
     if (pn < need) {
         if (pt) cudaFree(pt);
-        if (cudaMalloc(&pt, need * sizeof(float)) != cudaSuccess) { pt = nullptr; pn = 0; old(out); return; }
+        if (cudaMalloc(&pt, need * sizeof(float)) != cudaSuccess) { pt = nullptr; pn = 0; old(out); oq_separate(); return; }
         pn = need;
     }
     attend_split_kernel<<<dim3((unsigned) hb, (unsigned) S), 256, 0, s>>>(q, raw, ring, n_raw, comp,
                                                                                       comp_sel, n_comp, p, scale, ck, S,
                                                                                       pt);
     check("attend_split");
-    attend_combine_kernel<<<n_head, 256, 0, s>>>(pt, S, sinks, n_rot, rope, p, out);
+    attend_combine_kernel<<<n_head, 256, 0, s>>>(pt, S, sinks, n_rot, rope, p, out,
+                                                  oq_fuse ? (block_q8_1*) oq : nullptr);
     check("attend_combine");
+    if (!oq_fuse) oq_separate();
     if (chk) {
         static long calls = 0;
         if (calls++ % 997 == 0) {

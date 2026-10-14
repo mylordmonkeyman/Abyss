@@ -1631,6 +1631,14 @@ static int glm_pack_generate(const Options& o) {
             // request's acceptance and both times as running means: a proposal goes through a window while
             // (1 + k p) t_one > t_win, else it is dropped (every 16th still runs, to keep p current)
             double g_p = 0.6, g_one = 0.0, g_win = 0.0;
+            // a gated proposal's first token, compared with the single token sampled instead: the acceptance EMA
+            // learns from it as from a window (else a closed gate learns only from the 1-in-16 probes, and prose
+            // turning into code took ~50 tokens to reopen).  STRATA_DS4_SPEC_GATE_LEARN=0: windows and probes only
+            static const bool gate_learn = [] {
+                const char* v = getenv("STRATA_DS4_SPEC_GATE_LEARN");
+                return v == nullptr || std::atoi(v) != 0;
+            }();
+            int gated0 = -1;
             const auto ms_since = [](std::chrono::steady_clock::time_point a) {
                 return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - a).count();
             };
@@ -1646,6 +1654,7 @@ static int glm_pack_generate(const Options& o) {
                 dr.propose(room, draft);
                 if (!draft.empty() && spec_gate && g_one > 0.0 && g_win > 0.0 &&
                     (1.0 + g_p * (double) draft.size()) * g_one < g_win && (++n_prop & 15) != 0) {
+                    gated0 = gate_learn ? draft[0] : -1;
                     draft.clear();
                     ++n_gated;
                 }
@@ -1660,6 +1669,10 @@ static int glm_pack_generate(const Options& o) {
                     if (tok < 0) {
                         std::printf("ERR %s\n", err.c_str());
                         return 1;
+                    }
+                    if (gated0 >= 0) {
+                        g_p = 0.9 * g_p + 0.1 * (tok == gated0 ? 1.0 : 0.0);
+                        gated0 = -1;
                     }
                     tok = model.forced(tok);
                     sp.counter += 1;

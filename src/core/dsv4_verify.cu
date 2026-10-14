@@ -119,7 +119,7 @@ bool Glm5Model::verify_alloc(std::string& err) {
     ok = ok && cudaHostAlloc((void**) &V->tok_h, 64 * sizeof(int), cudaHostAllocDefault) == cudaSuccess;
     ok = ok && cudaHostAlloc((void**) &V->emb_h, (size_t) TM * E * sizeof(float), cudaHostAllocDefault) == cudaSuccess;
     ok = ok && cudaEventCreateWithFlags(&V->done, cudaEventDisableTiming) == cudaSuccess;
-    V->hpart_n = (size_t) (4 * E / 512) * 26 + 64;
+    V->hpart_n = (size_t) (4 * E / 512) * 36 + 64;
     V->hq_n = (size_t) 8 * g.n_ff_exp / 32 * kQ8;
     V->score_n = (size_t) std::max<int64_t>(64, max_ctx_ / 4 + 64);
     ok = ok && cudaMalloc((void**) &V->hpart, V->hpart_n * TM * sizeof(float)) == cudaSuccess;
@@ -314,10 +314,9 @@ bool Glm5Model::verify_attn(int il, int64_t p0, int tb, int T, cudaStream_t s, s
             }
         }
         ds::attend(q, Ly.raw, ds_ring_, n_raw, Ly.comp_cache, sel, n_comp, Ly.sinks, g.n_head, D, g.n_rot, rope, p,
-                   ob + (size_t) t * HD, s, c);
+                   ob + (size_t) t * HD, s, c, (uint8_t*) oqb + (size_t) t * (HD / 32) * kQ8);
     }
     // 5. the grouped output LoRA, every column at once (a group's rows of column t at o + t * HD + gi * gin)
-    gf::quantize_q8_1(ob, oqb, T * HD, s);
     const int gin = g.n_head / g.o_groups * D;
     const size_t wrow = gf::row_bytes(Ly.out_a.type, gin);
     if (wrow == 0 || g.o_groups > gf::kMaxMvJobs) { err = "deepseek4 verify: wo_a type"; return false; }

@@ -79,7 +79,8 @@ void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, 
 /// softmax; the output de-roped on its last n_rot dims at p -> out (n_head x head_dim f32).
 void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint16_t* comp, const int* comp_sel,
             int n_comp, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p, float* out,
-            cudaStream_t s, int lane = 0);   // lane (0..3): its own partials (concurrent streams)
+            cudaStream_t s, int lane = 0, void* oq = nullptr);   // lane (0..3): its own partials (concurrent
+                                                                  // streams); oq: out's q8_1 blocks too (wo_a's input)
 
 /// The head's prologue: m = fn . rms(flat R) (4 mixes), pre = sigmoid(m * scale + base) + hc_eps,
 /// h = sum_s pre_s R_s, x = rms(h) * norm_w -> x (f32) and xq (q8_1).  fn: BF16 [4][4 * n_embd].

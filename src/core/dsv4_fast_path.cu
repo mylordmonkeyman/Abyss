@@ -294,12 +294,11 @@ bool Glm5Model::fast_dsv4_attn(int il, int64_t p64, std::string& err) {
         }
     }
     ds::attend(F->q, Ly.raw, ds_ring_, n_raw, Ly.comp_cache, sel, n_comp, Ly.sinks, g.n_head, D, g.n_rot, rope, p,
-               F->ds_o, s);
+               F->ds_o, s, 0, F->ds_oq);   // (and its q8_1, wo_a's input)
     if (F->prof_on) F->mark("ds_attend");
     if (dumps) dsv4_dump(s, "attn_derope-" + Ls, F->ds_o, (int64_t) g.n_head * D);
 
     // 5. the grouped output LoRA: group gi (heads gi*H/G ..) through rows [gi*o_lora, (gi+1)*o_lora) of wo_a, then wo_b
-    gf::quantize_q8_1(F->ds_o, F->ds_oq, g.n_head * D, s);
     const int gin = g.n_head / g.o_groups * D;   // a group's input width
     const size_t wrow = gf::row_bytes(Ly.out_a.type, gin);
     if (wrow == 0 || g.o_groups > gf::kMaxMvJobs) { err = "deepseek4: wo_a type"; return false; }

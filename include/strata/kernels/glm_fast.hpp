@@ -77,8 +77,10 @@ struct HcArgs {
     int iters = 20, n_embd = 4096;
     float* x = nullptr;               // n_embd f32
     void* xq = nullptr;               // n_embd / 32 q8_1 blocks
-    float* part = nullptr;            // scratch: (hc*n_embd / 512) * 25 floats
+    float* part = nullptr;            // scratch: (hc*n_embd / 512) * 36 floats (25 partials + 10 Gram + a spare row)
     unsigned int* counter = nullptr;  // zero-initialised; the kernel leaves it zero
+    int gram = 0;                     // hc3: 1 = the mixed vector's norm from the streams' Gram partials (no second
+                                      // grid barrier; set by hc() from STRATA_GLM_HC_GRAM, default on)
 };
 void hc(const HcArgs& a, cudaStream_t s);
 /// The write half alone (the split boundary / the head): R_new = post (x) block_out + comb . R_old.

@@ -627,7 +627,7 @@ bool Glm5Model::fast_setup(std::string& err) {
     size_t need = 0;
     {
         // generous upper bound, carved below
-        need = (size_t) (4 * E + 64 + 32 * 26 + 128 + 6 * DI + 4 * 128 + 2 * DI + 2 * g.q_lora + 2 * g.kv_lora +
+        need = (size_t) (4 * E + 64 + 32 * 36 + 128 + 6 * DI + 4 * 128 + 2 * DI + 2 * g.q_lora + 2 * g.kv_lora +
                          4 * g.idx_key + 64 + (int64_t) g.n_head * g.qk_nope + (int64_t) g.idx_heads * g.idx_key +
                          max_pools + g.n_sel_max() + 2 * g.n_expert + 2 * FF + 2 * g.n_ff_dense + 2 * E + 64) *
                    sizeof(float);
@@ -650,7 +650,7 @@ bool Glm5Model::fast_setup(std::string& err) {
     F->pre = fa_take(at, 8);
     F->post = fa_take(at, 8);
     F->comb = fa_take(at, 16);
-    F->part = fa_take(at, (size_t) (4 * E / 512) * 26 + 64);   // 25 partials per block + the norm's per-block sums
+    F->part = fa_take(at, (size_t) (4 * E / 512) * 36 + 64);   // 25 partials per block + 10 Gram + a spare row
     F->counter = (unsigned int*) fa_take_b(at, 64);
     F->xq = fa_take_b(at, (size_t) E / 32 * q8);
     for (int i = 0; i < 3; ++i) F->proj[i] = fa_take(at, DI);
