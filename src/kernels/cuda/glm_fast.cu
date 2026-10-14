@@ -3434,6 +3434,22 @@ void swiglu_q8(const float* gate, const float* up, float limit, int n, void* hq,
     launch_check("swiglu_q8");
 }
 
+__global__ void sh_swiglu_kernel(const float* __restrict__ sh_gate, const float* __restrict__ sh_up, float sh_limit,
+                                 int n_ff_sh, block_q8_1* __restrict__ sh_hq) {
+    // moe_route_kernel's blocks > 0, unchanged: the shared expert's swiglu + q8_1 (warp-aligned 32-runs)
+    const int i = blockIdx.x * ROUTE_THREADS + threadIdx.x;
+    if (i >= n_ff_sh) return;
+    const float g = fminf(sh_gate[i], sh_limit);
+    const float u = fminf(fmaxf(sh_up[i], -sh_limit), sh_limit);
+    q8_1_store_warp((g / (1.0f + expf(-g))) * u, sh_hq + i / 32, threadIdx.x & 31);
+}
+
+void sh_swiglu(const float* sh_gate, const float* sh_up, float sh_limit, int n_ff_sh, void* sh_hq, cudaStream_t s) {
+    sh_swiglu_kernel<<<(n_ff_sh + ROUTE_THREADS - 1) / ROUTE_THREADS, ROUTE_THREADS, 0, s>>>(sh_gate, sh_up, sh_limit,
+                                                                                            n_ff_sh, (block_q8_1*) sh_hq);
+    launch_check("sh_swiglu");
+}
+
 void moe_route(const float* logits, const float* bias, int n_expert, int k, float w_scale, bool norm_w, int layer,
                const float* x, int n_embd, const MoeDev& d, const float* sh_gate, const float* sh_up, float sh_limit,
                int n_ff_sh, void* sh_hq, cudaStream_t s, const float* pred_logits, const float* pred_bias,

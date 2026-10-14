@@ -3611,10 +3611,22 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     const auto& Ly = F->L[(size_t) il];
     const int FFs = g.n_ff_exp * g.n_shared;
     gf::MvJob j[gf::kMaxMvJobs];
-    int nj = 3;
+    // The shared expert's gate/up GEMV runs after the route, not beside the router: the route - and with it the CPU /
+    // iGPU lane's request - goes out a GEMV earlier (DS4's shared gate/up: 18 MB of Q8_0, ~12 us a layer), and the
+    // shared expert then runs while the lane computes.  RTX 5090 + Radeon 8060S lane, DS4 1,024-token answers, two
+    // A/B rounds: prose 79.0 -> 81.3 tok/s, code 78.3 -> 81.4; KL unchanged (the same sums, in another order).
+    // STRATA_GLM_SH_LATE=0: beside the router, as before
+    static const bool sh_late = [] {
+        const char* v = getenv("STRATA_GLM_SH_LATE");
+        return v == nullptr || std::atoi(v) != 0;
+    }();
+    const bool late = sh_late && FFs > 0;
+    int nj = late ? 1 : 3;
     j[0] = {Ly.router, nullptr, F->x, F->rlog, nullptr, 1.0f, gf::kTypeBF16, g.n_embd, g.n_expert};
-    j[1] = {Ly.sh_gate.q, F->xq, nullptr, F->sh_g, nullptr, 1.0f, Ly.sh_gate.type, g.n_embd, FFs};
-    j[2] = {Ly.sh_up.q, F->xq, nullptr, F->sh_u, nullptr, 1.0f, Ly.sh_up.type, g.n_embd, FFs};
+    if (!late) {
+        j[1] = {Ly.sh_gate.q, F->xq, nullptr, F->sh_g, nullptr, 1.0f, Ly.sh_gate.type, g.n_embd, FFs};
+        j[2] = {Ly.sh_up.q, F->xq, nullptr, F->sh_u, nullptr, 1.0f, Ly.sh_up.type, g.n_embd, FFs};
+    }
     // the next layer's router on THIS layer's FFN input: its experts, one layer early
     // (only with prefetch on: the prediction costs a router GEMV and a second top-k per layer)
     const bool pred = F->max_pf > 0 && il + 1 < l1_ && F->L[(size_t) il + 1].moe;
@@ -3653,7 +3665,8 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
         return v != nullptr ? std::max(1, std::atoi(v)) : 0;
     }();
     gf::moe_route(F->rlog, Ly.router_bias, g.n_expert, g.n_exp_used, g.w_scale, g.norm_w != 0, il, F->x,
-                  g.n_embd, md, F->sh_g, F->sh_u, g.swiglu_shexp, FFs, F->sh_hq, s,
+                  g.n_embd, md, late ? nullptr : F->sh_g, late ? nullptr : F->sh_u, g.swiglu_shexp, late ? 0 : FFs,
+                  F->sh_hq, s,
                   pred ? F->plog : nullptr, pred ? F->L[(size_t) il + 1].router_bias : nullptr,
                   pred ? F->max_pf : 0, n_ah > 0 ? F->alog : nullptr, ah_bias, n_ah, fast_skip_from(il),
                   lane ? F->cpu_plan : 0ull, promote_min, pf_rank, g.gating,
@@ -3677,6 +3690,14 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
         cudaEventRecord(F->ev_pf, F->ps);
     };
     if (pf && pf_at == 0) issue_prefetch();
+    if (late) {
+        gf::MvJob sj[2];
+        sj[0] = {Ly.sh_gate.q, F->xq, nullptr, F->sh_g, nullptr, 1.0f, Ly.sh_gate.type, g.n_embd, FFs};
+        sj[1] = {Ly.sh_up.q, F->xq, nullptr, F->sh_u, nullptr, 1.0f, Ly.sh_up.type, g.n_embd, FFs};
+        if (!gf::mv(sj, 2, s)) { err = "glm fast: shared expert"; return false; }
+        gf::sh_swiglu(F->sh_g, F->sh_u, g.swiglu_shexp, FFs, F->sh_hq, s);
+        if (F->prof_on) F->mark("shexp_mv");
+    }
     // disk-only experts (rare once warm) park the device until the host has read them; everything not
     // in VRAM is then pulled over PCIe into its slot, and all 8 run from VRAM
     gf::moe_wait(md, g.n_embd, s);
