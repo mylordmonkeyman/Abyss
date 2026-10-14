@@ -1032,6 +1032,44 @@ __global__ void __launch_bounds__(256) mv_kernel_t(const __grid_constant__ MvBat
     if (lane == 0) J.y[row] = J.alpha * s + (J.bias ? J.bias[row] : 0.0f);
 }
 
+// ... and with SPLIT warps a row, for the small jobs: a row's k-blocks are shared by SPLIT warps and their partial
+// sums added through shared memory.  One warp a row left wo_b (4,096 rows of 8.7 KB: 512 blocks) at 1.5 TB/s and
+// the shared expert's gate/up (512 blocks of Q5_K) at 1.4 against q_b's 1.6 (32,768 short rows, 4,096 blocks) on an
+// RTX 5090: too few warps in flight for the latency.  The sums are not bit-identical to the one-warp kernel's
+template<int T, int SPLIT>
+__global__ void __launch_bounds__(256) mv_kernel_ts(const __grid_constant__ MvBatch b) {
+    constexpr int RPB = MV_ROWS / SPLIT;
+    __shared__ float s_part[MV_ROWS];
+    const int bid = blockIdx.x;
+    int ji = 0;
+    while (ji < b.n - 1 && bid >= b.blk_end[ji]) ++ji;
+    const MvJob& J = b.j[ji];
+    const int blk0 = ji ? b.blk_end[ji - 1] : 0;
+    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31;
+    const int row = (bid - blk0) * RPB + warp / SPLIT, part = warp % SPLIT;
+    using Fm = F<T>;
+    float s = 0.0f;
+    if (row < J.n_out) {
+        const uint8_t* w = (const uint8_t*) J.w + (size_t) row * rbytes<T>(J.n_in);
+        const block_q8_1* x = (const block_q8_1*) J.xq;
+        const int nk = J.n_in / Fm::qk * Fm::ipb;
+        const int k0 = nk * part / SPLIT, k1 = nk * (part + 1) / SPLIT;
+        for (int k = k0 + lane; k < k1; k += 32) {
+            const int kbx = k / Fm::ipb, iqs = Fm::step * (k % Fm::ipb);
+            s += Fm::dot(w, x + kbx * (Fm::qk / 32), kbx, iqs);
+        }
+    }
+    s = warp_sum(s);
+    if (lane == 0) s_part[warp] = s;
+    __syncthreads();
+    if (part == 0 && lane == 0 && row < J.n_out) {
+        float t = 0.0f;
+#pragma unroll
+        for (int p = 0; p < SPLIT; ++p) t += s_part[warp + p];
+        J.y[row] = J.alpha * t + (J.bias ? J.bias[row] : 0.0f);
+    }
+}
+
 // ... and against NC activations at once (a verify window's tokens): the weight row is read once, every column's
 // q8_1 blocks at xq + c * n_in / 32, its outputs at y + c * n_out (columns contiguous, as native_mmvq's)
 template<int T, int NC>
@@ -3270,6 +3308,9 @@ bool mv(const MvJob* jobs, int n, cudaStream_t s) {
     // the jobs of the common dense types go to a kernel compiled for their type (one launch per type present), the
     // rest to the generic one; the jobs are independent, so their order does not matter
     static const bool typed = getenv("STRATA_GLM_MV_GENERIC") == nullptr;
+    // STRATA_GLM_MV_SPLIT: 0 one warp a row always; 2 / 4 that split for every typed launch; unset: 4 warps a row
+    // under 256 blocks, 2 under 1,024 (mv_kernel_ts)
+    static const int split_env = [] { const char* v = getenv("STRATA_GLM_MV_SPLIT"); return v ? std::atoi(v) : -1; }();
     constexpr int kTyped[] = {14, 8, 12, 13};
     bool done[kMaxMvJobs] = {};
     if (typed) {
@@ -3285,12 +3326,29 @@ bool mv(const MvJob* jobs, int n, cudaStream_t s) {
                 }
             if (m == 0) continue;
             b.n = m;
-            switch (T) {
-                case 14: mv_kernel_t<14><<<acc, 256, 0, s>>>(b); break;
-                case 8: mv_kernel_t<8><<<acc, 256, 0, s>>>(b); break;
-                case 12: mv_kernel_t<12><<<acc, 256, 0, s>>>(b); break;
-                case 13: mv_kernel_t<13><<<acc, 256, 0, s>>>(b); break;
+            const int split = split_env >= 0 ? (split_env == 2 || split_env == 4 ? split_env : 1)
+                              : acc < 256 ? 4 : acc < 1024 ? 2 : 1;
+            if (split > 1) {   // the block ranges at MV_ROWS / split rows a block
+                const int rpb = MV_ROWS / split;
+                acc = 0;
+                for (int q = 0; q < m; ++q) {
+                    acc += (b.j[q].n_out + rpb - 1) / rpb;
+                    b.blk_end[q] = acc;
+                }
             }
+#define GF_MV_T(TT) \
+            switch (split) { \
+                case 4: mv_kernel_ts<TT, 4><<<acc, 256, 0, s>>>(b); break; \
+                case 2: mv_kernel_ts<TT, 2><<<acc, 256, 0, s>>>(b); break; \
+                default: mv_kernel_t<TT><<<acc, 256, 0, s>>>(b); break; \
+            }
+            switch (T) {
+                case 14: GF_MV_T(14) break;
+                case 8: GF_MV_T(8) break;
+                case 12: GF_MV_T(12) break;
+                case 13: GF_MV_T(13) break;
+            }
+#undef GF_MV_T
         }
     }
     MvBatch b{};

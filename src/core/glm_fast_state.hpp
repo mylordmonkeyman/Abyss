@@ -391,10 +391,12 @@ struct Glm5Model::FastState {
     volatile int* route_error_h = nullptr;   // in the mapped ring allocation, visible after compute completion
     uint64_t bg_up = 0, bg_down = 0;
     std::vector<cudaEvent_t> ev_free;
-    int* upd_key_h = nullptr;
-    unsigned long long* upd_val_h = nullptr;
-    int* upd_key_d = nullptr;
-    unsigned long long* upd_val_d = nullptr;
+    int* upd_key_h[2] = {nullptr, nullptr};            // two sets: a flush records an event on its set and the next
+    unsigned long long* upd_val_h[2] = {nullptr, nullptr};   // boundary waits on it before refilling that set (no
+    int* upd_key_d[2] = {nullptr, nullptr};            // stream sync after the update kernel)
+    unsigned long long* upd_val_d[2] = {nullptr, nullptr};
+    cudaEvent_t upd_ev[2] = {nullptr, nullptr};
+    int upd_buf = 0;
     static constexpr int kMaxUpd = 8192;
     // a batch holds each table key ONCE (its last value): the update kernel writes the batch in parallel, so a key
     // edited twice in one boundary (made live, then freed as the coldest) had no defined winner

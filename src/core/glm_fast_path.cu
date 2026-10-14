@@ -1265,14 +1265,16 @@ bool Glm5Model::fast_setup(std::string& err) {
                 }
             prefill_settle(all > 0 ? std::min(1.0, held / all) : 1.0);
         }
-        if (cudaHostAlloc((void**) &F->upd_key_h, FastState::kMaxUpd * sizeof(int), cudaHostAllocDefault) != cudaSuccess ||
-            cudaHostAlloc((void**) &F->upd_val_h, FastState::kMaxUpd * sizeof(unsigned long long),
-                          cudaHostAllocDefault) != cudaSuccess ||
-            cudaMalloc((void**) &F->upd_key_d, FastState::kMaxUpd * sizeof(int)) != cudaSuccess ||
-            cudaMalloc((void**) &F->upd_val_d, FastState::kMaxUpd * sizeof(unsigned long long)) != cudaSuccess) {
-            err = "glm fast: the table update buffers did not allocate";
-            return false;
-        }
+        for (int ub = 0; ub < 2; ++ub)
+            if (cudaHostAlloc((void**) &F->upd_key_h[ub], FastState::kMaxUpd * sizeof(int), cudaHostAllocDefault) != cudaSuccess ||
+                cudaHostAlloc((void**) &F->upd_val_h[ub], FastState::kMaxUpd * sizeof(unsigned long long),
+                              cudaHostAllocDefault) != cudaSuccess ||
+                cudaMalloc((void**) &F->upd_key_d[ub], FastState::kMaxUpd * sizeof(int)) != cudaSuccess ||
+                cudaMalloc((void**) &F->upd_val_d[ub], FastState::kMaxUpd * sizeof(unsigned long long)) != cudaSuccess ||
+                cudaEventCreateWithFlags(&F->upd_ev[ub], cudaEventDisableTiming) != cudaSuccess) {
+                err = "glm fast: the table update buffers did not allocate";
+                return false;
+            }
         F->upd_at.assign((size_t) (2 * F->n_keys + NL * gf::kSpares), 0);
         F->upd_gen.assign(F->upd_at.size(), 0u);
         // disk reads: three slices per expert in parallel; pinned staging for when the RAM tier has no free slot
@@ -2402,10 +2404,13 @@ void Glm5Model::fast_destroy() {
     for (auto e : F->ev_free) cudaEventDestroy(e);
     for (auto* sb : F->stage)
         if (sb) cudaFreeHost(sb);
-    if (F->upd_key_h) cudaFreeHost(F->upd_key_h);
-    if (F->upd_val_h) cudaFreeHost(F->upd_val_h);
-    if (F->upd_key_d) cudaFree(F->upd_key_d);
-    if (F->upd_val_d) cudaFree(F->upd_val_d);
+    for (int ub = 0; ub < 2; ++ub) {
+        if (F->upd_key_h[ub]) cudaFreeHost(F->upd_key_h[ub]);
+        if (F->upd_val_h[ub]) cudaFreeHost(F->upd_val_h[ub]);
+        if (F->upd_key_d[ub]) cudaFree(F->upd_key_d[ub]);
+        if (F->upd_val_d[ub]) cudaFree(F->upd_val_d[ub]);
+        if (F->upd_ev[ub]) cudaEventDestroy(F->upd_ev[ub]);
+    }
     if (F->ring_h) cudaFreeHost(F->ring_h);
     if (F->md.route_error_d) cudaFree(F->md.route_error_d);
     if (F->resp_h) cudaFreeHost(F->resp_h);
@@ -3046,20 +3051,41 @@ bool Glm5Model::fast_boundary(std::string& err) {
     std::lock_guard<std::mutex> lk(F->mu);
     int nu = 0;
     bool ok = true;
+    // the edits go through one of two pinned sets: a flush records an event on the stream after its copies, and a
+    // set is refilled only once that event has passed (the previous boundary's set, in practice long done) - the
+    // flush itself no longer waits for the stream (it was ~145 us a token with the GPU idle).
+    // STRATA_GLM_BOUNDARY_SYNC=1: the stream sync after every flush, as before
+    static const bool bsync = getenv("STRATA_GLM_BOUNDARY_SYNC") != nullptr && std::atoi(getenv("STRATA_GLM_BOUNDARY_SYNC")) != 0;
+    int ub = F->upd_buf;
+    int* kh = F->upd_key_h[ub];
+    unsigned long long* vh = F->upd_val_h[ub];
+    const auto take_set = [&] {
+        ub = F->upd_buf;
+        kh = F->upd_key_h[ub];
+        vh = F->upd_val_h[ub];
+        if (!bsync) ok = ok && glmfast::cuda_ok(cudaEventSynchronize(F->upd_ev[ub]), "glm table set reuse", err);
+    };
+    take_set();
     const auto flush = [&] {
         if (nu > 0 && ok) {
-            ok = glmfast::cuda_ok(cudaMemcpyAsync(F->upd_key_d, F->upd_key_h, (size_t) nu * sizeof(int),
+            ok = glmfast::cuda_ok(cudaMemcpyAsync(F->upd_key_d[ub], kh, (size_t) nu * sizeof(int),
                                                   cudaMemcpyHostToDevice, F->cs), "glm table keys", err) &&
-                 glmfast::cuda_ok(cudaMemcpyAsync(F->upd_val_d, F->upd_val_h,
+                 glmfast::cuda_ok(cudaMemcpyAsync(F->upd_val_d[ub], vh,
                                                   (size_t) nu * sizeof(unsigned long long), cudaMemcpyHostToDevice,
                                                   F->cs), "glm table values", err);
             if (ok) {
-                gf::tab_update(F->tab, F->upd_key_d, F->upd_val_d, nu, F->cs);
+                gf::tab_update(F->tab, F->upd_key_d[ub], F->upd_val_d[ub], nu, F->cs);
                 ok = glmfast::cuda_ok(cudaGetLastError(), "glm table update", err);
             }
-            // Pinned sources belong to the DMA until THIS stream completes, including the final batch.
-            const cudaError_t e = cudaStreamSynchronize(F->cs);
-            if (ok) ok = glmfast::cuda_ok(e, "glm table update sync", err);
+            if (bsync) {
+                // Pinned sources belong to the DMA until THIS stream completes, including the final batch.
+                const cudaError_t e = cudaStreamSynchronize(F->cs);
+                if (ok) ok = glmfast::cuda_ok(e, "glm table update sync", err);
+            } else {
+                if (ok) ok = glmfast::cuda_ok(cudaEventRecord(F->upd_ev[ub], F->cs), "glm table update event", err);
+                F->upd_buf ^= 1;
+                take_set();
+            }
         }
         nu = 0;
         ++F->upd_g;
@@ -3068,7 +3094,7 @@ bool Glm5Model::fast_boundary(std::string& err) {
     const auto upd = [&](size_t k, unsigned long long v) {
         if (!ok) return;
         if (F->upd_gen[k] == F->upd_g) {   // edited earlier in this batch: the last value is the one that counts
-            F->upd_val_h[F->upd_at[k]] = v;
+            vh[F->upd_at[k]] = v;
             return;
         }
         if (nu == FastState::kMaxUpd) {   // a full batch goes out first (the host buffers are reused after it ran)
@@ -3077,8 +3103,8 @@ bool Glm5Model::fast_boundary(std::string& err) {
         }
         F->upd_gen[k] = F->upd_g;
         F->upd_at[k] = nu;
-        F->upd_key_h[nu] = (int) k;
-        F->upd_val_h[nu] = v;
+        kh[nu] = (int) k;
+        vh[nu] = v;
         ++nu;
     };
     // the RAM tier's victim among its held experts: the least-used by the aged counts among those no route used in the

@@ -1099,15 +1099,20 @@ bool Glm5Model::lend_tail(size_t limit, uint64_t& moved, uint64_t& dropped, std:
         std::lock_guard<std::mutex> lk(F->mu);
         int nu = 0;
         bool ok = true;
+        // the boundary's current pinned set (its last flush's DMA may still be in flight: wait for its event)
+        const int ub = F->upd_buf;
+        int* kh = F->upd_key_h[ub];
+        unsigned long long* vh = F->upd_val_h[ub];
+        ok = glmfast::cuda_ok(cudaEventSynchronize(F->upd_ev[ub]), "glm lending set reuse", err);
         const auto flush = [&]() {
             if (nu == 0 || !ok) return;
-            ok = glmfast::cuda_ok(cudaMemcpyAsync(F->upd_key_d, F->upd_key_h, (size_t) nu * sizeof(int),
+            ok = glmfast::cuda_ok(cudaMemcpyAsync(F->upd_key_d[ub], kh, (size_t) nu * sizeof(int),
                                                   cudaMemcpyHostToDevice, F->cs), "glm lending keys", err) &&
-                 glmfast::cuda_ok(cudaMemcpyAsync(F->upd_val_d, F->upd_val_h,
+                 glmfast::cuda_ok(cudaMemcpyAsync(F->upd_val_d[ub], vh,
                                                   (size_t) nu * sizeof(unsigned long long), cudaMemcpyHostToDevice,
                                                   F->cs), "glm lending values", err);
             if (ok) {
-                gf::tab_update(F->tab, F->upd_key_d, F->upd_val_d, nu, F->cs);
+                gf::tab_update(F->tab, F->upd_key_d[ub], F->upd_val_d[ub], nu, F->cs);
                 ok = glmfast::cuda_ok(cudaGetLastError(), "glm lending table update", err);
             }
             const cudaError_t e = cudaStreamSynchronize(F->cs);   // pinned sources may now be reused
@@ -1119,8 +1124,8 @@ bool Glm5Model::lend_tail(size_t limit, uint64_t& moved, uint64_t& dropped, std:
             if (!ok) return;
             if (nu == FastState::kMaxUpd) flush();
             if (!ok) return;
-            F->upd_key_h[nu] = (int) k;
-            F->upd_val_h[nu] = v;
+            kh[nu] = (int) k;
+            vh[nu] = v;
             ++nu;
         };
         // STRATA_GLM_LEND_DROP=1: drop the lent slots' experts as before (instead of moving them, below)
