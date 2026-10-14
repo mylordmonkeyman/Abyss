@@ -1403,6 +1403,9 @@ void Glm5Model::fast_igpu_setup() {
         }
         bytes += (size_t) R.n * R.stride;
     }
+    // the request ring (x) too: the lane then reads it in place (the answer slots: in fast_cpu_lane_setup)
+    if (rg(F->ring_h, sizeof(gf::MoeRequest) * gf::kRingSize, e, (int) sizeof e) != 0)
+        std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: the ring did not register (%s) - x copied instead\n", dev_, e);
     F->igpu_lib = lib;
     F->igpu_experts = ex;
     F->igpu_poke = (abyss_igpu_poke_fn) dlsym(lib, "abyss_igpu_poke");
@@ -1712,6 +1715,11 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     std::memset(hp, 0, gf::kCpuAnswers * sizeof(gf::CpuAnswer));
     cudaMemset(F->cpu_seq_d, 0, 64);
     F->cpu_ans_h = (gf::CpuAnswer*) hp;
+    if (F->igpu_reg != nullptr) {   // the iGPU lane writes its sums into these slots in place
+        char e[256] = {0};
+        if (F->igpu_reg(hp, gf::kCpuAnswers * sizeof(gf::CpuAnswer), e, (int) sizeof e) != 0)
+            std::fprintf(stderr, "glm fast: CUDA%d iGPU lane: the answers did not register (%s) - copied instead\n", dev_, e);
+    }
     void* dp = nullptr;
     cudaHostGetDevicePointer(&dp, hp, 0);
     F->cpu_act.assign(kc::kNativeActBytes, 0);

@@ -25,7 +25,7 @@ namespace {
 template<int TD, int NR>
 __global__ void __launch_bounds__(256) lane_down_kernel(const unsigned long long* plan_ptr, const float* plan_w, int k,
                                                         int n_ff, size_t down_off, const block_q8_1* __restrict__ hq,
-                                                        float* __restrict__ out) {
+                                                        float* __restrict__ out, unsigned int* done) {
     __shared__ unsigned long long s_ptr[8];
     __shared__ float s_w[8];
     __shared__ uint32_t s_tab[TabWords<TD>::n > 0 ? TabWords<TD>::n : 1];
@@ -58,18 +58,25 @@ __global__ void __launch_bounds__(256) lane_down_kernel(const unsigned long long
     if (lane == 0)
 #pragma unroll
         for (int j = 0; j < NR; ++j) out[r0 + j] = m[j] + 0.0f;
+    // the call's completion, for the host: every block counts itself in once its rows are visible system-wide
+    if (done != nullptr) {
+        __threadfence_system();
+        __syncthreads();
+        if (threadIdx.x == 0) atomicAdd(done, 1u);
+    }
 }
 }  // namespace
 
+int lane_down_blocks(int n_embd) { return n_embd % (8 * DOWN_ROWS) == 0 ? n_embd / (8 * DOWN_ROWS) : 0; }
 bool lane_down(int d_type, const unsigned long long* plan_ptr, const float* plan_w, int k, int n_embd, int n_ff,
-               size_t down_off, const void* hq, float* out, hipStream_t s) {
+               size_t down_off, const void* hq, float* out, unsigned int* done, hipStream_t s) {
     constexpr int NR = DOWN_ROWS;
     if (n_embd % (8 * NR) != 0) return false;
     const int blocks = n_embd / (8 * NR);
     const auto* H = (const block_q8_1*) hq;
     switch (d_type) {
 #define LANE_DN(T) \
-        case T: lane_down_kernel<T, NR><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out); break;
+        case T: lane_down_kernel<T, NR><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out, done); break;
         LANE_DN(16) LANE_DN(18) LANE_DN(19) LANE_DN(23) LANE_DN(10) LANE_DN(11) LANE_DN(17) LANE_DN(22) LANE_DN(21)
         LANE_DN(29) LANE_DN(12) LANE_DN(13) LANE_DN(14) LANE_DN(39)
 #undef LANE_DN
@@ -98,6 +105,7 @@ struct Plan {                         // host-mapped: the kernels read it in pla
     unsigned long long ptr[8];
     float w[8];
     int cpu_flag;
+    unsigned int done;                // lane_down's blocks count themselves in here (the host waits on it)
 };
 struct Lane {
     bool open = false;
@@ -223,15 +231,32 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
     }
     for (int i = ne; i < 8; ++i) { L.plan_h->ptr[i] = 0ull; L.plan_h->w[i] = 0.0f; }
     L.plan_h->cpu_flag = 0;
-    std::memcpy(L.x_h, x, (size_t) n_embd * sizeof(float));
+    // DIRECT (ABYSS_IGPU_DIRECT=1; default 0): x read from, and the sum written to, the caller's buffers in place when
+    // they lie in registered host memory (the engine registers its request ring and answer slots) - no 16 KB memcpy
+    // either way; and the completion read from a host-mapped counter the down kernel's blocks bump, not from
+    // hipStreamQuery (a runtime call of ~3 us each, spun on).  0: the copies and the query, as before
+    // (measured the same as the copies on an RTX 5090 + Radeon 8060S: a call 109-117 us either way, 83.4 / 83.9 against
+    // 84.6 / 84.5 tok/s - the call's time is the iGPU's, ~20 us fixed + 41 an expert)
+    static const bool direct = [] { const char* v = getenv("ABYSS_IGPU_DIRECT"); return v != nullptr && std::atoi(v) != 0; }();
+    const unsigned long long dx = direct ? dev_of(x) : 0ull, dout = direct ? dev_of(out) : 0ull;
+    if (dx == 0ull) std::memcpy(L.x_h, x, (size_t) n_embd * sizeof(float));
+    const float* xd = dx != 0ull ? (const float*) dx : L.x_d;
+    float* od = dout != 0ull ? (float*) dout : L.out_d;
     gf::MoeDev md;
     md.plan_ptr = L.plan_d->ptr;
     md.plan_w = L.plan_d->w;
     md.cpu_flag = &L.plan_d->cpu_flag;
-    gf::quantize_q8_1(L.x_d, L.xq, n_embd, L.s);
+    volatile unsigned int* done_h = &L.plan_h->done;
+    *done_h = 0u;
+    const int want = direct ? gf::lane_down_blocks(n_embd) : 0;
+    gf::quantize_q8_1(xd, L.xq, n_embd, L.s);
     gf::moe_gate_up(gu_type, md, ne, n_embd, n_ff, limit, L.xq, L.hq, nullptr, 0, nullptr, 0, nullptr, L.s);
-    if (!gf::lane_down(d_type, L.plan_d->ptr, L.plan_d->w, ne, n_embd, n_ff, down_off, L.hq, L.out_d, L.s))
-        gf::moe_down(d_type, md, ne, n_embd, n_ff, down_off, L.hq, nullptr, L.out_d, L.s);
+    bool counted = want > 0;
+    if (!gf::lane_down(d_type, L.plan_d->ptr, L.plan_d->w, ne, n_embd, n_ff, down_off, L.hq, od,
+                       counted ? &L.plan_d->done : nullptr, L.s)) {
+        counted = false;
+        gf::moe_down(d_type, md, ne, n_embd, n_ff, down_off, L.hq, nullptr, od, L.s);
+    }
     static const unsigned long long stall_ticks = [] {
         const char* v = getenv("ABYSS_IGPU_TEST_STALL");   // "<ms>:<every n calls>"
         int rate = 0;
@@ -252,8 +277,16 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
         return v != nullptr ? std::max(0.0, std::atof(v)) : 20.0;
     }();
     const auto t0 = std::chrono::steady_clock::now();
-    hipError_t e;
-    while ((e = hipStreamQuery(L.s)) == hipErrorNotReady) {
+    hipError_t e = hipErrorNotReady;
+    if (counted) {   // the blocks' count first (memory, no runtime call); the query below only confirms
+        unsigned int polls = 0;
+        while (*done_h < (unsigned int) want) {
+            if ((++polls & 255u) == 0 && timeout_ms > 0.0 &&
+                std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count() > timeout_ms)
+                break;
+        }
+    }
+    while (e == hipErrorNotReady && (e = hipStreamQuery(L.s)) == hipErrorNotReady) {
         if (timeout_ms > 0.0 &&
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count() > timeout_ms) {
             L.pending = true;
@@ -268,7 +301,7 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
         std::fprintf(stderr, "iGPU lane: %s\n", hipGetErrorString(e));
         return -1;
     }
-    std::memcpy(out, L.out_h, (size_t) n_embd * sizeof(float));
+    if (dout == 0ull) std::memcpy(out, L.out_h, (size_t) n_embd * sizeof(float));
     return 0;
 }
 
