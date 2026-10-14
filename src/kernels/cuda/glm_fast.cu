@@ -2267,131 +2267,159 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     __shared__ unsigned long long s_pp[8], s_cs[8];
     __shared__ int s_npf, s_pfid[8];
     __shared__ unsigned long long s_pfptr[8];
-    if (tid == 0) {
+    // The PLAN, one lane an entry (warp 0): it was one thread walking the k entries, ~6 us of dependent shared and
+    // global loads and FP64 a route on the GPU's critical path (route -> lane request, route -> the expert kernels).
+    // The same decisions, made in parallel: the sum in route order, the host set as the to_cpu smallest by (route
+    // count, later entry first) - what picking the coldest to_cpu times over gives - and the spares by prefix count.
+    if (tid < 32) {
+        const int i = lane;
+        const bool on = i < a.k;
+        const float p = on ? s_p[s_ids[i]] : 0.0f;
         double sum = 0.0;
-        for (int i = 0; i < a.k; ++i) sum += (double) s_p[s_ids[i]];
+#pragma unroll
+        for (int j = 0; j < 8; ++j) {
+            const float pj = __shfl_sync(0xffffffffu, p, j);
+            if (j < a.k) sum += (double) pj;
+        }
         const float inv = (float) (a.norm_w ? 1.0 / fmax(sum, 6.103515625e-5) : 1.0);
         // the entries a miss leaves out: rank >= skip_from, or a share of the route's probability below skip_w
-        unsigned int cut = 0;
-        for (int i = 0; i < a.k; ++i)
-            if (i >= a.skip_from || (a.skip_w > 0.0f && (double) s_p[s_ids[i]] < (double) a.skip_w * sum)) cut |= 1u << i;
-        unsigned int mask = 0, fetch = 0, promo = 0, cpu = 0, skip = 0;
+        const bool cut_i = on && (i >= a.skip_from || (a.skip_w > 0.0f && (double) p < (double) a.skip_w * sum));
         unsigned long long* rtab = a.d.tab + a.d.n_keys;
         unsigned long long* spares = a.d.tab + 2 * (size_t) a.d.n_keys + (size_t) a.layer * kSpares;
-        int next_spare = 0;
+        const unsigned long long tab_i = on ? s_tab[i] : 0ull, rtab_i = on ? s_rtab[i] : 0ull;
         // the CPU LANE: of this route's f RAM-tier experts, cpu_take(f) (the plan's split table) are computed by the
         // host from their RAM-tier blobs while the device pulls the others over PCIe - the COLDEST by the route counts
         // (ties: the later in route order), so the hot ones are still promoted into VRAM
-        unsigned int host_set = 0;
+        bool host_i = false;
         if (a.cpu_plan != 0ull && a.skip_from > 0) {
-            int f_ram = 0, ri[8];
-            unsigned int rcnt[8];
-            for (int i = 0; i < a.k; ++i) {
-                const unsigned int c = s_cnt[i];
-                if (((cut >> i) & 1u) == 0u && s_tab[i] == 0ull && s_rtab[i] != 0ull) {
-                    ri[f_ram] = i;
-                    rcnt[f_ram++] = c;
-                }
+            const bool cand = on && !cut_i && tab_i == 0ull && rtab_i != 0ull;
+            const unsigned int cm = (unsigned int) __ballot_sync(0xffffffffu, cand);
+            const int f_ram = __popc(cm);
+            const int to_cpu = min((int) ((a.cpu_plan >> (4 * f_ram)) & 15ull), f_ram);
+            const unsigned int c_i = on ? s_cnt[i] : 0u;
+            int rank = 0;
+#pragma unroll
+            for (int j = 0; j < 8; ++j) {
+                const unsigned int cj = __shfl_sync(0xffffffffu, c_i, j);
+                if (((cm >> j) & 1u) && (cj < c_i || (cj == c_i && j > i))) ++rank;
             }
-            const int to_cpu = (int) ((a.cpu_plan >> (4 * f_ram)) & 15ull);
-            for (int t = 0; t < to_cpu && t < f_ram; ++t) {
-                int best = -1;
-                for (int j = 0; j < f_ram; ++j)
-                    if (((host_set >> ri[j]) & 1u) == 0u && (best < 0 || rcnt[j] <= rcnt[best])) best = j;
-                host_set |= 1u << ri[best];
-            }
+            host_i = cand && rank < to_cpu;
         }
-        for (int i = 0; i < a.k; ++i) {
-            const float w = (float) ((double) s_p[s_ids[i]] * inv * a.w_scale);
-            s_w[i] = w;
-            const size_t key = (size_t) a.layer * E + s_ids[i];
-            unsigned long long ptr = s_tab[i];
-            unsigned long long src = 0ull;
-            s_pp[i] = 0ull;
-            s_cs[i] = 0ull;
-            if (ptr == 0ull && ((cut >> i) & 1u)) {
+        const float w = (float) ((double) p * inv * a.w_scale);
+        const size_t key = on ? (size_t) a.layer * E + s_ids[i] : 0;
+        unsigned long long ptr = tab_i, src = 0ull, pp = 0ull, cs = 0ull;
+        bool b_skip = false, b_cpu = false, needs = false;
+        if (on && ptr == 0ull) {
+            if (cut_i) {
                 // left out: the expert kernels skip a null plan entry (a draft only has to be a good guess; a trunk
                 // route's low-ranked expert adds little to the token)
-                skip |= 1u << i;
-            } else if (ptr == 0ull) {
-                src = s_rtab[i];
-                if (src != 0ull && ((host_set >> i) & 1u)) {
+                b_skip = true;
+            } else {
+                src = rtab_i;
+                if (src != 0ull && host_i) {
                     // to the host: a null plan entry (the expert kernels skip it), no spare, no fetch
-                    cpu |= 1u << i;
-                    s_cs[i] = src;
+                    b_cpu = true;
+                    cs = src;
                     src = 0ull;
                 } else {
-                    // not in VRAM: land it in a spare slot of this layer (it becomes resident: the table says so
-                    // from here on) or, with none left, in this entry's scratch slot.  promote_min > 1: keep it
-                    // only when its aged route count clears the bar - one-offs take scratch and do not churn the tier
-                    const unsigned int rc = a.d.dcnt != nullptr ? a.d.dcnt[key] : 0u;
-                    while (next_spare < kSpares && spares[next_spare] == 0ull) ++next_spare;
-                    if (next_spare < kSpares && (a.promote_min <= 1 || rc >= (unsigned int) a.promote_min)) {
-                        ptr = spares[next_spare];
-                        spares[next_spare] = 0ull;
-                        a.d.tab[key] = ptr;
-                        promo |= 1u << i;
-                        s_pp[i] = ptr;
-                    } else {
-                        ptr = a.d.scratch[i];
-                    }
-                    if (src != 0ull) fetch |= 1u << i;
-                    else mask |= 1u << i;   // only on disk: the host provides the source
+                    needs = true;
                 }
             }
+        }
+        // not in VRAM: land it in a spare slot of this layer (it becomes resident: the table says so from here on)
+        // or, with none left, in this entry's scratch slot.  promote_min > 1: keep it only when its aged route count
+        // clears the bar - one-offs take scratch and do not churn the tier.  The r-th entry that wants one (route
+        // order) takes the r-th free spare.
+        const unsigned int rc = needs && a.d.dcnt != nullptr ? a.d.dcnt[key] : 0u;
+        const bool want = needs && (a.promote_min <= 1 || rc >= (unsigned int) a.promote_min);
+        unsigned long long sp[kSpares];
+#pragma unroll
+        for (int j = 0; j < kSpares; ++j) sp[j] = spares[j];
+        const unsigned int wm = (unsigned int) __ballot_sync(0xffffffffu, want);   // (all spare reads before the claims)
+        bool b_promo = false;
+        if (want) {
+            const int r = __popc(wm & ((1u << i) - 1u));
+            int c = 0;
+#pragma unroll
+            for (int j = 0; j < kSpares; ++j)
+                if (sp[j] != 0ull) {
+                    if (c == r) {
+                        ptr = sp[j];
+                        spares[j] = 0ull;
+                        a.d.tab[key] = ptr;
+                        b_promo = true;
+                        pp = ptr;
+                    }
+                    ++c;
+                }
+        }
+        if (needs && !b_promo) ptr = a.d.scratch[i];
+        if (on) {
+            s_w[i] = w;
+            s_pp[i] = pp;
+            s_cs[i] = cs;
             a.d.plan_ptr[i] = ptr;
             a.d.fetch_src[i] = src;
             a.d.plan_w[i] = w;
             a.d.plan_id[i] = s_ids[i];
+        } else if (i < 8) {
+            a.d.fetch_src[i] = 0ull;
         }
-        for (int i = a.k; i < 8; ++i) a.d.fetch_src[i] = 0ull;
-        s_mask = mask;
-        s_fetch = fetch;
-        s_promo = promo;
-        s_cpu = cpu;
-        s_skip = skip;
-        // PREFETCH: the predicted experts of the next layer that are not in VRAM but are in the RAM tier claim
-        // that layer's spares now (one spare stays for its real misses); the side stream copies them while this
-        // layer and the next one's attention compute, and the next route sees them as resident.  Only the
-        // prediction's first pf_rank ranks (STRATA_GLM_PREFETCH_RANK): its top guesses are right almost always (Maya-M
-        // on a 3090 + 3060, the next layer used rank 0 / 1 / 2 / 3 96 / 88 / 75 / 62 % of the time, ranks 4..7 52 .. 24 %)
-        // - the first NON-resident guess is often a low rank, and a wrong copy costs the link what a right one saves
-        int npf = 0;
-        if (a.pred_logits != nullptr && a.max_pf > 0) {
-            const int L1 = a.layer + 1;
-            unsigned long long* sp1 = a.d.tab + 2 * (size_t) a.d.n_keys + (size_t) L1 * kSpares;
-            for (int i = 0; i < a.k && i < a.pf_rank && npf < a.max_pf; ++i) {
-                const int e = s_pred[i];
-                if (e < 0) continue;
-                const size_t key = (size_t) L1 * E + e;
-                if (a.d.tab[key] != 0ull) continue;
-                const unsigned long long src = rtab[key];
-                if (src == 0ull) continue;
-                int navail = 0, first = -1;
-                for (int j = 0; j < kSpares; ++j)
-                    if (sp1[j] != 0ull) {
-                        ++navail;
-                        if (first < 0) first = j;
-                    }
-                if (navail < 2) break;
-                const unsigned long long dst = sp1[first];
-                sp1[first] = 0ull;
-                a.d.tab[key] = dst;
-                a.d.pf_src[npf] = src;
-                a.d.pf_dst[npf] = dst;
-                s_pfid[npf] = e;
-                s_pfptr[npf] = dst;
-                ++npf;
+        const unsigned int skip = (unsigned int) __ballot_sync(0xffffffffu, b_skip);
+        const unsigned int cpu = (unsigned int) __ballot_sync(0xffffffffu, b_cpu);
+        const unsigned int promo = (unsigned int) __ballot_sync(0xffffffffu, b_promo);
+        const unsigned int fetch = (unsigned int) __ballot_sync(0xffffffffu, needs && src != 0ull);
+        const unsigned int mask = (unsigned int) __ballot_sync(0xffffffffu, needs && src == 0ull);   // only on disk: the host provides the source
+        __syncwarp();
+        if (lane == 0) {
+            s_mask = mask;
+            s_fetch = fetch;
+            s_promo = promo;
+            s_cpu = cpu;
+            s_skip = skip;
+            // PREFETCH: the predicted experts of the next layer that are not in VRAM but are in the RAM tier claim
+            // that layer's spares now (one spare stays for its real misses); the side stream copies them while this
+            // layer and the next one's attention compute, and the next route sees them as resident.  Only the
+            // prediction's first pf_rank ranks (STRATA_GLM_PREFETCH_RANK): its top guesses are right almost always (Maya-M
+            // on a 3090 + 3060, the next layer used rank 0 / 1 / 2 / 3 96 / 88 / 75 / 62 % of the time, ranks 4..7 52 .. 24 %)
+            // - the first NON-resident guess is often a low rank, and a wrong copy costs the link what a right one saves
+            int npf = 0;
+            if (a.pred_logits != nullptr && a.max_pf > 0) {
+                const int L1 = a.layer + 1;
+                unsigned long long* sp1 = a.d.tab + 2 * (size_t) a.d.n_keys + (size_t) L1 * kSpares;
+                for (int i = 0; i < a.k && i < a.pf_rank && npf < a.max_pf; ++i) {
+                    const int e = s_pred[i];
+                    if (e < 0) continue;
+                    const size_t key = (size_t) L1 * E + e;
+                    if (a.d.tab[key] != 0ull) continue;
+                    const unsigned long long src = rtab[key];
+                    if (src == 0ull) continue;
+                    int navail = 0, first = -1;
+                    for (int j = 0; j < kSpares; ++j)
+                        if (sp1[j] != 0ull) {
+                            ++navail;
+                            if (first < 0) first = j;
+                        }
+                    if (navail < 2) break;
+                    const unsigned long long dst = sp1[first];
+                    sp1[first] = 0ull;
+                    a.d.tab[key] = dst;
+                    a.d.pf_src[npf] = src;
+                    a.d.pf_dst[npf] = dst;
+                    s_pfid[npf] = e;
+                    s_pfptr[npf] = dst;
+                    ++npf;
+                }
             }
+            *a.d.pf_n = npf;
+            s_npf = npf;
+            const unsigned int seq = s_seq0 + 1;
+            *a.d.seq = seq;
+            s_seq = seq;
+            *a.d.wait_seq = mask ? seq : 0u;
+            if (a.d.cpu_seq != nullptr) *a.d.cpu_seq = cpu ? seq : 0u;
+            *a.d.cpu_flag = 0;
         }
-        *a.d.pf_n = npf;
-        s_npf = npf;
-        const unsigned int seq = s_seq0 + 1;
-        *a.d.seq = seq;
-        s_seq = seq;
-        *a.d.wait_seq = mask ? seq : 0u;
-        if (a.d.cpu_seq != nullptr) *a.d.cpu_seq = cpu ? seq : 0u;
-        *a.d.cpu_flag = 0;
     }
     __syncthreads();
     MoeRequest* rq = (MoeRequest*) a.d.ring + (s_seq % kRingSize);
