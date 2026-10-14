@@ -281,7 +281,10 @@ bool Glm5Model::fast_dsv4_attn(int il, int64_t p64, std::string& err) {
     const int* sel = nullptr;
     if (r != 0) {
         const int n_vis = (p + 1) / r;
-        if (r == 4 && n_vis > 0) {
+        // the indexer's top-k only once more rows are visible than it keeps: below that every row is selected, and
+        // the attention reads them in position order instead (the same set; STRATA_DS4_IDX_ALL=1: the old way)
+        static const bool idx_all = getenv("STRATA_DS4_IDX_ALL") != nullptr && std::atoi(getenv("STRATA_DS4_IDX_ALL")) != 0;
+        if (r == 4 && n_vis > 0 && (idx_all || n_vis > g.idx_top_k)) {
             ds::indexer(F->iq, Ly.idx_cache, F->iw, g.idx_heads, g.idx_key, n_vis, g.idx_top_k, F->score, F->ds_sel, s);
             if (F->prof_on) F->mark("ds_index");
             n_comp = std::min(n_vis, g.idx_top_k);

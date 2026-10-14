@@ -345,7 +345,26 @@ __attribute__((visibility("default"))) int abyss_igpu_rows(int gu_type, int d_ty
 }
 
 __attribute__((visibility("default"))) void abyss_igpu_poke(void) {
-    if (L.open && hipStreamQuery(L.s) == hipSuccess) gf::lane_poke(L.s);
+    // ABYSS_IGPU_POKE_STAT=1 (investigation): how long the idle-stream query and the launch take, every 65,536 pokes
+    static const bool stat = getenv("ABYSS_IGPU_POKE_STAT") != nullptr;
+    if (!stat) {
+        if (L.open && hipStreamQuery(L.s) == hipSuccess) gf::lane_poke(L.s);
+        return;
+    }
+    static unsigned long long n = 0, q_us = 0, q_max = 0, l_us = 0, l_max = 0;
+    const auto t0 = std::chrono::steady_clock::now();
+    const bool idle = L.open && hipStreamQuery(L.s) == hipSuccess;
+    const auto t1 = std::chrono::steady_clock::now();
+    if (idle) gf::lane_poke(L.s);
+    const auto t2 = std::chrono::steady_clock::now();
+    const unsigned long long q = (unsigned long long) std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    const unsigned long long l = (unsigned long long) std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    q_us += q; q_max = std::max(q_max, q); l_us += l; l_max = std::max(l_max, l);
+    if (++n % 65536 == 0) {
+        std::fprintf(stderr, "iGPU poke stat: %llu pokes | query %.1f us (max %llu) | launch %.1f us (max %llu)\n", n,
+                     (double) q_us / 65536.0, q_max, (double) l_us / 65536.0, l_max);
+        q_us = l_us = 0; q_max = l_max = 0;
+    }
 }
 
 __attribute__((visibility("default"))) void abyss_igpu_close(void) {

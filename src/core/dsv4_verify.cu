@@ -302,7 +302,8 @@ bool Glm5Model::verify_attn(int il, int64_t p0, int tb, int T, cudaStream_t s, s
         const int* sel = nullptr;
         if (r != 0) {
             const int n_vis = (p + 1) / r;
-            if (r == 4 && n_vis > 0) {
+            static const bool idx_all = getenv("STRATA_DS4_IDX_ALL") != nullptr && std::atoi(getenv("STRATA_DS4_IDX_ALL")) != 0;
+            if (r == 4 && n_vis > 0 && (idx_all || n_vis > g.idx_top_k)) {   // (as the token path: all rows below top_k)
                 int* cs = V->sel + (size_t) c * g.idx_top_k;
                 ds::indexer(iq, Ly.idx_cache, iwb + (size_t) t * g.idx_heads, g.idx_heads, g.idx_key, n_vis,
                             g.idx_top_k, V->score + (size_t) c * V->score_n, cs, s);

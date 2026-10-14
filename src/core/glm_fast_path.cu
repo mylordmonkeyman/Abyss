@@ -1406,6 +1406,9 @@ void Glm5Model::fast_igpu_setup() {
     F->igpu_lib = lib;
     F->igpu_experts = ex;
     F->igpu_poke = (abyss_igpu_poke_fn) dlsym(lib, "abyss_igpu_poke");
+    // STRATA_GLM_IGPU_POKE=0 (investigation): no keep-alive kernel between routes
+    if (const char* pk = getenv("STRATA_GLM_IGPU_POKE"))
+        if (std::atoi(pk) == 0) F->igpu_poke = nullptr;
     F->igpu_rows = (abyss_igpu_rows_fn) dlsym(lib, "abyss_igpu_rows");
     F->igpu_reg = rg;
     F->igpu_unreg = (abyss_igpu_unregister_fn) dlsym(lib, "abyss_igpu_unregister");
@@ -2526,6 +2529,20 @@ void Glm5Model::fast_service() {
     auto igpu_route = last_route, igpu_poked = last_route;   // the iGPU lane's keep-alive (below)
     int idle = 0;                        // 0 spinning, 1 short sleeps, 2 long sleeps
     unsigned int polls = 0;
+    // STRATA_GLM_SVC_STAT=1 (investigation): where this thread's time goes per route - from seeing the request to
+    // the lane call (the bookkeeping), the lane call, from its return to the answer's publication - and how often a
+    // spin iteration took > 20 us (the thread was inside something else, e.g. the keep-alive's driver call, when a
+    // request could have landed).  Printed every 4,096 routes
+    static const bool svc_stat = getenv("STRATA_GLM_SVC_STAT") != nullptr;
+    struct SvcStat {
+        uint64_t n = 0, pre_us = 0, pre_max = 0, lane_us = 0, lane_max = 0, post_us = 0, post_max = 0;
+        uint64_t gaps = 0, gap_us = 0, gap_max = 0, iters = 0;
+    } ss;
+    auto last_iter = std::chrono::steady_clock::now();
+    auto t_seen = last_iter;
+    const auto us_since = [](std::chrono::steady_clock::time_point a, std::chrono::steady_clock::time_point b) {
+        return (uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(b - a).count();
+    };
 #if defined(_WIN32) && defined(STRATA_USE_HIP)
     auto last_kick = last_route;
     unsigned int kick_polls = 0;
@@ -2570,6 +2587,17 @@ void Glm5Model::fast_service() {
                         idle = 2;
                 } else {
                     cpu_relax();
+                    if (svc_stat) {
+                        const auto now = std::chrono::steady_clock::now();
+                        const uint64_t g = us_since(last_iter, now);
+                        last_iter = now;
+                        ++ss.iters;
+                        if (g > 20) {
+                            ++ss.gaps;
+                            ss.gap_us += g;
+                            ss.gap_max = std::max(ss.gap_max, g);
+                        }
+                    }
                     // the iGPU lane: a no-op kernel every 50 us within 20 ms of a route keeps its clocks up
                     if (F->igpu_poke != nullptr && (polls & 63u) == 0) {
                         const auto now = std::chrono::steady_clock::now();
@@ -2586,6 +2614,7 @@ void Glm5Model::fast_service() {
                 continue;
             }
         }
+        if (svc_stat) t_seen = std::chrono::steady_clock::now();
         if (kIdleMs > 0) {
             idle = 0;
             last_route = std::chrono::steady_clock::now();
@@ -2837,13 +2866,34 @@ void Glm5Model::fast_service() {
                 }
             gf::CpuAnswer* ans = F->cpu_ans_h + (next % gf::kCpuAnswers);
             fast_cpu_experts(rq->layer, ne, blob, w, rq->x, ans->part);
+            const auto t1 = std::chrono::steady_clock::now();
             std::atomic_thread_fence(std::memory_order_release);
             ans->seq = next;
             F->cpu_experts.fetch_add((uint64_t) ne, std::memory_order_relaxed);
             F->cpu_routes.fetch_add(1, std::memory_order_relaxed);
-            F->cpu_us.fetch_add((uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
-                                    std::chrono::steady_clock::now() - t0).count(),
+            F->cpu_us.fetch_add((uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count(),
                                 std::memory_order_relaxed);
+            if (svc_stat) {
+                const auto t2 = std::chrono::steady_clock::now();
+                const uint64_t pre = us_since(t_seen, t0), lane = us_since(t0, t1), post = us_since(t1, t2);
+                ++ss.n;
+                ss.pre_us += pre; ss.pre_max = std::max(ss.pre_max, pre);
+                ss.lane_us += lane; ss.lane_max = std::max(ss.lane_max, lane);
+                ss.post_us += post; ss.post_max = std::max(ss.post_max, post);
+                if (ss.n % 4096 == 0) {
+                    std::fprintf(stderr, "svc stat CUDA%d: %llu routes | seen->lane %.1f us (max %llu) | lane %.1f us (max %llu) | "
+                                         "lane->answer %.1f us (max %llu) | spin iterations %llu, > 20 us: %llu (%.1f%%), "
+                                         "%.2f ms in all, max %llu us\n",
+                                 dev_, (unsigned long long) ss.n, (double) ss.pre_us / (double) ss.n,
+                                 (unsigned long long) ss.pre_max, (double) ss.lane_us / (double) ss.n,
+                                 (unsigned long long) ss.lane_max, (double) ss.post_us / (double) ss.n,
+                                 (unsigned long long) ss.post_max, (unsigned long long) ss.iters,
+                                 (unsigned long long) ss.gaps, 100.0 * (double) ss.gaps / (double) std::max<uint64_t>(1, ss.iters),
+                                 (double) ss.gap_us / 1000.0, (unsigned long long) ss.gap_max);
+                    ss = SvcStat{};
+                }
+                last_iter = t2;
+            }
         }
         F->processed.fetch_add(1, std::memory_order_release);
         ++next;
