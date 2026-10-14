@@ -7,6 +7,46 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.16 - 2026-10-15
+
+DeepSeek V4's prompt processing 3-7% faster at 8K-32K tokens, a few decode-path savings, and a full survey of what
+is left (every source file read, 23 candidates ranked and then measured one by one:
+`Abyss-tools/worklog/2026-10-15_ds4-speedup-survey.md`). The answers are the same.
+- Prompt path: the prestage buffer is carved to the chunk's size (T / 128 slots, 16..160: it took all 160 slots =
+  1.3 GB for any chunk from 1,024 tokens, which evicted ~2.8 resident experts a layer at 8K;
+  `STRATA_GLM_PRESTAGE_CARVE=<slots>`, 0 = all), the prestaged experts are computed in 8-expert pieces as their copies
+  land instead of after the last one (`STRATA_GLM_PRESTAGE_PIECES=0`: after the last), the shared expert's GEMMs run
+  after the route's sync so the GPU works while the host plans the expert sets (`STRATA_GLM_PREFILL_SH_LATE=0`:
+  before the route), and a chunk's embedding rows are dequantized by the worker threads (`STRATA_GLM_PREFILL_EMB_PAR=0`:
+  one thread). RTX 5090 (PCIe Gen4 x4) + Ryzen AI Max+ 395 (Radeon 8060S lane), DeepSeek V4 Flash UD-Q2_K_XL, prompts
+  of 8K / 32K / 125K tokens, 2 runs each: 1,546 / 1,680 -> 1,629 / 1,757 tok/s; 2,934 / 3,179 -> 3,133 / 3,274;
+  2,800 -> 2,813.
+- Decode: the lightning indexer's score and top-k launches are skipped while fewer rows are visible than it keeps
+  (positions below 2,047: every row is selected anyway, and the attention reads them in position order;
+  `STRATA_DS4_IDX_ALL=1` keeps the launches) - 0.3-0.4 ms a token in a 1,024-token answer. KL against the old path's
+  own reference over positions 1,000-4,000: 0.0045, as between two runs of it. The attention output's q8_1 (wo_a's
+  input) is written by the combine kernel's epilogue, the same bits, 43 launches fewer (`STRATA_DS4_OQ_FUSE=0`: the
+  separate launch). The boundary's table updates go through two pinned sets with events instead of a stream sync a
+  flush (`STRATA_GLM_BOUNDARY_SYNC=1`: the sync). Typed GEMVs under 256 blocks run 4 warps a row
+  (`STRATA_GLM_MV_SPLIT`; nsys: q_a 4.3 -> 3.0 us, the HCA projections 6.3 -> 5.3; wo_b's 512 blocks stay at ~23.5 us,
+  the ceiling of its 8.7 KB rows, and the 512-block Q5_K shared gate/up got slower when split, so only the small ones).
+  The n-gram gate's acceptance also learns from the proposals it drops: the dropped draft's first token against the
+  single token sampled instead (`STRATA_DS4_SPEC_GATE_LEARN=0`: windows only). 1,024-token answers, prose / code, the
+  2nd-3rd of 3 runs: v1.3.15 81.6 / 82.3 -> 82-84 tok/s, within the bench's +-2%.
+- Measured and left off (the switches stay): the request's x written at the route kernel's start
+  (`STRATA_GLM_ROUTE_EARLY=1` - the system fence, not the store, is what the lane's request waits for); the iGPU lane
+  reading x from the registered request ring and writing its sum in place, with a host-mapped completion counter
+  (`ABYSS_IGPU_DIRECT=1` - a call is 109-117 us either way: the iGPU's own time, ~20 us + 41 an expert); hc3 without
+  its second grid barrier (`STRATA_GLM_HC_GRAM=1` - 8.5 -> 8.1 us, the sums round differently); the batched verify
+  window (`STRATA_DS4_SPEC_PIPE=0`: 73 against 90 tok/s on swe-bench prompts, its lane calls serialise); the lane's
+  keep-alive off (`STRATA_GLM_IGPU_POKE=0`: -10%); `STRATA_GLM_VRAM_EVICT=lru`, `STRATA_GLM_CPU_WAIT_BLOCKS=16` and
+  `STRATA_GLM_PROMOTE_FILL=200` (no change).
+- Investigation counters: `STRATA_GLM_SVC_STAT=1` prints the service thread's time per route (the lane call, the
+  bookkeeping around it, long spin gaps), `ABYSS_IGPU_POKE_STAT=1` the keep-alive's query and launch times.
+- A pack with `attn_q_b` / `attn_output_a` / `attn_output_b` re-quantized to Q6_K (`Abyss-tools/bench/requant_dense.py`
+  - llama-quantize refuses an i-quant model's dense tensors without an imatrix) decodes +1-2% with 129 more VRAM
+  slots at KL +0.0022 (0.0060 -> 0.0082, both on the CPU lane). Not adopted; a quality call.
+
 ## v1.3.15 - 2026-10-14
 
 DeepSeek V4 decodes 3-5% faster with the iGPU / CPU lane: the lane's request goes out earlier in each layer, and the
