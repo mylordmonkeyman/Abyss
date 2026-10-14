@@ -7,6 +7,29 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.13 - 2026-10-14
+
+Decode is faster when the CPU / iGPU lane is on: the expert tiers swap far fewer experts between VRAM and RAM.
+DeepSeek V4 decodes 4-12% faster, GLM-5.3-Flash 4-6%.
+- The background tier moves swapped a resident expert for a RAM-only one when its use count passed 2 x the
+  resident's + 4. The counts halve about every 130 tokens, so they are small and noisy, and DeepSeek V4 swapped
+  ~2.7 experts a token. Each swap is two 8 MB copies, and each copy holds the PCIe link for ~1.2 ms (Gen4 x4).
+  Behind those copies, the route's ring writes and the CPU lane's answer reads (host-mapped) waited: nsys showed
+  the route kernel at 16 us without a copy and 94-133 us with one, and `moe_cpu_wait` at 42 -> 119-154 us.
+- The swap rule is now 4 x + 16 (`STRATA_GLM_PROMOTE_RATIO` / `STRATA_GLM_PROMOTE_MARGIN`; 2 / 4 gives the old
+  rule). DeepSeek V4: ~0.5 swaps a token, VRAM hit 75% -> 68%, and still faster. Turning the swaps off altogether
+  is slower (prose 60 tok/s: the tiers then keep what the prompt left).
+- The route reads a device copy of the route error flag instead of the host-mapped one (a PCIe read each layer).
+- Measured on an RTX 5090 (PCIe Gen4 x4) + Ryzen AI Max+ 395 (iGPU lane on), greedy, 1,024-token answers to a
+  prose and a code prompt, 3 runs each (old -> new, tok/s):
+  - DeepSeek V4 Flash UD-Q2_K_XL, n-gram spec on (the default): prose 75.4 -> 78.8, code 70.1 -> 78.5.
+    Spec off: prose 76.5 -> 79.1, code 70.4 -> 77.3.
+  - GLM-5.3-Flash Maya-S-v2: prose 41.0 -> 42.6, code 38.3 -> 40.6.
+  - KL against bench/ref4k_cuda.bin (3K + 1K scored): 0.0058 -> 0.0056 (run-to-run spread ~0.005).
+- Looked at and not taken: a Q8_0 GEMV that stages rows through shared memory with 16-byte loads (the current one
+  is at 1.4-1.6 TB/s already, <5% to gain), and table edits passed in the launch instead of a staged copy + sync
+  (no measurable gain once the copies are few).
+
 ## v1.3.12 - 2026-10-14
 
 Speedups taken from Project Maya v1.1.2-v1.1.7 (mw00/project-maya). Abyss was copied from Maya v1.0.31. GLM-5.3-Flash

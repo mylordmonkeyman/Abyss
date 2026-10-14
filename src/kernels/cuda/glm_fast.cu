@@ -2131,9 +2131,12 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     __shared__ float s_w[8];
     __shared__ unsigned int s_mask, s_seq;
     __shared__ int bad;
-    // the host-mapped error flag: a PCIe round trip - read now, used at the bad check below, so it overlaps the
-    // scores and the selection instead of stalling the block
-    const int prev_err = tid == 0 && a.d.route_error != nullptr ? *a.d.route_error : 0;
+    // an earlier route's error: its device copy (the host-mapped flag is a PCIe round trip, which waited ~100 us
+    // behind the tier moves' copies) - read now, used at the bad check below
+    const int prev_err = tid != 0                       ? 0
+                         : a.d.route_error_d != nullptr ? *a.d.route_error_d
+                         : a.d.route_error != nullptr   ? *a.d.route_error
+                                                        : 0;
     if (tid == 0) bad = 0;
     __syncthreads();
     // the CPU lane's frequency counts age: every 4096 routes all of them halve (the whole block, before any use)
@@ -2238,6 +2241,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     if (bad != 0) {
         if (tid == 0) {
             // No probability/table lookup or DMA for an invalid route. Still publish and retire its sequence.
+            if (a.d.route_error_d != nullptr && *a.d.route_error_d == 0) *a.d.route_error_d = 4 * a.layer + bad;
             if (a.d.route_error != nullptr && *a.d.route_error == 0) *a.d.route_error = 4 * a.layer + bad;
             *a.d.wait_seq = 0u;
             if (a.d.cpu_seq != nullptr) *a.d.cpu_seq = 0u;

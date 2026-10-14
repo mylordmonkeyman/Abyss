@@ -751,6 +751,7 @@ void Glm5Model::reset() {
     // of it (#133: a conversation taken back from a slot answered the other one's question, then looped).
     if (fast_ != nullptr) {
         cudaMemsetAsync(state_, 0, state_bytes_, fast_->cs);
+        if (fast_->md.route_error_d != nullptr) cudaMemsetAsync(fast_->md.route_error_d, 0, sizeof(int), fast_->cs);
         if (cudaStreamSynchronize(fast_->cs) == cudaSuccess && fast_->route_error_h)
             *fast_->route_error_h = 0;   // a failed route belongs to the previous request
     } else {

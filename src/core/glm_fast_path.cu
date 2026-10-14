@@ -735,6 +735,11 @@ bool Glm5Model::fast_setup(std::string& err) {
     F->md.ring = dp;
     F->route_error_h = (volatile int*) (F->ring_h + gf::kRingSize);
     F->md.route_error = (volatile int*) ((gf::MoeRequest*) dp + gf::kRingSize);
+    if (cudaMalloc((void**) &F->md.route_error_d, 64) != cudaSuccess ||
+        cudaMemset(F->md.route_error_d, 0, 64) != cudaSuccess) {
+        err = "glm fast: the route error flag did not allocate";
+        return false;
+    }
     if (cudaHostAlloc(&hp, gf::kCpuAnswers * sizeof(gf::MoeResponse), cudaHostAllocMapped) != cudaSuccess) {
         err = "glm fast: the routing response did not allocate";
         return false;
@@ -2348,6 +2353,7 @@ void Glm5Model::fast_destroy() {
     if (F->upd_key_d) cudaFree(F->upd_key_d);
     if (F->upd_val_d) cudaFree(F->upd_val_d);
     if (F->ring_h) cudaFreeHost(F->ring_h);
+    if (F->md.route_error_d) cudaFree(F->md.route_error_d);
     if (F->resp_h) cudaFreeHost(F->resp_h);
     if (F->emb_h) cudaFreeHost(F->emb_h);
     if (F->hop_h) cudaFreeHost(F->hop_h);
@@ -3269,7 +3275,19 @@ bool Glm5Model::fast_boundary(std::string& err) {
             return v != nullptr ? std::max(0, std::atoi(v)) : 24;
         }();
         const int bg_up_max = std::max(bg_n, bg_fill);
-        constexpr uint32_t bg_ratio = 2;
+        // a swap (the layer's coldest resident out, a RAM-only expert in) when hot >= ratio * cold + margin
+        // (STRATA_GLM_PROMOTE_RATIO / _MARGIN, 4 / 16).  The counts halve every ~130 tokens, so they are small and
+        // noisy: at 2 / 4 DeepSeek V4 swapped ~2.7 experts a token, and each 8 MB copy held the PCIe link ~1.2 ms -
+        // the route's and the CPU lane's host-mapped reads and writes waited behind it (16 -> ~100 us a route).
+        // 4 / 16: ~0.5 a token, decode +3% (prose) / +9% (code) on an RTX 5090 at Gen4 x4.
+        static const uint32_t bg_ratio = [] {
+            const char* v = getenv("STRATA_GLM_PROMOTE_RATIO");
+            return v != nullptr ? (uint32_t) std::max(1, std::atoi(v)) : 4u;
+        }();
+        static const uint32_t bg_margin = [] {
+            const char* v = getenv("STRATA_GLM_PROMOTE_MARGIN");
+            return v != nullptr ? (uint32_t) std::max(0, std::atoi(v)) : 16u;
+        }();
         bool lane_all = F->cpu_plan != 0ull;   // the CPU lane takes every RAM-tier expert of a route
         for (int f = 1; f <= g.n_exp_used && lane_all; ++f) lane_all = (int) ((F->cpu_plan >> (4 * f)) & 15ull) == f;
         if (bg_n > 0 && lane_all && !F->bg_hold && (int) F->bg.size() < 2 * bg_up_max) {
@@ -3338,7 +3356,7 @@ bool Glm5Model::fast_boundary(std::string& err) {
                     cudaEventRecord(ev, F->copy);
                     F->bg.push_back(FastState::BgMove{c.il, c.free_slot, c.il * NE + c.e, rc, c.rs, true, ev});
                     ++filled;
-                } else if (c.cold_slot >= 0 && c.hot >= bg_ratio * std::max<uint32_t>(c.cold, 1u) + 4u) {
+                } else if (c.cold_slot >= 0 && c.hot >= bg_ratio * std::max<uint32_t>(c.cold, 1u) + bg_margin) {
                     int rs = -1;
                     for (int s2 = 0; s2 < R.n && rs < 0; ++s2)
                         if (R.st[(size_t) s2] == FastState::kRFree) rs = s2;
