@@ -450,6 +450,7 @@ struct Glm5Model::PrefillState {
     // the CPU and PCIe as before; copies still in flight at the plan count against the PCIe side.
     int NP = 0;                           // slots (of the largest MoE layer stride)
     size_t pbuf_bytes = 0;
+    size_t pbuf_carved = 0;               // ... of which this chunk's carve took (prefill_carve; the prestage's cap)
     uint8_t* pbuf = nullptr;              // carved for chunks of kPreMinT tokens and more
     int pre_layer = -1;                   // the layer whose experts pbuf holds (or is receiving)
     std::vector<int> pre_e;               // ... in slot order
@@ -973,7 +974,17 @@ size_t Glm5Model::prefill_carve(int Tn) {
     S->w32 = c.take<float>((size_t) S->w32_elems);
     S->ws = c.take<uint8_t>(S->ws_bytes);
     S->gbuf = S->gbuf_bytes ? c.take<uint8_t>(S->gbuf_bytes) : nullptr;
-    S->pbuf = S->pbuf_bytes && Tn >= kPreMinT ? c.take<uint8_t>(S->pbuf_bytes) : nullptr;   // (a short prompt: none)
+    // the prestage slots this chunk gets: T / 128 (16 .. the buffer's), unless STRATA_GLM_PRESTAGE_CARVE says
+    // otherwise (0: the whole buffer, as before) - the rest of the buffer stays with the pool's experts
+    static const long long carve_env = [] { const char* v = getenv("STRATA_GLM_PRESTAGE_CARVE"); return v ? std::atoll(v) : -1LL; }();
+    S->pbuf_carved = 0;
+    if (S->pbuf_bytes && Tn >= kPreMinT && S->gstride > 0) {
+        const size_t all = S->pbuf_bytes / S->gstride;
+        size_t slots = carve_env == 0 ? all : carve_env > 0 ? (size_t) carve_env : std::max<size_t>(16, T / 128);
+        slots = std::min(slots, all);
+        S->pbuf_carved = slots * S->gstride;
+    }
+    S->pbuf = S->pbuf_carved ? c.take<uint8_t>(S->pbuf_carved) : nullptr;   // (a short prompt: none)
     Carve a{S->arena};
     S->R = a.take<float>(T * 4 * E);
     S->x = a.take<float>(T * E);
@@ -1768,7 +1779,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             const char* v = getenv("STRATA_GLM_PRESTAGE_ADAPT");
             return v != nullptr && v[0] != '\0' ? std::atoi(v) != 0 : g.arch == 1;
         }();
-        const int cap = std::min(S->NP, (int) std::min<size_t>(S->pbuf_bytes / P.stride,
+        const int cap = std::min(S->NP, (int) std::min<size_t>(S->pbuf_carved / P.stride,
                                                                 S->ev_pdone.size() * PrefillState::kPreEv));
         // (deepseek4 before its first lesson: 64 experts for a 5.6K-token chunk, the cap from ~14K tokens on - the best
         // fixed counts measured there, so a server's first prompt does not pay the whole buffer)
@@ -2079,15 +2090,21 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         Carve c{S->uni};
         MoeBufs M = carve_moe(c, (size_t) T, (size_t) S->sh_sub(), g);
         const int FF = g.n_ff_exp * g.n_shared, NE = g.n_expert, nff = g.n_ff_exp;
-        for (int t0 = 0, shs = S->sh_sub(); t0 < T; t0 += shs) {
-            const int tn = std::min(shs, T - t0);
-            const uint16_t* x16 = S->x16 + (size_t) t0 * E;
-            hgemm_q(Ly.sh_gate, FF, E, x16, E, M.sh_g, FF, tn, 0.0f);
-            hgemm_q(Ly.sh_up, FF, E, x16, E, M.sh_u, FF, tn, 0.0f);
-            gb::swiglu_f16(M.sh_g, M.sh_u, M.sh16, (int64_t) tn * FF, g.swiglu_shexp, s);
-            hgemm_q(Ly.sh_down, E, FF, M.sh16, FF, S->ffn + (size_t) t0 * E, E, tn, 0.0f);
-        }
-        S->mark("shexp", s);
+        // the shared expert: before the route (as before), or after the route's sync so its GEMMs run while the
+        // host plans the expert sets (the stream was idle through the plan).  STRATA_GLM_PREFILL_SH_LATE=0: before
+        static const bool sh_late = [] { const char* v = getenv("STRATA_GLM_PREFILL_SH_LATE"); return v == nullptr || std::atoi(v) != 0; }();
+        const auto shared_expert = [&] {
+            for (int t0 = 0, shs = S->sh_sub(); t0 < T; t0 += shs) {
+                const int tn = std::min(shs, T - t0);
+                const uint16_t* x16 = S->x16 + (size_t) t0 * E;
+                hgemm_q(Ly.sh_gate, FF, E, x16, E, M.sh_g, FF, tn, 0.0f);
+                hgemm_q(Ly.sh_up, FF, E, x16, E, M.sh_u, FF, tn, 0.0f);
+                gb::swiglu_f16(M.sh_g, M.sh_u, M.sh16, (int64_t) tn * FF, g.swiglu_shexp, s);
+                hgemm_q(Ly.sh_down, E, FF, M.sh16, FF, S->ffn + (size_t) t0 * E, E, tn, 0.0f);
+            }
+            S->mark("shexp", s);
+        };
+        if (!sh_late) shared_expert();
         sgemm_bf16(Ly.router, NE, E, S->x, E, M.logits, NE, T, 1.0f);
         gb::route(M.logits, Ly.router_bias, NE, K, g.w_scale, g.norm_w != 0, T, M.ids, M.rw, s, g.gating,
                   Ly.tid2eid, S->toks_d);
@@ -2095,6 +2112,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         gb::copy_i32(M.counts, S->h_counts, NE, s);   // (not a copy: the engine may be busy with x, x_down)
         S->mark("route", s);
         if (!glmfast::cuda_ok(cudaStreamSynchronize(s), "glm prompt route/count sync", err)) return false;
+        if (sh_late) shared_expert();   // (into ffn, ahead of the expert sets' combines on the same stream)
         int counted = 0;
         for (int e = 0; e < NE; ++e) counted += S->h_counts[e];
         if (counted != T * K) {
@@ -2531,8 +2549,20 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         S->mark("moe_resident", s);
         if (S->pre_layer == il) {
             if (rows_pre > 0) {
-                cudaStreamWaitEvent(s, S->ev_pready, 0);
-                run_set(S->pbuf, (int) S->pre_e.size(), P.stride, M.bounds + b_pre, S->h_bounds + b_pre, rows_res);
+                // in pieces of kPreEv experts as their copies land (STRATA_GLM_PRESTAGE_PIECES=0: after the last)
+                static const bool pieces = [] { const char* v = getenv("STRATA_GLM_PRESTAGE_PIECES"); return v == nullptr || std::atoi(v) != 0; }();
+                const int npre = (int) S->pre_e.size();
+                if (pieces) {
+                    for (int k0 = 0, k = 0; k0 < npre; k0 += PrefillState::kPreEv, ++k) {
+                        const int cnt = std::min(PrefillState::kPreEv, npre - k0);
+                        cudaStreamWaitEvent(s, S->ev_pdone[(size_t) k], 0);
+                        run_set(S->pbuf + (size_t) k0 * P.stride, cnt, P.stride, M.bounds + b_pre + k0,
+                                S->h_bounds + b_pre + k0, rows_res);
+                    }
+                } else {
+                    cudaStreamWaitEvent(s, S->ev_pready, 0);
+                    run_set(S->pbuf, npre, P.stride, M.bounds + b_pre, S->h_bounds + b_pre, rows_res);
+                }
                 S->pre_rows += (uint64_t) rows_pre;
             }
             cudaEventRecord(S->ev_pfree, s);   // (the next layer's prestage overwrites pbuf after this)
@@ -3085,10 +3115,19 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
         const int T = chunk_len(c);
         const int64_t i = (int64_t) c * Tc;
         if (!glmfast::cuda_ok(cudaStreamSynchronize(fast_->cs), "glm prompt embedding", err)) return false;
-        for (int t = 0; t < T; ++t) {
+        // the rows by the disk workers' threads (a 32K chunk's rows took ~100 ms on one thread, the GPU idle);
+        // STRATA_GLM_PREFILL_EMB_PAR=0: one thread
+        static const bool emb_par = [] { const char* v = getenv("STRATA_GLM_PREFILL_EMB_PAR"); return v == nullptr || std::atoi(v) != 0; }();
+        const auto row = [&](int t) {
             tt->to_float(pack_emb_src_ + (size_t) tokens[(size_t) (i + t)] * row_b, S->emb_h + (size_t) t * E, E);
             if (const float* img = image_row(pos_start + i + t))   // an image's row in place of its <|image|> token
                 std::memcpy(S->emb_h + (size_t) t * E, img, (size_t) E * sizeof(float));
+        };
+        if (emb_par && fast_->workers != nullptr && T >= 256) {
+            const int nj = 8;
+            fast_->workers->run(nj, [&](int job) { for (int t = job; t < T; t += nj) row(t); });
+        } else {
+            for (int t = 0; t < T; ++t) row(t);
         }
         // the embedding lands in x (free until the first layer's gates write it) and fans out to the 4 streams
         cudaMemcpyAsync(S->x, S->emb_h, (size_t) T * E * sizeof(float), cudaMemcpyHostToDevice, fast_->cs);
