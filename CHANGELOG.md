@@ -7,6 +7,30 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.15 - 2026-10-14
+
+DeepSeek V4 decodes 3-5% faster with the iGPU / CPU lane: the lane's request goes out earlier in each layer, and the
+route kernel is shorter. The answers are the same.
+- Each MoE layer ran the router and the shared expert's gate/up as one GEMV before the route. The shared expert does
+  not need the route, so its gate/up now runs after it (`STRATA_GLM_SH_LATE=0` gives the old order). The route, and
+  with it the request to the iGPU / CPU lane, goes out one GEMV earlier (DeepSeek V4's shared gate/up is 18 MB of
+  Q8_0, ~12 us a layer), and the shared expert runs while the lane computes. The same for the n-gram verify windows.
+  The sums are the same, only their order on the GPU changes: KL with 4-token verify windows is identical with and
+  without it (0.005462).
+- The route kernel's plan (the weights, which RAM-tier experts go to the lane, the spare slots for fetched experts)
+  was made by one thread walking the route's entries: ~7 of its ~17 us. One lane of a warp now takes each entry,
+  with the same decisions.
+- Measured on an RTX 5090 (PCIe Gen4 x4) + Ryzen AI Max+ 395 (Radeon 8060S lane), DeepSeek V4 Flash UD-Q2_K_XL,
+  greedy, 1,024-token answers, the 2nd and 3rd of 3 runs, prose / code, tok/s: v1.3.14 79.0 / 78.3, the late shared
+  expert 81.3 / 81.4, with the parallel plan 81.5 / 81.7, with the verify windows 81.6 / 82.3. KL (3K prompt + 1K
+  scored against the RTX 5090 reference) 0.0055-0.0057, as before.
+- GLM-5.3-Flash takes the same path (Maya-S v2, the same machine, the 2nd of 2 runs, prose / code): 43.6 / 41.4 ->
+  44.6 / 42.8 tok/s.
+- Tried and dropped: the CPU threads computing part of each iGPU lane call (the ff columns split between the two).
+  The two together read ~230 GB/s against the iGPU's 150 at a 2-expert call, but during decode the CPU's share ran at
+  ~0.22 ms an expert (0.105 when timed alone) plus ~40 us a call, so even 1/8 of the columns took as long as the whole
+  call on the iGPU: 78 -> 58-65 tok/s.
+
 ## v1.3.14 - 2026-10-14
 
 The iGPU lane no longer loses the decode to the CPU lane for a whole session because of one stall at startup.
