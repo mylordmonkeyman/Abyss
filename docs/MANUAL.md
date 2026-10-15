@@ -151,6 +151,43 @@ cd ~/llm/apps/Abyss
 `--compat-bf16` rounds the hyper-connection matrices (stored F32 in the GGUF) to BF16, the form the engine reads. A
 few seconds; the experts stay in the GGUF files.
 
+### A lighter dense pack (the attention projections at Q6_K or Q5_K)
+
+Every decoded token reads all of the dense weights (6.6 GB in UD-Q2_K_XL), and 4.6 GB of that is three Q8_0 tensors a
+layer: `attn_q_b`, `attn_output_a` and `attn_output_b`. `tools/requant_dense.py` re-quantizes just those (with
+`ggml_quantize_chunk` from a llama.cpp build - llama-quantize refuses an i-quant model without an imatrix) and copies
+every other byte of the shards as it is; `iq_pack.py` then packs the new files like the original ones:
+
+```sh
+cd ~/llm/apps/Abyss
+GGUF_PY=~/llm/apps/llama.cpp/gguf-py LIBGGML=~/llm/apps/llama.cpp/build-cuda/bin/libggml-base.so \
+  .venv/bin/python -I tools/requant_dense.py $M/UD-Q2_K_XL/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf \
+  $M/UD-Q2_K_XL-attn-q6k q6_k 'blk\.\d+\.attn_q_b\.weight' 'blk\.\d+\.attn_output_[ab]\.weight'
+.venv/bin/python tools/iq_pack.py --gguf $M/UD-Q2_K_XL-attn-q6k/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf \
+  --out $M/UD-Q2_K_XL-attn-q6k/pack-dsv4 --compat-bf16
+```
+
+It rewrites the 90 GB of shards (10-25 minutes on an NVMe), so run it while the server is stopped; then point the
+config's pack and tokenizer paths at the new directory. What the three types cost and give (2026-10-15, v1.3.18;
+KL against the engine's own Q8_0 reference logits over the last 1,000 of 4,000 tokens, CPU lane, the same setup for
+all three):
+
+| attention projections | the three tensors | KL vs reference | max KL | same top token | nll | VRAM expert slots (RTX 5090) |
+|---|---|---|---|---|---|---|
+| Q8_0 (the GGUF as published) | 4.28 GiB | 0.0060 | 0.11 | 97.0% | 1.3071 | 3,010 |
+| Q6_K | 3.31 GiB | 0.0082 | 0.31 | 95.8% | 1.3116 | 3,139 |
+| Q5_K | 2.77 GiB | 0.0119 | 0.57 | 95.9% | 1.3135 | 3,225 |
+
+- Q6_K: decode +3.5% from the smaller GEMVs (v1.3.18's split kernel) plus 129 more VRAM slots. On the swe-bench L7
+  set (16 tasks x 3, RTX 5090 + Radeon 8060S) it ran 93.9 against 91.3 tok/s with the same resolved rate (81.2%) and
+  quality score (81.2 vs 81.0). The KL cost is the run-to-run spread's size; the Q6_K pack is what the author runs.
+- Q5_K: the KL doubles against Q8_0 (the largest single-token divergence 0.57). On an RTX 5090 it decodes 4% faster
+  than Q6_K (1,024-token answers: a single token 12.13 -> 11.65 ms, the verify window 15.52 -> 14.86, 86-89 -> 93
+  tok/s; the window and the token path share the saving), and more on a card with less memory bandwidth - a Radeon AI
+  PRO R9700 at 640 GB/s reads 1.5 GB less a token. A choice to make per use: the quality cost is twice Q6_K's.
+- Not worth touching: `attn_q_a`, the kv / compressor / indexer projections and the norms are small, and the shared
+  experts, the embedding and the output head are already Q5_K / Q6_K / Q4_K.
+
 ## Configure and start
 
 A config file (any name; `strata-dsv4.json` here) in the Abyss folder:

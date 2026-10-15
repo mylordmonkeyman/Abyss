@@ -151,6 +151,41 @@ cd ~/llm/apps/Abyss
 `--compat-bf16` は、GGUF に F32 で入っているハイパーコネクションの行列を、エンジンが読む BF16 に丸める。数秒で終わる。
 エキスパートは GGUF のまま使う。
 
+### 軽い dense pack（attention の射影を Q6_K か Q5_K に）
+
+decode は 1 トークンごとに dense の重み全部（UD-Q2_K_XL で 6.6 GB）を読み、そのうち 4.6 GB が各層の Q8_0 の 3 つ
+`attn_q_b`、`attn_output_a`、`attn_output_b`。`tools/requant_dense.py` はこの 3 つだけを再量子化し（llama.cpp のビルドの
+`ggml_quantize_chunk` を使う。llama-quantize は i-quant のモデルを imatrix なしでは受け付けない）、シャードの他のバイトは
+そのまま写す。できた GGUF を `iq_pack.py` で元と同じように pack にする:
+
+```sh
+cd ~/llm/apps/Abyss
+GGUF_PY=~/llm/apps/llama.cpp/gguf-py LIBGGML=~/llm/apps/llama.cpp/build-cuda/bin/libggml-base.so \
+  .venv/bin/python -I tools/requant_dense.py $M/UD-Q2_K_XL/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf \
+  $M/UD-Q2_K_XL-attn-q6k q6_k 'blk\.\d+\.attn_q_b\.weight' 'blk\.\d+\.attn_output_[ab]\.weight'
+.venv/bin/python tools/iq_pack.py --gguf $M/UD-Q2_K_XL-attn-q6k/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf \
+  --out $M/UD-Q2_K_XL-attn-q6k/pack-dsv4 --compat-bf16
+```
+
+90 GB のシャードを書き直すので（NVMe で 10〜25 分）、サーバーを止めてから実行する。できたら設定の pack と tokenizer の
+パスを新しいフォルダに向ける。3 つの型の品質と得るもの（2026-10-15、v1.3.18。KL はエンジン自身の Q8_0 の基準 logits
+との比較、4,000 トークンの最後の 1,000 トークン、CPU レーン、3 つとも同じ条件）:
+
+| attention の射影 | 3 テンソルの大きさ | KL（基準比） | max KL | top token 一致 | nll | VRAM の expert 枠（RTX 5090） |
+|---|---|---|---|---|---|---|
+| Q8_0（配布された GGUF のまま） | 4.28 GiB | 0.0060 | 0.11 | 97.0% | 1.3071 | 3,010 |
+| Q6_K | 3.31 GiB | 0.0082 | 0.31 | 95.8% | 1.3116 | 3,139 |
+| Q5_K | 2.77 GiB | 0.0119 | 0.57 | 95.9% | 1.3135 | 3,225 |
+
+- Q6_K: GEMV が小さくなる分（v1.3.18 の分割カーネル）で decode +3.5%、VRAM の枠が 129 増える。swe-bench の L7（16 問 × 3、
+  RTX 5090 + Radeon 8060S）では 91.3 → 93.9 tok/s で、resolved 率（81.2%）と品質スコア（81.0 → 81.2）は同じ。KL の増分は
+  実行ごとのばらつきと同じ大きさ。作者が常用しているのはこの Q6_K pack
+- Q5_K: KL は Q8_0 の 2 倍（1 トークンの最大のずれ 0.57）。RTX 5090 では Q6_K より decode が 4% 速い（1,024 トークンの
+  答え: 単発 12.13 → 11.65 ms、検証窓 15.52 → 14.86、86〜89 → 93 tok/s。窓も単発も同じだけ縮む）。帯域の低いカードほど
+  効く: Radeon AI PRO R9700（640 GB/s）では 1 トークンの読みが 1.5 GB 減る。品質の代償は Q6_K の 2 倍なので、用途で選ぶ
+- 触る価値がないもの: `attn_q_a`、kv / compressor / indexer の射影、norm は小さく、共有エキスパート・埋め込み・出力
+  ヘッドはもう Q5_K / Q6_K / Q4_K
+
 ## 設定と起動
 
 設定ファイル（名前は自由。ここでは `strata-dsv4.json`）を Abyss のフォルダに置く:

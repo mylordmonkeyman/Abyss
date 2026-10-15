@@ -7,6 +7,29 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.19 - 2026-10-15
+
+Lighter attention projections as a documented, measured option; abyss.py finds ROCm 10's package layout.
+- `tools/requant_dense.py` (moved in from Abyss-tools/bench) re-quantizes `attn_q_b` / `attn_output_a` /
+  `attn_output_b` - 4.6 of the 6.6 GB every decoded token reads - and copies the rest of the shards byte for byte;
+  `iq_pack.py` packs the result as usual. docs/MANUAL.md "A lighter dense pack" has the commands and the measurements
+  (KL against the engine's Q8_0 reference over 1,000 tokens, CPU lane, one setup for all three): Q8_0 0.0060 (same
+  top token 97.0%), Q6_K 0.0082 (95.8%), Q5_K 0.0119 (95.9%, the largest single-token divergence 0.57 against 0.11).
+  - Q6_K on the swe-bench L7 set (16 tasks x 3, RTX 5090 + Radeon 8060S): 91.3 -> 93.9 tok/s with the same resolved
+    rate (81.2%) and quality score (81.0 -> 81.2) - the pack the author now runs by default.
+  - Q5_K on an RTX 5090, 1,024-token answers: a single token 12.13 -> 11.65 ms against Q6_K, the verify window
+    15.52 -> 14.86, 86-89 -> 93 tok/s, 3,225 VRAM expert slots (Q6_K 3,139, Q8_0 3,010). Worth more on a card with less
+    memory bandwidth (a Radeon AI PRO R9700 reads 1.5 GB less a token); twice Q6_K's quality cost.
+- abyss.py (Linux): the ROCm root is also looked for in /opt/rocm/core-<version> (ROCm 10's packages, whose /opt/rocm
+  may lack the llvm / lib links) and /opt/rocm-<version>, the compiler under lib/llvm/bin as well as llvm/bin, hipBLAS
+  under lib/<triplet>/ as well as lib/. Reported from an Ubuntu 26.04 + AI PRO R9700 build that only passed with
+  ROCM_PATH pointed at AMD's pip SDK. (The HIP attention needs rocWMMA's headers; Ubuntu 26.04's librocwmma-dev was
+  reported broken - the pip SDK or ROCm's own apt repository has them.)
+- Tried and not adopted (branch `lane-multi`): the batched verify window's columns answered by one multi-column iGPU
+  lane call (bit-identical to one call a column). The batched window went 22.7-27.7 -> 18.8 ms, the pipelined default
+  is 16.0: pipelining hides the lane behind the other column's GPU work, batching exposes it every layer, and a
+  two-column lane call is only 10% cheaper than two. `Abyss-tools/worklog/2026-10-15_lane-multi.md`.
+
 ## v1.3.18 - 2026-10-15
 
 The prompt path's host experts on the iGPU as one fused int8 tensor-core pass, and a faster Q6_K dense GEMV for the
