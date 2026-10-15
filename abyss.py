@@ -302,11 +302,35 @@ def hip_unified_memory(g) -> bool:
 
 
 def hip_clang(root: Path) -> Path | None:
-    """ROCm's clang++: <root>/llvm/bin (a system ROCm on Linux), <root>/lib/llvm/bin (TheRock's wheels), or <root>/bin
-    (AMD's HIP SDK for Windows)."""
+    """ROCm's clang++: <root>/llvm/bin (a system ROCm on Linux), <root>/lib/llvm/bin (TheRock's wheels, and ROCm 10's
+    packages, whose <root>/llvm is a link to it when it exists at all), or <root>/bin (AMD's HIP SDK for Windows)."""
     exe = "clang++.exe" if WIN else "clang++"
     return next((p for p in (root / "llvm" / "bin" / exe, root / "lib" / "llvm" / "bin" / exe, root / "bin" / exe)
                  if p.exists()), None)
+
+
+def hipblas_lib(root: Path) -> bool:
+    """Whether a Linux ROCm root has hipBLAS (lib/, or the distribution's lib/<triplet>/)."""
+    return bool(list((root / "lib").glob("libhipblas.so*")) or list((root / "lib").glob("*/libhipblas.so*")))
+
+
+def linux_rocm_root() -> tuple:
+    """(the ROCm root, whether it has the HIP compiler and hipBLAS).  ROCM_PATH when set; else /opt/rocm, and when that
+    has no compiler (ROCm 10's packages put each release in /opt/rocm/core-<version> and may leave /opt/rocm itself
+    without the llvm / lib links; a versioned install may have no /opt/rocm at all), the newest /opt/rocm/core-<v> and
+    then the newest /opt/rocm-<v>."""
+    def vkey(p):
+        return [int(x) for x in re.findall(r"\d+", p.name)]
+    env = os.environ.get("ROCM_PATH")
+    cands = [Path(env)] if env else [Path("/opt/rocm")]
+    if not env:
+        cands += sorted((p for p in Path("/opt/rocm").glob("core-[0-9]*") if p.is_dir()), key=vkey, reverse=True)
+        cands += sorted((p for p in Path("/opt").glob("rocm-[0-9]*") if p.is_dir()), key=vkey, reverse=True)
+    for c in cands:
+        r = c.resolve()
+        if hip_clang(r) is not None and hipblas_lib(r):
+            return r, True
+    return cands[0].resolve(), False
 
 
 def rocm_sdk() -> str | None:
@@ -462,18 +486,15 @@ def check_hip_pc(a, installed=False) -> dict:
         if hipcc is not None and tool_version(str(hipcc)) < (7, 0):
             fail("Maya's HIP port requires ROCm 7 or newer")
     else:
-        root = Path(os.environ.get("ROCM_PATH") or "/opt/rocm")
-        if not os.environ.get("ROCM_PATH") and not root.exists():
-            # versioned installs without the /opt/rocm link (e.g. /opt/rocm-7.2.2): the newest one
-            versions = sorted(Path("/opt").glob("rocm-[0-9]*"),
-                              key=lambda p: [int(x) for x in re.findall(r"\d+", p.name)])
-            if versions:
-                root = versions[-1]
-        root = root.resolve()
-        if not (root / "llvm/bin/clang++").exists() or not list((root / "lib").glob("libhipblas.so*")):
-            fail("ROCm's HIP compiler and hipBLAS are required", "install ROCm 7, or set ROCM_PATH to its root")
-        if tool_version(str(root / "bin/hipcc")) < (7, 0):
-            fail("Maya's HIP port requires ROCm 7 or newer")
+        root, found = linux_rocm_root()
+        if not found:
+            fail("ROCm's HIP compiler (llvm/bin/clang++ or lib/llvm/bin/clang++) and hipBLAS are required under "
+                 f"{root}", "install ROCm 7 or newer, or set ROCM_PATH to its root - ROCm 10's packages: "
+                 "/opt/rocm/core-<version> (e.g. /opt/rocm/core-10.0); AMD's pip wheels: the directory rocm-sdk path "
+                 "--root prints")
+        hipcc = next((p for p in (root / "bin/hipcc", root / "lib/llvm/bin/hipcc") if p.exists()), None)
+        if hipcc is None or tool_version(str(hipcc)) < (7, 0):
+            fail("Maya's HIP port requires ROCm 7 or newer (hipcc not found or too old under " + str(root) + ")")
         if not shutil.which("c++"):
             fail("a C++ compiler is needed", "Ubuntu/Debian: sudo apt install build-essential")
     cpu, avx2, avx512 = S.cpu_info()
