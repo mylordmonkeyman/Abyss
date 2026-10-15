@@ -330,6 +330,8 @@ Environment variables for the engine, in the config's `"env"` block (all of Maya
 | `STRATA_GLM_IGPU` | auto | the iGPU lane: on when `libabyss_igpu.so` and a HIP device are there and it is faster than the CPU; `0` off, `1` on even when slower. `STRATA_GLM_IGPU_LIB=<path>`: another library |
 | `STRATA_GLM_IGPU_TIMEOUT_MS` | 20 | a lane call later than this goes to the CPU threads (0: wait) |
 | `STRATA_GLM_PREFILL_IGPU` | on | the prompt's RAM-tier experts on the iGPU; `0`: the CPU threads |
+| `STRATA_GLM_IGPU_FUSED` | on | the prompt's iGPU experts through the fused int8 tensor-core pass (gfx1151, IQ2_XS / IQ3_XXS experts at 4096 / 2048; v1.3.18); `0`: the one-row kernels. `ABYSS_IGPU_FUSED_CHECK=<n>` compares the first n calls against them (stderr) |
+| `STRATA_GLM_MV_SPLIT` | auto | dense GEMVs with a row over 4 warps: unset = under 256 blocks, and Q6_K up to 4,096 blocks (v1.3.18); `0` one warp a row always, `2` / `4` that split always. Not bit-identical to one warp a row |
 | `STRATA_GLM_PROMOTE_RATIO` / `_MARGIN` | 4 / 16 | a RAM-tier expert replaces a resident one when its use count passes ratio x the resident's + margin (2 / 4: the old, churnier rule) |
 | `STRATA_GLM_TAIL_SKIP` / `_W` | off | a route's experts past rank r (or below a probability share) that are not in VRAM are left out - faster on a slow CPU lane, changes the answers (KL ~0.01-0.02) |
 | `STRATA_DS4_IDX`, `STRATA_DS4_ATTN` | 0 | `1`: the older FP32 kernels for the lightning indexer / the prompt attention instead of the tensor-core ones (A/B checks) |

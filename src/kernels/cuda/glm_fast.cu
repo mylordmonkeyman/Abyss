@@ -3332,7 +3332,10 @@ bool mv(const MvJob* jobs, int n, cudaStream_t s) {
     // STRATA_GLM_MV_SPLIT: 0 one warp a row always; 2 / 4 that split for every typed launch; unset: 4 warps a row
     // under 256 blocks (mv_kernel_ts).  nsys on an RTX 5090: the 128-block Q5_K q_a 4.3 -> 3.0 us and the 192-block
     // HCA projections 6.3 -> 5.3, but the 512-block wo_b stays ~23.5 (1.5 TB/s is its long rows' ceiling) and the
-    // 512-block Q5_K shared gate/up got slower (8.4 -> 9.3: the dot's arithmetic, not latency) - so only the small ones
+    // 512-block Q5_K shared gate/up got slower (8.4 -> 9.3: the dot's arithmetic, not latency) - so only the small ones.
+    // Q6_K is the exception: one warp a row leaves its 6-bit dot latency-bound at every size measured (the attn-q6k
+    // pack's wo_a 1,024 blocks 24.1 -> 18.1 us, wo_b 512 blocks 23.0 -> 19.8, q_b 4,096 blocks 19.2 -> 18.5 with 4
+    // warps a row; 1.14 -> 1.52 TB/s on wo_a), so Q6_K splits up to 4,096 blocks (STRATA_GLM_MV_SPLIT=0: never)
     static const int split_env = [] { const char* v = getenv("STRATA_GLM_MV_SPLIT"); return v ? std::atoi(v) : -1; }();
     constexpr int kTyped[] = {14, 8, 12, 13};
     bool done[kMaxMvJobs] = {};
@@ -3349,7 +3352,8 @@ bool mv(const MvJob* jobs, int n, cudaStream_t s) {
                 }
             if (m == 0) continue;
             b.n = m;
-            const int split = split_env >= 0 ? (split_env == 2 || split_env == 4 ? split_env : 1) : acc < 256 ? 4 : 1;
+            const int split = split_env >= 0 ? (split_env == 2 || split_env == 4 ? split_env : 1)
+                            : (acc < 256 || (T == 14 && acc <= 4096)) ? 4 : 1;
             if (split > 1) {   // the block ranges at MV_ROWS / split rows a block
                 const int rpb = MV_ROWS / split;
                 acc = 0;

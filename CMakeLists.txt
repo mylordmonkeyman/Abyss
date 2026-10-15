@@ -384,9 +384,9 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
                 -I${CMAKE_CURRENT_SOURCE_DIR}/third_party/ggml -I${CMAKE_CURRENT_SOURCE_DIR}/include
                 -I${CMAKE_CURRENT_SOURCE_DIR}/include/strata/hip_compat
                 -include ${CMAKE_CURRENT_SOURCE_DIR}/include/strata/hip_compat/cuda_runtime.h
-                -x hip ${CMAKE_CURRENT_SOURCE_DIR}/src/igpu/igpu_lane.cpp
+                -x hip ${CMAKE_CURRENT_SOURCE_DIR}/src/igpu/igpu_lane.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/igpu/igpu_fused.cu
                 -o "${_strata_igpu_so}"
-        DEPENDS src/igpu/igpu_lane.cpp src/kernels/cuda/glm_fast.cu include/strata/kernels/glm_fast.hpp
+        DEPENDS src/igpu/igpu_lane.cpp src/igpu/igpu_fused.cu src/igpu/igpu_fused.h src/kernels/cuda/glm_fast.cu include/strata/kernels/glm_fast.hpp
                 include/strata/igpu/igpu_lane.h
         COMMENT "Building the iGPU lane (libabyss_igpu.so, ${STRATA_IGPU_ARCH})"
         VERBATIM)

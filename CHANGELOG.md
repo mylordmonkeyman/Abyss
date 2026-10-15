@@ -7,6 +7,31 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.18 - 2026-10-15
+
+The prompt path's host experts on the iGPU as one fused int8 tensor-core pass, and a faster Q6_K dense GEMV for the
+attention-Q6_K pack. Both from the second survey of Strata's derivatives
+(`Abyss-tools/worklog/2026-10-15_strata-derivatives-round2.md`; the measurements in
+`Abyss-tools/worklog/2026-10-15_igpu-fused-q6k-split.md`).
+- iGPU lane, prompts: the RAM-tier experts the APU computes for a prompt chunk go through a fused gate/up + SwiGLU +
+  down kernel on the matrix cores (`src/igpu/igpu_fused.cu`, from Maya v1.1.10's `moe_fused_rdna4.cu` by @boxwrench;
+  the weights decoded to int8 and multiplied with `v_wmma_i32_16x16x16_iu8`), instead of the one-row dp4a kernels.
+  It covers the IQ2_XS / IQ3_XXS experts of DeepSeek V4 Flash at 4096 / 2048 (the MXFP4 down of layers 26 and 42
+  stays on the CPU threads as before). A prompt's host call is ~1.6x faster per row (13.7 -> 8.5 us), so the planner gives
+  the iGPU more rows (8K: 185K -> 235K of the chunk's expert rows): RTX 5090 + Radeon 8060S, 8K prompts 1,634 / 1,753 ->
+  1,767 / 1,888 tok/s (+8%); 32K unchanged (3,136 / 3,295 -> 3,136 / 3,272). The answers agree with the row kernels
+  to 2e-3 relative (41 of 41 calls checked), KL against the reference 0.0053 (row kernels 0.0055).
+  `STRATA_GLM_IGPU_FUSED=0`: the row kernels; `ABYSS_IGPU_FUSED_CHECK=<n>`: compare the first n calls against them.
+- Q6_K dense GEMVs split a row over 4 warps up to 4,096 blocks (`STRATA_GLM_MV_SPLIT=0`: one warp a row, as before).
+  nsys on an RTX 5090 with the attn-q6k pack: wo_a 24.1 -> 18.1 us (1.14 -> 1.52 TB/s), wo_b 23.0 -> 19.8, q_b
+  19.2 -> 18.5; the pack's decode 11.52 -> 11.14 ms/token (83.2 / 85.8 -> 86.3 / 88.7 tok/s). The Q8_0 pack is
+  unaffected (its only Q6_K GEMV is one shared-expert row block). Why the Q6_K pack had gained only 1-2% before: at
+  one warp a row the Q6_K dot ran at 1.14-1.20 TB/s against Q8_0's 1.40-1.52, eating two thirds of its 23% fewer
+  bytes - the same finding as Indras-Mirror's on a 4090. The sums are not bit-identical to the one-warp kernel's.
+- Bench: `bench/kl_pf.sh` scores with the context through the prompt path (`STRATA_GLM_SCORE_PREFILL=1`), the
+  yardstick for prompt-path changes; `bench/nsys_dec_pack.sh` and `bench/ksum_grid.py` profile another pack and sum the
+  kernels by type and grid.
+
 ## v1.3.17 - 2026-10-15
 
 Documentation brought up to date with v1.3.16. No code change.

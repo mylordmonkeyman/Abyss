@@ -3,6 +3,7 @@
 // down, the k experts' weighted sum -> out (host).  Built by hipcc with the HIP compat header (cuda* -> hip*), as one
 // translation unit with glm_fast.cu (its row-dot helpers are file-local).
 #include "strata/igpu/igpu_lane.h"
+#include "igpu_fused.h"
 #include "../kernels/cuda/glm_fast.cu"
 
 #include <hip/hip_runtime.h>
@@ -11,6 +12,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include <cstring>
 #include <mutex>
 #include <vector>
@@ -122,6 +124,14 @@ struct Lane {
     int r_cap = 0;
     void *rxq = nullptr, *rhq = nullptr;
     size_t rxq_b = 0, rhq_b = 0;
+    // the fused pass (igpu_fused.cu): the experts' row bounds and 64-row tiles (host-mapped), a scratch for the check
+    int* fb_h = nullptr;
+    int fb_cap = 0;
+    int2* ft_h = nullptr;
+    int ft_cap = 0;
+    void *rchk = nullptr, *rxsave = nullptr;
+    size_t rchk_b = 0, rxsave_b = 0;
+    unsigned long long n_fused = 0, n_rows_k = 0;
     // A call that has not finished by its deadline is left running and answered by the CPU lane (return 1); the calls
     // after it go to the CPU too until it has (the queue may be held for seconds - see abyss_igpu_experts)
     bool pending = false;
@@ -366,14 +376,104 @@ __attribute__((visibility("default"))) int abyss_igpu_rows(int gu_type, int d_ty
     unsigned long long pd = 0ull, ld_d = 0ull;
     hipHostGetDevicePointer((void**) &pd, L.rptr_h, 0);
     hipHostGetDevicePointer((void**) &ld_d, L.rlight_h, 0);
-    if (!gf::rows_experts(gu_type, d_type, nullptr, 0, down_off, (const int*) ld_d, ne, (const int*) td,
-                          (const float*) xd, n_tok, n_embd, n_ff, limit, rlo, rhi, L.rxq, L.rhq, (float*) od, ld, L.s,
-                          (const unsigned long long*) pd))
-        return 1;
+    // The fused int8-WMMA pass (igpu_fused.cu, from Maya's moe_fused_rdna4.cu) where it covers the formats and the
+    // geometry (DS4's IQ2_XS / IQ3_XXS experts at 4096 / 2048) and the experts' rows are one ascending, contiguous
+    // range; else glm_fast's row kernels.  STRATA_GLM_IGPU_FUSED=0: the row kernels always.
+    // ABYSS_IGPU_FUSED_CHECK=<n>: the first n fused calls are also computed by the row kernels and compared (stderr).
+    namespace fz = abyss::igpu_fused;
+    static const int chk = [] { const char* v = getenv("ABYSS_IGPU_FUSED_CHECK"); return v != nullptr ? std::atoi(v) : 0; }();
+    bool fused = fz::available(0) && fz::supported(gu_type, d_type, n_embd, n_ff) && ld == n_embd && n_tok > 0 &&
+                 r0[0] == rlo && (((uintptr_t) od & 15) == 0);
+    const size_t gu_row = fz::row_bytes(gu_type, n_embd);
+    if (fused && down_off != 2 * (size_t) n_ff * gu_row) fused = false;   // (gate rows, up rows, then down: the lane's layout)
+    for (int i = 0; fused && i < ne; ++i)
+        fused = nr[i] >= 0 && r0[i] + nr[i] <= rhi && (i + 1 == ne ? r0[i] + nr[i] == rhi : r0[i] + nr[i] == r0[i + 1]);
+    if (fused) {
+        if (ne + 1 > L.fb_cap) {
+            if (L.fb_h) hipHostFree(L.fb_h);
+            L.fb_h = nullptr;
+            L.fb_cap = 0;
+            if ((e = hipHostMalloc((void**) &L.fb_h, (size_t) (ne + 1) * sizeof(int), hipHostMallocMapped)) != hipSuccess) return -1;
+            L.fb_cap = ne + 1;
+        }
+        int ntiles = 0;
+        for (int i = 0; i < ne; ++i) {
+            L.fb_h[i] = r0[i] - rlo;
+            ntiles += (nr[i] + 63) / 64;
+        }
+        L.fb_h[ne] = rhi - rlo;
+        if (ntiles > L.ft_cap) {
+            if (L.ft_h) hipHostFree(L.ft_h);
+            L.ft_h = nullptr;
+            L.ft_cap = 0;
+            if ((e = hipHostMalloc((void**) &L.ft_h, (size_t) ntiles * sizeof(int2), hipHostMallocMapped)) != hipSuccess) return -1;
+            L.ft_cap = ntiles;
+        }
+        ntiles = fz::make_tiles(L.fb_h, ne, L.ft_h, L.ft_cap);
+        const size_t xa_b = fz::act_bytes((size_t) n_tok, n_embd), ha_b = fz::act_bytes((size_t) (rhi - rlo), n_ff);
+        if (ntiles < 0 || (e = grow(L.rxq, L.rxq_b, std::max(xa_b, xq_b))) != hipSuccess ||
+            (e = grow(L.rhq, L.rhq_b, std::max(ha_b, hq_b))) != hipSuccess)
+            return -1;
+        unsigned long long fb_d = 0ull, ft_d = 0ull;
+        hipHostGetDevicePointer((void**) &fb_d, L.fb_h, 0);
+        hipHostGetDevicePointer((void**) &ft_d, L.ft_h, 0);
+        fz::Geometry geo;
+        geo.gu_type = gu_type;
+        geo.d_type = d_type;
+        geo.gu_row = gu_row;
+        geo.d_row = fz::row_bytes(d_type, n_ff);
+        geo.up_off = (size_t) n_ff * gu_row;
+        geo.down_off = down_off;
+        geo.limit = limit;
+        if (chk > 0 && (long long) L.n_fused < chk) {   // the check's x: saved first, as the gathered x IS out (overwritten below)
+            if ((e = grow(L.rxsave, L.rxsave_b, (size_t) n_tok * n_embd * sizeof(float))) != hipSuccess) return -1;
+            hipMemcpyAsync(L.rxsave, (const void*) xd, (size_t) n_tok * n_embd * sizeof(float), hipMemcpyDeviceToDevice, L.s);
+        }
+        fz::quantize((const float*) xd, (size_t) n_tok, n_embd, L.rxq, L.s);
+        if (!fz::experts((const unsigned long long*) pd, ne, (const int*) fb_d, (const int2*) ft_d, ntiles, geo, L.rxq,
+                         (const int*) td + rlo, L.rhq, (float*) od + (size_t) rlo * ld, L.s)) {
+            hipStreamSynchronize(L.s);
+            fused = false;
+        }
+    }
+    if (fused && chk > 0 && (long long) L.n_fused < chk) {
+        // the row kernels' answer beside the fused one: out rows [rlo, rhi) of each, relative error and largest gap
+        if ((e = hipStreamSynchronize(L.s)) != hipSuccess) return -1;
+        const size_t need = (size_t) rhi * ld * sizeof(float);
+        if ((e = grow(L.rchk, L.rchk_b, need)) != hipSuccess) return -1;
+        if (!gf::rows_experts(gu_type, d_type, nullptr, 0, down_off, (const int*) ld_d, ne, (const int*) td,
+                              (const float*) L.rxsave, n_tok, n_embd, n_ff, limit, rlo, rhi, L.rxq, L.rhq, (float*) L.rchk, ld,
+                              L.s, (const unsigned long long*) pd) ||
+            (e = hipStreamSynchronize(L.s)) != hipSuccess)
+            return -1;
+        std::vector<float> ref((size_t) (rhi - rlo) * ld);
+        if ((e = hipMemcpy(ref.data(), (const float*) L.rchk + (size_t) rlo * ld, ref.size() * sizeof(float),
+                           hipMemcpyDeviceToHost)) != hipSuccess)
+            return -1;
+        double num = 0.0, den = 0.0, mx = 0.0;
+        size_t nonfinite = 0;
+        for (int r = rlo; r < rhi; ++r)
+            for (int c = 0; c < n_embd; ++c) {
+                const double a = out[(size_t) r * ld + c], b = ref[(size_t) (r - rlo) * ld + c];
+                if (!std::isfinite(a)) ++nonfinite;
+                num += (a - b) * (a - b);
+                den += b * b;
+                mx = std::max(mx, std::fabs(a - b));
+            }
+        std::fprintf(stderr, "iGPU fused check %llu: gu %d down %d, %d experts, %d rows: rel %.3e, max |d| %.3e, nonfinite %zu\n",
+                     L.n_fused + 1, gu_type, d_type, ne, rhi - rlo, std::sqrt(num / std::max(den, 1e-30)), mx, nonfinite);
+    }
+    if (!fused) {
+        if (!gf::rows_experts(gu_type, d_type, nullptr, 0, down_off, (const int*) ld_d, ne, (const int*) td,
+                              (const float*) xd, n_tok, n_embd, n_ff, limit, rlo, rhi, L.rxq, L.rhq, (float*) od, ld, L.s,
+                              (const unsigned long long*) pd))
+            return 1;
+    }
     if ((e = hipStreamSynchronize(L.s)) != hipSuccess) {
         std::fprintf(stderr, "iGPU lane (prompt rows): %s\n", hipGetErrorString(e));
         return -1;
     }
+    if (fused) ++L.n_fused; else ++L.n_rows_k;
     return 0;
 }
 
@@ -412,6 +512,17 @@ __attribute__((visibility("default"))) void abyss_igpu_close(void) {
     if (L.rhq) hipFree(L.rhq);
     if (L.rptr_h) hipHostFree(L.rptr_h);
     if (L.rlight_h) hipHostFree(L.rlight_h);
+    if (L.fb_h) hipHostFree(L.fb_h);
+    if (L.ft_h) hipHostFree(L.ft_h);
+    if (L.rchk) hipFree(L.rchk);
+    if (L.rxsave) hipFree(L.rxsave);
+    L.fb_h = nullptr;
+    L.ft_h = nullptr;
+    L.rchk = L.rxsave = nullptr;
+    L.fb_cap = L.ft_cap = 0;
+    L.rchk_b = L.rxsave_b = 0;
+    if (L.n_fused + L.n_rows_k > 0)
+        std::fprintf(stderr, "iGPU lane: prompt calls - %llu fused, %llu on the row kernels\n", L.n_fused, L.n_rows_k);
     L.rxq = L.rhq = nullptr;
     L.rxq_b = L.rhq_b = 0;
     L.rptr_h = nullptr;
