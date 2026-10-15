@@ -25,10 +25,10 @@ installer) is kept under [docs/maya/](maya/README.md).
 | | Tested | Notes |
 | --- | --- | --- |
 | OS | Ubuntu (Linux) | Windows is not tested for DeepSeek V4 |
-| GPU | RTX 5090 (32 GB) | build for your GPU's architecture (`120a` for RTX 50). Other NVIDIA GPUs build but are untested with DeepSeek V4; on pre-Blackwell GPUs the MXFP4 expert rows run through the q8_1 path instead of FP4 MMA |
+| GPU | RTX 5090 (32 GB), RTX 3090 | build for your GPU's architecture (`120a` for RTX 50, `86` for RTX 30; several at once for a split). On pre-Blackwell GPUs the MXFP4 expert rows run through the q8_1 path instead of FP4 MMA; before Ampere (sm_80) the indexer and the prompt attention use the older FP32 kernels. A V100 (sm_70) builds with a CUDA 12 toolkit but has not been run. AMD Radeon: see "AMD GPUs" (experimental) |
 | RAM | 94 GB | the model is 96.8 GB: with VRAM + RAM above ~100 GB every expert stays in memory; with less, the rest are read from the SSD (works, slower) |
 | Disk | NVMe SSD, ~100 GB free | the GGUF files; the pack adds 0.2 GB |
-| CUDA | 13.3 | with `nvcc` |
+| CUDA | 13.3 | with `nvcc`; 12.9 for a V100 (`--nvcc`) |
 | Compiler | g++ 13 | a version your CUDA accepts |
 | Python | 3.12 | a private `.venv` in the Abyss folder |
 | ROCm (optional) | 7 (`hipcc`) | an AMD APU's integrated GPU computes the RAM-tier experts (the iGPU lane, below); without it the CPU does |
@@ -132,6 +132,10 @@ continues it.
 Other quants of the same repository should work if their expert types are among the decode kernels' (IQ1_S, IQ1_M,
 IQ2_XXS, IQ2_XS, IQ2_S, IQ3_XXS, IQ3_S, IQ4_XS, Q2_K-Q6_K, MXFP4; IQ1_M has no prompt-path kernel, so such a quant reads
 prompts token by token); only UD-Q2_K_XL is tested.
+
+DeepSeek V4 GGUFs whose router and small projections are F16 rather than quantized (antirez's deepseek-v4-gguf, huihui-ai's
+abliterated copies) also pack and run: `--compat-bf16` rounds those to BF16 for the engine's GEMVs. The huihui-ai Q2
+file was checked against llama.cpp on the same file (KL 0.0075 over 3,000 tokens).
 
 ## Make the pack
 
@@ -237,9 +241,13 @@ experts in VRAM, so the second card's VRAM holds more of them.
 - **Choosing the boundary:** `"layer_split": "22"` in the config (the second card's first layer).
 - **The iGPU lane:** it works with a split too. One iGPU computes every GPU's RAM tier, one call at a time.
 - **What has been checked:** a two-part split on one GPU (`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
-  STRATA_GLM_DEVS=0,0`, for testing). The prompt and decode results match the unsplit model (KL within the
-  run-to-run spread). Speed on two physical GPUs has not been measured yet.
-- **Limits:** a split has no n-gram speculative decoding. AMD GPUs: see "AMD GPUs" below.
+  STRATA_GLM_DEVS=0,0`, for testing) matches the unsplit model (KL within the run-to-run spread), and an RTX 5090
+  (PCIe Gen4 x4) + RTX 3090 (a USB4 enclosure, ~3.8 GB/s) split 27 / 16 ran at 8K / 32K prompts of 1,506 / 1,985
+  tok/s and decode of 54.9 / 56.7 tok/s with the iGPU lane (one RTX 5090 + iGPU: 1,683 / 2,876 and 58.5 / 65.9).
+  The second card raised the VRAM hit rate (82 -> 91%) but the hop between the cards and the slow link cost more.
+  A fast second card on a real PCIe slot has not been measured.
+- **Limits:** a split has no n-gram speculative decoding and no prestaging for the prompt's RAM-tier experts.
+  AMD GPUs: see "AMD GPUs" below.
 - **V100 (sm_70):** CUDA 13 cannot compile for the V100, so install CUDA 12 (12.9) and build with
   `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` (CUDA 12.9 also builds an RTX 50's `120a`). The sm_70
   build has been checked to compile; it has not run on a V100 yet. The newer tensor-core kernels (the indexer and the
@@ -269,12 +277,16 @@ RAM 70 GB; the iGPU lane on):
 
 | | |
 | --- | --- |
-| Decode, answers of ~1,500 tokens | ~73 tok/s (CPU lane only: ~56) |
-| Decode, 20 coding prompts (up to 800 tokens) | ~66 tok/s; ~78 with `STRATA_DS4_SPEC=1` |
-| Prompt, 5.6K tokens | ~1,000-1,090 tok/s |
-| Prompt, 18K tokens | ~1,700 tok/s |
+| Decode, 1,024-token answers (prose / code, greedy) | ~82-84 tok/s (CPU lane instead of the iGPU: ~55-60) |
+| Decode, 13 swe-bench coding prompts (sampled, end to end) | ~94 tok/s |
+| Decode at a 125K-token context | ~65 tok/s |
+| Prompt, 8K / 32K / 125K tokens (server, second run) | ~1,630-1,760 / ~3,100-3,270 / ~2,800 tok/s |
 | Start-up (weights + expert warm-up) | ~1 min |
 | Attention caches at 65536 tokens | 0.44 GB |
+
+(Abyss v1.3.16. On the same machine and file llama.cpp `bed0a8566` with `-ngl 99 -ncmoe 32` decodes at 28-30 tok/s
+and reads prompts at 78 tok/s with ubatch 512, 660 with ubatch 8192.) The numbers of every release, and how each was
+measured, are in [CHANGELOG.md](../CHANGELOG.md).
 
 The first prompts after a start, or with less memory than the model, read experts from the SSD and are slower. The
 CPU computes part of the RAM-tier experts while the GPU copies others over PCIe; the split is measured at start.
@@ -284,12 +296,19 @@ at ~240 GB/s against the CPU threads' ~75. With ROCm installed (the build then m
 registers its RAM tier with the iGPU at start and lets it compute the RAM-tier experts instead of the CPU threads -
 the experts are not copied. The start-up log says which lane it chose and why (`iGPU lane: an expert 0.046 ms vs 0.107
 on the CPU's 16 threads`); it keeps the CPU when that is faster, and when the library or a HIP device is missing.
+The prompt path uses the lane too: the RAM-tier experts a prompt chunk needs are computed on the iGPU instead of the
+CPU threads (an 8K prompt +40%). A lane call has a deadline (`STRATA_GLM_IGPU_TIMEOUT_MS`, 20 ms): when the kernel
+driver holds the iGPU's queue (it happens for a few minutes after a start, while the kernel reclaims memory after the
+warm-up), the CPU threads take over until the late call finishes, and the start-up timing is repeated until it is
+clean.
 
-**Speculative decoding (`STRATA_DS4_SPEC`).** The GGUF has no draft model, but the answer often repeats what is in the
-prompt or earlier in the answer (code, file paths, tool calls). With `STRATA_DS4_SPEC=1` the engine looks up the last 3
-tokens' earlier occurrence, checks the token that followed it together with the next one in one pass, and keeps it
-when the model agrees. The output is the same as without it (the same sampler on the same logits); only the time per
-token changes. Coding prompts: +12% (77-83% of the drafts accepted); prose: about even (~50% accepted).
+**Speculative decoding (`STRATA_DS4_SPEC`, on by default).** The GGUF has no draft model, but the answer often repeats
+what is in the prompt or earlier in the answer (code, file paths, tool calls). The engine looks up the last 3 tokens'
+earlier occurrence, checks the token that followed it together with the next one in one pass, and keeps it when the
+model agrees. The output is the same as without it (the same sampler on the same logits); only the time per token
+changes. A gate learns each request's acceptance and skips the draft while it would not pay. Coding prompts: +10-13%
+(77-85% of the drafts accepted); prose: about even (~50% accepted). `STRATA_DS4_SPEC=0` turns it off; a layer split
+across GPUs runs without it.
 
 ## Settings
 
@@ -309,16 +328,23 @@ Environment variables for the engine, in the config's `"env"` block (all of Maya
 | `STRATA_GLM_NO_REUSE` | off | `1`: no conversation reuse |
 | `STRATA_GLM_THINK_RESERVE` | 1024 | (server) tokens a thinking block always leaves for the answer |
 | `STRATA_GLM_IGPU` | auto | the iGPU lane: on when `libabyss_igpu.so` and a HIP device are there and it is faster than the CPU; `0` off, `1` on even when slower. `STRATA_GLM_IGPU_LIB=<path>`: another library |
+| `STRATA_GLM_IGPU_TIMEOUT_MS` | 20 | a lane call later than this goes to the CPU threads (0: wait) |
+| `STRATA_GLM_PREFILL_IGPU` | on | the prompt's RAM-tier experts on the iGPU; `0`: the CPU threads |
+| `STRATA_GLM_PROMOTE_RATIO` / `_MARGIN` | 4 / 16 | a RAM-tier expert replaces a resident one when its use count passes ratio x the resident's + margin (2 / 4: the old, churnier rule) |
+| `STRATA_GLM_TAIL_SKIP` / `_W` | off | a route's experts past rank r (or below a probability share) that are not in VRAM are left out - faster on a slow CPU lane, changes the answers (KL ~0.01-0.02) |
+| `STRATA_DS4_IDX`, `STRATA_DS4_ATTN` | 0 | `1`: the older FP32 kernels for the lightning indexer / the prompt attention instead of the tensor-core ones (A/B checks) |
 | `STRATA_GLM_MMQ_GLU` | on | the prompt path's expert gate/up product writes the SwiGLU itself (NVIDIA Turing and newer); `0`: the separate SwiGLU kernel, bit-identical to older builds |
 | `STRATA_GLM_CPU_MT` | on | CPU experts shared by several tokens (prompts, verify windows) decode each weight row once for all of them, bit-identical to ggml's dot; `0` off |
 | `STRATA_GLM_CPU_1T` | on | cheaper one-token IQ3_S / IQ3_XXS rows on the CPU lane, bit-identical to ggml's dot; `0` off |
 | `STRATA_GLM_VRAM_EVICT` | counts | `lru`: the VRAM tier's refill evicts the least recently used expert (for cache studies) |
 | `STRATA_GLM_DISK_READERS` | off | prompts read SSD-held experts with this many threads (try it on a DRAM-less NVMe) |
-| `STRATA_DS4_SPEC` | 0 (off) | speculative decoding from the prompt and the answer: draft tokens a step (1-3; 1 is the fastest measured) |
+| `STRATA_DS4_SPEC` | 1 (on) | speculative decoding from the prompt and the answer: draft tokens a step (1-3; 1 is the fastest measured); `0` off |
+| `STRATA_DS4_SPEC_GATE` | on | drop a draft while the request's acceptance does not pay for the verify window; `0`: always draft |
 | `STRATA_DS4_SPEC_MIN` | 3 | the tokens a draft's lookup matches (2-4) |
 
-`--max-context` sets the context. DeepSeek V4 is trained for 1M tokens; 65536 is tested. The attention caches are small
-(0.44 GB at 65536), but the prompt path's buffers grow with the context.
+`--max-context` sets the context. DeepSeek V4 is trained for 1M tokens; 65536 is the default and 131072 (a 125K
+prompt) has been measured. The attention caches are small (0.44 GB at 65536), but the prompt path's buffers grow with
+the context.
 
 ## Checking the output against llama.cpp
 
@@ -345,5 +371,6 @@ KL 0.009 over 3000 tokens, with the same next-token accuracy.
   drafts from the text itself (`STRATA_DS4_SPEC`).
 - Conversation slots on disk (`STRATA_GLM_SLOTS`) are off for DeepSeek V4; the live reuse of the last conversation works.
 - No images (DeepSeek V4 Flash is text-only here).
-- One GPU tested; Maya's layer split across GPUs is untested with DeepSeek V4.
+- Several GPUs: the layer split runs (see "Several GPUs") but without speculative decoding, and a slow second card
+  does not yet beat one fast card with the iGPU lane. Windows is untested for DeepSeek V4.
 - `./abyss.sh` (Maya's installer) is for GLM; DeepSeek V4 is set up with `./setup-deepseek.sh`.

@@ -7,6 +7,22 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.17 - 2026-10-15
+
+Documentation brought up to date with v1.3.16. No code change.
+- README (English and Japanese): the performance table is v1.3.16's (decode ~82-84 tok/s, prompts 8K / 32K / 125K
+  ~1,700 / ~3,200 / ~2,800 tok/s) against llama.cpp at its best settings on the same machine (`-ncmoe 32`: 28-30
+  tok/s decode, 78-660 prompt), with the other measured setups (RTX 3090, the RTX 5090 + RTX 3090 split, the Radeon
+  8060S); the highlights, requirements, roadmap and badges cover the iGPU lane for prompts, speculative decoding on
+  by default, the tensor-core long-context kernels, the layer split, the HIP build and the V100 build.
+- docs/MANUAL (both languages): the GPU row, the F16-projection GGUFs, the two-card measurements, the iGPU lane's
+  prompt use and call deadline, speculative decoding's default and gate, new settings
+  (`STRATA_GLM_IGPU_TIMEOUT_MS`, `STRATA_GLM_PREFILL_IGPU`, `STRATA_GLM_PROMOTE_RATIO` / `_MARGIN`,
+  `STRATA_GLM_TAIL_SKIP`, `STRATA_DS4_IDX` / `_ATTN`, `STRATA_DS4_SPEC_GATE`), the limitations.
+- docs/deepseek4/PORT.md: the "what is new" table gains the tensor-core kernels, the verify window, the iGPU lane,
+  HIP, the split and sm_70; the speed table is current with a release-by-release summary; "not done yet" names what
+  is left.
+
 ## v1.3.16 - 2026-10-15
 
 DeepSeek V4's prompt processing 3-7% faster at 8K-32K tokens, a few decode-path savings, and a full survey of what

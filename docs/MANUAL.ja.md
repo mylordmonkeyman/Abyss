@@ -25,10 +25,10 @@ Abyss は [Project Maya](https://github.com/mw00/project-maya)（MIT）をコピ
 | | 確認した環境 | 補足 |
 | --- | --- | --- |
 | OS | Ubuntu (Linux) | Windows は DeepSeek V4 では未確認 |
-| GPU | RTX 5090 (32 GB) | GPU のアーキテクチャに合わせてビルドする（RTX 50 は `120a`）。ほかの NVIDIA GPU もビルドはできるが DeepSeek V4 では未確認。Blackwell より前の GPU では MXFP4 のエキスパートは FP4 MMA ではなく q8_1 の経路で計算する |
+| GPU | RTX 5090 (32 GB)、RTX 3090 | GPU のアーキテクチャに合わせてビルドする（RTX 50 は `120a`、RTX 30 は `86`。分割するときは複数まとめて）。Blackwell より前の GPU では MXFP4 のエキスパートは FP4 MMA ではなく q8_1 の経路で計算する。Ampere（sm_80）より前では indexer と prompt の attention は従来の FP32 カーネルを使う。V100（sm_70）は CUDA 12 でビルドできるが実機は未確認。AMD Radeon は「AMD の GPU」（試験的） |
 | RAM | 94 GB | モデルは 96.8 GB。VRAM + RAM が約 100 GB を超えれば全エキスパートがメモリに載る。足りない分は SSD から読む（動くが遅い） |
 | ディスク | NVMe SSD、空き約 100 GB | GGUF ファイル。pack は 0.2 GB |
-| CUDA | 13.3 | `nvcc` を含む |
+| CUDA | 13.3 | `nvcc` を含む。V100 は 12.9（`--nvcc`） |
 | コンパイラ | g++ 13 | CUDA が受け付けるバージョン |
 | Python | 3.12 | Abyss のフォルダ内の `.venv` |
 | ROCm（任意） | 7（`hipcc`） | AMD APU の内蔵 GPU が RAM 層のエキスパートを計算する（下の「iGPU レーン」）。なければ CPU が計算する |
@@ -132,6 +132,10 @@ sha256sum $M/UD-Q2_K_XL/*.gguf
 同じリポジトリのほかの量子化も、エキスパートの型が decode 用カーネルの対応範囲（IQ1_S, IQ1_M, IQ2_XXS, IQ2_XS,
 IQ2_S, IQ3_XXS, IQ3_S, IQ4_XS, Q2_K〜Q6_K, MXFP4。IQ1_M はまとめ処理のカーネルがないので prompt は 1 トークンずつ）
 なら動くはず。確認したのは UD-Q2_K_XL だけ。
+
+ルーターや小さい射影が量子化されずに F16 で入っている DeepSeek V4 の GGUF（antirez の deepseek-v4-gguf、huihui-ai の
+abliterated 版）も pack して動く。`--compat-bf16` がそれらをエンジンの GEMV が読む BF16 に丸める。huihui-ai の Q2 は
+同じファイルの llama.cpp と照合した（3,000 トークンで KL 0.0075）。
 
 ## pack を作る
 
@@ -237,8 +241,12 @@ NVIDIA の GPU が 2 枚以上あれば、層を分けて載せられる（layer
 - **iGPU レーン:** 分けたときも使える。各 GPU の RAM 層を 1 つの iGPU が順番に計算する。
 - **確認済みの範囲:** 1 枚の GPU の上で 2 つに分けた形（`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
   STRATA_GLM_DEVS=0,0`、試験用）で、prompt と decode の結果が分けない場合と一致すること（KL がぶれの範囲内）。
-  2 枚の GPU での速度はまだ測っていない。
-- **制限:** 分けているときは、n-gram の先読み（speculative decode）が使えない。AMD の GPU は下の「AMD の GPU」を参照。
+  RTX 5090（PCIe Gen4 x4）+ RTX 3090（USB4 ケース、約 3.8 GB/s）を 27 / 16 層に分けた実測は、iGPU レーンありで
+  prompt 8K / 32K が 1,506 / 1,985 tok/s、decode が 54.9 / 56.7 tok/s（RTX 5090 1 枚 + iGPU: 1,683 / 2,876 と
+  58.5 / 65.9）。2 枚目で VRAM の当たり率は 82 → 91% に上がるが、カード間の受け渡しと遅いリンクのコストのほうが
+  大きかった。PCIe に直接挿した速い 2 枚目ではまだ測っていない。
+- **制限:** 分けているときは、n-gram の先読み（speculative decode）と、prompt の RAM 層エキスパートの prestage が
+  使えない。AMD の GPU は下の「AMD の GPU」を参照。
 - **V100（sm_70）:** CUDA 13 は V100 向けにコンパイルできないので、CUDA 12（12.9）を入れて
   `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` でビルドする（CUDA 12.9 は RTX 50 の `120a` も作れる）。
   sm_70 でのビルドは通ることを確かめた。V100 の実機ではまだ動かしていない。tensor core を使う新しいカーネル
@@ -268,12 +276,16 @@ VRAM 23 GB + RAM 70 GB に載った状態、iGPU レーンあり）:
 
 | | |
 | --- | --- |
-| 生成（1,500 トークン前後の応答） | 約 73 tok/s（CPU だけなら約 56） |
-| 生成（コーディングの prompt 20 本、各 800 トークンまで） | 約 66 tok/s。`STRATA_DS4_SPEC=1` で約 78 |
-| prompt（5.6K トークン） | 約 1,000〜1,090 tok/s |
-| prompt（18K トークン） | 約 1,700 tok/s |
+| 生成（1,024 トークンの応答、文章 / コード、greedy） | 約 82〜84 tok/s（iGPU の代わりに CPU レーンなら約 55〜60） |
+| 生成（swe-bench のコーディング問題 13 問、サンプリングあり、通し） | 約 94 tok/s |
+| 生成（コンテキスト 125K トークン） | 約 65 tok/s |
+| prompt（8K / 32K / 125K トークン、サーバー、2 回目） | 約 1,630〜1,760 / 約 3,100〜3,270 / 約 2,800 tok/s |
 | 起動（重み + エキスパートの読み込み） | 約 1 分 |
 | 65536 トークン分のアテンションキャッシュ | 0.44 GB |
+
+（Abyss v1.3.16。同じマシン・同じファイルで llama.cpp `bed0a8566` は `-ngl 99 -ncmoe 32` で生成 28〜30 tok/s、
+prompt は ubatch 512 で 78 tok/s、ubatch 8192 で 660 tok/s。）各リリースの数値と測り方は
+[CHANGELOG.md](../CHANGELOG.md) にある。
 
 起動直後や、メモリがモデルより少ない環境では、エキスパートを SSD から読むので遅くなる。RAM 層のエキスパートは、
 一部を CPU が計算し、残りを GPU が PCIe 経由で取り寄せる。その配分は起動時に測って決める。
@@ -283,12 +295,17 @@ VRAM 23 GB + RAM 70 GB に載った状態、iGPU レーンあり）:
 起動時に RAM 層を内蔵 GPU に登録し、RAM 層のエキスパートを CPU の代わりに内蔵 GPU で計算する（コピーはしない）。
 どちらで計算するかは起動時に両方を測って決め、ログに出す（`iGPU lane: an expert 0.046 ms vs 0.107 on the CPU's
 16 threads`）。CPU のほうが速い場合や、ライブラリか HIP のデバイスがない場合は CPU で計算する。
+prompt のまとめ処理でもこのレーンを使う。prompt のチャンクが必要とする RAM 層のエキスパートを、CPU のスレッドではなく
+内蔵 GPU で計算する（8K の prompt で +40%）。レーンの呼び出しには期限がある（`STRATA_GLM_IGPU_TIMEOUT_MS`、20 ms）。
+カーネルドライバが内蔵 GPU のキューを止めているとき（起動後の数分間、読み込みのあとにカーネルがメモリを回収する間に
+起きる）は、遅れた呼び出しが終わるまで CPU のスレッドが引き継ぎ、起動時の計測はきれいに測れるまでやり直す。
 
-**投機デコード（`STRATA_DS4_SPEC`）。** この GGUF にはドラフトモデルがないが、応答は prompt や応答の前のほうに
-出てきた並び（コード、ファイルパス、ツール呼び出し）を繰り返すことが多い。`STRATA_DS4_SPEC=1` にすると、直近
-3 トークンが前に出てきた場所を探し、その次のトークンを候補として次の 1 トークンと一緒に 1 回で確かめ、モデルの
-答えと一致すれば採用する。出力は使わない場合と同じで（同じロジットに同じサンプラー）、速さだけが変わる。
-コーディングの prompt で +12%（候補の 77〜83% が採用）、文章ではほぼ変わらない（採用は約 50%）。
+**投機デコード（`STRATA_DS4_SPEC`、既定でオン）。** この GGUF にはドラフトモデルがないが、応答は prompt や応答の
+前のほうに出てきた並び（コード、ファイルパス、ツール呼び出し）を繰り返すことが多い。エンジンは直近 3 トークンが
+前に出てきた場所を探し、その次のトークンを候補として次の 1 トークンと一緒に 1 回で確かめ、モデルの答えと一致すれば
+採用する。出力は使わない場合と同じで（同じロジットに同じサンプラー）、速さだけが変わる。リクエストごとに採用率を
+学習するゲートがあり、割に合わない間は候補を出さない。コーディングの prompt で +10〜13%（候補の 77〜85% が採用）、
+文章ではほぼ変わらない（採用は約 50%）。`STRATA_DS4_SPEC=0` でオフ。GPU を分割しているときは使わない。
 
 ## 設定項目
 
@@ -308,16 +325,23 @@ VRAM 23 GB + RAM 70 GB に載った状態、iGPU レーンあり）:
 | `STRATA_GLM_NO_REUSE` | オフ | `1`: 会話を再利用しない |
 | `STRATA_GLM_THINK_RESERVE` | 1024 | （サーバー）思考が回答のために必ず残すトークン数 |
 | `STRATA_GLM_IGPU` | 自動 | iGPU レーン。`libabyss_igpu.so` と HIP のデバイスがあり、CPU より速ければ使う。`0` で使わない、`1` で遅くても使う。`STRATA_GLM_IGPU_LIB=<パス>` で別のライブラリ |
+| `STRATA_GLM_IGPU_TIMEOUT_MS` | 20 | これより遅れたレーンの呼び出しは CPU のスレッドが引き継ぐ（0: 待つ） |
+| `STRATA_GLM_PREFILL_IGPU` | オン | prompt の RAM 層エキスパートを iGPU で計算する。`0`: CPU のスレッド |
+| `STRATA_GLM_PROMOTE_RATIO` / `_MARGIN` | 4 / 16 | RAM 層のエキスパートの使用回数が「VRAM 側の ratio 倍 + margin」を超えたら入れ替える（2 / 4 は以前の、入れ替えの多い規則） |
+| `STRATA_GLM_TAIL_SKIP` / `_W` | オフ | ルートの r 位より下（または確率の割合が閾値より下）で VRAM にないエキスパートを計算しない。CPU レーンが遅い環境で速くなるが、答えが変わる（KL 0.01〜0.02 程度） |
+| `STRATA_DS4_IDX`, `STRATA_DS4_ATTN` | 0 | `1`: lightning indexer / prompt の attention を tensor core 版ではなく従来の FP32 カーネルで計算する（A/B 確認用） |
 | `STRATA_GLM_MMQ_GLU` | オン | prompt の expert の gate/up の積で SwiGLU まで済ませる（NVIDIA Turing 以降）。`0` で別カーネル（以前のビルドとビット一致） |
 | `STRATA_GLM_CPU_MT` | オン | 複数トークンが同じ expert を使うとき（prompt、検証窓）、CPU は重みの行を 1 回だけ展開する。ggml の内積とビット一致。`0` で無効 |
 | `STRATA_GLM_CPU_1T` | オン | CPU レーンの 1 トークン用 IQ3_S / IQ3_XXS の行を軽くする。ggml の内積とビット一致。`0` で無効 |
 | `STRATA_GLM_VRAM_EVICT` | 使用回数 | `lru`: VRAM 層の入れ替えで、最も長く使われていない expert を追い出す（キャッシュの調査用） |
 | `STRATA_GLM_DISK_READERS` | オフ | prompt 処理で SSD 上の expert をこの数のスレッドで読む（DRAM なしの NVMe 向け。環境ごとに測ること） |
-| `STRATA_DS4_SPEC` | 0（なし） | prompt と応答から作る投機デコード。1 回に試す候補トークン数（1〜3。実測では 1 が最速） |
+| `STRATA_DS4_SPEC` | 1（オン） | prompt と応答から作る投機デコード。1 回に試す候補トークン数（1〜3。実測では 1 が最速）。`0` でオフ |
+| `STRATA_DS4_SPEC_GATE` | オン | リクエストの採用率が検証窓の分に見合わない間は候補を出さない。`0`: 常に出す |
 | `STRATA_DS4_SPEC_MIN` | 3 | 候補を探すときに一致させるトークン数（2〜4） |
 
-コンテキスト長は `--max-context` で決める。DeepSeek V4 の学習は 1M トークンだが、確認したのは 65536。アテンションの
-キャッシュは小さい（65536 で 0.44 GB）が、prompt 用のバッファはコンテキストに比例して増える。
+コンテキスト長は `--max-context` で決める。DeepSeek V4 の学習は 1M トークンだが、既定は 65536 で、131072（125K の
+prompt）まで測った。アテンションのキャッシュは小さい（65536 で 0.44 GB）が、prompt 用のバッファはコンテキストに
+比例して増える。
 
 ## llama.cpp との照合
 
@@ -343,5 +367,6 @@ VRAM 23 GB + RAM 70 GB に載った状態、iGPU レーンあり）:
   投機デコードは文章自体から候補を作る（`STRATA_DS4_SPEC`）。
 - 会話のディスク保存（`STRATA_GLM_SLOTS`）は DeepSeek V4 では無効。直前の会話の再利用は動く。
 - 画像は扱わない（ここでは DeepSeek V4 Flash はテキストのみ）。
-- 確認したのは GPU 1 枚だけ。Maya の複数 GPU への層の分割は、DeepSeek V4 では未確認。
+- 複数 GPU: 層の分割は動く（「複数の GPU」）が投機デコードは使えず、遅い 2 枚目を足しても速い 1 枚 + iGPU レーンには
+  まだ届かない。Windows は DeepSeek V4 では未確認。
 - `./abyss.sh`（Maya から引き継いだインストーラ）は GLM 用。DeepSeek V4 は `./setup-deepseek.sh`。
