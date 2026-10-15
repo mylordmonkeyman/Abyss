@@ -492,9 +492,10 @@ def check_hip_pc(a, installed=False) -> dict:
                  f"{root}", "install ROCm 7 or newer, or set ROCM_PATH to its root - ROCm 10's packages: "
                  "/opt/rocm/core-<version> (e.g. /opt/rocm/core-10.0); AMD's pip wheels: the directory rocm-sdk path "
                  "--root prints")
-        hipcc = next((p for p in (root / "bin/hipcc", root / "lib/llvm/bin/hipcc") if p.exists()), None)
-        if hipcc is None or tool_version(str(hipcc)) < (7, 0):
-            fail("Maya's HIP port requires ROCm 7 or newer (hipcc not found or too old under " + str(root) + ")")
+        # hipcc: <root>/bin, or lib/llvm/bin (ROCm 10's packages)
+        hipcc = next((p for p in (root / "bin/hipcc", root / "lib/llvm/bin/hipcc") if p.exists()), root / "bin/hipcc")
+        if tool_version(str(hipcc)) < (7, 0):
+            fail("Maya's HIP port requires ROCm 7 or newer (" + str(hipcc) + " did not answer, or is older)")
         if not shutil.which("c++"):
             fail("a C++ compiler is needed", "Ubuntu/Debian: sudo apt install build-essential")
     cpu, avx2, avx512 = S.cpu_info()
