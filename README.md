@@ -34,7 +34,7 @@ thinking and tool calls — all on your own machine.
 
 - **284B MoE on one card** — 256 experts per layer spread over VRAM, pinned RAM and SSD, filled from your own usage.
 - **~3x llama.cpp's decode speed and ~5x its prompt speed** on the same GGUF and machine (llama.cpp tuned with
-  `-ncmoe`; 10x+ against its experts on the CPU). Prompts at ~1,600–3,300 tok/s, decode at ~82–84 tok/s.
+  `-ncmoe`; 10x+ against its experts on the CPU). Prompts at ~1,600–3,300 tok/s, decode at ~90–93 tok/s.
 - **Long contexts stay fast** — the lightning indexer and the prompt attention run on tensor cores: a 125K-token
   prompt reads at ~2,800 tok/s, and decode holds ~65 tok/s at 125K.
 - **An AMD APU's integrated GPU as a second lane** — on a Ryzen AI Max the Radeon iGPU computes the RAM-tier experts
@@ -57,15 +57,17 @@ llama.cpp (`bed0a8566`) on the same machine and file, at its best settings (`-ng
 
 | | Abyss | llama.cpp |
 | --- | :---: | :---: |
-| Decode (1,024-token answers, prose / code) | **~82–84 tok/s** | 28–30 tok/s |
-| Decode (13 swe-bench coding prompts, end to end) | **~94 tok/s** | – |
+| Decode (1,024-token answers, prose / code) | **~90–93 tok/s** | 28–30 tok/s |
+| Decode (16 swe-bench coding tasks x 3, end to end) | **~99 tok/s** | – |
 | Decode at a 125K-token context | **~65 tok/s** | – |
 | Prompt (8K tokens) | **~1,630–1,760 tok/s** | 78 (ubatch 512) – 660 (ubatch 8192) |
 | Prompt (32K tokens) | **~3,100–3,270 tok/s** | – |
 | Prompt (125K tokens) | **~2,800 tok/s** | – |
 | Start-up (weights + expert warm-up) | ~1 min | ~50 s |
 
-All 11,008 routed experts fit in VRAM (23 GB) + pinned RAM (70 GB) — nothing is read from the SSD once warm. With the
+All 11,008 routed experts fit in VRAM (23 GB) + pinned RAM (70 GB) — nothing is read from the SSD once warm. Decode is
+measured with the attention projections re-quantized to Q5_K (the lighter dense pack in the manual: +8% over the GGUF as
+published at the same swe-bench quality). With the
 CPU lane instead of the iGPU (any NVIDIA box with enough RAM), decode is ~55–60 tok/s. Every number is in the
 [changelog](CHANGELOG.md) with how it was measured.
 

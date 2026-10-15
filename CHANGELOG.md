@@ -7,6 +7,21 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.20 - 2026-10-15
+
+The Q5_K attention pack is now the measured default: decode ~8% faster than the GGUF as published, at the same
+swe-bench quality.
+- swe-bench L7 (16 tasks x 3, sampled, RTX 5090 + Radeon 8060S): the Q5_K pack 99.0 tok/s, resolved 87.5% (14/16),
+  success rate 83.3%, quality 82.0, combined 75.9 - against the Q6_K pack 93.9 / 81.2% / 81.2% / 81.2 / 74.1 and the
+  Q8_0 GGUF 91.3 / 81.2% / 79.2% / 81.0 / 71.5 (the task-level differences are the sampling's). Engine statistics over
+  the runs: a single token 10.78 ms (Q6_K 11.26, Q8_0 11.88), the 2-token verify window 14.78 (15.65, 16.29), VRAM hit
+  74.6% with 3,225 slots (74.1% / 3,139, 73.2% / 3,010). KL against the Q8_0 reference 0.0119 (v1.3.19's table).
+- docs: the four performance tables carry the Q5_K pack's decode figures (1,024-token answers ~90-93 tok/s; the
+  swe-bench row is now the 16-task L7 set at ~99); the "lighter dense pack" section says which pack the author runs
+  and what each costs. The prompt and 125K rows were not re-measured (v1.3.16-1.3.18, the GGUF as published).
+- abyss.py: the HIP check's hipcc lookup as before when no hipcc file exists (the setup tests fake the root and mock
+  the version; v1.3.19 made them exit).
+
 ## v1.3.19 - 2026-10-15
 
 Lighter attention projections as a documented, measured option; abyss.py finds ROCm 10's package layout.

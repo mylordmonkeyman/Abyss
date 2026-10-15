@@ -180,11 +180,13 @@ all three):
 
 - Q6_K: decode +3.5% from the smaller GEMVs (v1.3.18's split kernel) plus 129 more VRAM slots. On the swe-bench L7
   set (16 tasks x 3, RTX 5090 + Radeon 8060S) it ran 93.9 against 91.3 tok/s with the same resolved rate (81.2%) and
-  quality score (81.2 vs 81.0). The KL cost is the run-to-run spread's size; the Q6_K pack is what the author runs.
+  quality score (81.2 vs 81.0). The KL cost is the run-to-run spread's size.
 - Q5_K: the KL doubles against Q8_0 (the largest single-token divergence 0.57). On an RTX 5090 it decodes 4% faster
   than Q6_K (1,024-token answers: a single token 12.13 -> 11.65 ms, the verify window 15.52 -> 14.86, 86-89 -> 93
   tok/s; the window and the token path share the saving), and more on a card with less memory bandwidth - a Radeon AI
-  PRO R9700 at 640 GB/s reads 1.5 GB less a token. A choice to make per use: the quality cost is twice Q6_K's.
+  PRO R9700 at 640 GB/s reads 1.5 GB less a token. On the same swe-bench set it ran 99.0 tok/s with resolved 87.5%
+  (14/16), success rate 83.3% and quality 82.0 - no loss visible for twice Q6_K's KL. **This is the pack the author
+  runs, and the one the decode figures under "Memory and speed" are measured with** (v1.3.20).
 - Not worth touching: `attn_q_a`, the kv / compressor / indexer projections and the norms are small, and the shared
   experts, the embedding and the output head are already Q5_K / Q6_K / Q4_K.
 
@@ -314,14 +316,16 @@ RAM 70 GB; the iGPU lane on):
 
 | | |
 | --- | --- |
-| Decode, 1,024-token answers (prose / code, greedy) | ~82-84 tok/s (CPU lane instead of the iGPU: ~55-60) |
-| Decode, 13 swe-bench coding prompts (sampled, end to end) | ~94 tok/s |
+| Decode, 1,024-token answers (prose / code, greedy) | ~90-93 tok/s (CPU lane instead of the iGPU: ~55-60) |
+| Decode, 16 swe-bench coding tasks x 3 (sampled, end to end) | ~99 tok/s (a single token 10.8 ms, the 2-token verify window 14.8) |
 | Decode at a 125K-token context | ~65 tok/s |
 | Prompt, 8K / 32K / 125K tokens (server, second run) | ~1,630-1,760 / ~3,100-3,270 / ~2,800 tok/s |
 | Start-up (weights + expert warm-up) | ~1 min |
 | Attention caches at 65536 tokens | 0.44 GB |
 
-(Abyss v1.3.16. On the same machine and file llama.cpp `bed0a8566` with `-ngl 99 -ncmoe 32` decodes at 28-30 tok/s
+(Decode rows: Abyss v1.3.20 with the Q5_K attention pack ("A lighter dense pack", above; the GGUF as published:
+~82-84 and ~91-94). Prompt and 125K rows: v1.3.16-1.3.18, the GGUF as published. On the same machine and file
+llama.cpp `bed0a8566` with `-ngl 99 -ncmoe 32` decodes at 28-30 tok/s
 and reads prompts at 78 tok/s with ubatch 512, 660 with ubatch 8192.) The numbers of every release, and how each was
 measured, are in [CHANGELOG.md](../CHANGELOG.md).
 
