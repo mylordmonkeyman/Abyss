@@ -191,6 +191,12 @@ struct Glm5Model::FastState {
     int tail_skip = 8;
     float tail_skip_w = 0.0f;
     std::atomic<uint64_t> tail_skips{0};
+    // EXPERT DEFERRAL (STRATA_GLM_DEFER=1, lossy, off by default): the CPU lane's part of a trunk layer's MoE is not
+    // waited for at the layer's end; after the NEXT layer's attention it is written into the residual streams with
+    // its own layer's write weights (hc_defer_add).  The device never idles for the lane but at the last trunk
+    // layer (its own part, once a token); the draft layer and the verify window keep the in-order sum
+    bool defer = false;
+    float* post_defer = nullptr;   // device, 8 floats: the FFN write weights of the layer whose part is deferred
     int max_pf = 0;   // STRATA_GLM_PREFETCH_N: measured a net LOSS on Mercury (the window between routes is shorter than one fetch)
     std::atomic<uint64_t> prefetches{0};
     unsigned long long* pf_buf[2] = {nullptr, nullptr};   // [src 8 | dst 8] per layer parity

@@ -2368,7 +2368,10 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             if (a.d.route_error_d != nullptr && *a.d.route_error_d == 0) *a.d.route_error_d = 4 * a.layer + bad;
             if (a.d.route_error != nullptr && *a.d.route_error == 0) *a.d.route_error = 4 * a.layer + bad;
             *a.d.wait_seq = 0u;
-            if (a.d.cpu_seq != nullptr) *a.d.cpu_seq = 0u;
+            if (a.d.cpu_seq != nullptr) {
+                a.d.cpu_seq[1] = a.d.cpu_seq[0];
+                a.d.cpu_seq[0] = 0u;
+            }
             *a.d.cpu_flag = 0;
             *a.d.pf_n = 0;
             for (int i = 0; i < a.k; ++i) {
@@ -2541,7 +2544,10 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
             *a.d.seq = seq;
             s_seq = seq;
             *a.d.wait_seq = mask ? seq : 0u;
-            if (a.d.cpu_seq != nullptr) *a.d.cpu_seq = cpu ? seq : 0u;
+            if (a.d.cpu_seq != nullptr) {   // [1]: the route before this one's (expert deferral waits for that one)
+                a.d.cpu_seq[1] = a.d.cpu_seq[0];
+                a.d.cpu_seq[0] = cpu ? seq : 0u;
+            }
             *a.d.cpu_flag = 0;
         }
     }
@@ -2614,11 +2620,13 @@ __global__ void moe_wait_kernel(MoeDev d, int n_embd) {
     }
 }
 
-// the CPU LANE's answer for the last route (when it sent experts to the host): spin, then out += its weighted sum
-__global__ void moe_cpu_wait_kernel(MoeDev d, int n_embd, float* out) {
+// the CPU LANE's answer for the last route (when it sent experts to the host): spin, then out += its weighted sum.
+// which: 0 the last route's (cpu_seq[0]), 1 the route before it (cpu_seq[1]: EXPERT DEFERRAL - the host's part of
+// layer l is added one layer late, into layer l + 1's FFN output, so the lane is never waited for)
+__global__ void moe_cpu_wait_kernel(MoeDev d, int n_embd, float* out, int which) {
     __shared__ unsigned int s_need;
     const int tid = threadIdx.x;
-    if (tid == 0) s_need = *d.cpu_seq;
+    if (tid == 0) s_need = d.cpu_seq[which];
     __syncthreads();
     if (s_need == 0) return;
     const CpuAnswer* r = (const CpuAnswer*) d.cpu_ans + (s_need % kCpuAnswers);
@@ -2651,6 +2659,44 @@ __global__ void moe_cpu_wait_kernel(MoeDev d, int n_embd, float* out) {
         for (int e = blockIdx.x * blockDim.x + tid; e < n_embd; e += gridDim.x * blockDim.x)
             out[e] += ((volatile const CpuAnswer*) r)->part[e];
     }
+}
+
+// EXPERT DEFERRAL, the half-layer form: the CPU lane's part of layer l's MoE, waited for after layer l + 1's
+// attention and written straight into the hyper-connection streams with layer l's FFN write weights (post, saved
+// before layer l + 1's attention-side read overwrote them): R[d][e] += post[d] * part[e].  Layer l + 1's attention
+// misses it, its router and experts see it.  (Adding it into layer l + 1's FFN output instead - a whole layer late
+// and with l + 1's weights - cost KL 0.21 against 0.012.)
+__global__ void hc_defer_add_kernel(MoeDev d, const float* __restrict__ post, int n_embd, float* __restrict__ R) {
+    __shared__ unsigned int s_need;
+    const int tid = threadIdx.x;
+    if (tid == 0) s_need = d.cpu_seq[0];   // (the last route's: the next layer's route has not run yet)
+    __syncthreads();
+    if (s_need == 0) return;
+    const CpuAnswer* r = (const CpuAnswer*) d.cpu_ans + (s_need % kCpuAnswers);
+    if (tid == 0) {
+        const long long t0 = clock64();
+        while (r->seq != s_need) {
+            if (clock64() - t0 > (1ll << 36)) break;
+        }
+        __threadfence_system();
+    }
+    __syncthreads();
+    const float p0 = post[0], p1 = post[1], p2 = post[2], p3 = post[3];
+    for (int e = blockIdx.x * blockDim.x + tid; e < n_embd; e += gridDim.x * blockDim.x) {
+#if defined(__HIPCC__)
+        const float v = ((volatile const float*) r->part)[e];
+#else
+        const float v = __ldcv(r->part + e);
+#endif
+        R[e] += p0 * v;
+        R[n_embd + e] += p1 * v;
+        R[2 * n_embd + e] += p2 * v;
+        R[3 * n_embd + e] += p3 * v;
+    }
+}
+__global__ void copy_floats_kernel(float* __restrict__ dst, const float* __restrict__ src, int n) {
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) dst[i] = src[i];
 }
 
 __global__ void __launch_bounds__(256) moe_prefetch_kernel(MoeDev d, size_t n16) {
@@ -3685,10 +3731,23 @@ void moe_wait(const MoeDev& d, int n_embd, cudaStream_t s) {
     launch_check("moe_wait");
 }
 
-void moe_cpu_wait(const MoeDev& d, int n_embd, float* out, cudaStream_t s) {
+void hc_defer_add(const MoeDev& d, const float* post, int n_embd, float* R, cudaStream_t s) {
     if (d.cpu_seq == nullptr) return;
     static const int cwb = [] { const char* v = getenv("STRATA_GLM_CPU_WAIT_BLOCKS"); return v ? std::max(1, std::atoi(v)) : 8; }();
-    moe_cpu_wait_kernel<<<cwb, 128, 0, s>>>(d, n_embd, out);   // STRATA_GLM_CPU_WAIT_BLOCKS: the blocks (A/B)
+    hc_defer_add_kernel<<<cwb, 128, 0, s>>>(d, post, n_embd, R);
+    launch_check("hc_defer_add");
+}
+void copy_floats(float* dst, const float* src, int n, cudaStream_t s) {
+    copy_floats_kernel<<<(n + 127) / 128, 128, 0, s>>>(dst, src, n);
+    launch_check("copy_floats");
+}
+
+void moe_cpu_wait(const MoeDev& d, int n_embd, float* out, cudaStream_t s, int mode) {
+    if (d.cpu_seq == nullptr) return;
+    static const int cwb = [] { const char* v = getenv("STRATA_GLM_CPU_WAIT_BLOCKS"); return v ? std::max(1, std::atoi(v)) : 8; }();
+    // mode bit 2: the route before the last one's answer (deferred from the layer before), bit 1: the last route's
+    if (mode & 2) moe_cpu_wait_kernel<<<cwb, 128, 0, s>>>(d, n_embd, out, 1);
+    if (mode & 1) moe_cpu_wait_kernel<<<cwb, 128, 0, s>>>(d, n_embd, out, 0);   // STRATA_GLM_CPU_WAIT_BLOCKS: the blocks (A/B)
     launch_check("moe_cpu_wait");
 }
 

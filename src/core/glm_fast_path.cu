@@ -656,6 +656,7 @@ bool Glm5Model::fast_setup(std::string& err) {
     F->ffn = fa_take(at, E);
     F->pre = fa_take(at, 8);
     F->post = fa_take(at, 8);
+    F->post_defer = fa_take(at, 8);
     F->comb = fa_take(at, 16);
     F->part = fa_take(at, (size_t) (4 * E / 512) * 36 + 64);   // 25 partials per block + 10 Gram + a spare row
     F->counter = (unsigned int*) fa_take_b(at, 64);
@@ -1105,6 +1106,11 @@ bool Glm5Model::fast_setup(std::string& err) {
         std::fprintf(stderr, "glm fast: CUDA%d layers [%d,%d) expert pool %.2f GB, %d-%d slots/layer (%lld total)\n",
                      dev_, l0_, l1_, (double) tot / 1073741824.0, nmin, nmax, (long long) F->pool_slots);
         fast_tail_skip_setup();
+        if (const char* dv = getenv("STRATA_GLM_DEFER"); dv != nullptr && std::atoi(dv) != 0) {
+            F->defer = n_parts_ == 1;   // (a layer split: each part would need the other's answer)
+            std::fprintf(stderr, "glm fast: CUDA%d expert deferral %s (STRATA_GLM_DEFER): the CPU lane's part of a layer joins "
+                                 "the residual one layer late\n", dev_, F->defer ? "on" : "off - the layers are split");
+        }
         if (getenv("STRATA_GLM_TIMING") != nullptr) {
             std::string sl;
             for (int il = l0_; il < lt_; ++il)
@@ -3863,8 +3869,16 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     gf::moe_down(Ly.d_type, md, g.n_exp_used, g.n_embd, g.n_ff_exp, Ly.down_off, F->hq,
                  Ly.sh_down.q != nullptr ? F->sh_out : nullptr, F->ffn, s);
     if (F->prof_on) F->mark("moe_down");
-    // the CPU lane's experts last: the device's own down rows ran while the CPU worked
-    if (lane) {
+    // the CPU lane's experts last: the device's own down rows ran while the CPU worked.  Deferred (F->defer): the
+    // layer before's part is added here instead, this layer's by the next (the last trunk layer adds both)
+    if (F->defer && !Ly.mtp) {
+        if (il == g.n_layers - 1) {   // the trunk's last layer: nothing after it to defer into
+            gf::moe_cpu_wait(md, g.n_embd, F->ffn, s);
+            if (F->prof_on) F->mark("moe_cpu_wait");
+        } else if (lane) {            // its write weights, for the add after the next layer's attention
+            gf::copy_floats(F->post_defer, F->post, 8, s);
+        }
+    } else if (lane) {
         gf::moe_cpu_wait(md, g.n_embd, F->ffn, s);
         if (F->prof_on) F->mark("moe_cpu_wait");
     }
@@ -3969,6 +3983,12 @@ bool Glm5Model::fast_layers(int64_t p, bool hop_in, std::string& err) {
             if (!fast_dsa(il, p, err)) return false;
         }
 
+        // expert deferral: the layer before's CPU-lane part into the streams now (its own write weights), so this
+        // layer's router and experts see it; the attention above did not
+        if (F->defer && Ly.moe && !Ly.mtp && il > g.dense_lead && il > l0_) {
+            gf::hc_defer_add(F->md, F->post_defer, g.n_embd, Rc, s);
+            if (F->prof_on) F->mark("hc_defer_add");
+        }
         // ---- the FFN-side read (fused with the mixer's write)
         h.block_out = F->mixer;
         h.R_old = Rc;

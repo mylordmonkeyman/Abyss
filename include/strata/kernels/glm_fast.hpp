@@ -184,7 +184,8 @@ struct MoeDev {
     const void* resp = nullptr;                // host-mapped response (device pointer)
     float* cpu_part = nullptr;                 // n_embd: the host's contribution (misses computed off-GPU)
     int* cpu_flag = nullptr;                   // 1 when cpu_part holds this layer's contribution
-    unsigned int* cpu_seq = nullptr;           // the CPU LANE: the seq whose answer moe_cpu_wait must see (0 = none)
+    unsigned int* cpu_seq = nullptr;           // the CPU LANE: [0] the seq whose answer moe_cpu_wait must see (0 = none),
+                                               // [1] the route before's (expert deferral)
     const void* cpu_ans = nullptr;             // ... host-mapped CpuAnswer (device pointer)
     unsigned int* dcnt = nullptr;              // ... [n_keys] routes per key (halved every 4096 routes): the coldest
                                                //     RAM-tier experts go to the host, the hot ones are promoted
@@ -256,7 +257,12 @@ void sh_swiglu(const float* sh_gate, const float* sh_up, float sh_limit, int n_f
 inline int cpu_take(unsigned long long plan, int f) { return (int) ((plan >> (4 * f)) & 15ull); }
 /// Waits (on the device) for the host's CPU-lane answer of the last route when it had CPU experts, then adds it to
 /// `out` (the layer's FFN output, which moe_down wrote first - its work runs while the CPU computes).
-void moe_cpu_wait(const MoeDev& d, int n_embd, float* out, cudaStream_t s);
+void moe_cpu_wait(const MoeDev& d, int n_embd, float* out, cudaStream_t s, int mode = 1);
+/// Expert deferral: the last route's CPU-lane part into the 4 hyper-connection streams R with the write weights post
+/// (4 floats, device): R[d][e] += post[d] * part[e].  Spins for the answer like moe_cpu_wait.
+void hc_defer_add(const MoeDev& d, const float* post, int n_embd, float* R, cudaStream_t s);
+/// dst[0..n) = src[0..n) by a kernel (no copy engine: those queue behind the expert moves' DMAs)
+void copy_floats(float* dst, const float* src, int n, cudaStream_t s);
 /// The side stream's copy of the prefetch list (pf_src -> pf_dst, pf_n entries of blob_bytes each).
 void moe_prefetch(const MoeDev& d, size_t blob_bytes, cudaStream_t s);
 /// Waits (on the device) for the host's response when the last route had misses, then applies it.

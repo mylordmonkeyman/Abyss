@@ -401,7 +401,7 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
         gf::moe_down(Ly.d_type, md, k, E, g.n_ff_exp, Ly.down_off, hq, Ly.sh_down.q != nullptr ? sh_out : nullptr,
                      V->ffn + (size_t) t * E, s);
     }
-    // ... and the CPU lane's answers, in request order
+    // ... and the CPU lane's answers, in request order (the window is not deferred: in-order sums)
     if (lane)
         for (int t = tb; t < tb + T; ++t) gf::moe_cpu_wait(V->md[(size_t) t], E, V->ffn + (size_t) t * E, s);
     return true;
