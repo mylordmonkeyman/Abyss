@@ -177,6 +177,7 @@ all three):
 | Q8_0 (the GGUF as published) | 4.28 GiB | 0.0060 | 0.11 | 97.0% | 1.3071 | 3,010 |
 | Q6_K | 3.31 GiB | 0.0082 | 0.31 | 95.8% | 1.3116 | 3,139 |
 | Q5_K | 2.77 GiB | 0.0119 | 0.57 | 95.9% | 1.3135 | 3,225 |
+| Q4_K | 2.27 GiB | 0.0246 | 0.84 | 92.9% | 1.3224 | 3,268 |
 
 - Q6_K: decode +3.5% from the smaller GEMVs (v1.3.18's split kernel) plus 129 more VRAM slots. On the swe-bench L7
   set (16 tasks x 3, RTX 5090 + Radeon 8060S) it ran 93.9 against 91.3 tok/s with the same resolved rate (81.2%) and
@@ -187,6 +188,8 @@ all three):
   PRO R9700 at 640 GB/s reads 1.5 GB less a token. On the same swe-bench set it ran 99.0 tok/s with resolved 87.5%
   (14/16), success rate 83.3% and quality 82.0 - no loss visible for twice Q6_K's KL. **This is the pack the author
   runs, and the one the decode figures under "Memory and speed" are measured with** (v1.3.20).
+- Q4_K: where it stops paying. The KL doubles again and the top token changes 3 points more often (Q8_0 -> Q5_K
+  cost 1.1), for a single token only 2% faster than Q5_K (11.67 -> 11.40 ms) and 43 more slots. Not run on swe-bench.
 - Not worth touching: `attn_q_a`, the kv / compressor / indexer projections and the norms are small, and the shared
   experts, the embedding and the output head are already Q5_K / Q6_K / Q4_K.
 
@@ -316,8 +319,8 @@ RAM 70 GB; the iGPU lane on):
 
 | | |
 | --- | --- |
-| Decode, 1,024-token answers (prose / code, greedy) | ~90-93 tok/s (CPU lane instead of the iGPU: ~55-60) |
-| Decode, 16 swe-bench coding tasks x 3 (sampled, end to end) | ~99 tok/s (a single token 10.8 ms, the 2-token verify window 14.8) |
+| Decode, 1,024-token answers (prose / code, greedy) | ~92-95 tok/s (CPU lane instead of the iGPU: ~55-60) |
+| Decode, 16 swe-bench coding tasks x 3 (sampled, end to end) | ~100 tok/s (10.1 ms a token averaged over the run; 1,024-token answers: a single token 11.1 ms, the 2-token verify window 14.6) |
 | Decode at a 125K-token context | ~65 tok/s |
 | Prompt, 8K / 32K / 125K tokens (server, second run) | ~1,630-1,760 / ~3,100-3,270 / ~2,800 tok/s |
 | Start-up (weights + expert warm-up) | ~1 min |
@@ -374,6 +377,8 @@ Environment variables for the engine, in the config's `"env"` block (all of Maya
 | `STRATA_GLM_IGPU_FUSED` | on | the prompt's iGPU experts through the fused int8 tensor-core pass (gfx1151, IQ2_XS / IQ3_XXS experts at 4096 / 2048; v1.3.18); `0`: the one-row kernels. `ABYSS_IGPU_FUSED_CHECK=<n>` compares the first n calls against them (stderr) |
 | `STRATA_GLM_MV_SPLIT` | auto | dense GEMVs with a row over 4 warps: unset = under 256 blocks, and Q6_K up to 4,096 blocks (v1.3.18); `0` one warp a row always, `2` / `4` that split always. Not bit-identical to one warp a row |
 | `STRATA_GLM_PROMOTE_RATIO` / `_MARGIN` | 4 / 16 | a RAM-tier expert replaces a resident one when its use count passes ratio x the resident's + margin (2 / 4: the old, churnier rule) |
+| `STRATA_GLM_ZERO_COPY` | on | the token boundary without the copy engines (v1.3.21): the table edits, the embedding row (a pinned copy of `token_embd`, Q8_0 / Q5_K) and the token are read and written host-mapped by the kernels. `0`: the copies, as before |
+| `STRATA_GLM_GAP_PROF` | off | `1`: a `glm gap prof` line after each answer - where the time between two tokens goes (host laps, the GPU's idle gap by timing events) |
 | `STRATA_GLM_TAIL_SKIP` / `_W` | off | a route's experts past rank r (or below a probability share) that are not in VRAM are left out - faster on a slow CPU lane, changes the answers (KL ~0.01-0.02) |
 | `STRATA_DS4_IDX`, `STRATA_DS4_ATTN` | 0 | `1`: the older FP32 kernels for the lightning indexer / the prompt attention instead of the tensor-core ones (A/B checks) |
 | `STRATA_GLM_MMQ_GLU` | on | the prompt path's expert gate/up product writes the SwiGLU itself (NVIDIA Turing and newer); `0`: the separate SwiGLU kernel, bit-identical to older builds |

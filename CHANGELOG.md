@@ -7,6 +7,24 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.21 - 2026-10-16
+
+The token boundary no longer waits behind the expert moves' DMAs: a single token 11.7 -> 11.1 ms on an RTX 5090 at
+Gen4 x4, the same answers.
+- A between-tokens profile (`STRATA_GLM_GAP_PROF=1`) showed the GPU idle 0.5-1.0 ms between two tokens while the host's
+  own work there was 0.05-0.25 ms: the small copies at a token's start and end (the expert-table edits, the 16 KB
+  embedding row, the 4-byte argmax or sampler result) went through the copy engines, queued behind whichever 8 MB
+  promotion or demotion was in flight there (1.2 ms each at Gen4 x4, ~0.5 a token). With `STRATA_GLM_PROMOTE=0` the
+  idle fell to 0.03-0.1 ms, and the VRAM hit rate with it.
+- Now the kernels read the edit sets host-mapped, gather the embedding row from a pinned copy of `token_embd` (Q8_0 /
+  Q5_K; 347 MB of host memory for DeepSeek V4 Flash) by a token id they read host-mapped, and write the argmax /
+  sampled token into host-mapped memory - no copy engine on the token path. The GPU's idle between tokens 0.5-1.1 ->
+  0.11-0.15 ms; 1,024-token answers: a single token 11.69 -> 11.10 ms, the 2-token verify window 14.85 -> 14.61;
+  KL against the Q8_0 reference unchanged (0.0117). The embedding row's page-cache stalls (0.2 ms a token on a cold
+  shard mapping) go with it. `STRATA_GLM_ZERO_COPY=0` restores the copies. swe-bench L7 (16 tasks x 3): 100.9 tok/s (v1.3.20: 99.0) at 10.1 ms a token averaged over the run (10.8), resolved 87.5% with the same two tasks failing, quality 81.2 (82.0).
+- docs: the pack table has the Q4_K row (KL 0.0246, twice Q5_K's, for 2% on a token: where the lighter dense pack
+  stops paying); the two variables above in the environment table; the README / MANUAL decode rows (~92-95 tok/s, swe-bench ~100).
+
 ## v1.3.20 - 2026-10-15
 
 The Q5_K attention pack is now the measured default: decode ~8% faster than the GGUF as published, at the same
