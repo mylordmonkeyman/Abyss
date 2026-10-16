@@ -55,6 +55,7 @@ struct VerifyBuf {
     int TM = 0;
     float *R = nullptr;                       // [TM][2][hc * n_embd]: each token's residual pair
     float *x = nullptr, *mixer = nullptr, *ffn = nullptr, *pre = nullptr, *post = nullptr, *comb = nullptr;
+    float* post_defer = nullptr;   // expert deferral: a column's FFN write weights of the layer whose part is deferred
     void* xq = nullptr;
     float *qr_raw = nullptr, *qr = nullptr, *kv_raw = nullptr, *iw = nullptr, *q = nullptr, *iq = nullptr;
     void* qr_q = nullptr;
@@ -110,7 +111,7 @@ bool Glm5Model::verify_alloc(std::string& err) {
     const auto f = [&](float*& p, size_t n) { ok = ok && cudaMalloc((void**) &p, n * TM * sizeof(float)) == cudaSuccess; };
     const auto b = [&](void*& p, size_t n) { ok = ok && cudaMalloc(&p, n * TM) == cudaSuccess; };
     ok = cudaMalloc((void**) &V->R, (size_t) TM * 2 * g.hc * E * sizeof(float)) == cudaSuccess;
-    f(V->x, E); f(V->mixer, E); f(V->ffn, E); f(V->pre, 8); f(V->post, 8); f(V->comb, 16);
+    f(V->x, E); f(V->mixer, E); f(V->ffn, E); f(V->pre, 8); f(V->post, 8); f(V->comb, 16); f(V->post_defer, 8);
     b(V->xq, E / 32 * kQ8);
     f(V->qr_raw, g.q_lora); f(V->qr, g.q_lora); b(V->qr_q, (size_t) g.q_lora / 32 * kQ8);
     f(V->kv_raw, D); f(V->iw, g.idx_heads); f(V->q, HD); f(V->iq, (size_t) g.idx_heads * g.idx_key);
@@ -401,9 +402,15 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
         gf::moe_down(Ly.d_type, md, k, E, g.n_ff_exp, Ly.down_off, hq, Ly.sh_down.q != nullptr ? sh_out : nullptr,
                      V->ffn + (size_t) t * E, s);
     }
-    // ... and the CPU lane's answers, in request order (the window is not deferred: in-order sums)
-    if (lane)
+    // ... and the CPU lane's answers, in request order.  Deferred (F->defer, as fast_ffn): a column's part is
+    // written into its streams after the next layer's attention (verify's hc_defer_add) with these write weights,
+    // saved now; the trunk's last layer waits for its own
+    if (F->defer && Ly.moe && !Ly.mtp && il != g.n_layers - 1) {
+        if (lane)
+            for (int t = tb; t < tb + T; ++t) gf::copy_floats(V->post_defer + (size_t) t * 8, V->post + (size_t) t * 8, 8, s);
+    } else if (lane) {
         for (int t = tb; t < tb + T; ++t) gf::moe_cpu_wait(V->md[(size_t) t], E, V->ffn + (size_t) t * E, s);
+    }
     return true;
 }
 
@@ -489,6 +496,12 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
         gf::hc(h, hs);
         if (block_out != nullptr) std::swap(Rc[(size_t) t], Ro[(size_t) t]);
     };
+    // expert deferral (F->defer, as fast_layers): the layer before's CPU-lane part of column t into its streams after
+    // this layer's attention, with the weights verify_moe saved (its own md: the last route is the layer before's)
+    const auto defer_add = [&](int il, int t, cudaStream_t hs) {
+        if (!F->defer || il <= g.dense_lead || !F->L[(size_t) il].moe) return;
+        gf::hc_defer_add(V->md[(size_t) t], V->post_defer + (size_t) t * 8, g.n_embd, Rc[(size_t) t], hs);
+    };
     // STRATA_GLM_PROF (as the token path's): the window's phases, marked v<T>_* so the two kinds stay apart
     // the pipelined window (STRATA_DS4_SPEC_PIPE, default on; not with PROF - its marks are one stream's)
     static const bool pipe_env = [] {
@@ -517,6 +530,7 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
                 hc_read(il, t, il == l0_ ? nullptr : V->ffn + (size_t) t * E, true, st);
                 if (!verify_attn(il, p0, t, 1, st, err)) return false;
                 cudaEventRecord(V->ev_attn[t], st);
+                defer_add(il, t, st);
                 hc_read(il, t, V->mixer + (size_t) t * E, false, st);
                 cudaEvent_t after = t > 0 ? V->ev_route[t - 1] : il > l0_ ? V->ev_route[T - 1] : nullptr;
                 if (!verify_moe(il, t, 1, toks, st, after, V->ev_route[t], err)) return false;
@@ -527,6 +541,7 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
             mark(0);
             if (!verify_attn(il, p0, 0, T, s, err)) return false;
             mark(1);
+            for (int t = 0; t < T; ++t) defer_add(il, t, s);
             for (int t = 0; t < T; ++t) hc_read(il, t, V->mixer + (size_t) t * E, false, s);
             mark(2);
             if (!verify_moe(il, 0, T, toks, s, nullptr, nullptr, err)) return false;

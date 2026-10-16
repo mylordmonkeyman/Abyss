@@ -7,6 +7,13 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.23 - 2026-10-16
+
+Expert deferral (`STRATA_GLM_DEFER=1`) covers the verify window too: each column's CPU-lane part joins its streams
+after the next layer's attention, as the single-token path's does.  The 2-token window 15.0 -> 13.1 ms, and the
+window is worth taking more often again: 1,024-token answers 104.5-106.1 -> 107.7-110.2 tok/s (off: 95-96).  Same
+answers as v1.3.22's single-token path (KL 0.08).
+
 ## v1.3.22 - 2026-10-16
 
 Expert deferral, opt-in (`STRATA_GLM_DEFER=1`, lossy): the GPU no longer idles for the CPU lane - single tokens
