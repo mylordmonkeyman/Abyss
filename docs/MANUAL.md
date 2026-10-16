@@ -298,8 +298,11 @@ experts in VRAM, so the second card's VRAM holds more of them.
 - **Speculative decoding** (v1.3.26): the verify window runs part after part, each part's columns crossing to the
   next as a token's residual does. RTX 5090 + RTX 3090 split 33 / 10: 87-90 tok/s (without it ~80-88), the drafts
   accepted as often as on one card (57% on code).
-- **Limits:** a split has no prestaging for the prompt's RAM-tier experts.
-  AMD GPUs: see "AMD GPUs" below.
+- **Prestaging** (v1.3.27): each part copies its next layer's predicted RAM-tier experts during the mixer, as one
+  GPU does; on a split the chunk is sized first (8192 at most) and the prestage buffer takes what it leaves. RTX 5090 +
+  RTX 3090 split 33 / 10: 32K-token prompts 2,177-2,186 -> 2,274-2,350 tok/s, 8K about even. `STRATA_GLM_PRESTAGE=0`
+  turns it off.
+- AMD GPUs: see "AMD GPUs" below.
 - **V100 (sm_70):** CUDA 13 cannot compile for the V100, so install CUDA 12 (12.9) and build with
   `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` (CUDA 12.9 also builds an RTX 50's `120a`). The sm_70
   build has been checked to compile; it has not run on a V100 yet. The newer tensor-core kernels (the indexer and the

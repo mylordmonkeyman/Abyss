@@ -295,7 +295,10 @@ NVIDIA の GPU が 2 枚以上あれば、層を分けて載せられる（layer
 - **投機デコード**（v1.3.26）: 検証窓を part ごとに順に通し、各 part の列を 1 トークンのときと同じように次の part に
   渡す。RTX 5090 + RTX 3090 を 33 / 10 に分けて 87〜90 tok/s（なしで約 80〜88）、候補の採用率は 1 枚のときと同じ
   （コードで 57%）。
-- **制限:** 分けているときは、prompt の RAM 層エキスパートの prestage が使えない。AMD の GPU は下の「AMD の GPU」を参照。
+- **prestage**（v1.3.27）: 各 part が、次の層で使いそうな RAM 層のエキスパートを mixer の間に VRAM へ送る（1 枚の
+  ときと同じ）。分割では chunk の大きさを先に決め（最大 8192）、残った分を prestage に使う。RTX 5090 + RTX 3090 の
+  33 / 10 分割で、32K の prompt が 2,177〜2,186 → 2,274〜2,350 tok/s、8K はほぼ同じ。`STRATA_GLM_PRESTAGE=0` でオフ。
+- AMD の GPU は下の「AMD の GPU」を参照。
 - **V100（sm_70）:** CUDA 13 は V100 向けにコンパイルできないので、CUDA 12（12.9）を入れて
   `./setup-deepseek.sh --nvcc /usr/local/cuda-12.9/bin/nvcc` でビルドする（CUDA 12.9 は RTX 50 の `120a` も作れる）。
   sm_70 でのビルドは通ることを確かめた。V100 の実機ではまだ動かしていない。tensor core を使う新しいカーネル

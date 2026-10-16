@@ -7,6 +7,18 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.27 - 2026-10-16
+
+A layer split's prompts prestage the experts too (one card had it; a split part copied each chunk's experts after
+the chunk's attention): each part keeps its own ring of staged experts and fills it while the chunk before runs.
+RTX 5090 + RTX 3090 split 33 / 10 (`STRATA_GLM_SPLIT_KEEP=1`, RAM tier 66 GB): a 32K prompt 2,274-2,350 tok/s
+(v1.3.26: 2,119-2,186, +7-8%), 8K about the same (1,424-1,508 vs 1,435-1,650).  The RTX 5090 alone is unchanged
+(32K 3,173-3,334).
+- Sizing under a split with `--prefill auto`: a part picks its chunk first (up to 8,192 tokens) and gives what is
+  left to the prestage ring (none below 16 slots), so a small card (a V100) does not get smaller chunks for it.
+  One card picks as before.  `STRATA_GLM_PRESTAGE=0` turns it off.
+- A split's prompts are still about 30% behind the RTX 5090 alone here.
+
 ## v1.3.26 - 2026-10-16
 
 The n-gram speculative decode (`STRATA_DS4_SPEC`) runs with a layer split too: the verify window goes through the

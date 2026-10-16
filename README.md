@@ -186,7 +186,7 @@ kernels match the FP32 ones to ~2e-6, and speculative decoding gives the token p
 - [ ] A DSpark drafter (this GGUF has no MTP block)
 - [ ] Conversation slots on disk
 - [ ] Windows for DeepSeek V4 (Linux tested)
-- [ ] Speed with several cards: prestaging in a split; a run on a V100; discrete Radeon cards
+- [ ] Speed with several cards: a split's prompts (30% behind one RTX 5090 here); a run on a V100; discrete Radeon cards
 - [ ] Prompt-path tuning at short lengths (staging RAM-tier experts still dominates an 8K prompt)
 
 ## 🙏 Credits

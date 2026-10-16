@@ -673,8 +673,9 @@ bool Glm5Model::prefill_setup(std::string& err) {
     const char* pct_env = getenv("STRATA_PREFILL_LEND_PCT");
     const char* mb_env = getenv("STRATA_GLM_PREFILL_MB");
     const size_t gbuf = has_moe ? (size_t) PrefillState::NG * PrefillState::GE * gstride : 0;
-    // the prestage buffer (the ring): one GPU (a split's parts hold most of their experts); STRATA_GLM_PRESTAGE=<slots>
-    int ring_max = has_moe && n_parts_ == 1 ? kPreSlots : 0;
+    // the prestage buffer (the ring), on a split's parts too (v1.3.27: RTX 5090 + RTX 3090 split 33 / 10, 32K-token
+    // prompts 2,177-2,186 -> 2,305-2,309 tok/s, 8K about even); STRATA_GLM_PRESTAGE=<slots>, 0 none
+    int ring_max = has_moe ? kPreSlots : 0;
     if (const char* v = getenv("STRATA_GLM_PRESTAGE")) ring_max = has_moe ? std::max(0, std::atoi(v)) : 0;
     // the chunk and its prestage slots for a lend cap of `pct`% of the pool's slots ({0, 0}: no chunk fits)
     S->choose = [=, this](int64_t pct) -> std::pair<int64_t, int> {
@@ -721,7 +722,11 @@ bool Glm5Model::prefill_setup(std::string& err) {
             return best;
         };
         int64_t T = 0;
-        if (is_auto) {
+        if (is_auto && n_parts_ > 1) {
+            // a split: the chunk first (8192 at most - the parts' pipeline wants it whole), the prestage buffer from
+            // what it leaves (none below 16 slots) - a small card keeps its chunk
+            T = biggest(0);
+        } else if (is_auto) {
             T = biggest(ring_max);
             if (T == 0 && ring_max > kRingMin) T = biggest(kRingMin);
             if (T == 0) T = biggest(0);
