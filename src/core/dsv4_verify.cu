@@ -404,8 +404,8 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
     }
     // ... and the CPU lane's answers, in request order.  Deferred (F->defer, as fast_ffn): a column's part is
     // written into its streams after the next layer's attention (verify's hc_defer_add) with these write weights,
-    // saved now; the trunk's last layer waits for its own
-    if (F->defer && Ly.moe && !Ly.mtp && il != g.n_layers - 1) {
+    // saved now; the trunk's (or this part's) last layer waits for its own
+    if (F->defer && Ly.moe && !Ly.mtp && il != l1_ - 1) {
         if (lane)
             for (int t = tb; t < tb + T; ++t) gf::copy_floats(V->post_defer + (size_t) t * 8, V->post + (size_t) t * 8, 8, s);
     } else if (lane) {

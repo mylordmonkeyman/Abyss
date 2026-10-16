@@ -1107,9 +1107,12 @@ bool Glm5Model::fast_setup(std::string& err) {
                      dev_, l0_, l1_, (double) tot / 1073741824.0, nmin, nmax, (long long) F->pool_slots);
         fast_tail_skip_setup();
         if (const char* dv = getenv("STRATA_GLM_DEFER"); dv != nullptr && std::atoi(dv) != 0) {
-            F->defer = n_parts_ == 1;   // (a layer split: each part would need the other's answer)
-            std::fprintf(stderr, "glm fast: CUDA%d expert deferral %s (STRATA_GLM_DEFER): the CPU lane's part of a layer joins "
-                                 "the residual one layer late\n", dev_, F->defer ? "on" : "off - the layers are split");
+            // (a layer split: each part defers within its own layers - its last layer waits for its own part, as
+            // the trunk's last layer does, and the next part's first layer has nothing to add)
+            F->defer = true;
+            std::fprintf(stderr, "glm fast: CUDA%d expert deferral on (STRATA_GLM_DEFER): the CPU lane's part of a layer joins "
+                                 "the residual one layer late%s\n", dev_,
+                         n_parts_ > 1 ? " (a split: each part's last layer waits for its own)" : "");
         }
         if (getenv("STRATA_GLM_TIMING") != nullptr) {
             std::string sl;
@@ -3870,9 +3873,10 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
                  Ly.sh_down.q != nullptr ? F->sh_out : nullptr, F->ffn, s);
     if (F->prof_on) F->mark("moe_down");
     // the CPU lane's experts last: the device's own down rows ran while the CPU worked.  Deferred (F->defer): the
-    // layer before's part is added here instead, this layer's by the next (the last trunk layer adds both)
+    // layer before's part is added here instead, this layer's by the next (the last trunk layer adds both; in a
+    // layer split each part's last layer, so the hop carries a complete residual and the next part starts clean)
     if (F->defer && !Ly.mtp) {
-        if (il == g.n_layers - 1) {   // the trunk's last layer: nothing after it to defer into
+        if (il == l1_ - 1) {   // the trunk's (or this part's) last layer: nothing after it here to defer into
             gf::moe_cpu_wait(md, g.n_embd, F->ffn, s);
             if (F->prof_on) F->mark("moe_cpu_wait");
         } else if (lane) {            // its write weights, for the add after the next layer's attention

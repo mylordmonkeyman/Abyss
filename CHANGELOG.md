@@ -7,6 +7,17 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.24 - 2026-10-16
+
+Expert deferral (`STRATA_GLM_DEFER=1`) works with a layer split (`STRATA_GLM_SPLIT`) too: each part defers within its
+own layers, and a part's last layer waits for its own CPU-lane part before the hop.  Answers: split alone KL 0.0115
+(unsplit 0.0119), split + deferral 0.060 (unsplit deferral 0.082 - the part boundaries keep the in-order sum).  No
+speed from it on an RTX 5090 + RTX 3090 split: 80.9-81.4 tok/s either way (12.4 ms a token) - with two cards' VRAM
+88% of the experts hit VRAM and the CPU lane is 1.7 ms a token, little to hide.  A split on two GPUs runs slower than
+the 5090 alone here (81 against 95 tok/s).  Note for one-GPU splits (`STRATA_GLM_SPLIT_SAME=1`): each part sizes its
+RAM tier from the free RAM, so give `STRATA_GLM_RAM_GB` - two parts pinned 72 GB of 93 and the system's OOM killer
+stopped the session.
+
 ## v1.3.23 - 2026-10-16
 
 Expert deferral (`STRATA_GLM_DEFER=1`) covers the verify window too: each column's CPU-lane part joins its streams
