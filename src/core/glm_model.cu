@@ -983,7 +983,8 @@ static double host_read_bps() {
 //   - the startability gate (Strata #1094): every part keeps its pool's floor and can lend a 512-token prompt chunk.
 // Two to four GPUs try every placement (memoised per part and range, as Strata's four-way search); more keep the
 // proportional split (glm_auto_bounds).  STRATA_GLM_SPLIT_LOG=1 prints every placement's prediction.
-static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t max_ctx, const std::vector<int>& devs) {
+static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t max_ctx, const std::vector<int>& devs,
+                                          int* one_dev = nullptr) {
     std::string err;
     std::vector<std::string> names;
     if (!pack_shard_names(pack_dir, names, err)) return {};
@@ -1163,7 +1164,20 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
     for (auto& c : cards)
         if (c.bw <= 0) c.bw = 1e11;   // (no reading: every card the same, and the misses decide)
     const double host_bps = host_read_bps();
-    const double miss_bps = std::max(1e9, (host_bps > 0 ? host_bps : 2e10) / n);   // each part's lane, all at once
+    // the terms of a decode token, fitted by least squares on an RTX 5090 + RTX 3090 with the Radeon 8060S lane (DSV4
+    // Flash Q2_K_XL, 2026-10-16: splits 22 / 26 / 30 / 36 and each card alone, 10.9 - 18.1 ms, every one within 0.35
+    // ms; STRATA_SPLIT_DUMP=1 prints the parts' bytes for a refit): a card reads at 56% of its bus's peak (the small
+    // kernels' latency included - a clock term did not separate from it), a miss costs 57% of its bytes' read from RAM
+    // (the rest the lane hides behind the GPU's own work), and each boundary 0.39 ms (the hop and the cross-device
+    // waits).  A serial decode's parts never run their lanes at once (the pipelined one's do: each its share).
+    const auto envd = [](const char* nm, double d) {
+        const char* v = getenv(nm);
+        return v != nullptr && v[0] ? std::atof(v) : d;
+    };
+    const double bw_eff = envd("STRATA_SPLIT_BW_EFF", 0.56);
+    const double miss_hide = envd("STRATA_SPLIT_MISS_SHARE", 0.57);
+    const double hop_ms = envd("STRATA_SPLIT_HOP_MS", 0.39);
+    const double host_lane = host_bps > 0 ? host_bps : 2e10;
     double max_stride = 0;
     for (double st : stride) max_stride = std::max(max_stride, st);
     const double fixed = 8.0 * max_stride + (double) (256u << 20);   // the scratch slots and the activations
@@ -1175,14 +1189,17 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
         int64_t per = 0;
         bool ok = false;
     };
-    // part i running layers [lb, le), memoised (a part's fill and time depend on its own range and card only)
-    std::map<std::tuple<int, int, int>, Eval> memo;
-    const auto stage = [&](int i, int lb, int le) -> Eval {
-        const auto key = std::make_tuple(i, lb, le);
+    // part i running layers [lb, le), memoised (a part's fill and time depend on its own range and card only);
+    // `alone`: card i runs every layer by itself (the first and the last part at once, no draft block)
+    std::map<std::tuple<int, int, int, bool>, Eval> memo;
+    const auto stage = [&](int i, int lb, int le, bool alone = false) -> Eval {
+        const auto key = std::make_tuple(i, lb, le, alone);
         if (const auto it = memo.find(key); it != memo.end()) return it->second;
-        const bool last = i == n - 1;
+        const bool last = alone || i == n - 1;
+        const bool with_mtp = mtp && !alone;
+        const double miss_bps = std::max(1e9, pipelined && !alone ? host_lane / n : host_lane) / miss_hide;
         const Card& c = cards[(size_t) i];
-        double used = common + fixed + 4.0 * 2 * g.hc * g.n_embd + (i == 0 ? embd : 0.0);
+        double used = common + fixed + 4.0 * 2 * g.hc * g.n_embd + (i == 0 || alone ? embd : 0.0);
         double bsum = 0, ssum = 0, smax = 0;
         bool kda = false, dsa = false, dense_ffn = false, moe = false;
         for (int l = lb; l < le; ++l) {
@@ -1199,7 +1216,7 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
         }
         if (last) {
             used += head;
-            if (mtp) {
+            if (with_mtp) {
                 used += mtp_dense + dsa_state;
                 bsum += blob[(size_t) L];
                 ssum += stride[(size_t) L];
@@ -1215,7 +1232,7 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
         // startable: the pool's floor, and a 512-token prompt chunk lent at --prefill auto's cap
         ev.ok = ssum == 0 || ev.per >= keep;
         if (ev.ok && ssum > 0) {
-            const double need = (double) glm_prefill_lend_bytes(g, 512, kda, dsa, dense_ffn, moe, last && mtp, max_ctx,
+            const double need = (double) glm_prefill_lend_bytes(g, 512, kda, dsa, dense_ffn, moe, last && with_mtp, max_ctx,
                                                                 (size_t) smax);
             const int64_t k = (int64_t) std::ceil(need / ssum);
             ev.ok = k + keep <= ev.per && k * 100 <= 90 * ev.per;
@@ -1231,12 +1248,26 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
                 ev.hits += h;
                 ev.routes += g.n_exp_used;
             }
-            return 1e3 * (gpu / c.bw + cpu / miss_bps);
+            return 1e3 * (gpu / (c.bw * bw_eff) + cpu / miss_bps);
         };
         for (int l = lb; l < le; ++l) ev.ms += layer_ms(l, dense[(size_t) l]);
+        static const bool dump = getenv("STRATA_SPLIT_DUMP") != nullptr;
+        if (dump) {   // (calibration: the terms of the part's time)
+            double gb = 0, cb = 0;
+            for (int l = lb; l < le; ++l) {
+                gb += dense[(size_t) l];
+                if (moe_layer(l)) {
+                    const double h = g.n_exp_used * held_share(l, held);
+                    gb += h * blob[(size_t) l];
+                    cb += (g.n_exp_used - h) * blob[(size_t) l];
+                }
+            }
+            if (last) gb += head;
+            std::fprintf(stderr, "glm split dump: %d %d %d %d %.6e %.6e %.6e\n", i, lb, le, (int) alone, gb, cb, c.bw);
+        }
         if (last) {
-            ev.ms += 1e3 * head / c.bw;
-            if (pipelined) ev.ms += layer_ms(L, mtp_dense);   // the draft, once a token
+            ev.ms += 1e3 * head / (c.bw * bw_eff);
+            if (pipelined && !alone) ev.ms += layer_ms(L, mtp_dense);   // the draft, once a token
         }
         memo[key] = ev;
         return ev;
@@ -1253,6 +1284,7 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
             slow = std::max(slow, ev.back().ms);
             ok = ok && ev.back().ok;
         }
+        sum += (n - 1) * hop_ms;
         obj = pipelined ? slow : sum;
         tie = pipelined ? sum : slow;
         return ok;
@@ -1291,8 +1323,9 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
     for (const auto& c : cards)
         std::fprintf(stderr, "glm split auto: CUDA%d (%s) memory %.0f GB/s, %.2f GB free\n", c.dev, c.name.c_str(),
                      c.bw / 1e9, c.free / 1073741824.0);
-    std::fprintf(stderr, "glm split auto: the host reads RAM at %.0f GB/s (a part's CPU lane: %.0f); the routes from %s; "
-                         "%s\n", host_bps / 1e9, miss_bps / 1e9,
+    std::fprintf(stderr, "glm split auto: the host reads RAM at %.0f GB/s (a part's CPU lane: %.0f, %.0f%% of a miss "
+                         "not hidden, %.2f ms a boundary); the routes from %s; %s\n", host_bps / 1e9,
+                 (pipelined ? host_lane / n : host_lane) / 1e9, 100.0 * miss_hide, hop_ms,
                  cover[3].empty() ? "the default coverage curve (no usage counts)" : "the usage counts",
                  pipelined ? "the pipelined decode: a token costs the slower part" : "a token costs the parts added");
     if (best.empty()) {
@@ -1303,6 +1336,27 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
     }
     double obj = 0, tie = 0;
     price(best, ev, obj, tie);
+    // one card by itself: a decode's parts run one after another, so a slower second card's layers can cost more
+    // than its VRAM saves in misses (RTX 5090 + RTX 3090: the best split 87.9 tok/s, the 5090 alone 92-95 - and it
+    // keeps the n-gram drafts a split has not).  STRATA_GLM_SPLIT_KEEP=1 splits anyway.
+    if (one_dev != nullptr && getenv("STRATA_GLM_SPLIT_KEEP") == nullptr) {
+        int bi = -1;
+        double bms = obj;
+        for (int i = 0; i < n; ++i) {
+            const Eval e = stage(i, 0, L, true);
+            if (split_log)
+                std::fprintf(stderr, "glm split auto: CUDA%d alone -> %.2f ms%s\n", cards[(size_t) i].dev, e.ms,
+                             e.ok ? "" : " (cannot start)");
+            if (e.ok && e.ms < bms) { bi = i; bms = e.ms; }
+        }
+        if (bi >= 0) {
+            std::fprintf(stderr, "glm split auto: CUDA%d alone - a token %.1f ms predicted against %.1f for the best "
+                                 "split; one GPU (STRATA_GLM_SPLIT_KEEP=1: the split anyway)\n",
+                         cards[(size_t) bi].dev, bms, obj);
+            *one_dev = cards[(size_t) bi].dev;
+            return {};
+        }
+    }
     std::string where, parts;
     double hits = 0, routes = 0;
     for (int i = 0; i < n; ++i) {
@@ -1365,7 +1419,9 @@ bool Glm5Model::load_pack_env(const std::string& pack_dir, int64_t max_ctx, std:
         // --layer-split auto: Strata's split search over two to four GPUs; more (or a pack it cannot read) share the
         // layers by free VRAM - two GPUs at the midpoint, plus two layers for the head half when the tail also runs
         // the NextN draft block (2x V100, split 22 / 23 / 24 / 25 / 26 -> 36.3 / 36.7 / 40.0 / 37.3 / 39.4 tok/s)
-        if (devs.size() <= 4) bounds = glm_search_bounds(pack_dir, max_ctx, devs);
+        int one = -1;
+        if (devs.size() <= 4) bounds = glm_search_bounds(pack_dir, max_ctx, devs, &one);
+        if (one >= 0) return load_pack(pack_dir, max_ctx, err, one);
         if (bounds.empty() && devs.size() == 2)
             bounds = {g_.n_layers / 2 +
                       (getenv("STRATA_GLM_NO_MTP") == nullptr && getenv("STRATA_GLM_NO_SPEC") == nullptr ? 2 : 0)};

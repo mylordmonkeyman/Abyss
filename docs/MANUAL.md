@@ -280,6 +280,13 @@ experts in VRAM, so the second card's VRAM holds more of them.
 - **Setup:** `./setup-deepseek.sh --gpus 0,1` or `--gpus all`. The config gets `"gpu": [0, 1]`, and the server
   starts the engine with `--layer-split auto`. GPUs of different generations (an RTX 5090 with an RTX 3090) are
   built for both architectures (`86;120a`).
+- **What `auto` picks (v1.3.25):** it prices every boundary - and each card by itself - by the decode time it
+  predicts (each card's bytes over its memory bandwidth, the misses the CPU / iGPU lane does not hide, a fixed cost
+  a boundary; fitted on an RTX 5090 + RTX 3090, within 0.35 ms of the measured 10.9 - 18.1 ms), and runs on one GPU
+  when that is faster: a decode token goes through the parts one after another, so a slower second card's layers can
+  cost more than its VRAM saves. RTX 5090 + RTX 3090 (both PCIe Gen4 x4): the 5090 alone, 94-95 tok/s (the split it
+  picked before, 26 / 17: 84 tok/s; the best split, 33 / 10: 88 tok/s). `STRATA_GLM_SPLIT_KEEP=1` splits anyway
+  (more context or VRAM for prompts), `STRATA_GLM_SPLIT_LOG=1` prints every prediction.
 - **Choosing the boundary:** `"layer_split": "22"` in the config (the second card's first layer).
 - **The iGPU lane:** it works with a split too. One iGPU computes every GPU's RAM tier, one call at a time.
 - **What has been checked:** a two-part split on one GPU (`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
@@ -420,6 +427,6 @@ KL 0.009 over 3000 tokens, with the same next-token accuracy.
   drafts from the text itself (`STRATA_DS4_SPEC`).
 - Conversation slots on disk (`STRATA_GLM_SLOTS`) are off for DeepSeek V4; the live reuse of the last conversation works.
 - No images (DeepSeek V4 Flash is text-only here).
-- Several GPUs: the layer split runs (see "Several GPUs") but without speculative decoding, and a slow second card
-  does not yet beat one fast card with the iGPU lane. Windows is untested for DeepSeek V4.
+- Several GPUs: the layer split runs (see "Several GPUs") but without speculative decoding, and a slower second card
+  does not beat one fast card with the iGPU lane - `auto` then runs on the fast card alone. Windows is untested for DeepSeek V4.
 - `./abyss.sh` (Maya's installer) is for GLM; DeepSeek V4 is set up with `./setup-deepseek.sh`.

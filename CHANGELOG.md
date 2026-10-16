@@ -7,6 +7,23 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.25 - 2026-10-16
+
+`--layer-split auto` prices the placements by what a decode token costs on this hardware, and runs on one GPU when
+that is faster.  RTX 5090 + RTX 3090 (both PCIe Gen4 x4), the default start with both cards visible: the 5090 alone,
+94.2-94.8 tok/s with the n-gram drafts (v1.3.24 split them 26 / 17: 84.4 tok/s).
+- Why a split lost: a decode token goes through the parts one after another, the 3090's layers cost 1.64x the
+  5090's (its memory bandwidth, STRATA_GLM_PROF), and the second card's VRAM only trims the CPU lane's wait, which the
+  iGPU lane already mostly hides; a split also has no n-gram drafts (+3-4% on one card).
+- The model: a card reads at 56% of its bus's peak, a miss costs 57% of its bytes' read from RAM (no longer the RAM
+  speed split between the parts - they do not run at once), 0.39 ms a boundary; fitted by least squares on splits
+  22 / 26 / 30 / 36 and each card alone (predicted 12.19 / 11.70 / 11.38 / 11.33 / 10.87 / 17.48 ms against measured
+  12.33 / 11.85 / 11.38 / 11.82 / 10.86 / 18.13).  `STRATA_SPLIT_BW_EFF`, `STRATA_SPLIT_MISS_SHARE`,
+  `STRATA_SPLIT_HOP_MS` override the terms; `STRATA_SPLIT_DUMP=1` prints each part's bytes for a refit.
+- `STRATA_GLM_SPLIT_KEEP=1` splits anyway (it now picks 33 / 10 here: 88.3-88.7 tok/s); an explicit
+  `STRATA_GLM_SPLIT=K` / `"layer_split"` is unchanged.  Fitted on one machine: V100 pairs and GLM's pipelined split are
+  not re-measured.
+
 ## v1.3.24 - 2026-10-16
 
 Expert deferral (`STRATA_GLM_DEFER=1`) works with a layer split (`STRATA_GLM_SPLIT`) too: each part defers within its

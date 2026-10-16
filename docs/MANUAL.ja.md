@@ -277,6 +277,13 @@ NVIDIA の GPU が 2 枚以上あれば、層を分けて載せられる（layer
 - **セットアップ:** `./setup-deepseek.sh --gpus 0,1` または `--gpus all`。設定に `"gpu": [0, 1]` が入り、サーバーが
   `--layer-split auto` を付けて起動する。世代の違う GPU（例: RTX 5090 + RTX 3090）は、両方のアーキテクチャ
   （`86;120a`）でビルドする。
+- **`auto` の選び方（v1.3.25）:** すべての境目と「各カード 1 枚だけ」を、予測した decode 時間で比べる（各カードの読む
+  バイト ÷ メモリ帯域、CPU / iGPU レーンが隠しきれないミスの分、境目 1 つごとの固定コスト。RTX 5090 + RTX 3090 で
+  合わせた係数で、実測 10.9〜18.1 ms との差は 0.35 ms 以内）。1 枚のほうが速ければ 1 枚で動かす。decode の 1 トークンは
+  part を順番に通るので、遅い 2 枚目の層は、増えた VRAM で減るミスより高くつくことがある。RTX 5090 + RTX 3090（どちらも
+  PCIe Gen4 x4）では 5090 だけで 94〜95 tok/s（以前選んでいた 26 / 17 の分割は 84 tok/s、最良の分割 33 / 10 でも
+  88 tok/s）。`STRATA_GLM_SPLIT_KEEP=1` で分割を続ける（長い文脈や prompt 用の VRAM が欲しいとき）。
+  `STRATA_GLM_SPLIT_LOG=1` で予測をすべて出す。
 - **境目を手で決める:** 設定の `"layer_split": "22"`（2 枚目が担当する最初の層）。
 - **iGPU レーン:** 分けたときも使える。各 GPU の RAM 層を 1 つの iGPU が順番に計算する。
 - **確認済みの範囲:** 1 枚の GPU の上で 2 つに分けた形（`STRATA_GLM_SPLIT_SAME=1 STRATA_GLM_SPLIT=22
@@ -414,5 +421,5 @@ prompt）まで測った。アテンションのキャッシュは小さい（65
 - 会話のディスク保存（`STRATA_GLM_SLOTS`）は DeepSeek V4 では無効。直前の会話の再利用は動く。
 - 画像は扱わない（ここでは DeepSeek V4 Flash はテキストのみ）。
 - 複数 GPU: 層の分割は動く（「複数の GPU」）が投機デコードは使えず、遅い 2 枚目を足しても速い 1 枚 + iGPU レーンには
-  まだ届かない。Windows は DeepSeek V4 では未確認。
+  届かない。そのとき `auto` は速いカード 1 枚で動かす。Windows は DeepSeek V4 では未確認。
 - `./abyss.sh`（Maya から引き継いだインストーラ）は GLM 用。DeepSeek V4 は `./setup-deepseek.sh`。
