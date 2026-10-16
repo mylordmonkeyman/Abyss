@@ -261,6 +261,19 @@ struct Glm5Model::FastState {
     gf::MoeRequest* ring_h = nullptr;
     gf::MoeResponse* resp_h = nullptr;
     float* emb_h = nullptr;     // pinned
+    // ZERO-COPY TOKEN BOUNDARY (STRATA_GLM_ZERO_COPY=0 turns it off): the small copies at a token's start and end
+    // (the table edits, the embedding row, the argmax / sampler result) went through the copy engines, behind any
+    // 8 MB expert move in flight there (0.5-0.9 ms of GPU idle a token on an RTX 5090 at Gen4 x4 with the default
+    // promotions).  Instead the kernels read the host-mapped edit sets and a pinned copy of token_embd, and write
+    // the token into host-mapped memory.
+    bool zero_copy = false;
+    int* tok_hd = nullptr;          // tok_h's device address (then tok_h is host-mapped)
+    int* tok_in_h = nullptr;        // the token(s) going in, host-mapped: the embedding kernel reads them
+    int* tok_in_d = nullptr;
+    uint8_t* emb_tab_h = nullptr;   // pinned copy of token_embd (Q8_0), host-mapped
+    uint8_t* emb_tab_d = nullptr;
+    int* upd_key_hd[2] = {nullptr, nullptr};   // the edit sets' device addresses
+    unsigned long long* upd_val_hd[2] = {nullptr, nullptr};
     float* hop_h = nullptr;     // pinned, hc * n_embd
     int* tok_h = nullptr;       // pinned
     // per layer: the resolved weights
@@ -447,6 +460,18 @@ struct Glm5Model::FastState {
     std::atomic<uint64_t> miss_us{0}, disk_us{0};
     uint64_t tokens = 0;
     double ms = 0;
+    // ---- STRATA_GLM_GAP_PROF=1: where the time between two tokens goes.  Host laps (ms, summed): from a token's
+    //      readiness to the next call (sampling, the drafter, emitting), the boundary's stream sync / service-thread
+    //      wait / table scan, the embedding row, the spin on the token; the GPU's own idle gap by timing events (the
+    //      previous token's last launch -> this token's first); the sampler's round trips.  gap_report() prints them.
+    bool gap_on = false, gap_live = false;
+    cudaEvent_t ev_gs = nullptr, ev_ge[2] = {nullptr, nullptr}, ev_g0 = nullptr;
+    int gap_par = 0;
+    std::chrono::steady_clock::time_point t_ready{};
+    double gap_host = 0, gap_bsync = 0, gap_bwait = 0, gap_bscan = 0, gap_emb = 0, gap_spin = 0, gap_gpu = 0,
+           gap_sample = 0, gap_busy = 0, gap_notice = 0;
+    bool token_spin = false;   // STRATA_GLM_TOKEN_SPIN=1: the wait for the token polls without yielding (an experiment)
+    uint64_t gap_n = 0, gap_gpu_n = 0, gap_sample_n = 0;
     bool timing = false;
     bool ram_resident = false;   // STRATA_GLM_RAM_RESIDENT=1 / --glm-ram-resident: the RAM tier holds EVERY expert
                                  // VRAM does not, nothing ever drops to disk; the start fails if the tier is small

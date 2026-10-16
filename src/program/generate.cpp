@@ -1774,6 +1774,7 @@ static int glm_pack_generate(const Options& o) {
                          (double) (st2.cpu_experts - st1.cpu_experts) / n, (st2.cpu_ms - st1.cpu_ms) / n,
                          (double) (st2.tail_skips - st1.tail_skips) / n, prompt_ms / (double) std::max<size_t>(1, prompt.size()), (long long) st2.pool_used,
                          (long long) st2.pool_slots, (long long) st2.ram_used, (long long) st2.ram_slots);
+            model.gap_report();
             if (model.spec_steps_ > spec0)
                 std::fprintf(stderr, "glm spec: %llu of %llu drafts accepted (%.1f%%)\n",
                              (unsigned long long) (model.spec_hits_ - hits0),

@@ -478,6 +478,8 @@ bool Glm5Model::fast_setup(std::string& err) {
     const Glm5Geometry& g = g_;
     F->timing = getenv("STRATA_GLM_TIMING") != nullptr;
     F->prof_on = getenv("STRATA_GLM_PROF") != nullptr;
+    F->gap_on = getenv("STRATA_GLM_GAP_PROF") != nullptr && std::atoi(getenv("STRATA_GLM_GAP_PROF")) != 0;
+    F->token_spin = getenv("STRATA_GLM_TOKEN_SPIN") != nullptr && std::atoi(getenv("STRATA_GLM_TOKEN_SPIN")) != 0;
     if (F->prof_on) F->pskip = (uint64_t) std::max(0, std::atoi(getenv("STRATA_GLM_PROF")));
     if (const char* pn = getenv("STRATA_GLM_PREFETCH_N")) F->max_pf = std::max(0, std::min(gf::kSpares - 1, std::atoi(pn)));
     // RAM-resident mode (--glm-ram-resident / STRATA_GLM_RAM_RESIDENT=1): the RAM tier's per-class cap grows by
@@ -495,6 +497,11 @@ bool Glm5Model::fast_setup(std::string& err) {
         cudaEventCreateWithFlags(&F->ev_pf_prev, cudaEventDisableTiming) != cudaSuccess ||
         cudaEventCreateWithFlags(&F->ev_done, cudaEventDisableTiming) != cudaSuccess) {
         err = "glm fast: streams/events did not create";
+        return false;
+    }
+    if (F->gap_on && (cudaEventCreate(&F->ev_gs) != cudaSuccess || cudaEventCreate(&F->ev_ge[0]) != cudaSuccess ||
+                      cudaEventCreate(&F->ev_ge[1]) != cudaSuccess || cudaEventCreate(&F->ev_g0) != cudaSuccess)) {
+        err = "glm fast: gap profile events did not create";
         return false;
     }
 
@@ -750,9 +757,39 @@ bool Glm5Model::fast_setup(std::string& err) {
     F->md.resp = dp;
     if (cudaHostAlloc((void**) &F->emb_h, (size_t) E * sizeof(float), cudaHostAllocDefault) != cudaSuccess ||
         cudaHostAlloc((void**) &F->hop_h, (size_t) g.hc * E * sizeof(float), cudaHostAllocDefault) != cudaSuccess ||
-        cudaHostAlloc((void**) &F->tok_h, 64, cudaHostAllocDefault) != cudaSuccess) {
+        cudaHostAlloc((void**) &F->tok_h, 64, cudaHostAllocMapped) != cudaSuccess ||
+        cudaHostAlloc((void**) &F->tok_in_h, 64 * sizeof(int), cudaHostAllocMapped) != cudaSuccess) {
         err = "glm fast: pinned staging did not allocate";
         return false;
+    }
+    F->zero_copy = getenv("STRATA_GLM_ZERO_COPY") == nullptr || std::atoi(getenv("STRATA_GLM_ZERO_COPY")) != 0;
+    if (cudaHostGetDevicePointer((void**) &F->tok_hd, F->tok_h, 0) != cudaSuccess ||
+        cudaHostGetDevicePointer((void**) &F->tok_in_d, F->tok_in_h, 0) != cudaSuccess) {
+        err = "glm fast: host-mapped token buffers have no device address";
+        return false;
+    }
+    std::memset(F->tok_h, 0, 64);
+    std::memset(F->tok_in_h, 0, 64 * sizeof(int));
+    // the pinned copy of token_embd (Q8_0 / Q5_K - the other types keep the host dequantizer and its copy)
+    if (F->zero_copy && pack_emb_src_ != nullptr && gf::embed_rows_q_supported(pack_emb_type_, (int) g.n_embd)) {
+        const size_t bytes = (size_t) g.n_vocab * ggml_row_size((ggml_type) pack_emb_type_, g.n_embd);
+        if (cudaHostAlloc((void**) &F->emb_tab_h, bytes, cudaHostAllocMapped) == cudaSuccess) {
+            if (cudaHostGetDevicePointer((void**) &F->emb_tab_d, F->emb_tab_h, 0) == cudaSuccess) {
+                std::memcpy(F->emb_tab_h, pack_emb_src_, bytes);
+            } else {
+                cudaFreeHost(F->emb_tab_h);
+                F->emb_tab_h = nullptr;
+            }
+        } else {
+            cudaGetLastError();
+            F->emb_tab_h = nullptr;
+        }
+        if (F->emb_tab_h == nullptr)
+            std::fprintf(stderr, "glm fast: token_embd (%.0f MB) did not pin: the embedding row goes through a copy\n",
+                         (double) bytes / 1048576.0);
+        else
+            std::fprintf(stderr, "glm fast: CUDA%d zero-copy token boundary: token_embd pinned (%.0f MB), the table "
+                                 "edits and the token are read and written host-mapped\n", dev_, (double) bytes / 1048576.0);
     }
 
     // ---- the expert pool: per-layer partitions (equal quota per layer within its size class)
@@ -1266,9 +1303,11 @@ bool Glm5Model::fast_setup(std::string& err) {
             prefill_settle(all > 0 ? std::min(1.0, held / all) : 1.0);
         }
         for (int ub = 0; ub < 2; ++ub)
-            if (cudaHostAlloc((void**) &F->upd_key_h[ub], FastState::kMaxUpd * sizeof(int), cudaHostAllocDefault) != cudaSuccess ||
+            if (cudaHostAlloc((void**) &F->upd_key_h[ub], FastState::kMaxUpd * sizeof(int), cudaHostAllocMapped) != cudaSuccess ||
                 cudaHostAlloc((void**) &F->upd_val_h[ub], FastState::kMaxUpd * sizeof(unsigned long long),
-                              cudaHostAllocDefault) != cudaSuccess ||
+                              cudaHostAllocMapped) != cudaSuccess ||
+                cudaHostGetDevicePointer((void**) &F->upd_key_hd[ub], F->upd_key_h[ub], 0) != cudaSuccess ||
+                cudaHostGetDevicePointer((void**) &F->upd_val_hd[ub], F->upd_val_h[ub], 0) != cudaSuccess ||
                 cudaMalloc((void**) &F->upd_key_d[ub], FastState::kMaxUpd * sizeof(int)) != cudaSuccess ||
                 cudaMalloc((void**) &F->upd_val_d[ub], FastState::kMaxUpd * sizeof(unsigned long long)) != cudaSuccess ||
                 cudaEventCreateWithFlags(&F->upd_ev[ub], cudaEventDisableTiming) != cudaSuccess) {
@@ -2415,6 +2454,8 @@ void Glm5Model::fast_destroy() {
     if (F->md.route_error_d) cudaFree(F->md.route_error_d);
     if (F->resp_h) cudaFreeHost(F->resp_h);
     if (F->emb_h) cudaFreeHost(F->emb_h);
+    if (F->tok_in_h) cudaFreeHost(F->tok_in_h);
+    if (F->emb_tab_h) cudaFreeHost(F->emb_tab_h);
     if (F->hop_h) cudaFreeHost(F->hop_h);
     if (F->tok_h) cudaFreeHost(F->tok_h);
     if (F->scratch) cudaFree(F->scratch);
@@ -2431,6 +2472,10 @@ void Glm5Model::fast_destroy() {
     if (F->ps) cudaStreamSynchronize(F->ps);
     if (F->ev_hop) cudaEventDestroy(F->ev_hop);
     if (F->ev_done) cudaEventDestroy(F->ev_done);
+    if (F->ev_gs) cudaEventDestroy(F->ev_gs);
+    if (F->ev_g0) cudaEventDestroy(F->ev_g0);
+    for (cudaEvent_t e : F->ev_ge)
+        if (e) cudaEventDestroy(e);
     if (F->ev_pred) cudaEventDestroy(F->ev_pred);
     if (F->ev_pf) cudaEventDestroy(F->ev_pf);
     if (F->ev_pf_prev) cudaEventDestroy(F->ev_pf_prev);
@@ -3043,12 +3088,25 @@ void Glm5Model::fast_ahead_reader() {
 bool Glm5Model::fast_boundary(std::string& err) {
     FastState* F = fast_;
     if (F == nullptr || F->lp.empty() || F->rc.empty()) return true;
+    const auto tb0 = std::chrono::steady_clock::now();
     // Also catches an asynchronous failure before waiting for routes that may never have been published.
     if (!glmfast::cuda_ok(cudaStreamSynchronize(F->cs), "glm boundary compute", err) || !F->route_ok(err))
         return false;
     const Glm5Geometry& g = g_;
+    const auto tb1 = std::chrono::steady_clock::now();
     while (F->processed.load(std::memory_order_acquire) < F->expected) cpu_relax();
     std::lock_guard<std::mutex> lk(F->mu);
+    struct GapScan {   // the table scan's time, whichever way the function leaves
+        FastState* F;
+        std::chrono::steady_clock::time_point t;
+        ~GapScan() {
+            if (F) F->gap_bscan += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
+        }
+    } gap_scan{F->gap_on ? F : nullptr, std::chrono::steady_clock::now()};
+    if (F->gap_on) {
+        F->gap_bsync += std::chrono::duration<double, std::milli>(tb1 - tb0).count();
+        F->gap_bwait += std::chrono::duration<double, std::milli>(gap_scan.t - tb1).count();
+    }
     int nu = 0;
     bool ok = true;
     // the edits go through one of two pinned sets: a flush records an event on the stream after its copies, and a
@@ -3068,14 +3126,20 @@ bool Glm5Model::fast_boundary(std::string& err) {
     take_set();
     const auto flush = [&] {
         if (nu > 0 && ok) {
-            ok = glmfast::cuda_ok(cudaMemcpyAsync(F->upd_key_d[ub], kh, (size_t) nu * sizeof(int),
-                                                  cudaMemcpyHostToDevice, F->cs), "glm table keys", err) &&
-                 glmfast::cuda_ok(cudaMemcpyAsync(F->upd_val_d[ub], vh,
-                                                  (size_t) nu * sizeof(unsigned long long), cudaMemcpyHostToDevice,
-                                                  F->cs), "glm table values", err);
-            if (ok) {
-                gf::tab_update(F->tab, F->upd_key_d[ub], F->upd_val_d[ub], nu, F->cs);
+            if (F->zero_copy) {
+                // the kernel reads the host-mapped set itself: no copy engine, nothing to queue behind
+                gf::tab_update(F->tab, F->upd_key_hd[ub], F->upd_val_hd[ub], nu, F->cs);
                 ok = glmfast::cuda_ok(cudaGetLastError(), "glm table update", err);
+            } else {
+                ok = glmfast::cuda_ok(cudaMemcpyAsync(F->upd_key_d[ub], kh, (size_t) nu * sizeof(int),
+                                                      cudaMemcpyHostToDevice, F->cs), "glm table keys", err) &&
+                     glmfast::cuda_ok(cudaMemcpyAsync(F->upd_val_d[ub], vh,
+                                                      (size_t) nu * sizeof(unsigned long long), cudaMemcpyHostToDevice,
+                                                      F->cs), "glm table values", err);
+                if (ok) {
+                    gf::tab_update(F->tab, F->upd_key_d[ub], F->upd_val_d[ub], nu, F->cs);
+                    ok = glmfast::cuda_ok(cudaGetLastError(), "glm table update", err);
+                }
             }
             if (bsync) {
                 // Pinned sources belong to the DMA until THIS stream completes, including the final batch.
@@ -3970,12 +4034,19 @@ bool Glm5Model::fast_token(int32_t token, std::string& err) {
     FastState* F = fast_;
     const Glm5Geometry& g = g_;
     const int64_t p = pos_++;
+    const bool gp = F->gap_on && split_next_ == nullptr;
+    if (gp) {
+        cudaEventRecord(F->ev_g0, F->cs);   // the first command of this token: when it reaches the GPU
+        if (F->gap_live)
+            F->gap_host += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - F->t_ready).count();
+    }
     // between tokens (every device idle): finished promotions go live in the device tables
     for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
         cudaSetDevice(m->dev_);
         if (!m->fast_boundary(err)) return false;
     }
     cudaSetDevice(dev_);
+    const auto te0 = std::chrono::steady_clock::now();
     for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) m->fast_->cur_tok = token;   // hash routing
     // ---- the embedding row (host-dequantized from the shard mapping) -> the 4 streams
     const ggml_type_traits* tt = ggml_get_type_traits((ggml_type) pack_emb_type_);
@@ -3983,11 +4054,22 @@ bool Glm5Model::fast_token(int32_t token, std::string& err) {
         err = "glm fast: no embedding dequantizer";
         return false;
     }
-    tt->to_float(pack_emb_src_ + (size_t) token * ggml_row_size((ggml_type) pack_emb_type_, g.n_embd), F->emb_h,
-                 g.n_embd);
-    if (const float* img = image_row(p)) std::memcpy(F->emb_h, img, (size_t) g.n_embd * sizeof(float));   // an image
-    cudaMemcpyAsync(F->emb, F->emb_h, (size_t) g.n_embd * sizeof(float), cudaMemcpyHostToDevice, F->cs);
+    const float* img = image_row(p);
+    if (F->emb_tab_d != nullptr && img == nullptr) {
+        // the row from the pinned table, gathered by the kernel (the id read host-mapped): no copy engine
+        F->tok_in_h[0] = token;
+        gf::embed_rows_q(pack_emb_type_, F->emb_tab_d, F->tok_in_d, 1, g.n_embd, F->emb, F->cs);
+    } else {
+        tt->to_float(pack_emb_src_ + (size_t) token * ggml_row_size((ggml_type) pack_emb_type_, g.n_embd), F->emb_h,
+                     g.n_embd);
+        if (img) std::memcpy(F->emb_h, img, (size_t) g.n_embd * sizeof(float));   // an image
+        cudaMemcpyAsync(F->emb, F->emb_h, (size_t) g.n_embd * sizeof(float), cudaMemcpyHostToDevice, F->cs);
+    }
     gf::embed_streams(F->emb, state_, g.n_embd, F->cs);
+    if (gp) {
+        cudaEventRecord(F->ev_gs, F->cs);
+        F->gap_emb += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - te0).count();
+    }
     if (!fast_layers(p, false, err)) return false;
     // each later part of a split: the residual crosses over through the previous part's pinned hop buffer, the
     // copy ordered on the devices by an event (the host never waits between the parts)
@@ -4034,15 +4116,20 @@ bool Glm5Model::fast_token(int32_t token, std::string& err) {
         err = "glm fast: output head (type " + std::to_string(ow.type) + ")";
         return false;
     }
-    gf::argmax(tail->sc_ + tail->sc_logits, g.n_vocab, FT->tok, FT->cs);
-    cudaMemcpyAsync(FT->tok_h, FT->tok, sizeof(int), cudaMemcpyDeviceToHost, FT->cs);
+    if (FT->zero_copy) {
+        gf::argmax(tail->sc_ + tail->sc_logits, g.n_vocab, FT->tok_hd, FT->cs);   // straight into the host-mapped word
+    } else {
+        gf::argmax(tail->sc_ + tail->sc_logits, g.n_vocab, FT->tok, FT->cs);
+        cudaMemcpyAsync(FT->tok_h, FT->tok, sizeof(int), cudaMemcpyDeviceToHost, FT->cs);
+    }
+    if (gp) cudaEventRecord(F->ev_ge[F->gap_par], F->cs);
     cudaEventRecord(FT->ev_done, FT->cs);
     // wait for the token (the service threads answer misses meanwhile)
     const auto tw = std::chrono::steady_clock::now();
     bool warned = false;
     cudaError_t done;
     while ((done = cudaEventQuery(FT->ev_done)) == cudaErrorNotReady) {
-        std::this_thread::yield();
+        if (F->token_spin) cpu_relax(); else std::this_thread::yield();
         if (!warned && std::chrono::steady_clock::now() - tw > std::chrono::seconds(10)) {
             warned = true;
             for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
@@ -4067,6 +4154,7 @@ bool Glm5Model::fast_token(int32_t token, std::string& err) {
         return false;
     }
     last_tok_ = FT->tok_h[0];
+    if (gp) fast_gap_mark(tw);
     for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get())
         if (m->fast_ && m->fast_->prof_on) {
             cudaSetDevice(m->dev_);
@@ -4133,10 +4221,62 @@ bool Glm5Model::fast_mtp(int64_t p, int32_t next_tok, std::string& err) {
 int Glm5Model::fast_sample(strata::kernels::SamplerParams& sp, std::string& err) {
     FastState* F = fast_;
     cudaSetDevice(dev_);
-    strata::kernels::sample_tokens(sc_ + sc_logits, 1, (int) g_.n_vocab, nullptr, 0, sp, d_tok_, F->cs);
-    cudaMemcpyAsync(F->tok_h, d_tok_, sizeof(int), cudaMemcpyDeviceToHost, F->cs);
+    const auto ts0 = std::chrono::steady_clock::now();
+    if (F->zero_copy) {
+        strata::kernels::sample_tokens(sc_ + sc_logits, 1, (int) g_.n_vocab, nullptr, 0, sp, F->tok_hd, F->cs);
+    } else {
+        strata::kernels::sample_tokens(sc_ + sc_logits, 1, (int) g_.n_vocab, nullptr, 0, sp, d_tok_, F->cs);
+        cudaMemcpyAsync(F->tok_h, d_tok_, sizeof(int), cudaMemcpyDeviceToHost, F->cs);
+    }
     if (!glmfast::cuda_ok(cudaStreamSynchronize(F->cs), "glm sampler", err) || !F->route_ok(err)) return -1;
+    if (F->gap_on) {
+        F->gap_sample += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - ts0).count();
+        ++F->gap_sample_n;
+    }
     return F->tok_h[0];
+}
+
+// STRATA_GLM_GAP_PROF: a token (or window) is ready at the host - the spin since `tw` ends, the GPU's idle gap before
+// this token (its previous end event -> its first launch) is read, and the clock for the host's share starts
+void Glm5Model::fast_gap_mark(std::chrono::steady_clock::time_point tw) {
+    FastState* F = fast_;
+    const auto now = std::chrono::steady_clock::now();
+    F->gap_spin += std::chrono::duration<double, std::milli>(now - tw).count();
+    if (F->gap_live) {
+        float ms = 0.0f;
+        if (cudaEventElapsedTime(&ms, F->ev_ge[F->gap_par ^ 1], F->ev_gs) == cudaSuccess) {
+            F->gap_gpu += ms;
+            ++F->gap_gpu_n;
+        }
+        if (cudaEventElapsedTime(&ms, F->ev_ge[F->gap_par ^ 1], F->ev_g0) == cudaSuccess) F->gap_notice += ms;
+    }
+    {
+        float ms = 0.0f;
+        if (cudaEventElapsedTime(&ms, F->ev_gs, F->ev_ge[F->gap_par]) == cudaSuccess) F->gap_busy += ms;
+    }
+    F->gap_par ^= 1;
+    F->gap_live = true;
+    F->t_ready = now;
+    ++F->gap_n;
+}
+
+void Glm5Model::gap_report() {
+    FastState* F = fast_;
+    if (F == nullptr || !F->gap_on || F->gap_n == 0) return;
+    const double n = (double) F->gap_n;
+    std::fprintf(stderr,
+                 "glm gap prof (%llu calls, ms/call): host after token %.3f (sampler %.3f x %.2f) | boundary sync %.3f "
+                 "wait %.3f scan %.3f | embed %.3f | spin %.3f | GPU busy %.3f, idle between tokens %.3f (%llu), "
+                 "of it before the next token's first command %.3f\n",
+                 (unsigned long long) F->gap_n, F->gap_host / n,
+                 F->gap_sample / (double) std::max<uint64_t>(1, F->gap_sample_n), (double) F->gap_sample_n / n,
+                 F->gap_bsync / n, F->gap_bwait / n, F->gap_bscan / n, F->gap_emb / n, F->gap_spin / n, F->gap_busy / n,
+                 F->gap_gpu / (double) std::max<uint64_t>(1, F->gap_gpu_n), (unsigned long long) F->gap_gpu_n,
+                 F->gap_notice / (double) std::max<uint64_t>(1, F->gap_gpu_n));
+    F->gap_host = F->gap_bsync = F->gap_bwait = F->gap_bscan = F->gap_emb = F->gap_spin = F->gap_gpu = F->gap_sample = 0;
+    F->gap_busy = F->gap_notice = 0;
+    F->gap_n = F->gap_gpu_n = F->gap_sample_n = 0;
+    F->gap_live = false;
 }
 
 // the bytes the expert pool may take from what is free: headroom kept (cuBLAS-free path; the context's own growth is

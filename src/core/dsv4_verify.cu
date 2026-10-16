@@ -66,7 +66,10 @@ struct VerifyBuf {
     float *head_x = nullptr, *logits = nullptr, *emb = nullptr;
     void* head_xq = nullptr;
     int* tok = nullptr;                       // device argmax per column
-    int* tok_h = nullptr;                     // pinned
+    int* tok_h = nullptr;                     // pinned, host-mapped (tok_hd: its device address)
+    int* tok_hd = nullptr;
+    int* tok_in_h = nullptr;                  // the window's tokens, host-mapped for the embedding kernel
+    int* tok_in_d = nullptr;
     float* emb_h = nullptr;                   // pinned [TM][n_embd]
     std::vector<gf::MoeDev> md;               // a route plan per column (the shared tables, own plan arrays)
     // per column, for the pipelined window's concurrent tokens: the mHC partials, the routed experts' h, the
@@ -116,7 +119,10 @@ bool Glm5Model::verify_alloc(std::string& err) {
     f(V->rlog, g.n_expert); f(V->sh_g, FF); f(V->sh_u, FF); f(V->sh_out, E); b(V->sh_hq, FF / 32 * kQ8);
     f(V->head_x, E); b(V->head_xq, E / 32 * kQ8); f(V->logits, (size_t) g.n_vocab); f(V->emb, E);
     ok = ok && cudaMalloc((void**) &V->tok, 64 * sizeof(int)) == cudaSuccess;
-    ok = ok && cudaHostAlloc((void**) &V->tok_h, 64 * sizeof(int), cudaHostAllocDefault) == cudaSuccess;
+    ok = ok && cudaHostAlloc((void**) &V->tok_h, 64 * sizeof(int), cudaHostAllocMapped) == cudaSuccess;
+    ok = ok && cudaHostAlloc((void**) &V->tok_in_h, 64 * sizeof(int), cudaHostAllocMapped) == cudaSuccess;
+    ok = ok && cudaHostGetDevicePointer((void**) &V->tok_hd, V->tok_h, 0) == cudaSuccess;
+    ok = ok && cudaHostGetDevicePointer((void**) &V->tok_in_d, V->tok_in_h, 0) == cudaSuccess;
     ok = ok && cudaHostAlloc((void**) &V->emb_h, (size_t) TM * E * sizeof(float), cudaHostAllocDefault) == cudaSuccess;
     ok = ok && cudaEventCreateWithFlags(&V->done, cudaEventDisableTiming) == cudaSuccess;
     V->hpart_n = (size_t) (4 * E / 512) * 36 + 64;
@@ -424,6 +430,11 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
     const int64_t p0 = pos_;
     pos_ += T;
     V->T = T;
+    if (F->gap_on) {
+        cudaEventRecord(F->ev_g0, s);
+        if (F->gap_live)
+            F->gap_host += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - F->t_ready).count();
+    }
     if (!fast_boundary(err)) return false;
     const auto t0 = std::chrono::steady_clock::now();
     // ---- the embedding rows -> each token's 4 streams
@@ -433,15 +444,24 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
         return false;
     }
     const size_t E = (size_t) g.n_embd, HCE = (size_t) g.hc * E;
-    for (int t = 0; t < T; ++t)
-        tt->to_float(pack_emb_src_ + (size_t) toks[(size_t) t] * ggml_row_size((ggml_type) pack_emb_type_, g.n_embd),
-                     V->emb_h + (size_t) t * E, g.n_embd);
-    cudaMemcpyAsync(V->emb, V->emb_h, (size_t) T * E * sizeof(float), cudaMemcpyHostToDevice, s);
+    if (F->emb_tab_d != nullptr) {
+        for (int t = 0; t < T; ++t) V->tok_in_h[t] = toks[(size_t) t];
+        gf::embed_rows_q(pack_emb_type_, F->emb_tab_d, V->tok_in_d, T, g.n_embd, V->emb, s);
+    } else {
+        for (int t = 0; t < T; ++t)
+            tt->to_float(pack_emb_src_ + (size_t) toks[(size_t) t] * ggml_row_size((ggml_type) pack_emb_type_, g.n_embd),
+                         V->emb_h + (size_t) t * E, g.n_embd);
+        cudaMemcpyAsync(V->emb, V->emb_h, (size_t) T * E * sizeof(float), cudaMemcpyHostToDevice, s);
+    }
     std::vector<float*> Rc((size_t) T), Ro((size_t) T);
     for (int t = 0; t < T; ++t) {
         Rc[(size_t) t] = V->R + (size_t) t * 2 * HCE;
         Ro[(size_t) t] = Rc[(size_t) t] + HCE;
         gf::embed_streams(V->emb + (size_t) t * E, Rc[(size_t) t], g.n_embd, s);
+    }
+    if (F->gap_on) {
+        cudaEventRecord(F->ev_gs, s);
+        F->gap_emb += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     }
     const auto hc_read = [&](int il, int t, const float* block_out, bool attn, cudaStream_t hs) {
         const auto& Ly = F->L[(size_t) il];
@@ -546,11 +566,19 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
             if (!gf::mv(&ot, 1, s)) { err = "deepseek4 verify: output head (type " + std::to_string(ow.type) + ")"; return false; }
         }
     }
-    for (int t = 0; t < T; ++t) gf::argmax(V->logits + (size_t) t * g.n_vocab, g.n_vocab, V->tok + t, s);
-    cudaMemcpyAsync(V->tok_h, V->tok, (size_t) T * sizeof(int), cudaMemcpyDeviceToHost, s);
+    if (F->zero_copy) {
+        for (int t = 0; t < T; ++t) gf::argmax(V->logits + (size_t) t * g.n_vocab, g.n_vocab, V->tok_hd + t, s);
+    } else {
+        for (int t = 0; t < T; ++t) gf::argmax(V->logits + (size_t) t * g.n_vocab, g.n_vocab, V->tok + t, s);
+        cudaMemcpyAsync(V->tok_h, V->tok, (size_t) T * sizeof(int), cudaMemcpyDeviceToHost, s);
+    }
+    if (F->gap_on) cudaEventRecord(F->ev_ge[F->gap_par], s);
     cudaEventRecord(V->done, s);
+    const auto tw = std::chrono::steady_clock::now();
     cudaError_t done;
-    while ((done = cudaEventQuery(V->done)) == cudaErrorNotReady) std::this_thread::yield();
+    while ((done = cudaEventQuery(V->done)) == cudaErrorNotReady) {
+        if (F->token_spin) glmfast::cpu_relax(); else std::this_thread::yield();
+    }
     if (!glmfast::cuda_ok(done, "deepseek4 verify completion", err) || !F->route_ok(err)) return false;
     if (gf::launch_errors() > 0) {
         err = "deepseek4 verify: " + std::to_string(gf::launch_errors()) + " kernel launch(es) failed (see stderr)";
@@ -559,6 +587,7 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
     F->ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     if (prof) F->collect();
     last_tok_ = V->tok_h[T - 1];
+    if (F->gap_on) fast_gap_mark(tw);
     return true;
 }
 

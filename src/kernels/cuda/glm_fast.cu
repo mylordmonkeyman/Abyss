@@ -1584,6 +1584,60 @@ __global__ void embed_streams_kernel(const float* __restrict__ emb, float* __res
     R[idx] = emb[idx % n_embd];
 }
 
+// token_embd rows for T tokens whose ids are read on the device (a host-mapped int or the argmax's output); the table
+// may be host-mapped (a few KB a row).  Q8_0: a thread a block of 32.  Q5_K: a thread a column l of a super-block
+// (ggml's dequantize_row_q5_K: 4 pairs of 32 per super-block).
+__global__ void embed_q8_rows_kernel(const block_q8_0* __restrict__ table, const int* __restrict__ toks, int n_embd,
+                                     float* __restrict__ out) {
+    const int t = blockIdx.y;
+    const int b = blockIdx.x * blockDim.x + threadIdx.x;
+    const int nb = n_embd / 32;
+    if (b >= nb) return;
+    const block_q8_0* q = table + (size_t) toks[t] * nb + b;
+    const float d = __half2float(q->d);
+    float* y = out + (size_t) t * n_embd + (size_t) b * 32;
+#pragma unroll
+    for (int i = 0; i < 32; ++i) y[i] = d * (float) q->qs[i];
+}
+
+__device__ __forceinline__ void emb_scale_min_k4(int j, const uint8_t* q, uint8_t& d, uint8_t& m) {
+    if (j < 4) {
+        d = q[j] & 63;
+        m = q[j + 4] & 63;
+    } else {
+        d = (q[j + 4] & 0xF) | ((q[j - 4] >> 6) << 4);
+        m = (q[j + 4] >> 4) | ((q[j - 0] >> 6) << 4);
+    }
+}
+
+__global__ void embed_q5k_rows_kernel(const block_q5_K* __restrict__ table, const int* __restrict__ toks, int n_embd,
+                                      float* __restrict__ out) {
+    const int t = blockIdx.y;
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;   // super-block * 32 + l
+    const int nsb = n_embd / 256;
+    const int sb = i >> 5, l = i & 31;
+    if (sb >= nsb) return;
+    const block_q5_K* q = table + (size_t) toks[t] * nsb + sb;
+    const float2 dm = __half22float2(q->dm);
+    const float d = dm.x, dmin = dm.y;
+    float* y = out + (size_t) t * n_embd + (size_t) sb * 256;
+    uint8_t u1 = 1, u2 = 2;
+    const uint8_t qh = q->qh[l];
+#pragma unroll
+    for (int j = 0; j < 4; ++j) {
+        uint8_t sc, m;
+        emb_scale_min_k4(2 * j, q->scales, sc, m);
+        const float d1 = d * sc, m1 = dmin * m;
+        emb_scale_min_k4(2 * j + 1, q->scales, sc, m);
+        const float d2 = d * sc, m2 = dmin * m;
+        const uint8_t ql = q->qs[32 * j + l];
+        y[64 * j + l] = d1 * (float) ((ql & 0xF) + ((qh & u1) ? 16 : 0)) - m1;
+        y[64 * j + 32 + l] = d2 * (float) ((ql >> 4) + ((qh & u2) ? 16 : 0)) - m2;
+        u1 <<= 2;
+        u2 <<= 2;
+    }
+}
+
 // ---------------------------------------------------------------- KDA
 __global__ void __launch_bounds__(128) kda_prep_kernel(const __grid_constant__ KdaPrepArgs a) {
     const int h = blockIdx.x, role = blockIdx.y, tid = threadIdx.x, lane = tid & 31, warp = tid >> 5;
@@ -3445,6 +3499,28 @@ void head_prep(const float* R, const float* norm_w, float eps, int n_embd, float
 void embed_streams(const float* emb, float* R, int n_embd, cudaStream_t s) {
     embed_streams_kernel<<<(4 * n_embd + 255) / 256, 256, 0, s>>>(emb, R, n_embd);
     launch_check("embed_streams");
+}
+
+bool embed_rows_q(int type, const void* table, const int* toks, int T, int n_embd, float* out, cudaStream_t s) {
+    if (type == 8 && n_embd % 32 == 0) {
+        const int nb = n_embd / 32;
+        embed_q8_rows_kernel<<<dim3((unsigned) ((nb + 127) / 128), (unsigned) T), 128, 0, s>>>(
+            (const block_q8_0*) table, toks, n_embd, out);
+        launch_check("embed_q8_rows");
+        return true;
+    }
+    if (type == 13 && n_embd % 256 == 0) {
+        const int n = n_embd / 256 * 32;
+        embed_q5k_rows_kernel<<<dim3((unsigned) ((n + 127) / 128), (unsigned) T), 128, 0, s>>>(
+            (const block_q5_K*) table, toks, n_embd, out);
+        launch_check("embed_q5k_rows");
+        return true;
+    }
+    return false;
+}
+
+bool embed_rows_q_supported(int type, int n_embd) {
+    return (type == 8 && n_embd % 32 == 0) || (type == 13 && n_embd % 256 == 0);
 }
 
 void kda_prep(const KdaPrepArgs& a, cudaStream_t s) {
