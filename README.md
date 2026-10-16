@@ -81,7 +81,7 @@ CPU lane instead of the iGPU (any NVIDIA box with enough RAM), decode is ~55–6
 | Radeon 8060S alone (HIP build, experts partly from the SSD) | – | 7K prompt ~150 tok/s |
 
 A second, slower card does not yet beat one RTX 5090 with the iGPU lane: the hop between the cards and the slow link
-cost more than the RAM-tier experts it saves, and a split has no speculative decoding yet.
+cost more than the RAM-tier experts it saves (speculative decoding runs in a split from v1.3.26).
 
 </details>
 
@@ -186,7 +186,7 @@ kernels match the FP32 ones to ~2e-6, and speculative decoding gives the token p
 - [ ] A DSpark drafter (this GGUF has no MTP block)
 - [ ] Conversation slots on disk
 - [ ] Windows for DeepSeek V4 (Linux tested)
-- [ ] Speed with several cards: speculative decoding and prestaging in a split; a run on a V100; discrete Radeon cards
+- [ ] Speed with several cards: prestaging in a split; a run on a V100; discrete Radeon cards
 - [ ] Prompt-path tuning at short lengths (staging RAM-tier experts still dominates an 8K prompt)
 
 ## 🙏 Credits

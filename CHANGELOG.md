@@ -7,6 +7,20 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.26 - 2026-10-16
+
+The n-gram speculative decode (`STRATA_DS4_SPEC`) runs with a layer split too: the verify window goes through the
+parts one after another, each part's last layer writing its columns' residuals, which cross to the next part through
+a pinned host buffer (as a token's residual does); the last part runs the head and keeps the logits.  RTX 5090 +
+RTX 3090 split 33 / 10: 87.1-90.4 tok/s (a window 16.2 ms, a single token 11.4; 57% of the drafts accepted on code,
+as on one card), 89.7-91.1 with `STRATA_GLM_DEFER=1`; the batched window (`STRATA_DS4_SPEC_PIPE=0`) works as well.
+The 5090 alone is unchanged (94.5-95.2 tok/s, a window 14.0-14.5 ms) and `--layer-split auto` still picks it here.
+- Expert deferral in the window: a part's first layer no longer adds the layer before's part (the part before waited
+  for it), as the token path.
+- Greedy answers are not a bit-exact
+  check here: with the speculation on or off they part after a few hundred tokens on one card too (which device
+  computes an expert, the GPU or the iGPU lane, varies from run to run).
+
 ## v1.3.25 - 2026-10-16
 
 `--layer-split auto` prices the placements by what a decode token costs on this hardware, and runs on one GPU when

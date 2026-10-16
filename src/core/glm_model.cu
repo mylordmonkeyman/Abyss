@@ -1337,8 +1337,8 @@ static std::vector<int> glm_search_bounds(const std::string& pack_dir, int64_t m
     double obj = 0, tie = 0;
     price(best, ev, obj, tie);
     // one card by itself: a decode's parts run one after another, so a slower second card's layers can cost more
-    // than its VRAM saves in misses (RTX 5090 + RTX 3090: the best split 87.9 tok/s, the 5090 alone 92-95 - and it
-    // keeps the n-gram drafts a split has not).  STRATA_GLM_SPLIT_KEEP=1 splits anyway.
+    // than its VRAM saves in misses (RTX 5090 + RTX 3090, the n-gram drafts on: the best split 87-90 tok/s, the 5090
+    // alone 94-95).  STRATA_GLM_SPLIT_KEEP=1 splits anyway.
     if (one_dev != nullptr && getenv("STRATA_GLM_SPLIT_KEEP") == nullptr) {
         int bi = -1;
         double bms = obj;

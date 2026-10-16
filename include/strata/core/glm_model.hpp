@@ -377,6 +377,11 @@ public:
     bool verify_attn(int il, int64_t p0, int tb, int n, cudaStream_t s, std::string& err);
     bool verify_moe(int il, int tb, int n, const std::vector<int32_t>& toks, cudaStream_t s, cudaEvent_t wait_ev,
                     cudaEvent_t done_ev, std::string& err);
+    // one part's share of a window (verify): its layers on the columns' residuals in its own buffers, then, a part
+    // before the last, the columns' residuals into the next part's (the host hop), else the head, the logits and the
+    // argmax; the last part records its buffers' done event
+    bool verify_part(const std::vector<int32_t>& toks, int64_t p0, std::string& err);
+    const Glm5Model* verify_tail() const;
     // the conversation snapshot's deepseek4 state: every layer's window ring and compressor rings (the compressed
     // caches are append-only by position - a row is written exactly when it becomes visible - so the position alone
     // restores them, as glm5-next's DSA caches)
@@ -462,7 +467,8 @@ public:
     /// STRATA_DS4_SPEC_PIPE=0 batches them on one stream (the dense GEMVs read once, every route issued before the
     /// first answer is awaited).  verify_argmax(i): the greedy token after toks[i];
     /// verify_sample(i): the sampler on those logits.  spec_rewind(pos): drop the window's tail (positions >= pos):
-    /// only the position moves (kSpecSlack keeps the window ring's older keys).
+    /// only the position moves (kSpecSlack keeps the window ring's older keys).  A layer split runs the window part
+    /// after part (each part's columns hop to the next through pinned host memory, as a token's residual does).
     static constexpr int kVerifyMax = 4;
     bool verify_ready() const;
     bool verify(const std::vector<int32_t>& toks, std::string& err);

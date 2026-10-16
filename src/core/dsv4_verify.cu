@@ -19,6 +19,9 @@
 // request counter, the tier tables, the host's in-order answers).
 // Rejected tokens are dropped by spec_rewind (the position only): the window ring has kSpecSlack spare rows, and the
 // compressor rings / compressed caches are rewritten in position order before anything reads them.
+// A layer split: the parts one after another (verify_part), as a token's - each part's last layer writes its columns'
+// complete residuals, which cross to the next part through a pinned host buffer, the copies ordered by an event; the
+// last part runs the head and keeps the logits and the argmax (verify_argmax / _sample / _logits read its buffers).
 #include "glm_fast_state.hpp"
 #include "strata/core/glm_model.hpp"
 #include "strata/kernels/dsv4_fast.hpp"
@@ -72,6 +75,8 @@ struct VerifyBuf {
     int* tok_in_h = nullptr;                  // the window's tokens, host-mapped for the embedding kernel
     int* tok_in_d = nullptr;
     float* emb_h = nullptr;                   // pinned [TM][n_embd]
+    float* hop_h = nullptr;                   // a split: pinned [TM][hc * n_embd], the columns' residuals to the next part
+    cudaEvent_t ev_hop = nullptr;
     std::vector<gf::MoeDev> md;               // a route plan per column (the shared tables, own plan arrays)
     // per column, for the pipelined window's concurrent tokens: the mHC partials, the routed experts' h, the
     // indexer's scores / selection, the fetched experts' scratch slots (column 0: the token path's)
@@ -91,12 +96,23 @@ struct VerifyBuf {
 }  // namespace
 
 bool Glm5Model::verify_ready() const {
-    const FastState* F = fast_;
-    if (F == nullptr || !g_.dsv4() || split_next_ || mtp_il_ >= 0 || F->max_pf > 0 || F->n_ahead > 0) return false;
-    for (int il = l0_; il < l1_; ++il)
-        if (!F->L[(size_t) il].moe) return false;
-    const auto it = ws_map_.find("output.weight");
-    return it != ws_map_.end() && it->second.type != 0;
+    // every part of a split (the window runs part after part): the fast path, no draft block, prefetch or lookahead,
+    // MoE layers; the head's weights on the last
+    for (const Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
+        const FastState* F = m->fast_;
+        if (F == nullptr || !m->g_.dsv4() || m->mtp_il_ >= 0 || F->max_pf > 0 || F->n_ahead > 0) return false;
+        for (int il = m->l0_; il < m->l1_; ++il)
+            if (!F->L[(size_t) il].moe) return false;
+    }
+    const Glm5Model* tail = verify_tail();
+    const auto it = tail->ws_map_.find("output.weight");
+    return it != tail->ws_map_.end() && it->second.type != 0;
+}
+
+const Glm5Model* Glm5Model::verify_tail() const {
+    const Glm5Model* t = this;
+    while (t->split_next_) t = t->split_next_.get();
+    return t;
 }
 
 bool Glm5Model::verify_alloc(std::string& err) {
@@ -126,6 +142,10 @@ bool Glm5Model::verify_alloc(std::string& err) {
     ok = ok && cudaHostGetDevicePointer((void**) &V->tok_in_d, V->tok_in_h, 0) == cudaSuccess;
     ok = ok && cudaHostAlloc((void**) &V->emb_h, (size_t) TM * E * sizeof(float), cudaHostAllocDefault) == cudaSuccess;
     ok = ok && cudaEventCreateWithFlags(&V->done, cudaEventDisableTiming) == cudaSuccess;
+    if (split_next_)
+        ok = ok && cudaHostAlloc((void**) &V->hop_h, (size_t) TM * g.hc * E * sizeof(float), cudaHostAllocDefault) ==
+                       cudaSuccess &&
+             cudaEventCreateWithFlags(&V->ev_hop, cudaEventDisableTiming) == cudaSuccess;
     V->hpart_n = (size_t) (4 * E / 512) * 36 + 64;
     V->hq_n = (size_t) 8 * g.n_ff_exp / 32 * kQ8;
     V->score_n = (size_t) std::max<int64_t>(64, max_ctx_ / 4 + 64);
@@ -421,30 +441,38 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
         return false;
     }
     if (!verify_ready()) {
-        err = "deepseek4 verify: not available (deepseek4 fast path on one GPU, no MTP / prefetch / lookahead)";
+        err = "deepseek4 verify: not available (deepseek4 fast path, no MTP / prefetch / lookahead)";
         return false;
     }
     if (pos_ + T > max_ctx_) {
         err = "deepseek4 verify: the window exceeds max_ctx";
         return false;
     }
-    if (!verify_alloc(err)) return false;
+    for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
+        cudaSetDevice(m->dev_);
+        if (!m->verify_alloc(err)) return false;
+    }
+    cudaSetDevice(dev_);
     FastState* F = fast_;
     auto* V = (VerifyBuf*) vb_;
     const Glm5Geometry& g = g_;
-    cudaSetDevice(dev_);
     cudaStream_t s = F->cs;
     const int64_t p0 = pos_;
     pos_ += T;
-    V->T = T;
-    if (F->gap_on) {
+    const bool gp = F->gap_on && split_next_ == nullptr;   // (as the token path: one device's events)
+    if (gp) {
         cudaEventRecord(F->ev_g0, s);
         if (F->gap_live)
             F->gap_host += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - F->t_ready).count();
     }
-    if (!fast_boundary(err)) return false;
+    // between windows (every device idle): finished promotions go live in the device tables
+    for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
+        cudaSetDevice(m->dev_);
+        if (!m->fast_boundary(err)) return false;
+    }
+    cudaSetDevice(dev_);
     const auto t0 = std::chrono::steady_clock::now();
-    // ---- the embedding rows -> each token's 4 streams
+    // ---- the embedding rows -> each token's 4 streams (the first part's columns)
     const ggml_type_traits* tt = ggml_get_type_traits((ggml_type) pack_emb_type_);
     if (tt == nullptr || tt->to_float == nullptr || pack_emb_src_ == nullptr) {
         err = "deepseek4 verify: no embedding dequantizer";
@@ -460,15 +488,58 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
                          V->emb_h + (size_t) t * E, g.n_embd);
         cudaMemcpyAsync(V->emb, V->emb_h, (size_t) T * E * sizeof(float), cudaMemcpyHostToDevice, s);
     }
+    for (int t = 0; t < T; ++t) gf::embed_streams(V->emb + (size_t) t * E, V->R + (size_t) t * 2 * HCE, g.n_embd, s);
+    if (gp) {
+        cudaEventRecord(F->ev_gs, s);
+        F->gap_emb += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    }
+    // ---- the parts in order (one part: this one's layers and the head)
+    for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
+        cudaSetDevice(m->dev_);
+        m->pos_ = pos_;
+        ((VerifyBuf*) m->vb_)->T = T;
+        if (!m->verify_part(toks, p0, err)) return false;
+    }
+    cudaSetDevice(dev_);
+    const Glm5Model* tail = verify_tail();
+    auto* VT = (VerifyBuf*) tail->vb_;
+    if (gp) cudaEventRecord(F->ev_ge[F->gap_par], s);
+    const auto tw = std::chrono::steady_clock::now();
+    cudaError_t done;
+    while ((done = cudaEventQuery(VT->done)) == cudaErrorNotReady) {
+        if (F->token_spin) glmfast::cpu_relax(); else std::this_thread::yield();
+    }
+    if (!glmfast::cuda_ok(done, "deepseek4 verify completion", err)) return false;
+    for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get())
+        if (!m->fast_->route_ok(err)) return false;
+    if (gf::launch_errors() > 0) {
+        err = "deepseek4 verify: " + std::to_string(gf::launch_errors()) + " kernel launch(es) failed (see stderr)";
+        return false;
+    }
+    F->ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    for (Glm5Model* m = this; m != nullptr; m = m->split_next_.get())
+        if (m->fast_->prof_on) {
+            cudaSetDevice(m->dev_);
+            m->fast_->collect();
+        }
+    cudaSetDevice(dev_);
+    last_tok_ = VT->tok_h[T - 1];
+    if (gp) fast_gap_mark(tw);
+    return true;
+}
+
+bool Glm5Model::verify_part(const std::vector<int32_t>& toks, int64_t p0, std::string& err) {
+    FastState* F = fast_;
+    auto* V = (VerifyBuf*) vb_;
+    const Glm5Geometry& g = g_;
+    cudaStream_t s = F->cs;
+    const int T = V->T;
+    const bool last = split_next_ == nullptr;
+    const size_t E = (size_t) g.n_embd, HCE = (size_t) g.hc * E;
     std::vector<float*> Rc((size_t) T), Ro((size_t) T);
     for (int t = 0; t < T; ++t) {
         Rc[(size_t) t] = V->R + (size_t) t * 2 * HCE;
         Ro[(size_t) t] = Rc[(size_t) t] + HCE;
-        gf::embed_streams(V->emb + (size_t) t * E, Rc[(size_t) t], g.n_embd, s);
-    }
-    if (F->gap_on) {
-        cudaEventRecord(F->ev_gs, s);
-        F->gap_emb += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     }
     const auto hc_read = [&](int il, int t, const float* block_out, bool attn, cudaStream_t hs) {
         const auto& Ly = F->L[(size_t) il];
@@ -499,7 +570,7 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
     // expert deferral (F->defer, as fast_layers): the layer before's CPU-lane part of column t into its streams after
     // this layer's attention, with the weights verify_moe saved (its own md: the last route is the layer before's)
     const auto defer_add = [&](int il, int t, cudaStream_t hs) {
-        if (!F->defer || il <= g.dense_lead || !F->L[(size_t) il].moe) return;
+        if (!F->defer || il <= g.dense_lead || il <= l0_ || !F->L[(size_t) il].moe) return;
         gf::hc_defer_add(V->md[(size_t) t], V->post_defer + (size_t) t * 8, g.n_embd, Rc[(size_t) t], hs);
     };
     // STRATA_GLM_PROF (as the token path's): the window's phases, marked v<T>_* so the two kinds stay apart
@@ -548,7 +619,31 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
             mark(3);
         }
     }
-    // the last layer's write half, the head, the output rows (every column at once) and each column's argmax
+    // the last layer's write half; a part before the last: the columns' residuals to the next part (as a token's hop);
+    // the last: the head, the output rows (every column at once) and each column's argmax
+    if (!last) {
+        Glm5Model* B = split_next_.get();
+        auto* VB = (VerifyBuf*) B->vb_;
+        for (int t = 0; t < T; ++t) {
+            cudaStream_t st = pipe && !pipe_env1 ? V->st[t] : s;
+            gf::hc_post(V->ffn + (size_t) t * E, Rc[(size_t) t], V->post + (size_t) t * 8, V->comb + (size_t) t * 16,
+                        g.n_embd, Ro[(size_t) t], st);
+            if (pipe && t > 0) {
+                cudaEventRecord(V->ev_fin[t], st);
+                cudaStreamWaitEvent(s, V->ev_fin[t], 0);
+            }
+        }
+        for (int t = 0; t < T; ++t)
+            cudaMemcpyAsync(V->hop_h + (size_t) t * HCE, Ro[(size_t) t], HCE * sizeof(float), cudaMemcpyDeviceToHost, s);
+        cudaEventRecord(V->ev_hop, s);
+        cudaSetDevice(B->dev_);
+        cudaStream_t sb = B->fast_->cs;
+        cudaStreamWaitEvent(sb, V->ev_hop, 0);
+        for (int t = 0; t < T; ++t)
+            cudaMemcpyAsync(VB->R + (size_t) t * 2 * HCE, V->hop_h + (size_t) t * HCE, HCE * sizeof(float),
+                            cudaMemcpyHostToDevice, sb);
+        return true;
+    }
     const auto fn = w16_.find("output_hc_fn.weight");
     const auto sc = w_.find("output_hc_scale.weight");
     const auto bs = w_.find("output_hc_base.weight");
@@ -587,40 +682,28 @@ bool Glm5Model::verify(const std::vector<int32_t>& toks, std::string& err) {
         for (int t = 0; t < T; ++t) gf::argmax(V->logits + (size_t) t * g.n_vocab, g.n_vocab, V->tok + t, s);
         cudaMemcpyAsync(V->tok_h, V->tok, (size_t) T * sizeof(int), cudaMemcpyDeviceToHost, s);
     }
-    if (F->gap_on) cudaEventRecord(F->ev_ge[F->gap_par], s);
     cudaEventRecord(V->done, s);
-    const auto tw = std::chrono::steady_clock::now();
-    cudaError_t done;
-    while ((done = cudaEventQuery(V->done)) == cudaErrorNotReady) {
-        if (F->token_spin) glmfast::cpu_relax(); else std::this_thread::yield();
-    }
-    if (!glmfast::cuda_ok(done, "deepseek4 verify completion", err) || !F->route_ok(err)) return false;
-    if (gf::launch_errors() > 0) {
-        err = "deepseek4 verify: " + std::to_string(gf::launch_errors()) + " kernel launch(es) failed (see stderr)";
-        return false;
-    }
-    F->ms += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-    if (prof) F->collect();
-    last_tok_ = V->tok_h[T - 1];
-    if (F->gap_on) fast_gap_mark(tw);
     return true;
 }
 
 int Glm5Model::verify_argmax(int i) const {
-    const auto* V = (const VerifyBuf*) vb_;
+    const auto* V = (const VerifyBuf*) verify_tail()->vb_;
     return V != nullptr && i >= 0 && i < V->T ? V->tok_h[i] : -1;
 }
 
 bool Glm5Model::verify_logits(int i, std::vector<float>& out, std::string& err) {
-    auto* V = (VerifyBuf*) vb_;
+    const Glm5Model* tail = verify_tail();
+    auto* V = (VerifyBuf*) tail->vb_;
     if (V == nullptr || i < 0 || i >= V->T) {
         err = "deepseek4 verify: no such column";
         return false;
     }
-    cudaSetDevice(dev_);
+    cudaSetDevice(tail->dev_);
     out.resize((size_t) g_.n_vocab);
-    if (cudaMemcpy(out.data(), V->logits + (size_t) i * g_.n_vocab, out.size() * sizeof(float),
-                   cudaMemcpyDeviceToHost) != cudaSuccess) {
+    const bool ok = cudaMemcpy(out.data(), V->logits + (size_t) i * g_.n_vocab, out.size() * sizeof(float),
+                               cudaMemcpyDeviceToHost) == cudaSuccess;
+    cudaSetDevice(dev_);
+    if (!ok) {
         err = "deepseek4 verify: logits copy";
         return false;
     }
@@ -628,16 +711,20 @@ bool Glm5Model::verify_logits(int i, std::vector<float>& out, std::string& err) 
 }
 
 int Glm5Model::verify_sample(int i, strata::kernels::SamplerParams& sp, std::string& err) {
-    auto* V = (VerifyBuf*) vb_;
+    Glm5Model* tail = this;
+    while (tail->split_next_) tail = tail->split_next_.get();
+    auto* V = (VerifyBuf*) tail->vb_;
     if (V == nullptr || i < 0 || i >= V->T) {
         err = "deepseek4 verify: no such column";
         return -1;
     }
     if (sp.greedy) return V->tok_h[i];
+    cudaSetDevice(tail->dev_);
+    cudaMemcpyAsync(tail->sc_ + tail->sc_logits, V->logits + (size_t) i * g_.n_vocab,
+                    (size_t) g_.n_vocab * sizeof(float), cudaMemcpyDeviceToDevice, tail->fast_->cs);
+    const int tok = tail->fast_sample(sp, err);
     cudaSetDevice(dev_);
-    cudaMemcpyAsync(sc_ + sc_logits, V->logits + (size_t) i * g_.n_vocab, (size_t) g_.n_vocab * sizeof(float),
-                    cudaMemcpyDeviceToDevice, fast_->cs);
-    return fast_sample(sp, err);
+    return tok;
 }
 
 }  // namespace strata::core
