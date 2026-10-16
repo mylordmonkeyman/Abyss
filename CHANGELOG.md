@@ -7,6 +7,22 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.22 - 2026-10-16
+
+Expert deferral, opt-in (`STRATA_GLM_DEFER=1`, lossy): the GPU no longer idles for the CPU lane - single tokens
+10.9 -> 9.6 ms, +9-10% tok/s on an RTX 5090 + Radeon 8060S, at a cost in the answers (KL 0.08 against the Q8_0
+reference; 0.012 without).
+- The CPU lane's part of a trunk layer's MoE is waited for after the NEXT layer's attention and written straight into
+  the hyper-connection streams with its own layer's write weights (`hc_defer_add`; the weights saved by a kernel,
+  not the copy engine).  Layer l + 1's attention misses it, its router and experts see it.  The trunk's last layer, the
+  draft layer and the verify window keep the in-order sum.  Added one layer late into the next FFN output instead
+  (KTransformers' form) it ran 111 tok/s at KL 0.21 - the write weights differ by layer.  swe-bench L7 (16 tasks x 3)
+  with it on: 107.2 tok/s (v1.3.21, off: 100.9), resolved 81.2% (13 of 16; off: 87.5%, 14 - the 3-run spread is 75-88%), quality 83.1 (81.2), 9.4 ms a token averaged over the run (10.1).
+- Tried and dropped: a persistent cooperative grid for the iGPU lane (branch `lane-persist`).  The launched lane has no
+  fixed cost to remove - its three kernels hide their launches and run at the ~160 GB/s the iGPU reads registered RAM
+  at - and the resident grid starved the display's shaders on the APU into a GPU reset.  `bench/lane_bench.cpp`
+  (the lane alone, 10 s) stays.
+
 ## v1.3.21 - 2026-10-16
 
 The token boundary no longer waits behind the expert moves' DMAs: a single token 11.7 -> 11.1 ms on an RTX 5090 at
