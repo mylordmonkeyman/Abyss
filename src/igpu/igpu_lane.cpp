@@ -24,7 +24,8 @@ namespace {
 // The lane's down for a FEW experts (a decode's lane call holds 1-2): every warp of a block on NR rows of its own,
 // looping over the experts and combining in plan order as moe_down does (the same sum).  moe_down gives each expert
 // one warp of a block's 8 (the device's plans hold 8), so at k = 1 seven of them idle: ~55 us for one expert's 3 MB.
-template<int TD, int NR>
+// MODE 0: rows_dot; 1: rows_dot_rdna with the signs expanded in registers (types 16 / 18 / 22); the grid in LDS either way
+template<int TD, int NR, int MODE = 0>
 __global__ void __launch_bounds__(256) lane_down_kernel(const unsigned long long* plan_ptr, const float* plan_w, int k,
                                                         int n_ff, size_t down_off, const block_q8_1* __restrict__ hq,
                                                         float* __restrict__ out, unsigned int* done) {
@@ -49,7 +50,11 @@ __global__ void __launch_bounds__(256) lane_down_kernel(const unsigned long long
             const uint8_t* rows[NR];
 #pragma unroll
             for (int j = 0; j < NR; ++j) rows[j] = (const uint8_t*) s_ptr[i] + down_off + (size_t) (r0 + j) * drb;
-            rows_dot<TD, NR>(rows, hq + (size_t) i * (n_ff / 32), n_ff, lane, s_tab, s);
+            if constexpr (MODE == 0) {
+                rows_dot<TD, NR>(rows, hq + (size_t) i * (n_ff / 32), n_ff, lane, s_tab, s);
+            } else {
+                rows_dot_rdna<TD, NR>(rows, hq + (size_t) i * (n_ff / 32), n_ff, lane, s_tab, nullptr, s, true, false);
+            }
         } else {
 #pragma unroll
             for (int j = 0; j < NR; ++j) s[j] = 0.0f;
@@ -69,13 +74,34 @@ __global__ void __launch_bounds__(256) lane_down_kernel(const unsigned long long
 }
 }  // namespace
 
-int lane_down_blocks(int n_embd) { return n_embd % (8 * DOWN_ROWS) == 0 ? n_embd / (8 * DOWN_ROWS) : 0; }
+// The RDNA dot (rows_dot_rdna: the signs expanded in registers, the grid in LDS) at 2 rows a warp for the i-quants it
+// has (16 / 18 / 22), else rows_dot at DOWN_ROWS.  lane_bench on the Radeon 8060S, 4 experts a call: IQ2_S (GLM-5.3
+// -Flash) 60.9 -> 56.3 us, IQ3_XXS (DeepSeek V4) 66.1 -> 62.6, the sums bit-identical; 8 lanes a row (fewer shuffles)
+// and the rows staged in LDS by 16-byte loads were slower.  ABYSS_IGPU_DN_LEGACY=1: rows_dot at 4 rows for every type
+static bool lane_dn_rdna(int d_type) {
+    static const bool legacy = [] { const char* v = getenv("ABYSS_IGPU_DN_LEGACY"); return v != nullptr && std::atoi(v) != 0; }();
+    return !legacy && (d_type == 16 || d_type == 18 || d_type == 22);
+}
+int lane_down_blocks(int d_type, int n_embd) {
+    const int nr = lane_dn_rdna(d_type) ? 2 : DOWN_ROWS;
+    return n_embd % (8 * nr) == 0 ? n_embd / (8 * nr) : 0;
+}
 bool lane_down(int d_type, const unsigned long long* plan_ptr, const float* plan_w, int k, int n_embd, int n_ff,
                size_t down_off, const void* hq, float* out, unsigned int* done, hipStream_t s) {
+    const auto* H = (const block_q8_1*) hq;
+    if (lane_dn_rdna(d_type)) {
+        if (n_embd % 16 != 0) return false;
+        const int blocks = n_embd / 16;
+        switch (d_type) {
+            case 16: lane_down_kernel<16, 2, 1><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out, done); break;
+            case 18: lane_down_kernel<18, 2, 1><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out, done); break;
+            default: lane_down_kernel<22, 2, 1><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out, done); break;
+        }
+        return hipGetLastError() == hipSuccess;
+    }
     constexpr int NR = DOWN_ROWS;
     if (n_embd % (8 * NR) != 0) return false;
     const int blocks = n_embd / (8 * NR);
-    const auto* H = (const block_q8_1*) hq;
     switch (d_type) {
 #define LANE_DN(T) \
         case T: lane_down_kernel<T, NR><<<blocks, 256, 0, s>>>(plan_ptr, plan_w, k, n_ff, down_off, H, out, done); break;
@@ -258,7 +284,7 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
     md.cpu_flag = &L.plan_d->cpu_flag;
     volatile unsigned int* done_h = &L.plan_h->done;
     *done_h = 0u;
-    const int want = direct ? gf::lane_down_blocks(n_embd) : 0;
+    const int want = direct ? gf::lane_down_blocks(d_type, n_embd) : 0;
     gf::quantize_q8_1(xd, L.xq, n_embd, L.s);
     gf::moe_gate_up(gu_type, md, ne, n_embd, n_ff, limit, L.xq, L.hq, nullptr, 0, nullptr, 0, nullptr, L.s);
     bool counted = want > 0;

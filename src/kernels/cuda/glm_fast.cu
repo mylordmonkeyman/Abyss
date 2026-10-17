@@ -779,6 +779,32 @@ template<> __device__ __forceinline__ float dw_rdna<16>(const uint8_t* row, int 
     sumi = sumi * ls / 8;
     return __half2float(bq2->d) * x.d * sumi;
 }
+template<> __device__ __forceinline__ float dw_rdna<17>(const uint8_t* row, int kbx, int iqs,
+    const XV& x, const uint32_t* tab, const uint4* sign_tab, bool direct, bool wide) {
+    (void) wide;
+    const block_iq2_xs* bq2 = (const block_iq2_xs*) row + kbx;
+    const int2 q2_packed = make_int2(get_int_b2(bq2->qs, iqs + 0), get_int_b2(bq2->qs, iqs + 1));
+    const uint16_t* q2 = (const uint16_t*) &q2_packed;
+    const int ls0 = bq2->scales[iqs / 2] & 0x0F;
+    const int ls1 = bq2->scales[iqs / 2] >> 4;
+    int sumi0 = 0, sumi1 = 0;
+#pragma unroll
+    for (int l0 = 0; l0 < 8; l0 += 2) {
+        const uint2 grid_pos = ((const uint2*) tab)[q2[l0 / 2] & 0x1FF];
+        const uint4 signs = direct ? direct_signs(q2[l0 / 2] >> 9, true) : sign_tab[(q2[l0 / 2] >> 9) & 127];
+        const int grid_l = (int) ((grid_pos.x ^ signs.x) + signs.y);
+        const int grid_h = (int) ((grid_pos.y ^ signs.z) + signs.w);
+        if (l0 < 4) {
+            sumi0 = __dp4a(grid_l, x.u[l0 + 0], sumi0);
+            sumi0 = __dp4a(grid_h, x.u[l0 + 1], sumi0);
+        } else {
+            sumi1 = __dp4a(grid_l, x.u[l0 + 0], sumi1);
+            sumi1 = __dp4a(grid_h, x.u[l0 + 1], sumi1);
+        }
+    }
+    const int sumi = (sumi0 * ls0 + sumi1 * ls1 + (sumi0 + sumi1) / 2) / 4;   // (as dw<17>)
+    return __half2float(bq2->d) * x.d * sumi;
+}
 template<> __device__ __forceinline__ float dw_rdna<18>(const uint8_t* row, int kbx, int iqs,
     const XV& x, const uint32_t* tab, const uint4* sign_tab, bool direct, bool wide) {
     const block_iq3_xxs* bq3 = (const block_iq3_xxs*) row + kbx;
@@ -3822,6 +3848,15 @@ bool rdna3_expert_device(bool allow_gfx1151 = true) {
     }
     return gfx1100 || (allow_gfx1151 && gfx1151);
 }
+bool gfx1151_device() {
+    static const bool v = [] {
+        int device = 0;
+        hipDeviceProp_t prop{};
+        return hipGetDevice(&device) == hipSuccess && hipGetDeviceProperties(&prop, device) == hipSuccess &&
+               std::strncmp(prop.gcnArchName, "gfx1151", 7) == 0;
+    }();
+    return v;
+}
 // Splitting shared down removes its dynamic type switch from routed gate/up's
 // register budget. The routed grid keeps exactly the original dot/reduction order.
 __global__ void __launch_bounds__(256) rdna_shared_down_kernel(const uint8_t* weights, int type,
@@ -3860,6 +3895,13 @@ void launch_expert_down(const MoeDev& d, int k, int n_embd, int n_ff, size_t off
 void moe_gate_up(int gu_type, const MoeDev& d, int k, int n_embd, int n_ff, float limit, const void* xq, void* hq,
                  const void* sh_down, int sh_type, const void* sh_hq, int n_ff_sh, float* sh_out, cudaStream_t s) {
 #if defined(STRATA_USE_HIP)
+    // IQ2_XS (DeepSeek V4's gate/up) the same way, measured on gfx1151 only (the Radeon 8060S lane: bit-identical sums)
+    if (gu_type == 17 && n_embd == 4096 && n_ff == 2048 && gfx1151_device() && !std::getenv("ABYSS_IGPU_GU17_LEGACY")) {
+        launch_expert_gu<17, 16, false, true, false, true>(d, k, n_embd, n_ff, limit,
+            xq, hq, sh_down, sh_type, sh_hq, n_ff_sh, sh_out, s);
+        launch_check("moe_gate_up RDNA3.5");
+        return;
+    }
     if (gu_type == 16 && n_embd == 4096 && n_ff == 2048 && rdna3_expert_device()) {
         // Packed sign expansion, original 16-wave/four-row geometry, grid in LDS.
         launch_expert_gu<16, 16, false, true, false, true>(d, k, n_embd, n_ff, limit,
