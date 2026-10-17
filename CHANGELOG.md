@@ -7,6 +7,24 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.28 - 2026-10-17
+
+Decode right after a prompt is no longer slow.  The prompt borrows part of the VRAM expert pool, and the token
+boundaries afterwards copied the experts back in 24 at a time (7-8 MB each); the next token's first host-mapped reads
+(the table edits, the embedding row) waited until all of those copies had landed, so the GPU idled ~20 ms a token.
+The copies (these refills and the swaps' promotions and demotions) now go out in pieces of up to 1 MB a MoE layer,
+after the layer's CPU-lane answer, while the next layer's mixer runs.  RTX 5090 + Radeon 8060S lane:
+- GLM-5.3-Flash AJ-IQ2_XXS: the tokens after an 8K / 16K prompt 14-17 ms (were 35-39 ms for 10 / 16 tokens); the
+  first 20 tokens 305-352 ms (581-711).
+- DeepSeek V4 Flash (q5k pack): 11-13 ms (were 16-20 ms for 20-28 tokens); the first 20 tokens 235-271 ms
+  (360-381).
+- RTX 5090 + RTX 3090 split 33 / 10 (`STRATA_GLM_SPLIT_KEEP=1`), 8K prompt: 12-14 ms (were 54 ms for 9 tokens);
+  the first 20 tokens 260-288 ms (581-750).
+- Steady decode unchanged (one card 91-97 tok/s, the split 86-91); KL the same (0.0051-0.0060 against 0.0055-0.0058
+  without the pacing, one card and a split).
+- `STRATA_GLM_BG_PACE_KB=<KB a layer>` (default 1024); `0`: the copies at the boundary, as before.  The spares'
+  demotions (which the lane may wait for) and the KDA graphs (`STRATA_GLM_KDA_GRAPH`) still copy at the boundary.
+
 ## v1.3.27 - 2026-10-16
 
 A layer split's prompts prestage the experts too (one card had it; a split part copied each chunk's experts after
