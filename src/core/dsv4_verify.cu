@@ -431,6 +431,7 @@ bool Glm5Model::verify_moe(int il, int tb, int T, const std::vector<int32_t>& to
     } else if (lane) {
         for (int t = tb; t < tb + T; ++t) gf::moe_cpu_wait(V->md[(size_t) t], E, V->ffn + (size_t) t * E, s);
     }
+    F->bg_drain(s, F->bg_pace);   // the paced promotions' next bytes, as fast_moe
     return true;
 }
 

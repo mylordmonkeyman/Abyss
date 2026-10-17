@@ -1103,6 +1103,7 @@ bool Glm5Model::lend_tail(size_t limit, uint64_t& moved, uint64_t& dropped, std:
     // background moves in flight land first and no new ones start (fast_boundary step 5): a slot with a copy on its
     // way would otherwise be lent under it
     F->bg_hold = true;
+    F->bg_drain(nullptr, SIZE_MAX);   // the paced promotions' remaining pieces go now
     // Retire metadata as well as DMA. With the hold set, the boundary cannot start replacement moves.
     if (!glmfast::cuda_ok(cudaStreamSynchronize(F->copy), "glm lending copies", err) || !fast_boundary(err))
         return false;

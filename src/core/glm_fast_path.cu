@@ -482,6 +482,8 @@ bool Glm5Model::fast_setup(std::string& err) {
     F->token_spin = getenv("STRATA_GLM_TOKEN_SPIN") != nullptr && std::atoi(getenv("STRATA_GLM_TOKEN_SPIN")) != 0;
     if (F->prof_on) F->pskip = (uint64_t) std::max(0, std::atoi(getenv("STRATA_GLM_PROF")));
     if (const char* pn = getenv("STRATA_GLM_PREFETCH_N")) F->max_pf = std::max(0, std::min(gf::kSpares - 1, std::atoi(pn)));
+    if (const char* bp = getenv("STRATA_GLM_BG_PACE_KB")) F->bg_pace = (size_t) std::max(0, std::atoi(bp)) << 10;
+    else F->bg_pace = (size_t) 1024 << 10;   // (FastState::bg_drain)
     // RAM-resident mode (--glm-ram-resident / STRATA_GLM_RAM_RESIDENT=1): the RAM tier's per-class cap grows by
     // ram_slack slots per MoE layer so it holds EVERY expert VRAM does not; nothing is ever dropped to disk and the
     // start fails when the tier cannot hold them all - the disk is the pack's home, never a read source at runtime
@@ -495,7 +497,8 @@ bool Glm5Model::fast_setup(std::string& err) {
         cudaEventCreateWithFlags(&F->ev_pred, cudaEventDisableTiming) != cudaSuccess ||
         cudaEventCreateWithFlags(&F->ev_pf, cudaEventDisableTiming) != cudaSuccess ||
         cudaEventCreateWithFlags(&F->ev_pf_prev, cudaEventDisableTiming) != cudaSuccess ||
-        cudaEventCreateWithFlags(&F->ev_done, cudaEventDisableTiming) != cudaSuccess) {
+        cudaEventCreateWithFlags(&F->ev_done, cudaEventDisableTiming) != cudaSuccess ||
+        cudaEventCreateWithFlags(&F->ev_bgq, cudaEventDisableTiming) != cudaSuccess) {
         err = "glm fast: streams/events did not create";
         return false;
     }
@@ -2481,6 +2484,7 @@ void Glm5Model::fast_destroy() {
     if (F->ps) cudaStreamSynchronize(F->ps);
     if (F->ev_hop) cudaEventDestroy(F->ev_hop);
     if (F->ev_done) cudaEventDestroy(F->ev_done);
+    if (F->ev_bgq) cudaEventDestroy(F->ev_bgq);
     if (F->ev_gs) cudaEventDestroy(F->ev_gs);
     if (F->ev_g0) cudaEventDestroy(F->ev_g0);
     for (cudaEvent_t e : F->ev_ge)
@@ -3423,6 +3427,10 @@ bool Glm5Model::fast_boundary(std::string& err) {
         const int NE = g.n_expert;
         std::vector<FastState::BgMove> keep;
         for (auto& m : F->bg) {
+            if (m.queued) {   // (paced: pieces still to go, the event not recorded yet)
+                keep.push_back(m);
+                continue;
+            }
             const cudaError_t me = cudaEventQuery(m.ev);
             if (me != cudaSuccess && me != cudaErrorNotReady)
                 return glmfast::cuda_ok(me, "glm background event", err);
@@ -3550,11 +3558,19 @@ bool Glm5Model::fast_boundary(std::string& err) {
                 if (c.free_slot >= 0) {
                     P.st[(size_t) c.free_slot] = FastState::kLanding;
                     R.st[(size_t) c.rs] = FastState::kRPin;
-                    cudaMemcpyAsync(P.slot_ptr(c.free_slot), R.base + (size_t) c.rs * R.stride, F->L[(size_t) c.il].blob,
-                                    cudaMemcpyHostToDevice, F->copy);
                     cudaEvent_t ev = F->get_event();
-                    cudaEventRecord(ev, F->copy);
-                    F->bg.push_back(FastState::BgMove{c.il, c.free_slot, c.il * NE + c.e, rc, c.rs, true, ev});
+                    // paced: the MoE layers of the next tokens issue it piece by piece (FastState::bg_drain); not
+                    // under the KDA graphs (a copy queued from inside a capture would join it)
+                    const bool paced = F->bg_pace > 0 && !F->kda_graph_on;
+                    if (paced) {
+                        F->bg_q.push_back(FastState::BgPiece{P.slot_ptr(c.free_slot), R.base + (size_t) c.rs * R.stride,
+                                                             F->L[(size_t) c.il].blob, 0, ev, cudaMemcpyHostToDevice});
+                    } else {
+                        cudaMemcpyAsync(P.slot_ptr(c.free_slot), R.base + (size_t) c.rs * R.stride,
+                                        F->L[(size_t) c.il].blob, cudaMemcpyHostToDevice, F->copy);
+                        cudaEventRecord(ev, F->copy);
+                    }
+                    F->bg.push_back(FastState::BgMove{c.il, c.free_slot, c.il * NE + c.e, rc, c.rs, true, ev, paced});
                     ++filled;
                 } else if (c.cold_slot >= 0 && c.hot >= bg_ratio * std::max<uint32_t>(c.cold, 1u) + bg_margin) {
                     int rs = -1;
@@ -3565,11 +3581,17 @@ bool Glm5Model::fast_boundary(std::string& err) {
                     P.st[(size_t) c.cold_slot] = FastState::kDraining;   // (still live in VRAM until the copy landed)
                     R.st[(size_t) rs] = FastState::kRDemote;
                     R.key[(size_t) rs] = vkey;
-                    cudaMemcpyAsync(R.base + (size_t) rs * R.stride, P.slot_ptr(c.cold_slot), F->L[(size_t) c.il].blob,
-                                    cudaMemcpyDeviceToHost, F->copy);
                     cudaEvent_t ev = F->get_event();
-                    cudaEventRecord(ev, F->copy);
-                    F->bg.push_back(FastState::BgMove{c.il, c.cold_slot, vkey, rc, rs, false, ev});
+                    const bool paced = F->bg_pace > 0 && !F->kda_graph_on;   // (as the promotions above)
+                    if (paced) {
+                        F->bg_q.push_back(FastState::BgPiece{R.base + (size_t) rs * R.stride, P.slot_ptr(c.cold_slot),
+                                                             F->L[(size_t) c.il].blob, 0, ev, cudaMemcpyDeviceToHost});
+                    } else {
+                        cudaMemcpyAsync(R.base + (size_t) rs * R.stride, P.slot_ptr(c.cold_slot),
+                                        F->L[(size_t) c.il].blob, cudaMemcpyDeviceToHost, F->copy);
+                        cudaEventRecord(ev, F->copy);
+                    }
+                    F->bg.push_back(FastState::BgMove{c.il, c.cold_slot, vkey, rc, rs, false, ev, paced});
                     ++issued;
                 }
             }
@@ -3891,6 +3913,8 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
         std::swap(F->ev_pf, F->ev_pf_prev);   // the next layer waits on THIS layer's prefetch
         pf_pending = true;
     }
+    // the paced promotions' next bytes: across the link while the next layer's mixer runs (no zero-copy reads there)
+    if (!F->kda_graph_on) F->bg_drain(s, F->bg_pace);
     return true;
 }
 
@@ -3908,6 +3932,7 @@ bool Glm5Model::fast_layers(int64_t p, bool hop_in, std::string& err) {
                         mtp_il_ < 0 && !F->prof_on && !dumps && F->max_pf == 0 && F->n_ahead == 0 &&
                         getenv("GLM_DUMP_H") == nullptr;
     F->kda_graph_on = graphs;
+    if (graphs) F->bg_drain(nullptr, SIZE_MAX);   // (paced copies are not issued from inside a capture)
     if (F->prof_on) F->mark("start");
     for (int il = l0_; il < l1_; ++il) {
         const auto& Ly = F->L[(size_t) il];

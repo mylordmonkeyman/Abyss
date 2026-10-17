@@ -404,9 +404,52 @@ struct Glm5Model::FastState {
         int il, vslot, key, rclass, rslot;
         bool up;
         cudaEvent_t ev;
+        bool queued = false;   // a paced promotion whose last piece is not issued yet (its event not recorded)
     };
     std::vector<BgMove> bg;
     bool bg_hold = false;   // lend_tail: no new moves while the pool's tail is lent
+    // ---- paced promotions (STRATA_GLM_BG_PACE_KB, default 1024; 0: the boundary issues each whole copy).  The
+    //      copies a boundary issued at once (the refill after a prompt: 24 x 7 MB, ~22 ms of a Gen4 x4 link) held
+    //      up the next token's first zero-copy reads (the table edits, the embedding row) until all of them had
+    //      landed: the GPU idled ~20 ms a token.  Instead each MoE layer, once its CPU-lane answer is in, lets up to
+    //      bg_pace bytes go: they cross while the next layer's mixer runs, which reads no host memory
+    struct BgPiece {
+        uint8_t* dst;
+        const uint8_t* src;
+        size_t n, done;
+        cudaEvent_t ev;   // the move's: recorded after its last piece
+        cudaMemcpyKind kind;   // a promotion (H2D) or a swap's demotion (D2H: posted writes, which the GPU's zero-copy
+                               // read requests may not pass - they held the token's reads up the same way)
+    };
+    std::vector<BgPiece> bg_q;   // in issue order
+    size_t bg_q_at = 0;          // the first piece not fully issued
+    size_t bg_pace = 0;
+    cudaEvent_t ev_bgq = nullptr;
+    // up to `budget` bytes of the queued copies onto the copy stream, after the work queued on `s` so far (s null:
+    // at once)
+    void bg_drain(cudaStream_t s, size_t budget) {
+        if (bg_q_at == bg_q.size()) return;
+        if (s != nullptr) {
+            cudaEventRecord(ev_bgq, s);
+            cudaStreamWaitEvent(copy, ev_bgq, 0);
+        }
+        while (bg_q_at < bg_q.size() && budget > 0) {
+            BgPiece& p = bg_q[bg_q_at];
+            const size_t n = p.n - p.done < budget ? p.n - p.done : budget;
+            cudaMemcpyAsync(p.dst + p.done, p.src + p.done, n, p.kind, copy);
+            p.done += n;
+            budget -= n;
+            if (p.done < p.n) break;
+            cudaEventRecord(p.ev, copy);
+            for (auto& m : bg)
+                if (m.ev == p.ev) m.queued = false;
+            ++bg_q_at;
+        }
+        if (bg_q_at == bg_q.size()) {
+            bg_q.clear();
+            bg_q_at = 0;
+        }
+    }
     volatile int* route_error_h = nullptr;   // in the mapped ring allocation, visible after compute completion
     uint64_t bg_up = 0, bg_down = 0;
     std::vector<cudaEvent_t> ev_free;
