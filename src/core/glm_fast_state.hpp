@@ -242,6 +242,8 @@ struct Glm5Model::FastState {
     bool ahead_read = false;                   // STRATA_GLM_AHEAD_READ=0: predict and count only
     bool disk_lane = false;                    // STRATA_GLM_DISK_LANE=1: disk misses computed by the lane in RAM
     bool disk_adapt = false;                   // STRATA_GLM_DISK_ADAPT=1: ... evicting at the miss (arena-adapt)
+    bool stream_fetch = true;                  // STRATA_GLM_STREAM_FETCH=0: the fetch after the whole read, as before
+    int read_chunks = 8;                       // STRATA_GLM_READ_CHUNKS: a part's O_DIRECT reads (also the stream's bits)
     float* alog = nullptr;                     // kAhead x n_expert logits (device)
     std::vector<std::array<std::array<short, 8>, gf::kAhead>> ah_pred;   // per layer: the predictions d+1 layers early
     struct AheadJob {

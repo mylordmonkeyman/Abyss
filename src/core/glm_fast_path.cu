@@ -1353,6 +1353,10 @@ bool Glm5Model::fast_setup(std::string& err) {
         F->disk_lane = dl != nullptr && std::atoi(dl) != 0;
         const char* da = getenv("STRATA_GLM_DISK_ADAPT");
         F->disk_adapt = F->disk_lane && da != nullptr && std::atoi(da) != 0;
+        const char* sf = getenv("STRATA_GLM_STREAM_FETCH");
+        F->stream_fetch = sf == nullptr || std::atoi(sf) != 0;
+        const char* rc = getenv("STRATA_GLM_READ_CHUNKS");
+        F->read_chunks = std::max(1, std::min(16, rc ? std::atoi(rc) : 8));
         std::array<std::array<short, 8>, gf::kAhead> none;
         for (auto& r : none) r.fill(-1);
         F->ah_pred.assign((size_t) NL, none);
@@ -2205,6 +2209,7 @@ bool Glm5Model::fast_warm(std::string& err) {
     int n_blend = 0;
     const std::string up = usage_path();
     int n_prof = 0;
+    std::vector<char> useeded((size_t) NL, 0);   // layers whose LFU counts the usage profile seeded
     if (!up.empty()) {
         std::ifstream uf(up);
         std::string line;
@@ -2252,11 +2257,40 @@ bool Glm5Model::fast_warm(std::string& err) {
             }
             o.insert(o.end(), order[(size_t) il].begin(), order[(size_t) il].end());
             order[(size_t) il].swap(o);
+            useeded[(size_t) il] = 1;
             ++n_prof;
         }
         if (n_prof > 0)
             std::fprintf(stderr, "glm fast: CUDA%d the tiers follow this machine's usage profile (%s, %d layers%s)\n", dev_,
                          up.c_str(), n_prof, n_blend > 0 ? ", blended with the pack's routing profile" : "");
+    }
+    // Without a usage profile every LFU count started at 0, and the eviction rules then broke every tie on slot
+    // order and recency: the boundary's VRAM victim was DROPPED to disk instead of demoted (rc_min < bc never held
+    // with both at 0), and the RAM victim was whichever landed first.  DeepSeek V4.1 (nazeshinjite Q2, seq0): 1,255
+    // VRAM drops in 512 tokens, 31% of the disk reads in the first 64 tokens.  The pack's routing profile seeds the
+    // counts the way the usage profile does (at most 32 a layer, relative to the layer's hottest expert).
+    // STRATA_GLM_SEED_PRIOR=1 - measured WORSE on V4.1 (seq0 512: 53.6 -> 61.6 ms/token, RAM re-reads 450 -> 774):
+    // the seeded counts protect the profile's experts against the text's own, as a session usage file did.  Off.
+    static const bool seed_prior = [] {
+        const char* v = getenv("STRATA_GLM_SEED_PRIOR");
+        return v != nullptr && std::atoi(v) != 0;
+    }();
+    if (seed_prior) {
+        int n_seed = 0;
+        for (int il = l0_; il < lt_; ++il) {
+            if (!F->L[(size_t) il].moe || useeded[(size_t) il] || pcount[(size_t) il].empty()) continue;
+            double mx = 0.0;
+            for (double c : pcount[(size_t) il]) mx = std::max(mx, c);
+            if (mx <= 0.0) continue;
+            for (size_t e = 0; e < pcount[(size_t) il].size() && e < (size_t) g.n_expert; ++e)
+                if (pcount[(size_t) il][e] > 0.0)
+                    F->cnt[(size_t) il * g.n_expert + e] =
+                        (uint32_t) std::max(1.0, std::floor(32.0 * pcount[(size_t) il][e] / mx));
+            ++n_seed;
+        }
+        if (n_seed > 0)
+            std::fprintf(stderr, "glm fast: CUDA%d LFU counts seeded from the pack's routing profile (%d layers)\n", dev_,
+                         n_seed);
     }
     for (int il = 0; il < NL; ++il) {
         auto& o = order[(size_t) il];
@@ -2959,16 +2993,56 @@ void Glm5Model::fast_service() {
                 }
                 // each part in chunks across the workers: the O_DIRECT bounce copy of a whole part was ~0.4 ms of the
                 // wait (Mercury: 3.6 -> 3.1 ms a disk wait at 8 chunks; STRATA_GLM_READ_CHUNKS overrides)
-                static const int rch = [] {
-                    const char* v = getenv("STRATA_GLM_READ_CHUNKS");
-                    return std::max(1, std::min(16, v ? std::atoi(v) : 8));
-                }();
+                const int rch = F->read_chunks;
+                const bool dlane_now = F->disk_lane && promo == 0u && F->cpu_plan != 0ull &&
+                                       F->cpu_fmt[(size_t) il].n_ff > 0;
+                gf::MoeResponse* Rp = F->resp_h + (next % gf::kCpuAnswers);
+                // STREAMED fetch: the response goes out now, before the reads; the reads below set ready[] bit by bit
+                // and the device's fetch kernel copies each chunk as it lands (the lookahead's in-flight slots are
+                // waited for first - they land outside this call's jobs)
+                const bool stream = F->stream_fetch && !dlane_now && nr > 0;
+                if (stream) {
+                    if (nw > 0) {
+                        const auto tw = std::chrono::steady_clock::now();
+                        for (int i = 0; i < nw; ++i)
+                            while ((F->rload[(size_t) cls][(size_t) wt[i]].load(std::memory_order_acquire) & 3u) != 2u)
+                                cpu_relax();
+                        F->ah_waited += (uint64_t) nw;
+                        F->ah_wait_us.fetch_add((uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
+                                                    std::chrono::steady_clock::now() - tw).count(),
+                                                std::memory_order_relaxed);
+                    }
+                    Rp->ptr_mask = 0;
+                    Rp->host_mask = 0;
+                    Rp->stream_mask = 0;
+                    Rp->n_upd = 0;
+                    Rp->cpu = 0;
+                    for (int v = 0; v < nev; ++v) {
+                        Rp->upd_key[Rp->n_upd] = (int) F->rtab_key(evk[v]);
+                        Rp->upd_val[Rp->n_upd++] = 0ull;
+                    }
+                    for (int m = 0; m < nm; ++m) {
+                        Rp->ptr[mi[m]] = (unsigned long long) dst[m];
+                        Rp->ptr_mask |= 1u << mi[m];
+                        Rp->ready[mi[m]] = 0xffffffffu;   // (landed already: every chunk there)
+                    }
+                    for (int r2 = 0; r2 < nr; ++r2) {
+                        Rp->ready[mi[rd[r2]]] = 0u;
+                        Rp->stream_mask |= 1u << mi[rd[r2]];
+                    }
+                    std::atomic_thread_fence(std::memory_order_release);
+                    Rp->seq = next;
+                }
                 F->workers->run(nr * 3 * rch, [&](int job) {
                     const int m = rd[job / (3 * rch)], part = job % (3 * rch);
                     fast_read_part(il, ids[mi[m]], part / rch, dst[m], part % rch, rch);
+                    if (stream) {   // the chunk is in the slot: tell the fetch kernel
+                        std::atomic_thread_fence(std::memory_order_release);
+                        std::atomic_ref<unsigned int>(Rp->ready[mi[m]]).fetch_or(1u << part, std::memory_order_release);
+                    }
                 });
                 for (int i = 0; i < ns; ++i) F->rload[(size_t) cls][(size_t) sl[i]].store(stv[i], std::memory_order_release);
-                if (nw > 0) {
+                if (nw > 0 && !stream) {
                     const auto tw = std::chrono::steady_clock::now();
                     for (int i = 0; i < nw; ++i)
                         while ((F->rload[(size_t) cls][(size_t) wt[i]].load(std::memory_order_acquire) & 3u) != 2u)
@@ -2978,16 +3052,17 @@ void Glm5Model::fast_service() {
                                                 std::chrono::steady_clock::now() - tw).count(),
                                             std::memory_order_relaxed);
                 }
-                gf::MoeResponse* Rp = F->resp_h + (next % gf::kCpuAnswers);
+                if (!stream) {
                 Rp->ptr_mask = 0;
                 Rp->host_mask = 0;
+                Rp->stream_mask = 0;
                 Rp->n_upd = 0;
                 Rp->cpu = 0;
                 for (int v = 0; v < nev; ++v) {   // the arena-adapt evictions: their RAM-tier entries leave the table
                     Rp->upd_key[Rp->n_upd] = (int) F->rtab_key(evk[v]);
                     Rp->upd_val[Rp->n_upd++] = 0ull;
                 }
-                if (F->disk_lane && promo == 0u && F->cpu_plan != 0ull && F->cpu_fmt[(size_t) il].n_ff > 0) {
+                if (dlane_now) {
                     // the disk lane (the route claimed no spare): their weighted sum from the RAM landing, by the lane
                     const uint8_t* blob[8];
                     float wl[8];
@@ -3011,6 +3086,7 @@ void Glm5Model::fast_service() {
                 }
                 std::atomic_thread_fence(std::memory_order_release);
                 Rp->seq = next;
+                }   // (!stream)
                 const uint64_t us = (uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
                                         std::chrono::steady_clock::now() - t0).count();
                 F->disk_reads.fetch_add((uint64_t) nr, std::memory_order_relaxed);   // read here (not ahead)
@@ -3470,7 +3546,14 @@ bool Glm5Model::fast_boundary(std::string& err) {
                 rs = ram_victim(R);
                 if (rs >= 0) rc_min = F->cnt[(size_t) R.key[(size_t) rs]];
             }
-            if (rs >= 0 && (R.st[(size_t) rs] == FastState::kRFree || rc_min < bc)) {
+            // STRATA_GLM_DEMOTE_TIES=1: a tie demotes instead of dropping (the VRAM expert was resident, the RAM
+            // victim is the tier's coldest).  Off: with the counts mostly 0 the demotions pushed RAM experts out that
+            // came back from disk (V4.1 seq0: re-reads after a RAM eviction 450 -> 774)
+            static const bool demote_ties = [] {
+                const char* v = getenv("STRATA_GLM_DEMOTE_TIES");
+                return v != nullptr && std::atoi(v) != 0;
+            }();
+            if (rs >= 0 && (R.st[(size_t) rs] == FastState::kRFree || rc_min < bc || (demote_ties && rc_min == bc))) {
                 if (R.st[(size_t) rs] == FastState::kRHold) {
                     const int old = R.key[(size_t) rs];
                     F->left[(size_t) old] = 2;
@@ -4000,7 +4083,8 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     // in VRAM is then pulled over PCIe into its slot, and all 8 run from VRAM
     gf::moe_wait(md, g.n_embd, s);
     if (F->prof_on) F->mark("moe_wait");
-    gf::moe_fetch(md, g.n_exp_used, Ly.blob, s);
+    if (F->stream_fetch) gf::moe_fetch(md, g.n_exp_used, Ly.blob, s, Ly.gu_bytes, Ly.dn_bytes, F->read_chunks);
+    else gf::moe_fetch(md, g.n_exp_used, Ly.blob, s);
     if (F->prof_on) F->mark("moe_fetch");
     if (pf && pf_at == 1) issue_prefetch();
     // this layer's own prefetched experts (issued one layer ago) must have landed before they are read

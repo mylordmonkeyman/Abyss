@@ -2756,6 +2756,55 @@ __global__ void __launch_bounds__(256) moe_fetch_kernel(MoeDev d, int k, size_t 
     }
 }
 
+// STREAMED: the host posted the response before its disk reads finished, and each read job sets a bit of
+// ready[i] (part * n_chunks + chunk, fast_read_part's layout) once its chunk is in the landing slot.  Block b copies
+// the chunks whose bit is b modulo the grid, each as soon as it is set - the PCIe pull (~6 GB/s) runs behind the
+// SSD (~3.4) instead of after it, so only the last chunk's copy stays exposed.  Entries outside stream_mask are
+// whole blobs, as above.  A bit that never comes (a dead host) gives up after ~60 s like moe_wait.
+__global__ void __launch_bounds__(256) moe_fetch_stream_kernel(MoeDev d, int k, size_t n16, unsigned long long gu,
+                                                               unsigned long long dn, int rch) {
+    __shared__ unsigned int s_need;
+    if (threadIdx.x == 0) s_need = *d.wait_seq;
+    __syncthreads();
+    const volatile MoeResponse* r = s_need != 0u ? (const volatile MoeResponse*) d.resp + (s_need % kCpuAnswers) : nullptr;
+    const unsigned int sm = r != nullptr ? r->stream_mask : 0u;
+    for (int i = 0; i < k; ++i) {
+        const unsigned long long src = d.fetch_src[i];
+        if (src == 0ull) continue;
+        const uint8_t* s = (const uint8_t*) src;
+        uint8_t* t = (uint8_t*) d.plan_ptr[i];
+        if (((sm >> i) & 1u) == 0u) {
+            const uint4* s4 = (const uint4*) s;
+            uint4* t4 = (uint4*) t;
+            for (size_t j = blockIdx.x * (size_t) blockDim.x + threadIdx.x; j < n16; j += (size_t) gridDim.x * blockDim.x)
+                t4[j] = s4[j];
+            continue;
+        }
+        for (int bit = blockIdx.x; bit < 3 * rch; bit += gridDim.x) {
+            const int part = bit / rch, c = bit % rch;
+            const unsigned long long len = part == 2 ? dn : gu;
+            const unsigned long long piece = ((len + (unsigned long long) rch - 1) / rch + 4095ull) & ~4095ull;
+            const unsigned long long c0 = min(len, (unsigned long long) c * piece), c1 = min(len, c0 + piece);
+            if (c1 <= c0) continue;
+            const unsigned long long base = (part == 0 ? 0ull : part == 1 ? gu : 2ull * gu) + c0;
+            if (threadIdx.x == 0) {
+                const long long t0 = clock64();
+                while (((r->ready[i] >> bit) & 1u) == 0u) {
+                    if (clock64() - t0 > (1ll << 36)) break;
+                }
+                __threadfence_system();
+            }
+            __syncthreads();
+            const size_t nb = (size_t) (c1 - c0), m16 = nb / 16;
+            const uint4* s4 = (const uint4*) (s + base);
+            uint4* t4 = (uint4*) (t + base);
+            for (size_t j = threadIdx.x; j < m16; j += blockDim.x) t4[j] = s4[j];
+            for (size_t j = m16 * 16 + threadIdx.x; j < nb; j += blockDim.x) t[base + j] = s[base + j];
+            __syncthreads();
+        }
+    }
+}
+
 constexpr int GU_ROWS = 32;   // h values (gate rows = up rows) per block: one q8_1 block of h
 constexpr int GU_WARPS = 16;  // ... 2 gate + 2 up rows per warp (8 per warp measured 90 vs 65 us a layer: occupancy)
 
@@ -3821,7 +3870,7 @@ void zero_copy(const void* src, void* dst, size_t bytes, cudaStream_t s) {
     launch_check("zero_copy");
 }
 
-void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s) {
+void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s, size_t gu_bytes, size_t dn_bytes, int n_chunks) {
     static int sms = 0;
     if (sms == 0) {
         int dev = 0;
@@ -3829,7 +3878,10 @@ void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s) {
         cudaDeviceGetAttribute(&sms, cudaDevAttrMultiProcessorCount, dev);
         if (sms <= 0) sms = 80;
     }
-    moe_fetch_kernel<<<sms, 256, 0, s>>>(d, k, (blob_bytes + 15) / 16);
+    if (n_chunks > 0 && gu_bytes > 0 && dn_bytes > 0)
+        moe_fetch_stream_kernel<<<sms, 256, 0, s>>>(d, k, (blob_bytes + 15) / 16, gu_bytes, dn_bytes, n_chunks);
+    else
+        moe_fetch_kernel<<<sms, 256, 0, s>>>(d, k, (blob_bytes + 15) / 16);
     launch_check("moe_fetch");
 }
 

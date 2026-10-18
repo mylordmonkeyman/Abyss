@@ -237,6 +237,8 @@ struct MoeResponse {
     volatile unsigned int seq;
     unsigned int ptr_mask;            // plan entries the host made resident: ptr[i] valid
     unsigned int host_mask;           // plan entries the host COMPUTED (their sum is in cpu_part): skipped on the device
+    unsigned int stream_mask;         // STREAMED entries: posted before their disk reads finished; ready[i] collects the
+    unsigned int ready[8];            // chunks that landed (bit part * n_chunks + chunk), the fetch copies them as they do
     unsigned long long ptr[8];
     int n_upd;                        // table updates: tab[key] = val
     int upd_key[64];
@@ -273,7 +275,10 @@ void moe_prefetch(const MoeDev& d, size_t blob_bytes, cudaStream_t s);
 /// Waits (on the device) for the host's response when the last route had misses, then applies it.
 void moe_wait(const MoeDev& d, int n_embd, cudaStream_t s);
 /// Copies every planned expert with a fetch source from the RAM tier (host-mapped) into its VRAM slot.
-void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s);
+/// The disk-landed experts into their planned slots: whole blobs, or - for the response's streamed entries - chunk by
+/// chunk as the host's reads land (gu_bytes / dn_bytes / n_chunks: the layout of fast_read_part's chunks)
+void moe_fetch(const MoeDev& d, int k, size_t blob_bytes, cudaStream_t s, size_t gu_bytes = 0, size_t dn_bytes = 0,
+               int n_chunks = 0);
 /// One host-mapped blob copied into VRAM the way moe_fetch copies a RAM-tier expert (SMs reading over PCIe, not the
 /// copy engine): the CPU lane's calibration times the decode's own PCIe path with it.
 void zero_copy(const void* src, void* dst, size_t bytes, cudaStream_t s);
