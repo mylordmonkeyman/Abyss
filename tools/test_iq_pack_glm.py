@@ -137,7 +137,8 @@ class ArchitectureCheck(unittest.TestCase):
         self.assertIn("glm5-next", iq_pack.ARCHITECTURES)
         self.assertIn("glm5next", iq_pack.ARCHITECTURES)   # unsloth's spelling, same KV family
         self.assertIn("deepseek4", iq_pack.ARCHITECTURES)  # Abyss: DeepSeek V4
-        self.assertEqual(len(iq_pack.ARCHITECTURES), 4)
+        self.assertIn("deepseek41", iq_pack.ARCHITECTURES)  # Abyss: DeepSeek V4.1 (v1.3.29)
+        self.assertEqual(len(iq_pack.ARCHITECTURES), 5)
 
     def test_deepseek4_bf16_list(self):
         # the hc fn matrices (F32 in the GGUFs) take the BF16 path, the indexer's F32 projection does not
@@ -145,6 +146,16 @@ class ArchitectureCheck(unittest.TestCase):
         self.assertTrue(iq_pack.needs_bf16("output_hc_fn.weight", "F32", "deepseek4"))
         self.assertFalse(iq_pack.needs_bf16("blk.2.indexer.proj.weight", "F32", "deepseek4"))
         self.assertFalse(iq_pack.needs_bf16("blk.0.ffn_gate_inp.weight", "BF16", "deepseek4"))
+
+    def test_deepseek41_bf16_list(self):
+        # the hc fn matrices at any type; the index keys' projection at any type (mrfakename's Q2_K: the publish
+        # kernel reads BF16); the F16 projections; but not the Engram projection served quantized (Q2_K) by the GEMV
+        self.assertTrue(iq_pack.needs_bf16("blk.3.hc_attn_fn.weight", "Q2_K", "deepseek41"))
+        self.assertTrue(iq_pack.needs_bf16("blk.2.indexer.attn_k.weight", "Q2_K", "deepseek41"))
+        self.assertTrue(iq_pack.needs_bf16("blk.2.indexer.attn_k.weight", "F16", "deepseek41"))
+        self.assertTrue(iq_pack.needs_bf16("blk.1.engram_kv.weight", "F16", "deepseek41"))
+        self.assertFalse(iq_pack.needs_bf16("blk.1.engram_wkv.weight", "Q2_K", "deepseek41"))
+        self.assertFalse(iq_pack.needs_bf16("blk.2.indexer.proj.weight", "F16", "deepseek41"))   # (widened to F32)
 
 
 if __name__ == "__main__":
