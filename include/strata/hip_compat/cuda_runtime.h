@@ -70,6 +70,7 @@
 #define cudaMalloc hipMalloc
 #define cudaMallocHost(...) (::strata::hip_compat::malloc_host(__VA_ARGS__))
 #define cudaMemGetInfo hipMemGetInfo
+#define cudaMemcpyKind hipMemcpyKind
 #define cudaMemcpy hipMemcpy
 #define cudaMemcpy2DAsync hipMemcpy2DAsync
 #define cudaMemcpyAsync hipMemcpyAsync
