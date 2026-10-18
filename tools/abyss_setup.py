@@ -183,6 +183,13 @@ def hip_engine(a):
                     "STRATA_GLM_PREFILL_MB": "6144" if S.ram_gb() >= 96 else "4096"})
     elif min(g.get("vram_gb", 0) for g in gpus) >= 20:
         env.update({"STRATA_GLM_PREFILL_SUB": "1024", "STRATA_GLM_PREFILL_MB": "4096"})
+    if os.name == "nt" and not any(M.hip_unified_memory(g) for g in gpus):
+        # Windows counts the pinned RAM tier against the commit limit (RAM + pagefile) and the 16 GB headroom comes off
+        # that: with a small pagefile experts go to the SSD while RAM is free.  The defaults stay safe; this is the
+        # tuning that kept every expert resident on an RX 7900 XT + 128 GB (issue #4) - it needs the bigger pagefile.
+        S.say("  Windows: if the log's RAM tier holds fewer experts than your RAM allows, a larger pagefile (e.g. 64 GB)")
+        S.say("  plus STRATA_GLM_RAM_HEADROOM_GB=4, STRATA_GLM_RESERVE_MB=512 (no display on this card) and --prefill 8192")
+        S.say("  in the config kept all experts resident on an RX 7900 XT + 128 GB (github.com/zephel01/Abyss/issues/4)")
     extra = {"exe": str(M.EXE), "backend": "hip", "gpu": [g["index"] for g in gpus],
              "lib_dirs": (meta or {}).get("lib_dirs") or [], "env": env}
     return gpus, extra

@@ -1,7 +1,7 @@
 @echo off
 rem Abyss for Windows (experimental): the first run checks the PC, compiles the engine, asks before it
 rem downloads the model, builds the pack and starts the dashboard; later runs just start it.
-rem START-ABYSS.bat --help lists the options. Like ./abyss.sh, nothing is installed system-wide: a missing Python,
+rem START-ABYSS.bat --help lists the options. This is Maya's installer (GLM-5.3-Flash); DeepSeek V4 Flash: setup-deepseek.bat. Like ./abyss.sh, nothing is installed system-wide: a missing Python,
 rem compiler or CUDA toolkit is reported with where to get it.
 setlocal
 title Abyss
