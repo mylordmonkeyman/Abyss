@@ -26,6 +26,9 @@ GPU. The engine keeps the most-used experts in VRAM, the next ones in pinned RAM
 moves them as the conversation needs them. You get a browser chat and OpenAI- / Anthropic-compatible APIs, with
 thinking and tool calls — all on your own machine.
 
+**New in v1.3.29: [DeepSeek V4.1 Flash (1017)](docs/deepseek41/README.md)** — 17.7 tok/s on an RTX 5090 + 93 GB RAM
++ NVMe with nazeshinjite's Q2 GGUF (its 366 GB include the ~200 GB Engram tables, read row by row from the SSD).
+
 > [!NOTE]
 > Abyss is a fork of [Project Maya](https://github.com/mw00/project-maya), which grew out of
 > [Strata](https://github.com/Niko1221/Strata). It adds DeepSeek V4 to Maya's engine. See [Credits](#-credits).
@@ -170,11 +173,13 @@ kernels match the FP32 ones to ~2e-6, and speculative decoding gives the token p
 | [Changelog](CHANGELOG.md) | every release with its measurements |
 | [Port notes](docs/deepseek4/PORT.md) | what Abyss adds and how it was validated |
 | [Spec](docs/deepseek4/SPEC.md) | DeepSeek V4's forward pass as implemented |
+| [DeepSeek V4.1](docs/deepseek41/README.md) | V4.1 Flash (1017): which GGUFs load, packing, quality and speed, its options |
 | [Maya docs](docs/maya/README.md) | Maya's documentation, unchanged: GLM-5.3-Flash, its installer (`./abyss.sh`), tuning, AMD, multi-GPU |
 
 ## 🗺️ Roadmap
 
 - [x] DeepSeek V4 Flash: token path, batched prompt path, conversation reuse
+- [x] DeepSeek V4.1 Flash (1017): token path, batched prompt path, conversation reuse, Engram from the SSD
 - [x] Thinking levels, DSML tool calls, OpenAI / Anthropic APIs
 - [x] One-command setup with `Abyss-tools`
 - [x] The iGPU lane (Ryzen AI Max) for decode and prompts
@@ -185,7 +190,8 @@ kernels match the FP32 ones to ~2e-6, and speculative decoding gives the token p
 - [x] V100 (sm_70) builds with CUDA 12
 - [ ] A DSpark drafter (this GGUF has no MTP block)
 - [ ] Conversation slots on disk
-- [ ] Windows for DeepSeek V4 (Linux tested)
+- [ ] Windows for DeepSeek V4 (Linux tested; community builds on an RX 7900 XT, see [AMD HIP](docs/maya/AMD_HIP.md))
+- [ ] DeepSeek V4.1: speculative decoding (its DSpark drafter), a batched prompt attention, a layer split
 - [ ] Speed with several cards: a split's prompts (30% behind one RTX 5090 here); a run on a V100; discrete Radeon cards
 - [ ] Prompt-path tuning at short lengths (staging RAM-tier experts still dominates an 8K prompt)
 

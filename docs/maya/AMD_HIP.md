@@ -61,6 +61,30 @@ pinned by this repository. For an offline build, point `STRATA_GGML_DIR` at a
 checkout of that exact revision; using an arbitrary newer checkout changes the
 dependency being tested.
 
+### Windows 11 (community reports, not validated by the maintainers)
+
+A native Windows build with Visual Studio 18 (MSVC 14.51) and AMD's TheRock ROCm wheels
+(`rocm[libraries,devel,gfx1100]==7.14.1`, Clang 23) was reported on an RX 7900 XT
+([#2](https://github.com/zephel01/Abyss/issues/2), [#3](https://github.com/zephel01/Abyss/issues/3)).
+`setup-deepseek.bat --backend hip` (DeepSeek V4 Flash) or `START-ABYSS.bat` (GLM-5.3-Flash) builds it.
+
+- From v1.3.29 the HIP build always compiles at `-O3 -DNDEBUG` (except Debug); before that, a toolchain that left
+  `CMAKE_HIP_FLAGS_RELEASE` empty built every kernel at `-O0` (1.30 tok/s instead of ~45).
+- MSVC 14.51's `<cmath>` declares `isgreater` .. `isunordered`, `isnormal` and `signbit` as `constexpr`
+  (implicitly `__host__ __device__` under HIP), which collides with TheRock 7.14.1's device declarations
+  ("`__device__` function 'isgreater' cannot overload `__host__ __device__` function"). Until one of the toolchains
+  changes, guard those declarations with `#if !defined(_MSC_VER)` in the SDK's
+  `lib/llvm/lib/clang/23/include/__clang_hip_cmath.h` and `__clang_cuda_math_forward_declares.h` - only `isgreater`
+  through `isunordered` (up to `modf`), `isnormal` and `signbit`; keep `isfinite`, `isinf` and `isnan`, which the
+  kernels need. #2 has a script that applies the guard.
+- Windows counts the pinned RAM tier against the commit limit (RAM + pagefile). With a small pagefile the default
+  `STRATA_GLM_RAM_HEADROOM_GB=16` sends experts to the SSD while RAM is free; a larger pagefile (e.g. 64 GB) with
+  `STRATA_GLM_RAM_HEADROOM_GB=4`, `STRATA_GLM_RESERVE_MB=512` (no display on the card) and `--prefill 8192` kept
+  every expert resident on an RX 7900 XT + 128 GB ([#4](https://github.com/zephel01/Abyss/issues/4)).
+- Hybrid Intel CPUs: `STRATA_GLM_CPU_PIN=0-15` puts the CPU lane's workers on the P-core threads of an i7-14700K
+  (v1.3.29: pinning works with one GPU and on Windows). Do not restrict the whole process to the physical P-cores -
+  that starved the HIP runtime's threads (4.97 tok/s).
+
 ## Model and serving configuration
 
 Prepare a supported model pack and its MTP runtime using the existing tools.

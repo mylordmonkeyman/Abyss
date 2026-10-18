@@ -7,6 +7,38 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.29 - 2026-10-18
+
+**DeepSeek V4.1 Flash (1017)** runs on the fast path ([docs/deepseek41/README.md](docs/deepseek41/README.md)): the
+V4.1 attention (four shared KV slots, ratio-2 / ratio-1 compressed rows, index-source reuse, candidate blocks), the
+lagged hyper-connection pre, and the Engram tables read row by row from the GGUF. Decode, the batched prompt path and
+conversation reuse; both GGUF layouts (ds4 / antirez and llama.cpp's PR). RTX 5090 + Radeon 8060S lane + 93 GB RAM,
+against the unquantized 1017's top-256 on Lucebox's 8 held-out sequences:
+- nazeshinjite's Q2 (IQ2_XXS / Q2_K experts, 1017 imatrix): 17.7 tok/s, KL 0.229, top-1 agreement 79.2%.
+- Lucebox's Q8_0 dense + 8-bit Engram with mrfakename's Q2_K/Q3_K experts: 8.5 tok/s, KL 0.168, 83.4%.
+- The same GGUF as llama.cpp's V4.1 PR: teacher KL 0.639 against its 0.636. A chat's second turn reuses the first:
+  44 s -> 4.7 s of prompt for 1,132 tokens, the same text.
+
+Also:
+- **serve**: a reasoning ends only at the special `</think>` token (GLM, DeepSeek V4 / V4.1). V4.1 wrote the tag as
+  text while explaining a chat template, and the rest of its reasoning went out as the answer.
+- **HIP / Windows** (#2, #3, #4): `-O3 -DNDEBUG` on every non-Debug HIP build (a toolchain with an empty
+  `CMAKE_HIP_FLAGS_RELEASE` built the kernels at `-O0`: 1.30 tok/s instead of ~45 on an RX 7900 XT);
+  `cudaMemcpyKind` in the HIP compat header (v1.3.28 broke the HIP build); no `M_PI`; quieter Windows warnings;
+  `setup-deepseek.bat` (Windows' `./setup-deepseek.sh` - `START-ABYSS.bat` installs GLM-5.3-Flash); a tuning hint
+  for Radeon cards on Windows; the MSVC 14.51 / TheRock 7.14.1 header workaround in
+  [docs/maya/AMD_HIP.md](docs/maya/AMD_HIP.md).
+- **CPU lane**: `STRATA_GLM_CPU_PIN=<CPU list>` (e.g. `0-15`) pins the workers with one GPU too, and pinning works on
+  Windows (it was Linux-only and only for a split's pools).
+- **iGPU lane**: the RDNA dot for the lane's down (IQ2_XXS / IQ3_XXS / IQ2_S) and DeepSeek V4's IQ2_XS gate/up -
+  lane time -4-5%, decode about +1%, bit-identical sums; a stall is logged as a range (an idle server made the old
+  "finished after" read minutes).
+- **New options, off by default**: `STRATA_GLM_TAIL_SKIP_DISK=1` (the tail skip leaves out only disk-only experts),
+  `STRATA_GLM_DISK_LANE=1` (a disk read computed by the lane in RAM), `STRATA_GLM_AHEAD_TOP=<n>`,
+  `STRATA_GLM_RAM_THP=1` (transparent huge pages for the RAM tier), `iq_pack.py --first-wins`,
+  `requant_dense.py --from=<types>`.
+- GLM-5.3-Flash and DeepSeek V4 are unchanged: KL 0.000000 (GLM S-v2) and 0.0058 (V4) against their references.
+
 ## v1.3.28 - 2026-10-17
 
 Decode right after a prompt is no longer slow.  The prompt borrows part of the VRAM expert pool, and the token
