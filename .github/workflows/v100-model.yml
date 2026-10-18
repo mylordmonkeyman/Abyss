@@ -85,3 +85,5 @@ jobs:
           path: ${{ env.EVIDENCE }}
           if-no-files-found: warn
           retention-days: 30
+
+# Start model bring-up after enabling the pinned official actions.
