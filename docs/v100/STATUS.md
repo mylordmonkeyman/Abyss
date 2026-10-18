@@ -48,6 +48,31 @@ See [paired evidence](v9-bases-2026-10-18.json) and
 [memory worksheet](v9-memory-2026-10-18.csv). Artifact `12145906706` is
 2,869,760 bytes, SHA256 `e7570b41bbeaf6502b678b4e2e12d65eb9ed7508768183d49c85af33a58963e7`.
 
+### Fixed-token follow-up and P2a next step
+
+[Replay run 39171655697](https://github.com/mylordmonkeyman/Abyss/actions/runs/39171655697)
+passed all 36 fixed-history requests (one warmup plus five measured requests per
+process). The paired median LOGP wall-time changes are **+1.260%, +0.380%, +0.523%**
+for v1.3.31; median across pairs **+0.523%**. LOGP includes host-logit transfer and
+CPU normalization, so these are not decode throughput changes. The smaller gap
+does not reproduce the initial ~5% observation, but all three paired signs remain
+positive. Within-version sum log-probabilities vary across identical requests;
+fixed tokens do not establish identical internal routes or arithmetic repeatability.
+
+Retain v1.3.28 for isolation under v9. The next narrowly scoped base investigation
+is repeated fixed-history logits/router/cache-state capture, rather than treating
+this small replay difference as a proven source regression. No thermal slowdown
+was sampled; placement remains a confounder. The complete replay artifact is
+`12153042649`, 1,931,188 bytes, SHA256
+`e8874df89dab98a1d15c1b33909fc790a58586a7cbd7e6692b744ca5216fcd0d`.
+See [compact replay evidence](v9-replay-2026-10-18.json).
+
+The isolated [P2a QK/sink-softmax/PV diagnostic](P2_ARITHMETIC.md) is implemented
+with 32 synthetic cases and graph replay, FP64/device-FP32 references, guard
+checks, SM70 resource/SASS capture and sanitizer steps. Its first physical V100
+run is pending. It does not enable production arithmetic or satisfy the full
+latent/gather/RoPE/output-projection/model-quality gate.
+
 [v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
 commit `f7138de`, passed **89 isolated Q8_1 scatter byte/guard cases**, with zero
 memcheck/synccheck errors. Existing DeepSeek/MMA checks also passed; the engine

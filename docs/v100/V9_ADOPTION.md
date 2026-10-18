@@ -103,3 +103,11 @@ replies, per-request CPU/placement snapshots, phase timestamps, thermal/clock sa
 and immutable fixture/binary hashes are retained. No base code or public control
 changes, rebuild, model conversion, memory binding, clock setting or privilege
 change is involved.
+
+## Fixed-token outcome
+
+Run `39171655697` passed. Paired median LOGP wall-time changes are +1.260%,
++0.380%, +0.523%; this reduces but does not explain the initial short-prompt gap.
+Identical token histories still yield varying likelihoods within each base. Keep
+v1.3.28 for isolation and investigate fixed-history logits/router/cache state;
+continue isolated P1/P2 math work without migrating or enabling new dispatch.

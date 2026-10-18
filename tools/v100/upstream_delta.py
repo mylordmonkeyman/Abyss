@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v8 P0 ancestry/feature evidence; read-only source/header census, not a quality pass."""
+"""v9 P0 ancestry/feature evidence; read-only source/header census, not a quality pass."""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +8,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import p0
@@ -15,6 +16,7 @@ import p0
 ROOT = p0.ROOT
 STRATA = '477ac13cbe8e582c20484871ce459d20d82df09d'
 GGML = '3cf03257f219afbe7334045ff7c6a06ac68c627d'
+CURRENT_ABYSS = '7c893ac17e61ec45c934b3278356807fc4626c3c'
 
 
 def inspect():
@@ -22,59 +24,70 @@ def inspect():
              'src/core/glm_fast_path.cu', 'src/kernels/cpu/native_expert.cpp',
              'src/kernels/cpu/iq_avx2.cpp', 'src/kernels/cuda/dsv4_fast.cu']
     source = {p: (ROOT / p).read_text() for p in paths}
+    thp = 'getenv("STRATA_GLM_RAM_THP")' in source[paths[2]]
+    stream_fetch = 'getenv("STRATA_GLM_STREAM_FETCH")' in source[paths[2]]
+    version = (ROOT / 'VERSION').read_text().strip()
+    spec_text = (ROOT / 'docs/v100/IMPLEMENTATION_SPEC.md').read_text()
+    revision = re.search(r'revision\s+(\d+\.\d+)', spec_text)
     # Explicit source observations, scoped to these symbols. Neither literal
     # absence nor presence proves a runtime bottleneck or a feature enabled.
     candidates = [
-        dict(id='P3.12', status='absent', file=paths[0], symbol='quantize',
+        dict(id='P3.1', status='absent', file=paths[0], symbol='quantize',
              evidence='Indexed quantize_mmq_q8_1_cuda; no engine scatter call. glm_prefill run_set uses '
                       'row_tok repeatedly over window-sized expert groups; down GU rows are expert-specific.',
              decision='Isolated vendor API test first; full-route scatter is not a drop-in for window-sized Xq.'),
-        dict(id='P3.2f', status='different', file=paths[3], symbol='pick_rows1 / iq256_rows1_supported',
+        dict(id='P3.2', status='different', file=paths[3], symbol='pick_rows1 / iq256_rows1_supported',
              evidence='Existing exact singleton IQ3_XXS/IQ3_S; iq_avx2.cpp supports singleton types 18/21.',
              decision='Named IQ2_XXS case is inapplicable if absent from inventory. Upstream exact-one also '
                       'explicitly supports type 17 (IQ2_XS): retain that separately validated CPU candidate.'),
-        dict(id='P4i', status='different', file=paths[2], symbol='STRATA_GLM_CPU_PLAN / STRATA_GLM_PCIE_SHARE',
+        dict(id='P3.3', status='different', file=paths[2], symbol='STRATA_GLM_CPU_PLAN / STRATA_GLM_PCIE_SHARE',
              evidence='Startup CPU/DMA/mapped-access calibration and fixed route plan already exist.',
              decision='Observe per-layer prediction error before introducing online allocation.'),
-        dict(id='P3.13', status='absent', file=paths[0], symbol='Context::run / dispatch',
+        dict(id='C03', status='absent', file=paths[0], symbol='Context::run / dispatch',
              evidence='Contiguous Product::w; no STRATA_MMQ_DIRECT pointer-table path.',
              decision='Optional after real gather cost; MXFP4 cannot inherit another format whitelist.'),
-        dict(id='P3.14', status='absent', file=paths[2], symbol='STRATA_HC_Q8',
+        dict(id='C09', status='absent', file=paths[2], symbol='STRATA_HC_Q8',
              evidence='No upstream HC Q8 control in audited engine source.',
              decision='Optional lossy storage only after separate resident HC census.'),
-        dict(id='P4j', status='different', file=paths[2], symbol='numa_pinned / bg_pace / promote',
+        dict(id='C10', status='different', file=paths[2], symbol='numa_pinned / bg_pace / promote',
              evidence='Existing pinned mapped pool, service and paced background promotion; no upstream '
                       'STRATA_EXCHANGE_ROTATE/STRATA_PIN_BY_NEED control.',
              decision='No replacement cache; require trace of actual missing overlap/host commit copies.'),
-        dict(id='P4k', status='absent', file=paths[1], symbol='prefill-head-alias',
+        dict(id='C11', status='absent', file=paths[1], symbol='prefill-head-alias',
              evidence='No upstream head-alias option in audited prefill source.',
              decision='Optional only after measured head/workspace pressure.'),
-        dict(id='P2g', status='inapplicable', file=paths[5], symbol='attend_batch_kernel',
+        dict(id='C06', status='inapplicable', file=paths[5], symbol='attend_batch_kernel',
              evidence='Per-query n_raw and raw0 addressing; existing V100 trace launches attend_batch.',
              decision='Do not port Xolotl masked-union workaround; retain direct per-query gathers.'),
-        dict(id='Abyss RAM_THP', status='different', file=paths[2], symbol='numa_pinned',
-             evidence='buddyinfo compaction guard already exists; newer STRATA_GLM_RAM_THP control absent.',
-             decision='No base update; later one-node/partial hugepage policy not incorporated.'),
-        dict(id='Abyss STREAM_FETCH', status='absent', file=paths[2], symbol='STRATA_GLM_STREAM_FETCH',
-             evidence='Later Abyss streaming-fetch control absent.',
-             decision='No base update; existing staged fetch preserved.'),
+        dict(id='Abyss RAM_THP', status='present' if thp else 'different', file=paths[2], symbol='numa_pinned',
+             evidence='RAM_THP control included.' if thp else 'buddyinfo guard present; RAM_THP control absent.',
+             decision='Record actual realized THP; a control is not evidence of huge pages.'),
+        dict(id='Abyss STREAM_FETCH', status='present' if stream_fetch else 'absent', file=paths[2], symbol='STRATA_GLM_STREAM_FETCH',
+             evidence='Streaming-fetch control included.' if stream_fetch else 'Streaming-fetch control absent.',
+             decision='Record actual disk-fetch activity before attributing a speed difference.'),
     ]
     vendor = ROOT / 'third_party/llama.cpp'
     header = vendor / 'ggml/src/ggml-cuda/quantize.cuh'
     api = header.read_text() if header.is_file() else None
-    return dict(schema_version=1, specification='8.0',
+    return dict(schema_version=2, specification=revision[1] if revision else 'unrecognized',
                 specification_sha256=p0.sha256(ROOT / 'docs/v100/IMPLEMENTATION_SPEC.md'),
                 working_commit=p0.command(['git', 'rev-parse', 'HEAD'])['stdout'].strip(),
                 git_describe=p0.command(['git', 'describe', '--always', '--dirty', '--tags'])['stdout'].strip(),
                 pinned_abyss_base=p0.BASE, strata_reference=STRATA,
-                abyss_differential_reference='7c893ac17e61ec45c934b3278356807fc4626c3c',
-                base_changed=False, ggml_expected=GGML,
+                abyss_differential_reference=CURRENT_ABYSS,
+                working_version=version, source_version_changed_from_historical=version!='1.3.28',
+                current_reference_features={'ram_thp':thp,'stream_fetch':stream_fetch},
+                ancestry_check=p0.command(['git','merge-base','--is-ancestor',CURRENT_ABYSS,'HEAD']),
+                shallow_checkout=p0.command(['git','rev-parse','--is-shallow-repository']),
+                ancestry_note='A shallow runner checkout may not contain ancestry; source hashes and version are separate evidence.',
+                ggml_expected=GGML,
                 ggml_actual=p0.command(['git', '-C', str(vendor), 'rev-parse', 'HEAD']).get('stdout', '').strip(),
                 vendor_scatter_api_declared=None if api is None else 'void quantize_scatter_mmq_q8_1_cuda(' in api,
                 source_sha256={p: hashlib.sha256(s.encode()).hexdigest() for p,s in source.items()},
                 candidates=candidates,
                 model_integrity='Sizes and GGUF structure only; shard SHA256 unverified (not fabricated).',
-                proposed_controls_implemented=[], production_change=False,
+                implemented_v100_controls=sorted(set(re.findall(r'"(ABYSS_V100_[A-Z0-9_]+)"','\n'.join(source.values())))),
+                v100_candidate_arithmetic_enabled=False,
                 unresolved_gates=['Hardware counters denied: ERR_NVGPUCTRPERM',
                                   'QPI counters unmeasured', 'Greedy repeat variability unisolated',
                                   'Model-exact extended parity and dedicated MXFP4 row parity incomplete'])
