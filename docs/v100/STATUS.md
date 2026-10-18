@@ -69,8 +69,8 @@ See [compact replay evidence](v9-replay-2026-10-18.json).
 
 The isolated [P2a QK/sink-softmax/PV diagnostic](P2_ARITHMETIC.md) is implemented
 with 32 synthetic cases and graph replay, FP64/device-FP32 references, guard
-checks, SM70 resource/SASS capture and sanitizer steps. Its first physical V100
-run is pending. It does not enable production arithmetic or satisfy the full
+checks, SM70 resource/SASS capture and sanitizer steps. Its [first physical V100 run](https://github.com/mylordmonkeyman/Abyss/actions/runs/39172763525)
+passed all 32 cases and both sanitizers (zero errors). It does not enable production arithmetic or satisfy the full
 latent/gather/RoPE/output-projection/model-quality gate.
 
 [v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),

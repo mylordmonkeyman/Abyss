@@ -39,3 +39,15 @@ compressor inputs, raw/CSA/HCA addressing and masks, selected-key identity,
 RoPE/inverse RoPE and grouped `wo_a/wo_b`, malformed-selection defenses, complete
 model logits and a measured profitable production geometry. No new public switch
 or automatic path is enabled by this diagnostic.
+
+## Physical V100 result
+
+Run [39172763525](https://github.com/mylordmonkeyman/Abyss/actions/runs/39172763525)
+on `da9364a` passed all 32 cases, four graph replays each, memcheck and synccheck
+with zero errors. Selected SM70 SASS contains HMMA. QK/PV report 40/39 registers,
+zero local bytes and 32 theoretical one-warp CTAs/SM; achieved occupancy is unmeasured.
+At 640 keys, unscaled PV relative L2 is 1.0601e-5 and scaled PV is 7.8376e-7.
+The dominant-sink case reports relative L2 1.0 from FP16 underflow, with maximum
+absolute error 5.84e-35; it passes only the explicitly stated absolute screen.
+This is not proof that probability scaling is safe for arbitrary model inputs.
+See [all case results](p2-qkpv-2026-10-18.json).

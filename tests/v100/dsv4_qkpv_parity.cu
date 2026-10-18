@@ -1,3 +1,5 @@
+// This target is CUDA-only in CMake; exclude it from HIP source auditing.
+#ifndef STRATA_USE_HIP
 // P2a arithmetic only: 64 heads, shared 512-D FP16 K=V, independent hi/lo
 // accumulators, sink denominator with no sink value. No model dispatch/gathers.
 #include "volta_mma884.cuh"
@@ -194,3 +196,5 @@ int main() {
         return 0;
     } catch(const std::exception& e) {std::fprintf(stderr,"QK/PV diagnostic FAILED: %s\n",e.what());return 1;}
 }
+
+#endif // !STRATA_USE_HIP
