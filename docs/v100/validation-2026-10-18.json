@@ -164,6 +164,17 @@
     "full_inference": true,
     "model_logit_parity": false,
     "hardware_counter_critical_path": false,
-    "performance_improvement_claim": null
+    "performance_improvement_claim": null,
+    "warm_prompt_baseline_run_id": 39139393175,
+    "same_engine_prefill_reference_run_id": 39138840797,
+    "external_cpu_reference_run_id": 39140902521,
+    "nsight_timeline_run_id": 39140801624,
+    "counter_gate": "ERR_NVGPUCTRPERM",
+    "limited_logit_measurements": {
+      "batch_vs_token_mean_kl": 5.50869736409417e-07,
+      "cpu_reference_mean_kl": 0.013540201894700597,
+      "cpu_reference_top1_agreement": 0.9612403100775194,
+      "broader_qualification": "pending"
+    }
   }
 }

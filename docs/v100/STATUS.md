@@ -90,8 +90,91 @@ again on that commit (130 server / 202 tool tests, with existing skips).
 Hosted CI now uses the same pinned allowlisted checkout action and the image's
 Python, removing the extra setup-python action dependency.
 
-Still required: 2K/8K/32K prompts and warm-repeat benchmarks, dedicated MXFP4-down parity,
-teacher-forced logits/boundary and reused-cache tests, runtime type/shape/kernel census,
-VRAM/pinned/page-cache/workspace ledger, sustained thermal/QPI/PCIe evidence, supported
-profiler counters and an annotated critical-path trace. No production P1/P2/P3 routing
-may be promoted on these synthetic tests alone.
+## Warm baseline, teacher forcing, and actual CUDA timeline
+
+[Baseline run 39139393175](https://github.com/mylordmonkeyman/Abyss/actions/runs/39139393175),
+commit `c2bbbad`, completed an excluded warm-up plus **five measured warm repetitions**
+per length, 256 output tokens each, profiling/speculation/prefix reuse off. Context
+capacity was 36,864, RAM budget 72 GiB, CPU lane 28 threads. Requested PCIe share
+0.21 becomes about 0.17 in the engine's integer per-route plan. Persistent usage
+history was disabled. Same-process expert residency still warms across requests.
+
+| Prompt | Prefill median (range), tokens/s | Decode median (range), tokens/s |
+| --- | --- | --- |
+| 2,048 | 549.8 (540.7–563.7) | 34.17 (33.51–34.91) |
+| 8,192 | 709.1 (707.5–712.8) | 32.15 (31.31–33.29) |
+| 32,768 | 623.7 (621.3–624.7) | 30.55 (29.86–31.54) |
+
+These are **synthetic baseline observations, not improvements**. All lengths used
+the same executable and packing. Greedy output differed across repetitions; at 2K,
+the first mismatch versus warm repetition 1 was at generated index 22 or 34. No
+cause is established. Treat this as a baseline-variability investigation before
+using generated-string equality as an optimization acceptance gate.
+
+Peak sampled RSS was 78.68 / 78.75 / 79.07 GiB; peak container charge 73.16 /
+73.24 / 73.59 GiB. These measurements are not additive. No cgroup OOM events were
+recorded. Maximum sampled temperatures were 58 / 66 / 71 C, with no sampled
+thermal slowdown. Power-cap activity occurred in the 8K and 32K runs. Full-process
+samples include loading/idle intervals, so their clock ranges do not prove steady
+active clocks. NUMA mapping was about 54/24 GiB on nodes 0/1 at 2K and 32K but
+24/55 GiB at 8K (at peak RSS); policy labels were default. That is mapped residency,
+not measured QPI traffic. Cross-length changes are not a controlled causal A/B.
+
+[Same-engine teacher-forced run 39138840797](https://github.com/mylordmonkeyman/Abyss/actions/runs/39138840797)
+compared **64 full-vocabulary distributions**, crossing the ~2K selection and
+compression boundaries: mean KL **5.5087e-7**, max **7.2320e-6**, top-1 **64/64**.
+Both dumps contained 8,273,920 finite values. This fixture was highly predictable;
+it is an internal path screen, not a representative task-quality corpus.
+
+[External CPU reference run 39140902521](https://github.com/mylordmonkeyman/Abyss/actions/runs/39140902521)
+compared Abyss against pinned llama.cpp `3cf03257f219afbe7334045ff7c6a06ac68c627d`
+on **129 varied teacher-forced positions**, including the raw-window wrap. Mean
+KL was **0.0135402**, max **0.0529301**, top-1 **124/129**. Mean NLL was 3.63659
+(reference) versus 3.65062 (Abyss). This calibrates one small reference fixture;
+it is not an unconditional quality pass or a like-for-like comparison with the
+upstream README's different document. Raw distributions were temporary; summaries,
+hashes and per-position results were uploaded (artifact 933,184 bytes).
+
+[Rootless timeline run 39140801624](https://github.com/mylordmonkeyman/Abyss/actions/runs/39140801624)
+succeeded with Nsight Systems **2024.6.2**, a checksum-pinned package acquired from
+NVIDIA's CUDA repository into the runner's tool cache. No system installation,
+container recreation or privilege change was needed. The **9,206,422-byte** artifact
+contains the report and SQLite export for one warmed 2K prefill + 32-token request.
+CPU sampling/context-switch tracing was disabled. The first argmax marks the
+prefill/decode split; the SQLite interval matches reported decode time within
+0.022 ms. Analysis is reproducible with `tools/profiling/analyze_trace.py`.
+
+| Captured phase | Largest source-tagged shares of summed kernel time |
+| --- | --- |
+| Prefill | Routed-expert MMQ 50.46%; DeepSeek attention 18.04%; dense/shared/projection GEMM 15.99% |
+| Decode | Dense/shared/projection GEMV 31.50%; CPU-expert dependency wait 25.93%; routed-expert arithmetic 15.11%; RAM fetch kernel 8.53% |
+
+Indexer score/select accounts for about 2.38% / 2.04% of prefill/decode kernel time
+in this capture. These are kernel-time shares, **not wall-time savings or proof of
+compute/HBM limits**. The timeline records about 867 ms of prefill intervals with
+an explicit copy active but no compute kernel; CPU activity and zero-copy PCIe
+reads need separate interpretation. The report contains the FP32 `idx_score*` /
+`attend*` symbols, **zero `qsa_*` launches**, **64 MXFP4 down-kernel launches** over
+32 token-path forwards (including the final prompt forward), and 17 MXFP4 MMQ
+launches. Presence/finite end-to-end output is not standalone MXFP4 arithmetic parity.
+
+The shipped expert inventory is important for the next profiler campaign:
+42 layers' gate/up weights are **IQ2_XS**, one **IQ3_XXS**; down weights are
+**IQ3_XXS** on 41 layers and **MXFP4** on layers 26/42. Dense cuBLAS/CUTLASS Volta
+Tensor Core kernels are already present; our isolated MMA884 primitive remains
+unconnected to inference. No new arithmetic or production dispatch is enabled.
+
+[Counter-access run 39139110081](https://github.com/mylordmonkeyman/Abyss/actions/runs/39139110081)
+verified installed Nsight Compute **2025.1.1**, but its SM70 smoke returned
+**ERR_NVGPUCTRPERM**. The profiler-gate report remains blocked. No capabilities,
+seccomp policy or host driver settings were changed. Kernel activity timestamps
+and static launch attributes do not replace HBM/L2/SM/HMMA/occupancy/spill counters.
+
+Next: isolate CPU-lane/cache-dependent greedy variability, broaden controlled
+teacher forcing, verify MXFP4 rows, and obtain permitted hardware-counter/QPI
+measurements before choosing a production optimization. The current 2K timeline
+makes MoE staging/actual IQ formats, CPU dependency and dense GEMV the first
+**profiling candidates**; a long-context trace is needed before extrapolating that
+ranking to 32K+. Extended 1,024-token and 64K/125K runs and reused-cache checks remain.
+See [machine-readable baseline](baseline-2026-10-18.json) and
+[timeline analysis](timeline-2026-10-18.json) for commands, hashes and full values.
