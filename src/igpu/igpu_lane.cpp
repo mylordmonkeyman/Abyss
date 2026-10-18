@@ -161,7 +161,7 @@ struct Lane {
     // A call that has not finished by its deadline is left running and answered by the CPU lane (return 1); the calls
     // after it go to the CPU too until it has (the queue may be held for seconds - see abyss_igpu_experts)
     bool pending = false;
-    std::chrono::steady_clock::time_point t_pend;
+    std::chrono::steady_clock::time_point t_pend, t_busy;   // (t_busy: the last call that found the late one running)
     unsigned long long on_cpu = 0;
 };
 Lane L;
@@ -247,11 +247,16 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
     if (L.pending) {
         if (hipStreamQuery(L.s) != hipSuccess) {
             ++L.on_cpu;
+            L.t_busy = std::chrono::steady_clock::now();
             return 1;
         }
-        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - L.t_pend).count();
-        std::fprintf(stderr, "iGPU lane: the late call finished after %.0f ms; %llu calls went to the CPU meanwhile\n", ms,
-                     L.on_cpu);
+        // seen done only now, at the next call: the stall lasted at least until the last call that found it busy and
+        // at most until now (an idle server between requests made the old "finished after" read minutes)
+        const auto now = std::chrono::steady_clock::now();
+        const double lo = std::chrono::duration<double, std::milli>(L.t_busy - L.t_pend).count();
+        const double hi = std::chrono::duration<double, std::milli>(now - L.t_pend).count();
+        std::fprintf(stderr, "iGPU lane: the late call ran %.0f-%.0f ms (busy at the last of %llu calls the CPU took "
+                             "meanwhile, done by this one)\n", lo, hi, L.on_cpu);
         L.pending = false;
         L.on_cpu = 0;
     }
@@ -327,6 +332,7 @@ __attribute__((visibility("default"))) int abyss_igpu_experts(int gu_type, int d
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count() > timeout_ms) {
             L.pending = true;
             L.t_pend = t0;
+            L.t_busy = std::chrono::steady_clock::now();
             L.on_cpu = 0;
             std::fprintf(stderr, "iGPU lane: a call is still running after %.0f ms - the CPU lane takes the calls until "
                                  "it finishes\n", timeout_ms);

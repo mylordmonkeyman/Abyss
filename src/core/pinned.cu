@@ -94,7 +94,18 @@ void* reserve(uint64_t bytes, PageBacking& got, std::string& note) {
     note = "MAP_HUGETLB unavailable (no hugetlb pool configured?); using 4 KB pages";
     p = mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     got = PageBacking::NormalPages;
-    return p == MAP_FAILED ? nullptr : p;
+    if (p == MAP_FAILED) return nullptr;
+    // STRATA_GLM_RAM_THP=1: ask for transparent 2 MB pages (THP "madvise" mode) before the registration faults the
+    // pages in - 512x fewer pages for the iGPU driver to re-validate when its MMU notifier fires (the lane's multi-
+    // second stalls: amdgpu "svm_range_restore_work hogged CPU", 2026-10-18), and THP is not reclaimed or swapped
+    const char* thp = std::getenv("STRATA_GLM_RAM_THP");
+    if (thp != nullptr && std::atoi(thp) != 0) {
+        if (madvise(p, bytes, MADV_HUGEPAGE) == 0)
+            note = "MAP_HUGETLB unavailable; transparent huge pages asked for (STRATA_GLM_RAM_THP)";
+        else
+            note += "; MADV_HUGEPAGE refused";
+    }
+    return p;
 #endif
 }
 
