@@ -5,8 +5,9 @@ Production arithmetic and dispatch remain unchanged. No performance improvement 
 
 ## Active specification
 
-The implementation now follows consolidated **v8** (`IMPLEMENTATION_SPEC.md`).
-See [adoption and applicability audit](V8_ADOPTION.md) for actual-format corrections,
+The implementation now follows **v9** (`IMPLEMENTATION_SPEC.md`).
+See [v9 adoption and paired-base campaign](V9_ADOPTION.md). It supersedes v8's
+task ordering; the [v8 applicability audit](V8_ADOPTION.md) retains actual-format corrections,
 newer-Abyss differences and the isolated quantize-once/scatter contract. The pinned
 base and measured baseline are preserved. P0 counter/NUMA/quality gates remain open;
 adopting v8 does not mark its proposed flags implemented or enable production paths.
