@@ -477,10 +477,15 @@ bool Glm5Model::fast_setup(std::string& err) {
 #endif
     const Glm5Geometry& g = g_;
     F->timing = getenv("STRATA_GLM_TIMING") != nullptr;
-    F->prof_on = getenv("STRATA_GLM_PROF") != nullptr;
-    F->gap_on = getenv("STRATA_GLM_GAP_PROF") != nullptr && std::atoi(getenv("STRATA_GLM_GAP_PROF")) != 0;
+    // P0 alias: reuse existing event stages and host-gap accounting. These timings perturb execution;
+    // collect production wall-time in a separate unprofiled run. Legacy controls retain their semantics.
+    const char* v100_profile = getenv("ABYSS_V100_PROFILE");
+    const bool v100_prof = g.dsv4() && v100_profile && std::strcmp(v100_profile, "1") == 0;
+    F->prof_on = v100_prof || getenv("STRATA_GLM_PROF") != nullptr;
+    F->gap_on = v100_prof || (getenv("STRATA_GLM_GAP_PROF") != nullptr && std::atoi(getenv("STRATA_GLM_GAP_PROF")) != 0);
     F->token_spin = getenv("STRATA_GLM_TOKEN_SPIN") != nullptr && std::atoi(getenv("STRATA_GLM_TOKEN_SPIN")) != 0;
-    if (F->prof_on) F->pskip = (uint64_t) std::max(0, std::atoi(getenv("STRATA_GLM_PROF")));
+    if (const char* prof_skip = getenv("STRATA_GLM_PROF"))
+        F->pskip = (uint64_t) std::max(0, std::atoi(prof_skip));
     if (const char* pn = getenv("STRATA_GLM_PREFETCH_N")) F->max_pf = std::max(0, std::min(gf::kSpares - 1, std::atoi(pn)));
     if (const char* bp = getenv("STRATA_GLM_BG_PACE_KB")) F->bg_pace = (size_t) std::max(0, std::atoi(bp)) << 10;
     else F->bg_pace = (size_t) 1024 << 10;   // (FastState::bg_drain)

@@ -1,0 +1,30 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {"major": 3, "minor": 24, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "v100-release",
+      "displayName": "V100 CUDA 12.x / Broadwell AVX2 baseline",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-v100",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CUDA_ARCHITECTURES": "70",
+        "STRATA_ENABLE_CUDA": "ON",
+        "STRATA_NATIVE_EXPERTS": "ON",
+        "STRATA_PORTABLE": "ON",
+        "STRATA_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "v100-diagnostics",
+      "inherits": "v100-release",
+      "binaryDir": "${sourceDir}/build-v100-diagnostics",
+      "cacheVariables": {"STRATA_V100_DIAGNOSTICS": "ON"}
+    }
+  ],
+  "buildPresets": [
+    {"name": "v100-release", "configurePreset": "v100-release", "targets": ["strata"], "jobs": 32},
+    {"name": "v100-diagnostics", "configurePreset": "v100-diagnostics", "targets": ["strata"], "jobs": 32}
+  ]
+}

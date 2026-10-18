@@ -632,7 +632,9 @@ bool Glm5Model::prefill_setup(std::string& err) {
     S->max_pools = (int) std::max<int64_t>(1, max_ctx_ / g.idx_kpool);
     if (const char* v = getenv("STRATA_GLM_PREFILL_SUB"))
         S->sub_env = std::clamp(std::atoi(v), 16, 8192);
-    S->prof = getenv("STRATA_GLM_PREFILL_PROF") != nullptr;
+    const char* v100_profile = getenv("ABYSS_V100_PROFILE");
+    S->prof = getenv("STRATA_GLM_PREFILL_PROF") != nullptr ||
+              (g.dsv4() && v100_profile && std::strcmp(v100_profile, "1") == 0);
     S->gstride = gstride;
 
     // ---- sizes: the chunk T from the budget (per device)

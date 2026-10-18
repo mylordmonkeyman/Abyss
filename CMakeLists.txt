@@ -4,9 +4,8 @@
 # `strata-pack` are added when their sources exist - a target with no sources would make the build graph
 # claim something the tree does not have, which is worse than an absent target.
 #
-# CUDA targets arrive in Phase 2.  The kernels need sm_80 or newer (tf32 mma, bf16 math) and the guard
-# below refuses anything older: silently building for a pre-Ampere arch would produce a binary that runs
-# and is wrong about its own performance, which is the worst of both outcomes.
+# CUDA targets support sm_70+ with architecture-gated FP32 fallbacks below Ampere.
+# The V100 preset pins SM70 and a portable AVX2 CPU baseline; real-GPU parity is a separate gate.
 cmake_minimum_required(VERSION 3.24)
 project(strata VERSION 0.1.27 LANGUAGES CXX)
 add_compile_definitions(STRATA_VERSION="${PROJECT_VERSION}")
@@ -33,6 +32,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(STRATA_ENABLE_CUDA "Build the CUDA targets (Phase 2+)" OFF)
+option(STRATA_V100_DIAGNOSTICS "Emit CUDA line information, register usage and spill warnings" OFF)
 option(STRATA_ENABLE_HIP "Build the HIP targets for gfx1100 wave32 hardware" OFF)
 option(STRATA_PREFILL_MMQ "Build the GGML MMQ prompt path for HIP (a HIP build needs it)" OFF)
 if(STRATA_PREFILL_MMQ AND NOT STRATA_ENABLE_HIP)
@@ -75,12 +75,20 @@ if(STRATA_ENABLE_CUDA)
     if(_base STREQUAL "native" OR _base STREQUAL "all" OR _base STREQUAL "all-major")
       continue()
     endif()
+    if(_base EQUAL 70 AND CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 13)
+      message(FATAL_ERROR "SM70 requires CUDA 12.x: CUDA 13 removed offline compilation for Volta. "
+                          "Select -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.8/bin/nvcc in a fresh build directory.")
+    endif()
     if(_base LESS 70)
       message(FATAL_ERROR
         "Strata needs an NVIDIA GPU of compute capability 7.0 or newer (V100, RTX 20 / 30 / 40 / 50 series), but "
         "CMAKE_CUDA_ARCHITECTURES is '${CMAKE_CUDA_ARCHITECTURES}'.")
     endif()
   endforeach()
+  if(STRATA_V100_DIAGNOSTICS)
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+                        $<$<COMPILE_LANGUAGE:CUDA>:-Xptxas=-v,-warn-spills>)
+  endif()
   message(STATUS "Strata: CUDA enabled, arch ${CMAKE_CUDA_ARCHITECTURES}")
   # CMake links CUDA code with the static runtime (CMAKE_CUDA_RUNTIME_LIBRARY's default); on Windows the same runtime
   # must be named here too - MSVC's linker refuses cudart_static.lib and cudart.lib (the DLL's) in one program,
