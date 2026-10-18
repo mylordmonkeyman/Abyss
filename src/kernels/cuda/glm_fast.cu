@@ -2216,6 +2216,7 @@ struct RouteArgs {
     float skip_w;               // ... and those not in VRAM whose share of the route's probability is below skip_w
     int early_x;                // 1: the request's x (16 KB, host-mapped) is written at the kernel's start, beside
                                 // the scores and the plan, instead of after them (STRATA_GLM_ROUTE_EARLY)
+    int skip_disk;              // 1: the tail skip leaves out only the experts in no tier (disk-only), not RAM ones
 };
 // the router's per-expert probability
 __device__ __forceinline__ float route_score(float x, int gating) {
@@ -2436,7 +2437,8 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         }
         const float inv = (float) (a.norm_w ? 1.0 / fmax(sum, 6.103515625e-5) : 1.0);
         // the entries a miss leaves out: rank >= skip_from, or a share of the route's probability below skip_w
-        const bool cut_i = on && (i >= a.skip_from || (a.skip_w > 0.0f && (double) p < (double) a.skip_w * sum));
+        const bool cut_i = on && (!a.skip_disk || s_rtab[i] == 0ull) &&
+                           (i >= a.skip_from || (a.skip_w > 0.0f && (double) p < (double) a.skip_w * sum));
         unsigned long long* rtab = a.d.tab + a.d.n_keys;
         unsigned long long* spares = a.d.tab + 2 * (size_t) a.d.n_keys + (size_t) a.layer * kSpares;
         const unsigned long long tab_i = on ? s_tab[i] : 0ull, rtab_i = on ? s_rtab[i] : 0ull;
@@ -3737,11 +3739,11 @@ void moe_route(const float* logits, const float* bias, int n_expert, int k, floa
                int n_ff_sh, void* sh_hq, cudaStream_t s, const float* pred_logits, const float* pred_bias,
                int max_prefetch, const float* ahead_logits, const float* const* ahead_bias, int n_ahead,
                int skip_from, unsigned long long cpu_plan, int promote_min, int pf_rank, int gating,
-               const int* hash_ids, float skip_w) {
+               const int* hash_ids, float skip_w, int skip_disk) {
     RouteArgs a{logits, bias, n_expert, k, w_scale, norm_w ? 1 : 0, layer, x, n_embd, d,
                 sh_gate, sh_up, sh_limit, n_ff_sh, (block_q8_1*) sh_hq, pred_logits, pred_bias, max_prefetch,
                 ahead_logits, {}, 0, skip_from, d.cpu_seq != nullptr ? cpu_plan : 0ull, promote_min,
-                pf_rank > 0 ? pf_rank : k, gating, hash_ids, skip_w, 0};
+                pf_rank > 0 ? pf_rank : k, gating, hash_ids, skip_w, 0, skip_disk};
     // STRATA_GLM_ROUTE_EARLY=1: x written at the route kernel's start (float4, beside the scores and the plan);
     // default 0: after the plan, as before - measured the same on an RTX 5090 + iGPU lane (the system fence, not the
     // store, is what the request waits for): 3 x 2 answers, 83.4 / 85.6 against 83.6 / 91.2 tok/s

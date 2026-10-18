@@ -254,7 +254,7 @@ void moe_route(const float* logits, const float* bias, int n_expert, int k, floa
                const float* pred_bias = nullptr, int max_prefetch = 0, const float* ahead_logits = nullptr,
                const float* const* ahead_bias = nullptr, int n_ahead = 0, int skip_from = 8,
                unsigned long long cpu_plan = 0, int promote_min = 0, int pf_rank = 0, int gating = 0,
-               const int* hash_ids = nullptr, float skip_w = 0.0f);
+               const int* hash_ids = nullptr, float skip_w = 0.0f, int skip_disk = 0);
 /// The shared expert's swiglu + q8_1 alone (what moe_route's extra blocks do when it is given sh_gate / sh_up): for
 /// the token path's late shared expert, whose gate/up GEMV runs after the route (STRATA_GLM_SH_LATE).
 void sh_swiglu(const float* sh_gate, const float* sh_up, float sh_limit, int n_ff_sh, void* sh_hq, cudaStream_t s);

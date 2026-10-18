@@ -3874,6 +3874,10 @@ void Glm5Model::fast_tail_skip_setup() {
     }
     F->tail_skip = r;
     F->tail_skip_w = w;
+    // STRATA_GLM_TAIL_SKIP_DISK=1: only the experts in NO tier (disk-only) are left out - a RAM-tier one costs the lane
+    // ~0.1 ms, a disk one a ~4-10 ms read (Maya's STRATA_GLM_DISK_SKIP)
+    const char* vd = getenv("STRATA_GLM_TAIL_SKIP_DISK");
+    F->tail_skip_disk = vd != nullptr && std::atoi(vd) != 0;
     std::string rule;
     if (r < 8) rule = "at rank " + std::to_string(r + 1) + " of " + std::to_string(g.n_exp_used) + " and below";
     if (w > 0.0f) {
@@ -3881,8 +3885,8 @@ void Glm5Model::fast_tail_skip_setup() {
         std::snprintf(b, sizeof b, "%sbelow %.3f of the route's weight", r < 8 ? " or " : "", (double) w);
         rule += b;
     }
-    std::fprintf(stderr, "glm fast: CUDA%d route tail skip: experts not in VRAM %s are left out (VRAM holds %.1f%% of "
-                         "the experts)\n", dev_, rule.c_str(), held);
+    std::fprintf(stderr, "glm fast: CUDA%d route tail skip: experts %s %s are left out (VRAM holds %.1f%% of "
+                         "the experts)\n", dev_, F->tail_skip_disk ? "only on disk" : "not in VRAM", rule.c_str(), held);
 }
 
 int Glm5Model::fast_skip_from(int il) const {
@@ -3963,7 +3967,8 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
                   pred ? F->plog : nullptr, pred ? F->L[(size_t) il + 1].router_bias : nullptr,
                   pred ? F->max_pf : 0, n_ah > 0 ? F->alog : nullptr, ah_bias, n_ah, fast_skip_from(il),
                   lane ? F->cpu_plan : 0ull, dlane ? -1 : promote_min, pf_rank, g.gating,
-                  Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) F->cur_tok * g.n_exp_used : nullptr, fast_skip_w(il));
+                  Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) F->cur_tok * g.n_exp_used : nullptr, fast_skip_w(il),
+                  F->tail_skip_disk ? 1 : 0);
     if (F->prof_on) F->mark("moe_route");
     ++F->expected;
     // the side stream copies the next layer's predicted experts while this layer computes.  STRATA_GLM_PREFETCH_AT:

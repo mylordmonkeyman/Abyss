@@ -203,6 +203,7 @@ struct Glm5Model::FastState {
     // STRATA_GLM_TAIL_SKIP_W=<share>: also (or instead) those whose share of the route's probability is below it.
     int tail_skip = 8;
     float tail_skip_w = 0.0f;
+    bool tail_skip_disk = false;   // STRATA_GLM_TAIL_SKIP_DISK=1: ... only the disk-only ones
     std::atomic<uint64_t> tail_skips{0};
     // EXPERT DEFERRAL (STRATA_GLM_DEFER=1, lossy, off by default): the CPU lane's part of a trunk layer's MoE is not
     // waited for at the layer's end; after the NEXT layer's attention it is written into the residual streams with
