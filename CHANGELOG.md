@@ -7,6 +7,17 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.30 - 2026-10-18
+
+**DeepSeek V4.1 chats fixed.** The ds4-layout V4.1 GGUFs (antirez's converter: nazeshinjite's, Lucebox's) mark the
+48 added chat tokens as normal tokens, so v1.3.29's server split `<｜User｜>`, `<｜Assistant｜>`, `</think>`,
+`｜DSML｜` ... into characters and the model answered with end markers written out as text (`2<｜end▁of▁sentence｜>`,
+`Hello!<|end|>`). The tokenizer now restores the types DeepSeek V4's GGUF carries (control for `<｜...｜>` and
+`<|EOT|>`, user-defined for `<think>`, `</think>`, `｜DSML｜`, `<dsml:`, `</dsml:`) when it reads a DeepSeek GGUF and
+when it loads a pack, so a pack made with v1.3.29 works without re-packing. Greedy answers are now `2`, `Hello`,
+`東京`. The quality numbers of v1.3.29 stand: they were measured on token ids, which this did not touch.
+Also: the tools tests know the `deepseek41` packer arch (v1.3.29's CI failed on the old count of four).
+
 ## v1.3.29 - 2026-10-18
 
 **DeepSeek V4.1 Flash (1017)** runs on the fast path ([docs/deepseek41/README.md](docs/deepseek41/README.md)): the
