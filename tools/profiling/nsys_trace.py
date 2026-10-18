@@ -85,7 +85,7 @@ def main():
         shell = '"$@" < "$ABYSS_TRACE_INPUT" > "$ABYSS_TRACE_STDOUT" 2> "$ABYSS_TRACE_STDERR"; printf "%s\\n" "$?" > "$ABYSS_TRACE_STATUS"'
         # CLI session is isolated by run id. CPU sampling/context switches are disabled.
         launch_argv = [str(nsys),'launch','--session-new='+session,'--trace=cuda,nvtx,osrt',
-                       '--sample=none','--cpuctxsw=none','--cuda-graph-trace=node','/bin/bash','-c',shell,'abyss-trace',*argv]
+                       '--cuda-graph-trace=node','/bin/bash','-c',shell,'abyss-trace',*argv]
         p0.write_json(out/'trace_request.json',{'argv':argv,'input_sha256':p0.sha256(out/'input.txt'),
                       'trace_scope':'one warmed 2048-token prefill and 32 generated tokens',
                       'no_hardware_counter_claim':True,'no_cpu_sampling_claim':True})
@@ -93,6 +93,7 @@ def main():
         fd = os.open(fifo,os.O_RDWR)
         writer = os.fdopen(os.dup(fd),'w',buffering=1)
         read_pos = 0
+        launched = None
         def until(prefix, timeout=600):
             nonlocal read_pos
             deadline = time.monotonic()+timeout
@@ -106,21 +107,20 @@ def main():
                                 raise RuntimeError(line)
                             if line.startswith(prefix):
                                 return line.strip()
+                if launched is not None and launched.poll() is not None and not status.exists():
+                    raise RuntimeError('profiler launcher exited: '+(out/'launch.log').read_text())
                 if status.exists():
                     raise RuntimeError('engine exited: '+status.read_text()+'; '+(stderr.read_text() if stderr.exists() else ''))
                 time.sleep(.1)
             raise TimeoutError(prefix)
         try:
             with Monitor(out):
-                result = subprocess.run(launch_argv,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
-                                        text=True,timeout=60)
-                (out/'launch.log').write_text(result.stdout)
-                if result.returncode:
-                    raise RuntimeError(result.stdout)
+                with (out/'launch.log').open('w') as launch_log:
+                    launched = subprocess.Popen(launch_argv,env=env,stdout=launch_log,stderr=subprocess.STDOUT)
                 until('READY ')
                 writer.write('GEN 64 temperature=0 '+tokens+'\n');writer.flush()
                 until('DONE ')
-                cli(['start','--session='+session,'--output='+str(out/'warmed-request'),'--force-overwrite=true','--stop-on-exit=false'])
+                cli(['start','--session='+session,'--output='+str(out/'warmed-request'),'--force-overwrite=true','--stop-on-exit=true','--sample=none','--cpuctxsw=none'])
                 begin = {'utc':p0.now(),'monotonic_s':time.monotonic()}
                 writer.write('GEN 32 temperature=0 '+tokens+'\n');writer.flush()
                 done = until('DONE ',timeout=120)
@@ -132,9 +132,15 @@ def main():
                 while not status.exists() and time.monotonic()<deadline: time.sleep(.1)
                 if not status.exists() or status.read_text().strip()!='0':
                     raise RuntimeError('engine did not exit cleanly')
+                launched.wait(timeout=60)
+                if launched.returncode:
+                    raise RuntimeError('profiler launcher returned '+str(launched.returncode))
         finally:
             writer.close();os.close(fd)
             p0.write_json(out/'shutdown.json',p0.command([str(nsys),'shutdown','--session='+session,'--kill=sigkill'],timeout=30))
+            if launched is not None and launched.poll() is None:
+                launched.kill()
+                launched.wait()
             for src,name in [(stdout,'wire.log'),(stderr,'engine.log')]:
                 if src.exists(): shutil.copyfile(src,out/name)
     reports = list(out.glob('*.nsys-rep'))
@@ -146,7 +152,6 @@ def main():
     (out/'kernel-api-summary.csv').write_text(summary.get('stdout',''))
     p0.write_json(out/'report_identity.json',{'file':report.name,'bytes':report.stat().st_size,'sha256':p0.sha256(report)})
     # Reports only, never profiler binaries. Keep upload data bounded even on a broken profiler.
-    for path in out.glob('*.sqlite'): path.unlink()
     for path in out.glob('*.qdstrm'): path.unlink()
     if report.stat().st_size > 128*1024*1024:
         destination=Path('/actions-runner/abyss-tools')/('trace-'+os.environ['GITHUB_RUN_ID']+'.nsys-rep')
@@ -165,7 +170,7 @@ def cap_upload():
     files = sorted((p for p in out.rglob('*') if p.is_file()), key=lambda p:p.stat().st_size, reverse=True)
     total = sum(p.stat().st_size for p in files)
     for p in files:
-        if p.suffix in ('.sqlite','.qdstrm') or total > 128*1024*1024:
+        if p.suffix == '.qdstrm' or total > 128*1024*1024:
             cache.mkdir(parents=True,exist_ok=True)
             size = p.stat().st_size
             retained.append({'file':p.name,'bytes':size,'sha256':p0.sha256(p),'runner_path':str(cache/p.name)})

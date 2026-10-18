@@ -32,8 +32,7 @@ int main(int argc, char ** argv) {
     llama_backend_init();
     auto mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
-    mp.use_mmap = true;
-    mp.use_mlock = false;
+    mp.load_mode = LLAMA_LOAD_MODE_MMAP;
     std::unique_ptr<llama_model, decltype(&llama_model_free)> model(
         llama_model_load_from_file(argv[1], mp), llama_model_free);
     if (!model) return 1;
