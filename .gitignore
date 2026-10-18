@@ -55,3 +55,6 @@ build-vision.bat
 *.done
 /third_party/*.zip
 
+
+# V100 P0 captures contain model/workload metadata and large diagnostic reports.
+/results/

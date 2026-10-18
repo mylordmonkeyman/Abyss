@@ -37,3 +37,16 @@ jobs:
         run: '"$RUNNER_TEMP/venv/bin/python" -m unittest discover -s serve -p "test_*.py" -t .'
       - name: Installer and tools tests
         run: '"$RUNNER_TEMP/venv/bin/python" -m unittest discover -s tools -p "test_*.py"'
+
+  p0-cpu-build:
+    # This is host-tool/build validation, not SM70 compilation or a V100 correctness claim.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate V100 preset syntax
+        run: cmake --list-presets
+      - name: Configure without CUDA or downloaded GGML
+        run: cmake -S . -B build-p0-cpu -DSTRATA_ENABLE_CUDA=OFF -DSTRATA_NATIVE_EXPERTS=OFF -DSTRATA_BUILD_TESTS=OFF
+      - name: Build host targets
+        run: cmake --build build-p0-cpu --parallel 2
