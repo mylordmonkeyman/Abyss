@@ -115,10 +115,10 @@ jobs:
       - name: Build engine and device test, retaining ptxas resource reports
         run: |
           set -euo pipefail
-          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity test_mma884_fragment_contract test_v100_mmq_scatter dsv4_qkpv_parity --parallel "$BUILD_JOBS" \
+          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity test_mma884_fragment_contract test_v100_mmq_scatter dsv4_qkpv_parity test_dsv4_mla_latent_parity --parallel "$BUILD_JOBS" \
             2>&1 | tee "$EVIDENCE/build-ptxas.log"
           cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/CMakeCache.txt"
-          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity build-v100-diagnostics/test_mma884_fragment_contract build-v100-diagnostics/test_v100_mmq_scatter build-v100-diagnostics/dsv4_qkpv_parity \
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity build-v100-diagnostics/test_mma884_fragment_contract build-v100-diagnostics/test_v100_mmq_scatter build-v100-diagnostics/dsv4_qkpv_parity build-v100-diagnostics/test_dsv4_mla_latent_parity \
             > "$EVIDENCE/binary-sha256.txt"
 
       - name: Audit v9 ancestry, actual formats and source-feature differences
@@ -251,10 +251,19 @@ jobs:
           timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
             build-v100-diagnostics/dsv4_qkpv_parity 2>&1 | tee "$EVIDENCE/qkpv-synccheck.log"
           cuobjdump --list-elf build-v100-diagnostics/dsv4_qkpv_parity > "$EVIDENCE/qkpv-elf.txt"
-          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/dsv4_qkpv_parity \
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/dsv4_qkpv_parity build-v100-diagnostics/test_dsv4_mla_latent_parity \
             > "$EVIDENCE/qkpv-sm70-sass.txt"
           grep -q sm_70 "$EVIDENCE/qkpv-elf.txt"
           grep -q HMMA "$EVIDENCE/qkpv-sm70-sass.txt"
+
+      - name: Validate raw-ring and CSA HCA cached-row latent parity
+        run: |
+          set -euo pipefail
+          timeout 600s build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers.jsonl"
+          timeout 900s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers-memcheck.log"
+          timeout 900s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers-synccheck.log"
 
       - name: Record model availability without copying model data
         if: always()

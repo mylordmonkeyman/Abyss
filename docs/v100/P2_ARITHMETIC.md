@@ -51,3 +51,26 @@ The dominant-sink case reports relative L2 1.0 from FP16 underflow, with maximum
 absolute error 5.84e-35; it passes only the explicitly stated absolute screen.
 This is not proof that probability scaling is safe for arbitrary model inputs.
 See [all case results](p2-qkpv-2026-10-18.json).
+
+## Cached-row latent follow-up (physical verification pending)
+
+`test_dsv4_mla_latent_parity` reuses the same staged arithmetic from
+`tests/v100/qkpv_math.cuh`. Twenty-one synthetic cases exercise actual
+`win_load`, `win_store`, `q_prep_batch` and FP32 `attend_batch`, with raw-window
+lengths and chunk tails, wrap, ratios 0/4/128, CSA top-512 visibility around
+2,048, and YaRN positions around 4K/8K. Exact host row bytes/absolute IDs are
+checked independently of the device gather. Split chunks must reproduce the
+same historical window and existing FP32 output exactly. Selected tokens include
+chunk ends and compressor completion boundaries. The candidate compares QK,
+probability, sink denominator, PV and inverse-RoPE stages against FP64 equations
+and its final output against existing FP32 attention. CUDA graphs repeat the
+staged path three times per checked token. Negative/future/duplicate CSA IDs are
+rejected by the diagnostic before memory addressing; malformed IDs are never
+passed into the upstream attention API.
+
+Cached K=V rows here are synthetic, rotated at raw position or compressed block
+start. Actual learned projections, KV normalization and compressor creation are
+not covered. Queries use the existing preparation kernel, so this is not an
+independent q-preparation oracle. Grouped output projection, real stage dumps,
+full-model logits and fused-kernel resource/performance gates remain open. This
+staged gather path is diagnostic only and adds no public control.
