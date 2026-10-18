@@ -30,12 +30,20 @@ explicit shape arrays fixed it in `1a3dc6d` before the passing run above.
 - P0 capture/inventory tooling: nine host-only tests pass; synthetic GGUF census and
   host-only CMake build passed previously and in hosted CI.
 - `8324f9e` repairs the inherited HIP `cudaMemcpyKind` mapping. The mapping checker and
-  its two tests pass locally; hosted CI now gets past that checker. This does not claim
-  a new ROCm runtime qualification.
+  its two tests pass locally; hosted CI passes all 130 server and 202 installer/tool
+  tests. This does not claim a new ROCm runtime qualification.
 - Isolated P1a MMA884 primitive/test added for four quadpairs, all accumulator coordinates,
   typed PTX operands, masks/K tails, signed/zero/subnormal stress, and CUDA graph replays.
-  It is **not wired into inference**. Its new runner qualification is pending until a
-  passing workflow and emitted SM70 PTX/SASS are recorded here.
+  It is **not wired into inference**. [Run 39101028811](https://github.com/mylordmonkeyman/Abyss/actions/runs/39101028811),
+  commit `ed41547`, passed all **15 MMA contract cases**, device-scalar/FP64 comparison,
+  memcheck/synccheck (0 errors), and selected SM70 image/PTX/SASS checks. All contract
+  cases reported zero absolute error on these exactly representable synthetic inputs,
+  including the subnormal case. This does not establish error bounds for arbitrary
+  full-model FP32-to-FP16 splits. The emitted PTX contains the expected MMA884 opcode
+  and the selected SM70 SASS contains HMMA. Full-engine opcode auditing is not claimed.
+- [Hosted CI run 39101028820](https://github.com/mylordmonkeyman/Abyss/actions/runs/39101028820)
+  also passed on `ed41547`. The GPU container and existing build cache were reused;
+  no runner/container replacement was needed for these tests.
 
 ## P0 remains partial
 

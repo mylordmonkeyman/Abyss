@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-18",
+  "pinned_base": "47001f31cbfba14bcbf4c083e3af07c50707ec0c",
+  "tested_commit": "ed41547eacf83d86924b10f6bbfa748bcbeca724",
+  "gpu": "Tesla V100-PCIE-32GB",
+  "compute_capability": "7.0",
+  "nvcc": "12.8.93",
+  "gpu_run_id": 39101028811,
+  "hosted_ci_run_id": 39101028820,
+  "artifact_id": 12126830748,
+  "artifact_sha256": "5a2dd89b65f3eab6209448e9dadbd14ffec6a4a40389dd1877ba32d5af0bacc5",
+  "dsv4_f32_components": {
+    "synthetic_cases": 26,
+    "default_dispatch": "pass",
+    "legacy_forced_f32": "pass",
+    "memcheck_errors": 0,
+    "synccheck_errors": 0,
+    "attention_max_relative_l2": 6.09602949e-07,
+    "attention_max_absolute_error": 7.3962379e-08
+  },
+  "mma884_contract": {
+    "synthetic_cases": 15,
+    "four_quadpairs_all_accumulator_coordinates": "pass",
+    "host_fp64_and_device_scalar": "pass",
+    "graph_replays": 4,
+    "max_absolute_error": 0,
+    "memcheck_errors": 0,
+    "synccheck_errors": 0,
+    "sm70_ptx_mma884": "pass",
+    "sm70_sass_hmma": "pass",
+    "production_dispatch_enabled": false
+  },
+  "hosted_ci": {
+    "server_tests": 130,
+    "installer_tool_tests": 202,
+    "result": "pass",
+    "host_cpu_build": "pass"
+  },
+  "full_model_p0": {
+    "status": "blocked",
+    "reason": "No /models mount or visible GGUFs on runner",
+    "full_inference": false,
+    "model_logit_parity": false,
+    "hardware_counter_critical_path": false,
+    "performance_improvement_claim": null
+  }
+}
