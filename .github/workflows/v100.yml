@@ -14,6 +14,7 @@ on:
       - 'third_party/ggml/**'
       - 'tools/v100/**'
       - 'tools/test_v100_p0.py'
+      - 'tests/v100/**'
 
 permissions:
   contents: read
@@ -108,15 +109,16 @@ jobs:
           cmake --preset v100-diagnostics \
             -DCMAKE_CUDA_COMPILER="$NVCC" \
             -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+            -DSTRATA_V100_TESTS=ON \
             2>&1 | tee "$EVIDENCE/configure.log"
 
       - name: Build engine and device test, retaining ptxas resource reports
         run: |
           set -euo pipefail
-          cmake --build build-v100-diagnostics --target strata strata-device --parallel "$BUILD_JOBS" \
+          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity --parallel "$BUILD_JOBS" \
             2>&1 | tee "$EVIDENCE/build-ptxas.log"
           cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/CMakeCache.txt"
-          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device \
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity \
             > "$EVIDENCE/binary-sha256.txt"
 
       - name: Record code-object images and inspect SM70 device-test SASS
@@ -149,6 +151,35 @@ jobs:
           timeout 300s compute-sanitizer --tool synccheck --error-exitcode 1 \
             build-v100-diagnostics/strata-device --selftest \
             2>&1 | tee "$EVIDENCE/device-synccheck.log"
+
+      - name: DeepSeek FP32 component parity, default and forced dispatch
+        run: |
+          set -euo pipefail
+          timeout 300s build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-default-parity.jsonl"
+          STRATA_DS4_IDX=1 STRATA_DS4_ATTN=1 timeout 300s build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-forced-f32-parity.jsonl"
+
+      - name: Sanitize DeepSeek FP32 component kernels
+        run: |
+          set -euo pipefail
+          timeout 600s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-memcheck.log"
+          timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-synccheck.log"
+
+      - name: Record model availability without copying model data
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('/models')
+          report = {'models_directory_present': root.is_dir(),
+                    'gguf_files_at_depth_2': len(list(root.glob('*.gguf'))) + len(list(root.glob('*/*.gguf'))) if root.is_dir() else 0,
+                    'full_model_P0': 'not executed by this model-free workflow'}
+          (pathlib.Path(os.environ['EVIDENCE']) / 'model_availability.json').write_text(json.dumps(report, indent=2) + '\n')
+          PY
 
       - name: Summarize scope and outstanding P0 gates
         if: always()
