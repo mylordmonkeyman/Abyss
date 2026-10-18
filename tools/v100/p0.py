@@ -177,8 +177,10 @@ def xml_sample(xml):
     power_values = [v for k, v in flags.items() if "sw_power_cap" in k]
     return dict(gpu_uuid=g.findtext("uuid"), temperature=g.findtext("temperature/gpu_temp"),
                 memory_temperature=g.findtext("temperature/memory_temp"),
-                power_draw=g.findtext("gpu_power_readings/power_draw") or g.findtext("power_readings/power_draw"),
-                power_limit=g.findtext("gpu_power_readings/power_limit") or g.findtext("power_readings/power_limit"),
+                power_draw=g.findtext("gpu_power_readings/instant_power_draw") or
+                g.findtext("gpu_power_readings/power_draw") or g.findtext("power_readings/power_draw"),
+                power_limit=g.findtext("gpu_power_readings/current_power_limit") or
+                g.findtext("gpu_power_readings/power_limit") or g.findtext("power_readings/power_limit"),
                 sm_clock=g.findtext("clocks/sm_clock"), memory_clock=g.findtext("clocks/mem_clock"),
                 pstate=g.findtext("performance_state"), reasons=flags,
                 thermal_flag=any(v == "Active" for v in thermal_values), thermal_reasons_known=thermal_known,

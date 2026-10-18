@@ -100,6 +100,16 @@ class Telemetry(unittest.TestCase):
             hot = p0.xml_sample(driver_xml(thermal="Active", tag=tag))
             self.assertTrue(p0.thermal_assessment([hot, s])["thermal_flag"])
 
+    def test_driver_580_instant_power_fields(self):
+        # The target's 580.178.04 XML uses these tags; average power is N/A.
+        xml = driver_xml().replace('</gpu>', '<gpu_power_readings>\n<average_power_draw>N/A</average_power_draw><instant_power_draw>44.90 W</instant_power_draw>\n<current_power_limit>250.00 W</current_power_limit></gpu_power_readings></gpu>')
+        sample = p0.xml_sample(xml)
+        self.assertEqual(sample['power_draw'], '44.90 W')
+        self.assertEqual(sample['power_limit'], '250.00 W')
+        legacy = driver_xml().replace('</gpu>', '<power_readings><power_draw>120 W</power_draw>'
+                                     '<power_limit>250 W</power_limit></power_readings></gpu>')
+        self.assertEqual(p0.xml_sample(legacy)['power_draw'], '120 W')
+
     def test_missing_reasons_or_samples_never_pass(self):
         unknown = p0.xml_sample("<nvidia_smi_log><gpu><uuid>x</uuid></gpu></nvidia_smi_log>")
         self.assertEqual(p0.thermal_assessment([unknown, unknown])["regime"], "unassessed")
