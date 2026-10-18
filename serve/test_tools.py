@@ -101,6 +101,34 @@ class GlmCalls(unittest.TestCase):
             self.assertEqual(json.loads(streamed), {"city": "Paris", "days": 3}, pieces)
 
 
+class ThinkToken(unittest.TestCase):
+    """think_token: the reasoning ends at the special token only - DeepSeek V4.1 wrote `</think>` while explaining a
+    chat template, and its reasoning's second half went out as the answer."""
+
+    def text(self, events, kind):
+        return "".join(e.text for e in events if e.kind == kind)
+
+    def test_the_tag_written_inside_the_reasoning(self):
+        p = OutputParser(thinking=True, think_token=True)
+        ev = p.feed("It appends `</think>` if thinking is off.")
+        ev += p.feed(" Done.")
+        ev += p.feed("</think>", think_end=True)
+        ev += p.feed("\n\nThe answer.")
+        ev += p.finish()
+        self.assertEqual(self.text(ev, "reasoning"), "It appends `</think>` if thinking is off. Done.")
+        self.assertEqual(self.text(ev, "content"), "The answer.")
+
+    def test_the_end_token_with_held_text(self):
+        p = OutputParser(thinking=True, think_token=True)
+        ev = p.feed("plan</think>", think_end=True) + p.feed("answer") + p.finish()
+        self.assertEqual(self.text(ev, "reasoning"), "plan")
+        self.assertEqual(self.text(ev, "content"), "answer")
+
+    def test_text_mode_unchanged(self):
+        ev = OutputParser(thinking=True).feed("plan</think>answer")
+        self.assertEqual(self.text(ev, "reasoning"), "plan")
+
+
 class QuotedCalls(unittest.TestCase):
     """A call quoted in the answer's code fence or inline code is text; at the top level it is a call."""
 

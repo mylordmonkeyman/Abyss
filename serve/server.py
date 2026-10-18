@@ -1429,7 +1429,8 @@ class Service:
         if defaults:                   # the request's own fields win (explicit 0 stays greedy)
             req_values = {k: v for k, v in (sampling or {}).items() if v is not None}
             sampling = {**defaults, **req_values}
-        parser = OutputParser(thinking=thinking, tools=tools, stream_tools=True)
+        parser = OutputParser(thinking=thinking, tools=tools, stream_tools=True,
+                              think_token=self.think_end_id is not None)
         prefill = (sampling or {}).get("_prefill") or ""   # the call's opening, already in the prompt (prepare)
         pre_events = parser.feed(prefill) if prefill else []
         detok, n, finish = Detokenizer(self.tok), 0, "length"
@@ -1491,6 +1492,7 @@ class Service:
                             yield "ping", None
                             continue
                         n += 1
+                        is_think_end = self.think_end_id is not None and t == self.think_end_id
                         if in_think and t == self.think_end_id:
                             in_think = False
                             if n == think_budget + 1:
@@ -1503,6 +1505,8 @@ class Service:
                         raw_ids.append(t)
                         text, stopped = detok.push(t), False
                         stops = self.stop_texts + (client_stops if parser.state != "reasoning" else [])
+                        if is_think_end and parser.state == "reasoning":   # the real end: past the stop scan,
+                            text, held, stops = held + text, "", []         # with what it held back
                         if stops:
                             held += text
                             hits = [(i, s) for s, i in ((s, held.find(s)) for s in stops) if i >= 0]
@@ -1514,7 +1518,7 @@ class Service:
                                 k = max((j for s in stops for j in range(1, len(s))
                                          if held.endswith(s[:j])), default=0)
                                 text, held = held[:len(held) - k], held[len(held) - k:]
-                        evs = parser.feed(text)
+                        evs = parser.feed(text, think_end=is_think_end)
                         self._note(n, evs)
                         last_print = self._progress(last_print)
                         for ev in evs:

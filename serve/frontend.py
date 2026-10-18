@@ -413,8 +413,13 @@ class OutputParser:
     """Incremental parser of the model's text. Feed deltas; get events. A tag split across deltas is held back
     until it is complete, so clients never see `<tool_` or `</thi`."""
 
-    def __init__(self, thinking: bool = True, tools: list[dict] | None = None, stream_tools: bool = False):
+    def __init__(self, thinking: bool = True, tools: list[dict] | None = None, stream_tools: bool = False,
+                 think_token: bool = False):
         self.state = "reasoning" if thinking else "content"
+        # think_token: the model ends its reasoning with a SPECIAL token the caller reports (feed(..., think_end=True));
+        # the text "</think>" inside the reasoning is then the model writing about the tag (DeepSeek V4.1 explaining
+        # a chat template), not the end of it
+        self.think_token = think_token
         self.buf = ""
         self.lead = False
         self.schemas = {t.get("name"): t for t in tools or []}
@@ -609,11 +614,26 @@ class OutputParser:
                     best = max(best, n)
         return best
 
-    def feed(self, delta: str) -> list[Event]:
+    def feed(self, delta: str, think_end: bool = False) -> list[Event]:
         self.buf += delta
         out: list[Event] = []
         while True:
-            if self.state == "reasoning":
+            if self.state == "reasoning" and self.think_token:
+                if not think_end:   # (no tag to hold back: the end comes as its own token)
+                    if self.buf:
+                        out.append(Event("reasoning", self.buf))
+                        self.buf = ""
+                    return out
+                i = self.buf.rfind(THINK_END)   # the special token's text ends this delta
+                if i < 0:
+                    i = len(self.buf)
+                if i:
+                    out.append(Event("reasoning", self.buf[:i]))
+                self.buf = self.buf[i + len(THINK_END):] if self.buf[i:].startswith(THINK_END) else ""
+                self.state, self.lead = "content", True
+                self.fence, self.line, self.ticks = "", "", 0
+                think_end = False
+            elif self.state == "reasoning":
                 i = self.buf.find(THINK_END)
                 if i < 0:
                     keep = self._hold(self.buf, (THINK_END,))
