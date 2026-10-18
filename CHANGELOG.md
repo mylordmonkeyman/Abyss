@@ -7,6 +7,34 @@ only what changed and starts; the model is not downloaded again.
 Abyss numbers its own releases from v1.1.0 (zephel01/Abyss). v1.0.31 and older below are Project Maya's, which Abyss
 was copied from; DeepSeek V4 support (the `deepseek4` port) came on top of v1.0.31.
 
+## v1.3.31 - 2026-10-18
+
+**The iGPU lane's multi-second stalls are gone, and a disk-landed expert reaches VRAM while the SSD is still
+reading it.** DeepSeek V4.1 Flash 1017 on RTX 5090 + Radeon 8060S lane + 93 GB RAM (nazeshinjite's Q2,
+`STRATA_GLM_TAIL_SKIP=3` + `_DISK=1`, the speed config), Lucebox's 8 held-out sequences:
+- **RAM tier in transparent huge pages** (`STRATA_GLM_RAM_THP`, default on, Linux). The lane's APU driver
+  re-validates the registered tier's pages when its MMU notifier fires (`svm_range_restore_work hogged CPU` in the
+  kernel log); with the tier in the driver's 4 KB pinned pages that took 15-24 s, during which the CPU lane took the
+  calls (7 such stalls in 8 x 1K tokens). The tier now comes from an mmap with `MADV_HUGEPAGE` on as much of it as
+  the free 2 MB blocks cover (the rest stays 4 KB pages, so the faults never compact memory - that had tripped
+  systemd-oomd) and is registered from there, on one NUMA node too. 47.5 of a 60 GB tier in huge pages, the lane
+  registers it in 255 ms (was 390), no stall in 17 x 1K tokens; the sequences that had stalled: 47.5 / 40.2 / 32.7
+  / 34.6 -> 35.3 / 30.3 / 29.3 / 29.1 ms/token. `STRATA_GLM_RAM_THP=0`: the driver's pages as before.
+- **Streamed fetch** (`STRATA_GLM_STREAM_FETCH`, default on). The service thread read a missed expert's 24 chunks
+  into its RAM landing slot and only then let the device pull the 10 MB over PCIe, so the pull (~1.5 ms at Gen4 x4)
+  ran after the read (~3 ms) on the token's critical path. The device now copies each chunk as it lands (a ready
+  bit per chunk), PCIe running behind the SSD; only the last chunk's copy stays exposed. seq0 512 tokens 43.6 ->
+  39.5 ms/token, logits identical. `=0`: the whole-blob fetch after the read.
+- Together: 8 sequences 35.9 ms/token (27.9 tok/s; was 34.2 at v1.3.29 and 39.3 with the streamed fetch alone,
+  both with stalls in the mean), 29-37 ms on 7 of them; one sequence 67 ms with the SSD's reads 2.5x slower for
+  that run (disk waits 34 s against 10-15 s, no lane stall - the ORICO NVMe has such spells, and runs slower when
+  warm: a sequence re-run back to back went 30.5 -> 39.2 ms/token at 51 -> 56 C). KL 0.2408 against the
+  unquantized 1017's top-256 (0.2399 before; the tail skip's choice depends on which experts are on disk at the
+  time). DeepSeek V4 KL 0.005939 and GLM-5.3-Flash S-v2 0.000000 unchanged.
+- Measured worse and left off: `STRATA_GLM_SEED_PRIOR=1` (LFU counts seeded from the pack's routing profile:
+  46.8 -> 48.5 ms/token) and `STRATA_GLM_DEMOTE_TIES=1` (a VRAM victim demoted instead of dropped on equal
+  counts: 46.1, RAM re-reads up).
+
 ## v1.3.30 - 2026-10-18
 
 **DeepSeek V4.1 chats fixed.** The ds4-layout V4.1 GGUFs (antirez's converter: nazeshinjite's, Lucebox's) mark the
