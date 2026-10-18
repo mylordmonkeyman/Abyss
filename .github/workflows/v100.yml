@@ -251,7 +251,7 @@ jobs:
           timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
             build-v100-diagnostics/dsv4_qkpv_parity 2>&1 | tee "$EVIDENCE/qkpv-synccheck.log"
           cuobjdump --list-elf build-v100-diagnostics/dsv4_qkpv_parity > "$EVIDENCE/qkpv-elf.txt"
-          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/dsv4_qkpv_parity build-v100-diagnostics/test_dsv4_mla_latent_parity \
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/dsv4_qkpv_parity \
             > "$EVIDENCE/qkpv-sm70-sass.txt"
           grep -q sm_70 "$EVIDENCE/qkpv-elf.txt"
           grep -q HMMA "$EVIDENCE/qkpv-sm70-sass.txt"
