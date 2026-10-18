@@ -52,7 +52,7 @@ absolute error 5.84e-35; it passes only the explicitly stated absolute screen.
 This is not proof that probability scaling is safe for arbitrary model inputs.
 See [all case results](p2-qkpv-2026-10-18.json).
 
-## Cached-row latent follow-up (physical verification pending)
+## Cached-row latent follow-up
 
 `test_dsv4_mla_latent_parity` reuses the same staged arithmetic from
 `tests/v100/qkpv_math.cuh`. Twenty-one synthetic cases exercise actual
@@ -74,3 +74,23 @@ not covered. Queries use the existing preparation kernel, so this is not an
 independent q-preparation oracle. Grouped output projection, real stage dumps,
 full-model logits and fused-kernel resource/performance gates remain open. This
 staged gather path is diagnostic only and adds no public control.
+
+### Physical result
+
+[Run 39173519298](https://github.com/mylordmonkeyman/Abyss/actions/runs/39173519298)
+on `8c74a3f` passed all 21 cases, 54 checked token positions and 324 stage
+comparisons; memcheck/synccheck each report zero errors. The maximum relative
+L2 is 1.0189e-6 for QK, 4.9045e-7 for probabilities, 1.0313e-6 for the sink
+denominator, 9.4576e-7 for PV, 1.4413e-6 after inverse RoPE versus FP64, and
+1.0040e-6 versus existing FP32 attention. Exact row identity/order, split-window
+state/output, future-row exclusion and malformed-selection rejection passed.
+This is an addressing/arithmetic diagnostic, not the complete P2 latent gate.
+Hosted Python tests and CPU build also pass on this commit.
+
+The first compile exposed a mixed-type `auto` declaration, fixed in `ef55687`.
+The next run passed the shared arithmetic checks but stopped on an accidental
+extra cuobjdump filename, fixed in `8c74a3f` before the passing complete run.
+See [case results and stage extrema](p2-latent-gathers-2026-10-18.json); full
+per-token max/p99/relative stage observations remain in artifact `12153153780`
+(117,185 bytes, SHA256
+`569d02af98f02baf2b5f43c738220e84d4662552932e0956d061d88a4a61ca19`).

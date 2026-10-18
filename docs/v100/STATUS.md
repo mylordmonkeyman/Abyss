@@ -73,6 +73,24 @@ checks, SM70 resource/SASS capture and sanitizer steps. Its [first physical V100
 passed all 32 cases and both sanitizers (zero errors). It does not enable production arithmetic or satisfy the full
 latent/gather/RoPE/output-projection/model-quality gate.
 
+### P2 cached-row gather and inverse-RoPE result
+
+[Run 39173519298](https://github.com/mylordmonkeyman/Abyss/actions/runs/39173519298),
+commit `8c74a3f`, passes **21 cached-row cases / 54 checked token positions**,
+with three graph replays per position and zero memcheck/synccheck errors. It
+compares shared staged SM70 QK/sink-softmax/PV plus inverse RoPE with FP64 and
+actual FP32 `attend_batch`, using real ring load/store and query preparation.
+Raw wrap/chunk tails, exact full-versus-split state/output, CSA visibility around
+top-512, HCA chronology and malformed-selection rejection pass. Maximum relative
+L2 versus existing FP32 attention is **1.0040e-6**; versus FP64 after inverse RoPE
+**1.4413e-6**. See [all case/extrema evidence](p2-latent-gathers-2026-10-18.json).
+Hosted Python/CPU-build CI passes.
+
+The staged gather path is diagnostic only. Full P2 still requires learned input
+projections and actual compressor/norm construction, grouped output projection,
+real stage dumps and same-branch logits, then a fused profitable geometry. No
+production dispatch, public switch or performance improvement is enabled.
+
 [v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
 commit `f7138de`, passed **89 isolated Q8_1 scatter byte/guard cases**, with zero
 memcheck/synccheck errors. Existing DeepSeek/MMA checks also passed; the engine
