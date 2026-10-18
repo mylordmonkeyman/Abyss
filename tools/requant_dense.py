@@ -1,6 +1,6 @@
 """Re-quantizes a few dense tensors of a (split) GGUF and copies everything else byte for byte.
 
-usage: requant_dense.py <in shard 1> <out dir> <type> <regex> [<regex> ...] [--check]
+usage: requant_dense.py <in shard 1> <out dir> <type> <regex> [<regex> ...] [--check] [--from=<type>[,<type>...]]
   e.g. requant_dense.py .../UD-Q2_K_XL/DeepSeek-...-00001-of-00003.gguf .../UD-Q2_K_XL-attn-q6k q6_k \
          'blk\\.\\d+\\.attn_q_b\\.weight' 'blk\\.\\d+\\.attn_output_[ab]\\.weight'
 Each input shard becomes one output shard of the same name (the split metadata is copied as is).  The matched
@@ -9,6 +9,8 @@ k-quants); llama-quantize cannot do this on an i-quant model without an imatrix,
 GGUF_PY (default: a llama.cpp checkout's gguf-py) and LIBGGML (a llama.cpp build's libggml-base.so) name where those
 are; the Abyss .venv's python has numpy.  Examples and the quality / speed of the packs made this way: docs/MANUAL.md,
 "A lighter dense pack".
+Only Q8_0 tensors are re-quantized unless --from names the source types (e.g. --from=q6_k for GLM-5.3-Flash AJ, whose
+dense weights are all Q6_K): a k-quant source is dequantized first, so its rounding error and the new one add up.
 """
 import ctypes
 import os
@@ -25,8 +27,12 @@ LIBGGML = os.environ.get("LIBGGML", "/home/zephel01/llm/apps/llama.cpp/build-cud
 
 
 def main() -> int:
-    args = [a for a in sys.argv[1:] if a != "--check"]
+    args = [a for a in sys.argv[1:] if a != "--check" and not a.startswith("--from=")]
     check = "--check" in sys.argv
+    src_types = {Q.Q8_0}
+    for a in sys.argv[1:]:
+        if a.startswith("--from="):
+            src_types = {Q[n.upper()] for n in a[len("--from="):].split(",")}
     if len(args) < 4:
         print(__doc__)
         return 2
@@ -54,8 +60,9 @@ def main() -> int:
         plan = []
         for t in r.tensors:
             hit = any(p.search(t.name) for p in pats)
-            if hit and t.tensor_type != Q.Q8_0:
-                print("  %s is %s, not Q8_0: left as is" % (t.name, t.tensor_type.name))
+            if hit and t.tensor_type not in src_types:
+                print("  %s is %s, not %s: left as is" % (t.name, t.tensor_type.name,
+                                                         "/".join(sorted(q.name for q in src_types))))
                 hit = False
             if hit:
                 ne0, ne1 = int(t.shape[0]), int(t.shape[1]) if len(t.shape) > 1 else 1
