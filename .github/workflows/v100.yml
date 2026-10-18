@@ -115,10 +115,10 @@ jobs:
       - name: Build engine and device test, retaining ptxas resource reports
         run: |
           set -euo pipefail
-          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity --parallel "$BUILD_JOBS" \
+          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity test_mma884_fragment_contract --parallel "$BUILD_JOBS" \
             2>&1 | tee "$EVIDENCE/build-ptxas.log"
           cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/CMakeCache.txt"
-          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity \
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity build-v100-diagnostics/test_mma884_fragment_contract \
             > "$EVIDENCE/binary-sha256.txt"
 
       - name: Record code-object images and inspect SM70 device-test SASS
@@ -170,7 +170,40 @@ jobs:
             build-v100-diagnostics/dsv4_fallback_parity \
             2>&1 | tee "$EVIDENCE/dsv4-synccheck.log"
 
+      - name: Validate isolated Volta MMA884 fragment/register contract
+        run: |
+          set -euo pipefail
+          timeout 120s build-v100-diagnostics/test_mma884_fragment_contract \
+            2>&1 | tee "$EVIDENCE/mma884-contract.jsonl"
+          timeout 300s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/test_mma884_fragment_contract \
+            2>&1 | tee "$EVIDENCE/mma884-memcheck.log"
+          timeout 300s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/test_mma884_fragment_contract \
+            2>&1 | tee "$EVIDENCE/mma884-synccheck.log"
+          "$NVCC" -std=c++17 --ptx -arch=compute_70 -Isrc/kernels/cuda \
+            tests/v100/test_mma884_fragment_contract.cu -o "$EVIDENCE/mma884-sm70.ptx" \
+            2>&1 | tee "$EVIDENCE/mma884-ptx-compile.log"
+          cuobjdump --list-elf build-v100-diagnostics/test_mma884_fragment_contract > "$EVIDENCE/mma884-elf.txt"
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/test_mma884_fragment_contract \
+            > "$EVIDENCE/mma884-sm70-sass.txt"
+          grep -q 'sm_70' "$EVIDENCE/mma884-elf.txt"
+          grep -q 'HMMA' "$EVIDENCE/mma884-sm70-sass.txt"
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          out = pathlib.Path(os.environ['EVIDENCE'])
+          ptx = (out / 'mma884-sm70.ptx').read_text()
+          assert re.search(r'\.target\s+sm_70\b', ptx), 'wrong PTX target'
+          assert 'mma.sync.aligned.m8n8k4.row.col.f32.f16.f16.f32' in ptx, 'missing MMA884 instruction'
+          assert not re.search(r'\b(ldmatrix|cp\.async|wgmma|mbarrier)\b|mma\.sync[^;]*m16n8k16', ptx), 'unsupported SM70 instruction'
+          report = {'scope': 'isolated MMA884 contract executable only', 'target': 'sm_70',
+                    'ptx_mma884_present': True, 'sm70_sass_hmma_present': True,
+                    'whole_engine_opcode_audit': 'not claimed'}
+          (out / 'sm70_arch_manifest.json').write_text(json.dumps(report, indent=2) + '\n')
+          PY
+
       - name: Record model availability without copying model data
+        if: always()
         run: |
           python3 - <<'PY'
           import json, os, pathlib

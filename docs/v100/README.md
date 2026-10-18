@@ -146,3 +146,13 @@ including cuobjdump and Compute Sanitizer, and network access to the pinned GGML
 checkout. No profiler installation or model download occurs. Logs, tool/binary hashes,
 code-object listings and sanitizer output are uploaded even when a step fails.
 Passing this workflow establishes build/device-smoke evidence, not full-model P0 parity.
+
+## Model-free DeepSeek and MMA gates
+
+`-DSTRATA_V100_TESTS=ON` adds `dsv4_fallback_parity` and
+`test_mma884_fragment_contract` without enabling the unrelated global test suite.
+Both executables reject non-SM70 GPUs. The workflow runs default and forced-FP32
+DeepSeek component cases, plus memcheck/synccheck. The isolated MMA contract also
+produces target-scoped PTX/SASS and checks for the expected MMA884/HMMA instructions.
+The primitive is not connected to production scoring or attention. See
+[STATUS.md](STATUS.md) for actual run evidence and remaining full-model gates.
