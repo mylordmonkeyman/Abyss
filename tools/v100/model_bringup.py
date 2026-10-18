@@ -86,7 +86,7 @@ def main():
         token_file = out / f'{name}-input.txt'
         token_file.write_text(','.join(map(str, ids)) + '\n')
         (out / f'{name}-prompt.txt').write_text(rendered)
-        argv = [str(ROOT / 'build-v100-diagnostics/strata'), 'generate', '--glm-pack', str(pack),
+        argv = [str(ROOT / 'build-v100-diagnostics/strata'), '--glm-pack', str(pack),
                 '--tokens-file', str(token_file), '--max-new', str(count), '--max-context', '4096',
                 '--prefill', 'auto', '--temperature', '0']
         env = dict(os.environ, STRATA_DS4_SPEC='0', ABYSS_V100_PROFILE='1', STRATA_GLM_RAM_GB='72')

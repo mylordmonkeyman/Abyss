@@ -6,6 +6,7 @@ on:
     branches: [feature/deepseek-v100-perf, main]
     paths:
       - '.github/workflows/v100-model.yml'
+      - 'tools/v100/model_bringup.py'
 
 permissions:
   contents: read
