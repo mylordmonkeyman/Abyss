@@ -131,3 +131,19 @@ class PreSchemeGuard(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DeepseekSpecialTypes(unittest.TestCase):
+    """The ds4-layout DeepSeek V4.1 GGUFs mark the chat tokens NORMAL; the tokenizer restores V4's types, so the
+    server's prompt keeps <｜User｜> / <｜Assistant｜> / </think> as one token each (v1.3.29 split them into characters)."""
+
+    def test_types_restored(self):
+        from strata_tokenizer import deepseek_special_types
+        tokens = ["a"] * 128000 + ["<｜User｜>", "<｜Assistant｜>", "</think>", "｜DSML｜", "<|EOT|>",
+                                   "<｜/table>｜", "plain", "<|place_holder_mm_span_0437|>"]
+        types = [1] * len(tokens)
+        out = deepseek_special_types(tokens, types)
+        self.assertEqual(out[128000:], [3, 3, 4, 4, 3, 4, 1, 1])
+        self.assertEqual(out[:128000], types[:128000])   # the base vocabulary is left alone
+        types[128000] = 3
+        self.assertEqual(deepseek_special_types(tokens, types)[128000], 3)   # a typed token keeps its type

@@ -185,6 +185,8 @@ class Tokenizer:
             tokens[i] = s
         meta = json.loads((t / "tokenizer.json").read_text(encoding="utf-8")) if (t / "tokenizer.json").exists() else {}
         types = json.loads((t / "token_type.json").read_text()) if (t / "token_type.json").exists() else None
+        if types and meta.get("pre") == "joyai-llm":   # DeepSeek V4 / V4.1: a pack exported by v1.3.29 kept the
+            types = deepseek_special_types(tokens, types)   # ds4 GGUF's NORMAL chat tokens - fixed on load too
         return cls(tokens, (t / "merges.txt").read_text(encoding="utf-8").split("\n"), types,
                    meta.get("pre", "qwen35"), meta.get("special_ids") or None)
 
@@ -202,9 +204,11 @@ class Tokenizer:
             raise ValueError("expected a byte-level BPE tokenizer (model 'gpt2'), got %r" % model)
         special = {k: int(md[k]) for k in md
                    if k.startswith("tokenizer.ggml.") and k.endswith("_token_id")}
-        return cls(list(md["tokenizer.ggml.tokens"]), list(md["tokenizer.ggml.merges"]),
-                   list(md.get("tokenizer.ggml.token_type") or []) or None,
-                   md.get("tokenizer.ggml.pre", "qwen35"), special)
+        tokens = list(md["tokenizer.ggml.tokens"])
+        types = list(md.get("tokenizer.ggml.token_type") or []) or None
+        if types and md.get("general.architecture") in ("deepseek4", "deepseek41"):
+            types = deepseek_special_types(tokens, types)
+        return cls(tokens, list(md["tokenizer.ggml.merges"]), types, md.get("tokenizer.ggml.pre", "qwen35"), special)
 
     # -------------------------------------------------------------- the algorithm
     def _bpe(self, word: str) -> list[str]:
@@ -336,6 +340,26 @@ class Tokenizer:
 
     def decode(self, ids: list[int], errors: str = "replace") -> str:
         return b"".join(self.token_bytes(i) for i in ids).decode("utf-8", errors=errors)
+
+
+# DeepSeek V4 / V4.1's added tokens (ids 128000 on): the ds4-layout V4.1 GGUFs (antirez's converter - Lucebox's,
+# nazeshinjite's) mark them all NORMAL (1), so the chat template's <｜User｜> / <｜Assistant｜> / </think> went into the
+# model as runs of plain characters and it answered with end markers written out as text.  The types unsloth's V4
+# GGUF carries: CONTROL (3) for <｜...｜> and <|EOT|>, USER_DEFINED (4) for the tags matched in any text.
+DEEPSEEK_USER_DEFINED = ("<think>", "</think>", "｜DSML｜", "<dsml:", "</dsml:", "<｜/table>｜")
+
+
+def deepseek_special_types(tokens: list[str], types: list[int]) -> list[int]:
+    out = list(types)
+    for i in range(min(len(tokens), len(out))):
+        if i < 128000 or out[i] != 1:
+            continue
+        t = tokens[i]
+        if t in DEEPSEEK_USER_DEFINED:
+            out[i] = 4
+        elif (t.startswith("<｜") and t.endswith("｜>")) or t == "<|EOT|>":
+            out[i] = 3
+    return out
 
 
 # ------------------------------------------------------------------ the pack's tokenizer/ directory
