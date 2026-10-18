@@ -3,6 +3,14 @@
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
 Production arithmetic and dispatch remain unchanged. No performance improvement is claimed.
 
+## Active specification
+
+The implementation now follows consolidated **v8** (`IMPLEMENTATION_SPEC.md`).
+See [adoption and applicability audit](V8_ADOPTION.md) for actual-format corrections,
+newer-Abyss differences and the isolated quantize-once/scatter contract. The pinned
+base and measured baseline are preserved. P0 counter/NUMA/quality gates remain open;
+adopting v8 does not mark its proposed flags implemented or enable production paths.
+
 ## Confirmed on the actual V100
 
 - [Initial build/device run 39100453015](https://github.com/mylordmonkeyman/Abyss/actions/runs/39100453015),

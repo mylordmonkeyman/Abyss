@@ -115,11 +115,51 @@ jobs:
       - name: Build engine and device test, retaining ptxas resource reports
         run: |
           set -euo pipefail
-          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity test_mma884_fragment_contract --parallel "$BUILD_JOBS" \
+          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity test_mma884_fragment_contract test_v100_mmq_scatter --parallel "$BUILD_JOBS" \
             2>&1 | tee "$EVIDENCE/build-ptxas.log"
           cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/CMakeCache.txt"
-          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity build-v100-diagnostics/test_mma884_fragment_contract \
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity build-v100-diagnostics/test_mma884_fragment_contract build-v100-diagnostics/test_v100_mmq_scatter \
             > "$EVIDENCE/binary-sha256.txt"
+
+      - name: Audit v8 ancestry, actual formats and source-feature differences
+        run: |
+          set -euo pipefail
+          python3 tools/v100/upstream_delta.py --output "$EVIDENCE" \
+            --model /models/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf
+
+      - name: Check isolated Q8_1 gather versus scatter bytes on V100
+        run: |
+          set -euo pipefail
+          timeout 300s build-v100-diagnostics/test_v100_mmq_scatter 2>&1 | tee "$EVIDENCE/mmq-scatter-parity.jsonl"
+          timeout 600s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/test_v100_mmq_scatter 2>&1 | tee "$EVIDENCE/mmq-scatter-memcheck.log"
+          timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/test_v100_mmq_scatter 2>&1 | tee "$EVIDENCE/mmq-scatter-synccheck.log"
+
+      - name: Measure isolated vendor quantizers with telemetry, no engine change
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys, threading, time
+          sys.path.insert(0, 'tools/v100')
+          import p0
+          out = pathlib.Path(os.environ['EVIDENCE'])
+          stop = threading.Event()
+          def monitor():
+              with (out / 'mmq-scatter-telemetry.jsonl').open('w') as f:
+                  while not stop.is_set():
+                      f.write(json.dumps({'utc': p0.now(), 'monotonic_s': time.monotonic(),
+                                          'gpu': p0.command(['nvidia-smi', '-i', os.environ['ABYSS_GPU'], '-q', '-x'])})+'\n')
+                      f.flush()
+                      stop.wait(1)
+          thread = threading.Thread(target=monitor, daemon=True)
+          thread.start()
+          try:
+              with (out / 'mmq-scatter-events.jsonl').open('w') as log:
+                  subprocess.run(['build-v100-diagnostics/test_v100_mmq_scatter', '--bench'],
+                                 stdout=log, stderr=subprocess.STDOUT, check=True, timeout=300)
+          finally:
+              stop.set(); thread.join()
+          PY
 
       - name: Record code-object images and inspect SM70 device-test SASS
         run: |
