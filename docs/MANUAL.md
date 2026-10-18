@@ -377,6 +377,7 @@ Environment variables for the engine, in the config's `"env"` block (all of Maya
 | `STRATA_GLM_WARM` | on | `0`: no warm-up at start (the tiers fill as experts are used; the first answers are slower) |
 | `STRATA_GLM_RAM_GB` | from free RAM | a fixed size of the pinned RAM tier in GB |
 | `STRATA_GLM_RAM_HEADROOM_GB` | 6 | RAM left free for the system when the RAM tier is sized |
+| `STRATA_GLM_RAM_THP` | on (Linux) | the RAM tier in transparent huge pages, as far as the free 2 MB blocks go (an APU lane re-validates 512x fewer pages: no multi-second lane stalls); `0`: the driver's pinned pages |
 | `STRATA_GLM_RESERVE_MB` | 700 | VRAM left free beside the expert pool |
 | `STRATA_GLM_CPU_LANE` | one thread per physical core | CPU threads computing RAM-tier experts; `0` = off |
 | `STRATA_GLM_PCIE_SHARE` | measured at start | the share of RAM-tier experts copied over PCIe instead of computed on the CPU (`0` = all on the CPU, `1` = none) |

@@ -259,11 +259,25 @@ static int numa_node_cpus() {
 // threads through that node's memory controllers only (2-socket Xeon, Q3_K experts, 44 threads: 216 us an expert
 // node-local, 152 us interleaved).  Mapped, so the device reads its host pointers as it does cudaHostAlloc's.
 // nullptr: one node, STRATA_GLM_NUMA=0, no host-pointer access for registered memory, or a failure.
+// STRATA_GLM_RAM_THP (default on, 0 = off): this path on ONE node too, with MADV_HUGEPAGE on as much of the tier as
+// the free 2 MB blocks cover - 512x fewer pages for the APU driver to re-validate when its MMU notifier fires: the
+// iGPU lane's stalls of 15-24 s (7 in 8 x 1K tokens, "svm_range_restore_work hogged CPU" in the kernel log) were
+// gone with 47.5 of a 60 GB tier in huge pages, and the lane registered the tier in 255 ms instead of 390 (RTX 5090 +
+// Radeon 8060S, DeepSeek V4.1, 2026-10-18).  The caller drops the shards' page cache first so the 2 MB blocks exist.
+// Registered memory's pages cannot be swapped either way.
+static bool ram_thp() {
+    static const bool on = [] {
+        const char* v = getenv("STRATA_GLM_RAM_THP");
+        return v == nullptr || std::atoi(v) != 0;
+    }();
+    return on;
+}
+
 static void* numa_pinned(size_t bytes) {
 #ifdef __linux__
     const char* v = getenv("STRATA_GLM_NUMA");
     const auto nodes = numa_nodes();
-    if ((v != nullptr && std::atoi(v) == 0) || nodes.size() < 2) return nullptr;
+    if ((v != nullptr && std::atoi(v) == 0) || (nodes.size() < 2 && !ram_thp())) return nullptr;
     int dev = 0, ok = 0;
     cudaGetDevice(&dev);
     if (cudaDeviceGetAttribute(&ok, cudaDevAttrCanUseHostPointerForRegisteredMem, dev) != cudaSuccess || !ok) {
@@ -301,14 +315,35 @@ static void* numa_pinned(size_t bytes) {
         }
         std::fclose(bf);
     }
-    if (!huge_known || huge_free >= bytes + ((size_t) 1 << 30)) madvise(p, bytes, MADV_HUGEPAGE);
+    // STRATA_GLM_RAM_THP: huge pages for the part of the tier the free blocks cover (less 1 GB), 4 KB pages for the
+    // rest - asking for the whole tier made the faults compact for the remainder, the memory pressure that caused sat
+    // over systemd-oomd's limit (50% for 20 s) and the engine was killed (60 GB tier, 45-50 GB in free blocks, 2026-10-18)
+    size_t thp_bytes = 0;
+    if (!huge_known || huge_free >= bytes + ((size_t) 1 << 30)) thp_bytes = bytes;
+    else if (ram_thp() && huge_free > ((size_t) 1 << 30))
+        thp_bytes = std::min(bytes, (huge_free - ((size_t) 1 << 30)) & ~(((size_t) 2 << 20) - 1));
+    if (thp_bytes > 0) madvise(p, thp_bytes, MADV_HUGEPAGE);
     // (the registration faults the pages in, one thread: faulting them from 16 threads first started ~40 s sooner but
     // left fewer huge pages - the CPU lane read its experts 6-8% slower, 2-socket Xeon 6152)
-    if (syscall(SYS_mbind, p, bytes, 3 /* MPOL_INTERLEAVE */, mask, (unsigned long) (sizeof mask * 8), 0u) != 0 ||
+    if ((nodes.size() >= 2 &&
+         syscall(SYS_mbind, p, bytes, 3 /* MPOL_INTERLEAVE */, mask, (unsigned long) (sizeof mask * 8), 0u) != 0) ||
         cudaHostRegister(p, bytes, cudaHostRegisterPortable | cudaHostRegisterMapped) != cudaSuccess) {
         cudaGetLastError();
         munmap(p, bytes);
         return nullptr;
+    }
+    if (ram_thp()) {   // what the faults gave: the process's huge pages before and after this tier
+        long long huge_kb = 0;
+        if (FILE* sm = std::fopen("/proc/self/smaps_rollup", "r")) {
+            char line[256];
+            while (std::fgets(line, sizeof line, sm))
+                if (std::sscanf(line, "AnonHugePages: %lld kB", &huge_kb) == 1) break;
+            std::fclose(sm);
+        }
+        std::fprintf(stderr, "glm fast: RAM tier %.1f GB registered from an mmap, MADV_HUGEPAGE on %.1f GB of it; the "
+                             "process now holds %.1f GB in transparent huge pages (free 2 MB blocks before: %.1f GB)\n",
+                     (double) bytes / 1073741824.0, (double) thp_bytes / 1073741824.0, (double) huge_kb / 1048576.0,
+                     (double) huge_free / 1073741824.0);
     }
     return p;
 #else
@@ -1261,6 +1296,12 @@ bool Glm5Model::fast_setup(std::string& err) {
             n = std::min<int64_t>(n, cap);
             const int64_t least = std::min<int64_t>(16, cap);   // the floor, or the whole cap when that is smaller
             void* p = nullptr;
+#ifdef __linux__
+            if (ram_thp()) {   // the shards' page cache (the experts are read O_DIRECT; Engram has its row cache) ->
+                for (auto& sh : pack_shards_)   // free 2 MB blocks for the tier's huge pages
+                    if (sh.fd >= 0) posix_fadvise(sh.fd, 0, 0, POSIX_FADV_DONTNEED);
+            }
+#endif
             while (n >= least) {
                 if ((p = numa_pinned((size_t) n * R.stride)) != nullptr) {   // (over every socket: numa_pinned)
                     R.registered = true;
