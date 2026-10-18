@@ -199,9 +199,11 @@ int main() {
         // The workflow runs separate processes for default dispatch and legacy forced FP32.
         for (int n : {0, 1, 512, 513, 8192}) index_case(n ? n * 4 - 1 : 0, 1, false, false);
         index_case(513 * 4 - 1, 1, false, true);
-        for (auto s : {std::pair<int, int>{0, 5}, {2044, 9}, {4091, 33}}) index_case(s.first, s.second, true, false);
+        const std::pair<int, int> index_shapes[] = {{0, 5}, {2044, 9}, {4091, 33}};
+        for (auto s : index_shapes) index_case(s.first, s.second, true, false);
         index_case(2044, 9, true, true);
-        for (auto s : {std::pair<int, int>{0, 3}, {127, 3}, {128, 33}, {2047, 5}}) ring_case(s.first, s.second);
+        const std::pair<int, int> ring_shapes[] = {{0, 3}, {127, 3}, {128, 33}, {2047, 5}};
+        for (auto s : ring_shapes) ring_case(s.first, s.second);
         for (bool yarn : {false, true}) {
             attention_case(0, 0, 3, yarn); attention_case(0, 127, 3, yarn);
             attention_case(4, 3, 3, yarn); attention_case(4, 2047, 5, yarn);
