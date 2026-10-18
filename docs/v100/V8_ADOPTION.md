@@ -72,6 +72,33 @@ model-exact expert output parity, or an independent scalar quantizer oracle.
 it excludes map construction, allocation and copying and is not a TTFT test.
 The workflow retains V100 telemetry and runs memcheck/synccheck.
 
+### Physical V100 result
+
+[Run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
+commit `f7138de`, passed **all 89 byte/guard cases**. Memcheck and synccheck each
+reported **zero errors**. Existing 26-case DeepSeek parity (default/forced FP32),
+15-case MMA884 contract and their sanitizer checks passed again. The engine
+binary SHA256 remains `f730c2347189bf00513c1254787340ef84f40c140783fd7ce0aa8b241cf2ff25`,
+identical to the prior reference/timeline build.
+
+At T=2,048, K=4,096, six slots, IQ2_XS, median isolated CUDA-event latency was
+**0.247038 ms indexed versus 0.163941 ms scatter**. Both wrote **56,623,104 bytes**;
+the row-quantization count changes from 12,288 to 2,048, not the output payload.
+Map construction/storage and the larger full-route buffer are excluded from
+these timings. Only two whole-suite telemetry samples were collected; no thermal
+reason was observed, but this is insufficient for sustained matched attribution.
+**No clean whole-model speedup or production admission is claimed.**
+
+Artifact `12144298858` is **57,272 bytes**, SHA256
+`30f0cda8d66c51fe247265d24134bd0bfe63b8863b8c76f7d48f01faba392f02`.
+The [source audit](v8-upstream-delta-2026-10-18.json),
+[microtest/event samples](v8-scatter-2026-10-18.json), and
+[existing-trace quantizer query](v8-quantizer-timing-2026-10-18.json) are retained.
+The audit's empty proposed-control list concerns the **new v8 experiments**;
+the earlier `ABYSS_V100_PROFILE` timing wrapper remains implemented.
+Hosted run `39149507209` passed 130 server / 206 tool tests (3 / 27 existing skips)
+and the host-only build. Reused runner/container/build; no new model copies.
+
 ## Next admission decisions
 
 P0 remains partial: counters denied, QPI unmeasured, greedy-repeat variation

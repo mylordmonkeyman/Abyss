@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "specification": "8.0",
+  "specification_sha256": "17c8c15323c9a80d01dfacc311c5d854de9c9c8ab0742c3305991a3bddb3ebb2",
+  "working_commit": "f7138de71e4e5770bec79442663125d606b1091e",
+  "git_describe": "f7138de",
+  "pinned_abyss_base": "47001f31cbfba14bcbf4c083e3af07c50707ec0c",
+  "strata_reference": "477ac13cbe8e582c20484871ce459d20d82df09d",
+  "abyss_differential_reference": "7c893ac17e61ec45c934b3278356807fc4626c3c",
+  "base_changed": false,
+  "ggml_expected": "3cf03257f219afbe7334045ff7c6a06ac68c627d",
+  "ggml_actual": "3cf03257f219afbe7334045ff7c6a06ac68c627d",
+  "vendor_scatter_api_declared": true,
+  "source_sha256": {
+    "src/prefill/moe_mmq.cu": "30dbf2f3edd105c88f35ed82b79e682f5b508338867573b6208f53705c06145f",
+    "src/core/glm_prefill.cu": "4e10bb7f7a664708d7caae259332c7456c19c6f7ee5974006082319949d3ac8f",
+    "src/core/glm_fast_path.cu": "3f0d60053211646a7f94cd7beed1cd5f640eb7de4437c4c8d94ba989eb25e878",
+    "src/kernels/cpu/native_expert.cpp": "7173de0c8118ea254535c51096195db386216aa026ea49c76591ba5ff0a5df6c",
+    "src/kernels/cpu/iq_avx2.cpp": "268ac8ec94d7822e70587b800b2e9008827841983209b46eac0dd4be0c9a6993",
+    "src/kernels/cuda/dsv4_fast.cu": "f5eede5eee480a64d7f65deb2617ed0c75e8b510a95190894b8cc4148d1df826"
+  },
+  "candidates": [
+    {
+      "id": "P3.12",
+      "status": "absent",
+      "file": "src/prefill/moe_mmq.cu",
+      "symbol": "quantize",
+      "evidence": "Indexed quantize_mmq_q8_1_cuda; no engine scatter call. glm_prefill run_set uses row_tok repeatedly over window-sized expert groups; down GU rows are expert-specific.",
+      "decision": "Isolated vendor API test first; full-route scatter is not a drop-in for window-sized Xq."
+    },
+    {
+      "id": "P3.2f",
+      "status": "different",
+      "file": "src/kernels/cpu/native_expert.cpp",
+      "symbol": "pick_rows1 / iq256_rows1_supported",
+      "evidence": "Existing exact singleton IQ3_XXS/IQ3_S; iq_avx2.cpp supports singleton types 18/21.",
+      "decision": "Named IQ2_XXS case is inapplicable if absent from inventory. Upstream exact-one also explicitly supports type 17 (IQ2_XS): retain that separately validated CPU candidate."
+    },
+    {
+      "id": "P4i",
+      "status": "different",
+      "file": "src/core/glm_fast_path.cu",
+      "symbol": "STRATA_GLM_CPU_PLAN / STRATA_GLM_PCIE_SHARE",
+      "evidence": "Startup CPU/DMA/mapped-access calibration and fixed route plan already exist.",
+      "decision": "Observe per-layer prediction error before introducing online allocation."
+    },
+    {
+      "id": "P3.13",
+      "status": "absent",
+      "file": "src/prefill/moe_mmq.cu",
+      "symbol": "Context::run / dispatch",
+      "evidence": "Contiguous Product::w; no STRATA_MMQ_DIRECT pointer-table path.",
+      "decision": "Optional after real gather cost; MXFP4 cannot inherit another format whitelist."
+    },
+    {
+      "id": "P3.14",
+      "status": "absent",
+      "file": "src/core/glm_fast_path.cu",
+      "symbol": "STRATA_HC_Q8",
+      "evidence": "No upstream HC Q8 control in audited engine source.",
+      "decision": "Optional lossy storage only after separate resident HC census."
+    },
+    {
+      "id": "P4j",
+      "status": "different",
+      "file": "src/core/glm_fast_path.cu",
+      "symbol": "numa_pinned / bg_pace / promote",
+      "evidence": "Existing pinned mapped pool, service and paced background promotion; no upstream STRATA_EXCHANGE_ROTATE/STRATA_PIN_BY_NEED control.",
+      "decision": "No replacement cache; require trace of actual missing overlap/host commit copies."
+    },
+    {
+      "id": "P4k",
+      "status": "absent",
+      "file": "src/core/glm_prefill.cu",
+      "symbol": "prefill-head-alias",
+      "evidence": "No upstream head-alias option in audited prefill source.",
+      "decision": "Optional only after measured head/workspace pressure."
+    },
+    {
+      "id": "P2g",
+      "status": "inapplicable",
+      "file": "src/kernels/cuda/dsv4_fast.cu",
+      "symbol": "attend_batch_kernel",
+      "evidence": "Per-query n_raw and raw0 addressing; existing V100 trace launches attend_batch.",
+      "decision": "Do not port Xolotl masked-union workaround; retain direct per-query gathers."
+    },
+    {
+      "id": "Abyss RAM_THP",
+      "status": "different",
+      "file": "src/core/glm_fast_path.cu",
+      "symbol": "numa_pinned",
+      "evidence": "buddyinfo compaction guard already exists; newer STRATA_GLM_RAM_THP control absent.",
+      "decision": "No base update; later one-node/partial hugepage policy not incorporated."
+    },
+    {
+      "id": "Abyss STREAM_FETCH",
+      "status": "absent",
+      "file": "src/core/glm_fast_path.cu",
+      "symbol": "STRATA_GLM_STREAM_FETCH",
+      "evidence": "Later Abyss streaming-fetch control absent.",
+      "decision": "No base update; existing staged fetch preserved."
+    }
+  ],
+  "model_integrity": "Sizes and GGUF structure only; shard SHA256 unverified (not fabricated).",
+  "proposed_controls_implemented": [],
+  "production_change": false,
+  "unresolved_gates": [
+    "Hardware counters denied: ERR_NVGPUCTRPERM",
+    "QPI counters unmeasured",
+    "Greedy repeat variability unisolated",
+    "Model-exact extended parity and dedicated MXFP4 row parity incomplete"
+  ],
+  "shards": [
+    {
+      "name": "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf",
+      "bytes": 5257664,
+      "sha256": null
+    },
+    {
+      "name": "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf",
+      "bytes": 49437013568,
+      "sha256": null
+    },
+    {
+      "name": "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf",
+      "bytes": 47390237120,
+      "sha256": null
+    }
+  ],
+  "routed_inventory": [
+    {
+      "role": "routed_expert_down",
+      "type": "IQ3_XXS",
+      "tensors": 41
+    },
+    {
+      "role": "routed_expert_down",
+      "type": "MXFP4",
+      "tensors": 2
+    },
+    {
+      "role": "routed_expert_gate",
+      "type": "IQ2_XS",
+      "tensors": 42
+    },
+    {
+      "role": "routed_expert_gate",
+      "type": "IQ3_XXS",
+      "tensors": 1
+    },
+    {
+      "role": "routed_expert_up",
+      "type": "IQ2_XS",
+      "tensors": 42
+    },
+    {
+      "role": "routed_expert_up",
+      "type": "IQ3_XXS",
+      "tensors": 1
+    }
+  ],
+  "iq2_xxs_routed_tensors": 0,
+  "iq2_xxs_candidate_applicable_to_this_pack": false,
+  "mxfp4_routed_layers": [
+    26,
+    42
+  ]
+}

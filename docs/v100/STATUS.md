@@ -11,6 +11,17 @@ newer-Abyss differences and the isolated quantize-once/scatter contract. The pin
 base and measured baseline are preserved. P0 counter/NUMA/quality gates remain open;
 adopting v8 does not mark its proposed flags implemented or enable production paths.
 
+[v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
+commit `f7138de`, passed **89 isolated Q8_1 scatter byte/guard cases**, with zero
+memcheck/synccheck errors. Existing DeepSeek/MMA checks also passed; the engine
+binary is unchanged. The new source-feature audit confirms the actual mixed IQ
+and MXFP4 inventory and absence of routed IQ2_XXS/Q2_K. Upstream exact-one also
+supports the relevant IQ2_XS type, retained as a separately validated CPU candidate.
+Scatter integration is deferred: all MMQ quantization represents only 0.638% of
+the existing 2K trace's prefill wall time, and full-route scatter needs a resource
+design for Abyss's smaller W-row buffers. The ~1.5x isolated quantizer result is
+not a whole-model speedup. Latest hosted CI passes 130 server / 206 tool tests.
+
 ## Confirmed on the actual V100
 
 - [Initial build/device run 39100453015](https://github.com/mylordmonkeyman/Abyss/actions/runs/39100453015),

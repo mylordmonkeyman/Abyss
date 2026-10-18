@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "source_run_id": 39140801624,
+  "source_artifact_id": 12141194059,
+  "downloaded_zip_sha256": "fff31d559409138318a73c19e9c8c1ed40d589835b37a231f5064e8b842931e7",
+  "sqlite_sha256": "77f4583098af6360553d93c77b2de5acd051c26e87e5b97783b207928e0f77ae",
+  "query": "SELECT k.start,k.end,s.value FROM CUPTI_ACTIVITY_KIND_KERNEL k JOIN StringIds s ON s.id=k.demangledName ORDER BY k.start",
+  "filter": "quantize_mmq_q8_1<",
+  "phase_boundary": "first argmax end minus reported prefill duration",
+  "begin_ns": 8289695,
+  "end_ns": 3898089695,
+  "done": "DONE 32 2048 3889.8 1072.8 length 0 0 0 6554 7998",
+  "quantizer_launches": 1416,
+  "quantizer_sum_ms": 24.813115,
+  "prefill_wall_ms": 3889.8,
+  "quantizer_kernel_time_divided_by_prefill_wall_percent": 0.6379020772276208,
+  "symbols": [
+    "void quantize_mmq_q8_1<(mmq_q8_1_ds_layout)0, (bool)0>(const float *, const int *, void *, long, long, long, long, long, int, int, int)"
+  ],
+  "scope": "All MMQ Q8_1 activation quantization, gate/up plus expert-specific down; not entirely shareable. CUPTI timestamps, not hardware counters or an end-to-end savings bound.",
+  "decision": "Isolated parity test only. Defer production scatter integration pending meaningful all-in benefit and W-window VRAM design."
+}
