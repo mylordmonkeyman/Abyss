@@ -1,0 +1,163 @@
+name: V100 CUDA 12.8 build and device smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf, main]
+    paths:
+      - '.github/workflows/v100.yml'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'cmake/**'
+      - 'include/**'
+      - 'src/**'
+      - 'third_party/ggml/**'
+      - 'tools/v100/**'
+      - 'tools/test_v100_p0.py'
+
+permissions:
+  contents: read
+
+# Queue this repository's GPU jobs instead of cancelling an in-flight build/test.
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+
+jobs:
+  build-and-smoke:
+    # The existing runner must be registered with Abyss (or shared with it at org scope).
+    # No new Docker container, model download, GPU reset or driver installation.
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: ${{ vars.ABYSS_NVCC || '/usr/local/cuda-12.8/bin/nvcc' }}
+      ABYSS_GPU: ${{ vars.ABYSS_GPU || '0' }}
+      BUILD_JOBS: ${{ vars.ABYSS_BUILD_JOBS || '32' }}
+      EVIDENCE: results/ci-v100-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Check out Abyss, retaining ignored build directories
+        uses: actions/checkout@v4
+        with:
+          clean: false
+          persist-credentials: false
+
+      - name: Check out the pinned GGML dependency
+        uses: actions/checkout@v4
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+
+      - name: Check toolkit, select one SM70 GPU, and record provenance
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE"
+          test -x "$NVCC"
+          export PATH="$(dirname "$NVCC"):$PATH"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          command -v cmake
+          command -v ninja
+          command -v python3
+          command -v nvidia-smi
+          command -v cuobjdump
+          "$NVCC" --version | tee "$EVIDENCE/nvcc-version.txt"
+          grep -Eq 'release 12\.8([, ]|$)' "$EVIDENCE/nvcc-version.txt"
+          cmake --version | tee "$EVIDENCE/cmake-version.txt"
+          git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
+          git -C third_party/llama.cpp rev-parse HEAD > "$EVIDENCE/ggml-sha.txt"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          sys.path.insert(0, 'tools/v100')
+          import p0
+          out = pathlib.Path(os.environ['EVIDENCE'])
+          manifest = p0.manifest(os.environ['ABYSS_GPU'])
+          (out / 'toolchain_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          identity = manifest['commands']['gpu_identity']
+          lines = identity.get('stdout', '').strip().splitlines()
+          if identity['returncode'] != 0 or len(lines) != 1:
+              raise SystemExit('ABYSS_GPU must select one accessible GPU; see toolchain_manifest.json')
+          fields = [v.strip() for v in lines[0].split(',')]
+          if len(fields) != 3 or fields[2] != '7.0':
+              raise SystemExit('This workflow requires compute capability 7.0 (V100)')
+          # UUID selection avoids confusing CUDA ordinal 0 with the host's other GPU.
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('CUDA_VISIBLE_DEVICES=' + fields[0] + '\n')
+          PY
+
+      - name: Run GPU-free capture tooling checks
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools -p test_v100_p0.py -v 2>&1 | tee "$EVIDENCE/p0-tooling-tests.log"
+
+      - name: Configure CUDA SM70 diagnostics build
+        run: |
+          set -euo pipefail
+          cmake --preset v100-diagnostics \
+            -DCMAKE_CUDA_COMPILER="$NVCC" \
+            -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+            2>&1 | tee "$EVIDENCE/configure.log"
+
+      - name: Build engine and device test, retaining ptxas resource reports
+        run: |
+          set -euo pipefail
+          cmake --build build-v100-diagnostics --target strata strata-device --parallel "$BUILD_JOBS" \
+            2>&1 | tee "$EVIDENCE/build-ptxas.log"
+          cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/CMakeCache.txt"
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device \
+            > "$EVIDENCE/binary-sha256.txt"
+
+      - name: Record code-object images and inspect SM70 device-test SASS
+        run: |
+          set -euo pipefail
+          for target in strata strata-device; do
+            cuobjdump --list-elf "build-v100-diagnostics/$target" > "$EVIDENCE/$target-elf.txt"
+            cuobjdump --list-ptx "build-v100-diagnostics/$target" > "$EVIDENCE/$target-ptx.txt"
+            grep -q 'sm_70' "$EVIDENCE/$target-elf.txt"
+          done
+          # Limit disassembly to the small device test, not the engine's entire fatbin.
+          # This is an image/launch smoke gate, not the later full opcode/fragment audit.
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/strata-device \
+            > "$EVIDENCE/strata-device-sm70-sass.txt"
+          test -s "$EVIDENCE/strata-device-sm70-sass.txt"
+
+      - name: Launch real SM70 device self-test
+        run: |
+          set -euo pipefail
+          timeout 120s build-v100-diagnostics/strata-device --selftest \
+            2>&1 | tee "$EVIDENCE/device-selftest.log"
+
+      - name: Sanitize the device self-test
+        run: |
+          set -euo pipefail
+          command -v compute-sanitizer
+          timeout 300s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/strata-device --selftest \
+            2>&1 | tee "$EVIDENCE/device-memcheck.log"
+          timeout 300s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/strata-device --selftest \
+            2>&1 | tee "$EVIDENCE/device-synccheck.log"
+
+      - name: Summarize scope and outstanding P0 gates
+        if: always()
+        run: |
+          {
+            echo '### V100 build/device smoke'
+            echo "- Build SHA: $GITHUB_SHA"
+            echo '- Includes SM70 engine compilation, code-object listings, a real device allocation/kernel launch, and device-test sanitizers.'
+            echo '- Full DeepSeek inference, model parity, thermal/performance A/B and supported hardware-counter collection remain separate P0 gates.'
+            echo '- Profiler absence does not block compilation; toolchain_manifest.json records counter-gate blockers.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload logs and diagnostics even after failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: abyss-v100-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}/
+          if-no-files-found: warn
+          retention-days: 14

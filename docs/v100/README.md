@@ -127,3 +127,22 @@ cmake -S . -B build-p0-cpu -DSTRATA_ENABLE_CUDA=OFF \
   -DSTRATA_NATIVE_EXPERTS=OFF -DSTRATA_BUILD_TESTS=OFF
 cmake --build build-p0-cpu --parallel 4
 ```
+
+## GitHub V100 runner workflow
+
+[`.github/workflows/v100.yml`](../../.github/workflows/v100.yml) builds the full engine
+and runs the small real-device self-test under memcheck and synccheck. It queues on
+`self-hosted, Linux, X64, v100, sm70, cuda-12-8`; the runner must be registered with
+**this Abyss repository** (a runner registered only with NInfer cannot take this job).
+Pushes affecting the build on this feature branch/main trigger it; manual dispatch
+is also declared. GitHub's Actions UI exposes manual dispatch once the workflow is
+present on the repository's default branch.
+
+It uses the existing runner environment and retains the diagnostics build directory.
+Optional repository variables: `ABYSS_NVCC` (default `/usr/local/cuda-12.8/bin/nvcc`),
+`ABYSS_GPU` (default `0`, exactly one SM70 GPU), and `ABYSS_BUILD_JOBS` (default `32`).
+The runner needs Git, Python 3, CMake 3.24+, Ninja, a host C++ compiler, CUDA 12.8
+including cuobjdump and Compute Sanitizer, and network access to the pinned GGML
+checkout. No profiler installation or model download occurs. Logs, tool/binary hashes,
+code-object listings and sanitizer output are uploaded even when a step fails.
+Passing this workflow establishes build/device-smoke evidence, not full-model P0 parity.
