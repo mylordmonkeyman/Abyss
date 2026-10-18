@@ -94,3 +94,29 @@ See [case results and stage extrema](p2-latent-gathers-2026-10-18.json); full
 per-token max/p99/relative stage observations remain in artifact `12153153780`
 (117,185 bytes, SHA256
 `569d02af98f02baf2b5f43c738220e84d4662552932e0956d061d88a4a61ca19`).
+
+## Compressor construction and output projection follow-up (pending V100)
+
+The cached-row test now builds ratio-4 overlapping CSA and ratio-128 HCA caches
+with the actual `compress_batch` kernel. Independent FP64 softmax pooling,
+per-channel biases, RMS normalization and block-start RoPE are compared before
+and after FP16 storage rounding. Full versus split batches must produce identical
+cache bytes and final rings; separate incomplete-block cases must leave the cache
+untouched. The resulting device-created rows feed the existing staged attention
+checks, instead of independently synthesized compressed rows. Inputs are synthetic
+projection outputs; the learned input GEMMs and raw-KV prep are still outside scope.
+
+Every checked latent output also passes through the prefill output sequence:
+FP16 conversion, 8 groups of 4096-to-1024 `wo_a`, FP16 conversion, then
+8192-to-4096 `wo_b`, using the same cuBLAS T/N operations and tensor-op FP32
+accumulation API. Candidate and fallback form two batch columns to exercise actual
+leading dimensions and group offsets. Synthetic FP16 matrices have eight nonzero
+weights per row, making independent FP64 stage oracles affordable while cuBLAS
+runs full dense shapes. This tests layout and conversion placement, not learned
+quantized weight dequantization or full-model quality.
+
+Compressor FP64-plus-F16-storage relative screen is 5e-4; rounded-FP64 comparison
+is 2e-4, with 0.004 maximum absolute limits. Projection GEMM stage screens are
+1e-5; the post-projection candidate/fallback screen is 1e-3 because two explicit
+FP16 conversion boundaries are included. All measured errors are retained. These
+component screens do not replace or widen the model delta-KL or semantic gates.

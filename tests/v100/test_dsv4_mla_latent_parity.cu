@@ -4,6 +4,7 @@
 #include "qkpv_math.cuh"
 #include "strata/kernels/dsv4_fast.hpp"
 #include <numeric>
+#include <cublas_v2.h>
 
 using namespace v100diag;
 namespace ds = strata::kernels::dsv4;
@@ -67,7 +68,9 @@ void rotate_host(std::vector<double>& x,const ds::Rope& r,int pos,bool forward) 
     }
 }
 
-void run_case(int ratio,int p0,int T,bool yarn) {
+#include "latent_components.cuh"
+
+void run_case(int ratio,int p0,int T,bool yarn,OutputProjection& projection) {
     const int hist=std::min(p0,127),rows=hist+T,comp_rows=ratio?(p0+T)/ratio:0;
     const auto rope=ds::make_rope(64,yarn?160000.f:10000.f,yarn?1.f/16:1.f,
                                  yarn?1.f:0.f,4096,32,1);
@@ -84,7 +87,7 @@ void run_case(int ratio,int p0,int T,bool yarn) {
         rotate_host(x,rope,pos,true);for(int d=0;d<D;++d)dst[d]=fh(float(x[d]));
     };
     for(int r=0;r<rows;++r)cache_row(keys.data()+r*D,p0-hist+r);
-    for(int r=0;r<comp_rows;++r)cache_row(comp.data()+r*D,r*ratio);
+    if(ratio)comp=compressed_rows(ratio,p0,T,rope);
     for(int r=0;r<hist;++r)std::copy_n(keys.data()+r*D,D,ring.data()+((p0-hist+r)%WINDOW)*D);
     std::vector<int> selections(T*TOP,-12345);
     for(int t=0;t<T && ratio==4;++t) {
@@ -184,6 +187,7 @@ void run_case(int ratio,int p0,int T,bool yarn) {
                    ev=compare(pv.get(),latent),eo=compare(out.get(),rotated),ef=compare(out.get(),existing);
         need(eq.rel<1e-5 && ep.rel<1e-5 && ed.rel<1e-5,"gathered QK/softmax screen");
         need(ev.rel<1e-5 && eo.rel<1e-5 && ef.rel<1e-5,"gathered PV/inverse RoPE screen");
+        projection.check(out.p,fallback.p+t*H*D,out.get(),existing,ratio,p0,t);
         auto stage=[&](const char* name,const Error& e) {
             std::printf("{\"stage\":\"%s\",\"ratio\":%d,\"p0\":%d,\"t\":%d,"
                         "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"p99_abs\":%.9g,\"pass\":true}\n",
@@ -213,11 +217,14 @@ int main() {
     try {
         cudaDeviceProp device{};ck(cudaGetDeviceProperties(&device,0));
         need(device.major==7 && device.minor==0,"latent diagnostic requires actual SM70");
-        for(int T:{1,7,8,15,16,31,32,33,127,128,129})run_case(0,0,T,false);
-        run_case(0,127,7,false);run_case(0,129,8,false);
+        OutputProjection projection;
+        for(int T:{1,7,8,15,16,31,32,33,127,128,129})run_case(0,0,T,false,projection);
+        run_case(0,127,7,false,projection);run_case(0,129,8,false,projection);
         for(int ratio:{4,128}) {
-            run_case(ratio,ratio-2,7,true);run_case(ratio,2046,7,true);
-            run_case(ratio,4094,7,true);run_case(ratio,8190,7,true);
+            run_case(ratio,ratio-2,7,true,projection);run_case(ratio,2046,7,true,projection);
+            run_case(ratio,4094,7,true,projection);run_case(ratio,8190,7,true,projection);
+            const auto rope=ds::make_rope(64,160000.f,1.f/16,1.f,4096,32,1);
+            compressed_rows(ratio,ratio-2,1,rope);
         }
         std::puts("{\"suite\":\"cached_latent_gathers\",\"cases\":21,\"projection_compressor_gate_complete\":false,\"pass\":true}");
         return 0;
