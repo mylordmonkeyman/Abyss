@@ -1710,11 +1710,41 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
     // (and with MTP drafting both parts run at once).  The RAM tier stays interleaved (one socket reading only its own
     // memory: 54 GB/s, interleaved 77).  By default only on a host with two NUMA nodes or more, where it measured
     // faster; on one node the unpinned pools sharing every core were (two V100s, one 14-core Xeon: 25.8 tok/s against
-    // 24.7 pinned).  STRATA_GLM_CPU_PIN=1 / 0 pins / unpins on any host.
+    // 24.7 pinned).  STRATA_GLM_CPU_PIN=1 / 0 pins / unpins a split's pools on any host.
+    // STRATA_GLM_CPU_PIN=<CPU list> ("0-15", "0,2,4-7"): the pool's workers on those CPUs, ONE GPU too, and no more
+    // threads than the list has - the hybrid CPUs' P-cores (an i7-14700K's 16 P-core threads: 31.26 tok/s against
+    // 30.41 unpinned, issue #4).  Only the workers: the GPU runtime's and the service thread stay free (the whole
+    // process on the 8 physical P-cores collapsed to 4.97 tok/s).
     std::vector<int> pin_cpus;
     int pin_node = -1;
     const char* pin_env = getenv("STRATA_GLM_CPU_PIN");
-    const bool pin = pin_env != nullptr && pin_env[0] ? std::atoi(pin_env) != 0 : numa_nodes().size() >= 2;
+    std::vector<int> pin_list;
+    if (pin_env != nullptr && (std::strchr(pin_env, '-') != nullptr || std::strchr(pin_env, ',') != nullptr ||
+                               std::atoi(pin_env) > 1)) {
+        for (const char* q = pin_env; *q;) {
+            char* e = nullptr;
+            const long a = std::strtol(q, &e, 10);
+            if (e == q) break;
+            long b = a;
+            q = e;
+            if (*q == '-') {
+                b = std::strtol(q + 1, &e, 10);
+                q = e;
+            }
+            for (long c = a; c <= b && c < 4096; ++c)
+                if (c >= 0) pin_list.push_back((int) c);
+            if (*q == ',') ++q;
+            else if (*q) break;
+        }
+        std::sort(pin_list.begin(), pin_list.end());
+        pin_list.erase(std::unique(pin_list.begin(), pin_list.end()), pin_list.end());
+    }
+    const bool pin = !pin_list.empty() ? false
+                     : pin_env != nullptr && pin_env[0] ? std::atoi(pin_env) != 0 : numa_nodes().size() >= 2;
+    if (!pin_list.empty() && !shared && threads > 0) {
+        pin_cpus = pin_list;
+        threads = std::min(threads, std::max(2, (int) pin_list.size()));
+    }
     if (n_parts_ >= 2 && !shared && threads > 0 && pin) {
         std::vector<int> gpu_node;
         for (int d : split_devs_) gpu_node.push_back(gpu_numa_node(d));

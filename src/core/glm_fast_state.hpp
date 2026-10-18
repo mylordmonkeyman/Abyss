@@ -11,6 +11,12 @@
 #include "glm_layer_graphs.hpp"
 
 #include "ggml.h"
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>   // (pin_thread's SetThreadAffinityMask)
+#endif
 
 #include <cuda_runtime.h>
 
@@ -54,7 +60,8 @@ inline void cpu_relax() {
 #endif
 }
 
-// a thread's CPUs: `cpus` (empty: left to the OS).  Linux only; elsewhere a no-op.
+// a thread's CPUs: `cpus` (empty: left to the OS).  Linux, and Windows within its first processor group (CPUs 0-63:
+// SetThreadAffinityMask - issue #4, a single-GPU i7-14700K on Windows 11); elsewhere a no-op.
 inline void pin_thread(std::thread::native_handle_type h, const std::vector<int>& cpus) {
 #ifdef __linux__
     if (cpus.empty()) return;
@@ -63,6 +70,12 @@ inline void pin_thread(std::thread::native_handle_type h, const std::vector<int>
     for (int c : cpus)
         if (c >= 0 && c < CPU_SETSIZE) CPU_SET(c, &set);
     pthread_setaffinity_np(h, sizeof set, &set);
+#elif defined(_WIN32)
+    if (cpus.empty()) return;
+    DWORD_PTR mask = 0;
+    for (int c : cpus)
+        if (c >= 0 && c < 64) mask |= (DWORD_PTR) 1 << c;
+    if (mask != 0) SetThreadAffinityMask((HANDLE) h, mask);
 #else
     (void) h;
     (void) cpus;
