@@ -56,5 +56,12 @@ overlapping memory views are not added together. Full component pin accounting,
 QPI, sustained matched conditions, 512/1024 outputs and filled 32K+ remain open.
 Both existing public-runner guards and a 128-MiB uncompressed evidence cap apply.
 
+After extracting the workflow artifact, reproduce the paired deltas and memory
+worksheet with `python3 tools/profiling/summarize_bases.py ARTIFACT_DIRECTORY OUTPUT_DIRECTORY`.
+The worksheet marks missing unique components instead of summing overlapping
+resident, pinned and cached memory into a false total. Per-repeat latency deltas
+are retained; negative values favor v1.3.31. Three initial pairs are not a broad
+performance or release qualification.
+
 The base remains v1.3.28 until the evidence supports selecting v1.3.31 under v9.
 No new production switch, arithmetic, cache policy or runner privilege is added.
