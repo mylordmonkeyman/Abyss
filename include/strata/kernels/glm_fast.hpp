@@ -81,6 +81,8 @@ struct HcArgs {
     unsigned int* counter = nullptr;  // zero-initialised; the kernel leaves it zero
     int gram = 0;                     // hc3: 1 = the mixed vector's norm from the streams' Gram partials (no second
                                       // grid barrier; set by hc() from STRATA_GLM_HC_GRAM, default on)
+    const float* pre_use = nullptr;   // deepseek41: the collapse weights (the PREVIOUS sublayer's pre, 4 floats); null =
+                                      // this sublayer's own pre.  pre still receives the new one (another buffer)
 };
 void hc(const HcArgs& a, cudaStream_t s);
 /// The write half alone (the split boundary / the head): R_new = post (x) block_out + comb . R_old.
@@ -197,11 +199,13 @@ struct MoeDev {
 /// staging): kCpuAnswers of each, the route `seq`'s at index seq % kCpuAnswers - a verify window has several routes
 /// of a layer in flight, and the host answers them in order before the device reads them.
 constexpr int kCpuAnswers = 4;
+/// The widest n_embd the host-mapped route / answer records hold (DeepSeek V4.1 Flash: 5120).
+constexpr int kMaxEmbd = 5120;
 /// The CPU LANE's answer: the weighted sum of the RAM-tier experts the host computed for route `seq`.
 struct CpuAnswer {
     volatile unsigned int seq;
     unsigned int pad[3];
-    float part[4096];
+    float part[kMaxEmbd];
 };
 constexpr int kRingSize = 64;
 /// LOOKAHEAD: a route may also carry the top-k of the next (up to) kAhead layers' routers applied to its FFN input.
@@ -224,7 +228,7 @@ struct MoeRequest {
     short ahead[kAhead][8];      // layer + 1 + d's router on this layer's FFN input: its top-k (-1: none)
     unsigned int cpu_mask;       // the CPU LANE: RAM-tier experts the host computes (the device skips them) ...
     unsigned long long cpu_src[8];   // ... their RAM-tier blobs
-    alignas(16) float x[4096];   // the FFN input (16-byte stores; written at the kernel's start, or only when
+    alignas(16) float x[kMaxEmbd];   // the FFN input (16-byte stores; written at the kernel's start, or only when
                                  // cpu_mask != 0 with STRATA_GLM_ROUTE_EARLY=0)
     unsigned int skip_mask;      // experts left out (not in VRAM at rank >= skip_from): neither computed nor waited for
 };
@@ -232,12 +236,13 @@ struct MoeRequest {
 struct MoeResponse {
     volatile unsigned int seq;
     unsigned int ptr_mask;            // plan entries the host made resident: ptr[i] valid
+    unsigned int host_mask;           // plan entries the host COMPUTED (their sum is in cpu_part): skipped on the device
     unsigned long long ptr[8];
     int n_upd;                        // table updates: tab[key] = val
     int upd_key[64];
     unsigned long long upd_val[64];
     int cpu;                          // 1: cpu_part (host-mapped, below) holds the missed experts' weighted sum
-    float cpu_part[4096];
+    float cpu_part[kMaxEmbd];
 };
 /// Router (sigmoid + bias, stable top-k, normalised weights - router_sigmoid's arithmetic; gating 1: deepseek4's
 /// sqrt(softplus) probabilities, hash_ids: the k ids of a hash-routed layer instead of a selection), the plan

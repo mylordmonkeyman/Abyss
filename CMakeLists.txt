@@ -244,6 +244,7 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
                           src/kernels/cuda/glm_fast.cu
                           src/kernels/cuda/glm_batch.cu
                           src/kernels/cuda/dsv4_fast.cu
+                          src/kernels/cuda/dsv41_fast.cu
                           src/kernels/ngram.cpp
                           src/ngram/ple_reader.cpp
                           src/platform/direct_file.cpp)
@@ -325,7 +326,7 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
   # about arithmetic, and this one knows the ORDER the arithmetic happens in.
   add_library(strata_engine STATIC src/core/layer.cpp src/core/session.cpp src/core/expert_source.cpp src/core/remote_experts.cpp
     src/core/expert_cache.cpp src/core/native_head.cpp src/core/native_dense.cpp src/core/verify.cpp src/core/mtp.cpp
-    src/core/glm_model.cu src/core/glm_fast_path.cu src/core/glm_prefill.cu src/core/dsv4_fast_path.cu
+    src/core/glm_model.cu src/core/glm_fast_path.cu src/core/glm_prefill.cu src/core/dsv4_fast_path.cu src/core/dsv41_fast_path.cu
     src/core/dsv4_verify.cu)
   target_include_directories(strata_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(strata_engine PUBLIC strata_core strata_kernels strata_kernels_cpu ${_strata_gpu_runtime_target})

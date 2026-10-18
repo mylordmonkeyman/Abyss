@@ -325,7 +325,16 @@ bool Glm5Model::dsv4_snap_copy(bool restore) {
         size_t bytes;
     };
     std::vector<Run> runs;
-    for (int il = l0_; il < l1_; ++il) {
+    if (g.v41) {
+        // deepseek41: what later positions OVERWRITE - each layer's window ring and the four KV slots' pending even
+        // row (ratio 2: a snapshot at an odd position holds half a pair).  The slots' compressed / index-key rows are
+        // written at their position's row only, and Engram's history is kept per position (V41Engram::hist), so the
+        // position alone restores those; the HC lag and the index selection are per token.
+        for (int il = l0_; il < l1_; ++il) runs.push_back({F->L[(size_t) il].raw, (size_t) ds_ring_ * D * 2});
+        for (int sl = 0; sl < 4; ++sl)
+            if (F->v41_pend[sl] != nullptr) runs.push_back({F->v41_pend[sl], 2 * D * 4});
+    }
+    for (int il = l0_; il < l1_ && !g.v41; ++il) {
         const auto& Ly = F->L[(size_t) il];
         runs.push_back({Ly.raw, (size_t) ds_ring_ * D * 2});
         if (Ly.ratio == 4) {

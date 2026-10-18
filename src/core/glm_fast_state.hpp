@@ -226,6 +226,8 @@ struct Glm5Model::FastState {
     //      the layers in between compute, so their own route finds them on the host (a short wait or none)
     int n_ahead = 0;
     bool ahead_read = false;                   // STRATA_GLM_AHEAD_READ=0: predict and count only
+    bool disk_lane = false;                    // STRATA_GLM_DISK_LANE=1: disk misses computed by the lane in RAM
+    bool disk_adapt = false;                   // STRATA_GLM_DISK_ADAPT=1: ... evicting at the miss (arena-adapt)
     float* alog = nullptr;                     // kAhead x n_expert logits (device)
     std::vector<std::array<std::array<short, 8>, gf::kAhead>> ah_pred;   // per layer: the predictions d+1 layers early
     struct AheadJob {
@@ -299,6 +301,7 @@ struct Glm5Model::FastState {
         const uint16_t *idx_k = nullptr, *idx_gate = nullptr, *idx_q_b = nullptr, *idx_proj = nullptr;
         const uint16_t *k_b = nullptr, *v_b = nullptr;
         const uint16_t* router = nullptr;
+        int router_type = gf::kTypeBF16;                            // deepseek41: kTypeF32 (router then points at F32)
         const float* router_bias = nullptr;
         WSlot sh_gate, sh_up, sh_down;
         WSlot ffn_gate, ffn_up, ffn_down;
@@ -314,6 +317,12 @@ struct Glm5Model::FastState {
         uint16_t* comp_cache = nullptr;                             // compressed rows (CSA / HCA)
         uint16_t* idx_cache = nullptr;                              // the indexer's compressed keys (CSA)
         float *ring_kv = nullptr, *ring_sc = nullptr, *iring_kv = nullptr, *iring_sc = nullptr;
+        // ---- deepseek41 (dsv41_fast_path.cu): the KV-source / index-source roles and Engram
+        int slot = -1;                                              // the compressed cache read (-1: window only)
+        bool kv_src = false, idx_src = false;
+        int eng = -1;                                               // Engram table (-1: none)
+        WSlot idx_k_w, eng_kv;                                      // indexer.attn_k (BF16), engram_kv (BF16)
+        const float *idx_k_norm = nullptr, *eng_qn = nullptr, *eng_kn = nullptr;
     };
     std::vector<Layer> L;
     // ---- deepseek4 activations (dsv4_fast_path.cu)
@@ -321,6 +330,17 @@ struct Glm5Model::FastState {
     float *ds_o = nullptr, *ds_oa = nullptr;                    // the attention output (n_head x head_dim), wo_a's
     void *ds_oq = nullptr, *ds_oaq = nullptr;                   // ... their q8_1
     int* ds_sel = nullptr;                                      // the indexer's chosen rows
+    // ---- deepseek41 (dsv41_fast_path.cu)
+    uint16_t *v41_comp[4] = {}, *v41_idx[4] = {};               // per KV slot: compressed rows (512) and index keys
+    float* v41_pend[4] = {};                                    // per KV slot (ratio 2): the parked token (v | g)
+    float* v41_pre[2] = {};                                     // the hyper-connections' pre, alternating sublayers
+    float *v41_score = nullptr, *v41_bscore = nullptr;          // the index scores (ctx), the block maxima (ctx / 8)
+    int* v41_bsel = nullptr;                                    // the selected candidate blocks
+    unsigned char* v41_keep = nullptr;                          // the candidate mask of this token (ctx / 8)
+    float *v41_eng = nullptr, *v41_eng_h = nullptr;             // Engram rows (2 x 24 x 256 f32, device / pinned)
+    float* v41_eng_kv = nullptr;                                // engram_kv's output (5 x n_embd)
+    void* v41_eng_q = nullptr;                                  // the Engram rows as Q8_1 (a quantized engram_kv)
+    float *v41_pblk = nullptr, *v41_pblk_h = nullptr;           // the prompt path's block of rows (256 tokens' 24 x 256)
     int32_t cur_tok = 0;                                        // the token in flight (hash routing)
     // ---- the VRAM tier: per-layer partitions.  A slot is FREE, RESIDENT (in tab), a SPARE (handed to the
     //      device, which may fill it during a token and mark it resident itself) or DRAINING (its old expert
@@ -488,6 +508,8 @@ struct Glm5Model::FastState {
     std::vector<uint8_t> cpu_act, cpu_hq;                    // x's activation quant; 8 h quants
     std::vector<float> cpu_ff, cpu_dn;                       // 8 x n_ff; 8 x n_embd
     std::atomic<uint64_t> cpu_experts{0}, cpu_routes{0}, cpu_us{0};
+    std::atomic<uint64_t> dlane_experts{0}, dlane_us{0};   // the disk lane's experts and its time
+    uint64_t dlane_evict = 0;                              // ... and its evictions at the miss (service thread)
     // ---- the iGPU LANE (STRATA_GLM_IGPU=1, src/igpu/igpu_lane.cpp): the lane's calls computed by an APU's integrated
     //      GPU from the registered RAM tier instead of the pool's threads; a call it cannot take stays on the CPU
     void* igpu_lib = nullptr;

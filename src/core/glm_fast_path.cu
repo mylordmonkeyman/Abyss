@@ -598,7 +598,12 @@ bool Glm5Model::fast_setup(std::string& err) {
         }
         if (!g.dsv4()) Ly.out = q("attn_output.weight");
         if (Ly.moe) {
-            Ly.router = b16("ffn_gate_inp.weight");
+            if (g.v41 && w16_.find(P + "ffn_gate_inp.weight") == w16_.end()) {   // (ds4's V4.1 GGUF: F32, served as F32)
+                Ly.router = (const uint16_t*) f32("ffn_gate_inp.weight");
+                Ly.router_type = gf::kTypeF32;
+            } else {
+                Ly.router = b16("ffn_gate_inp.weight");
+            }
             if (!(g.dsv4() && il < g.hash_layers)) Ly.router_bias = f32("exp_probs_b.bias");   // (hash layers: none)
             Ly.sh_gate = q("ffn_gate_shexp.weight");
             Ly.sh_up = q("ffn_up_shexp.weight");
@@ -628,7 +633,8 @@ bool Glm5Model::fast_setup(std::string& err) {
         err = "glm fast: unresolved weights: " + missing.substr(0, 600);
         return false;
     }
-    if (g.dsv4() && (!dsv4_bind(err) || !dsv4_alloc(err))) return false;
+    if (g.dsv4() && !g.v41 && (!dsv4_bind(err) || !dsv4_alloc(err))) return false;
+    if (g.v41 && (!dsv41_bind(err) || !dsv41_alloc(err))) return false;
 
     // ---- the activation arena
     const int64_t E = g.n_embd, DI = g.d_inner(), FF = g.n_ff_exp * g.n_shared;
@@ -644,7 +650,7 @@ bool Glm5Model::fast_setup(std::string& err) {
         need += (size_t) (E + DI + g.q_lora + (int64_t) g.n_head * g.v_head + FF + 8 * g.n_ff_exp + g.n_ff_dense + E) /
                 32 * q8;
         need += 64 * 256 + (size_t) (2 * NL * g.n_expert + NL * gf::kSpares) * sizeof(unsigned long long) +
-                8 * 16 + 4096 * 4 + 4 * 256 + (size_t) g.n_expert * 4 + 256 + 4 * 256;
+                8 * 16 + gf::kMaxEmbd * 4 + 4 * 256 + (size_t) g.n_expert * 4 + 256 + 4 * 256;
         need += (size_t) gf::kAhead * g.n_expert * sizeof(float) + 256 + (size_t) E * sizeof(float) + 256;
     }
     if (cudaMalloc(&F->arena, need) != cudaSuccess) {
@@ -1343,6 +1349,10 @@ bool Glm5Model::fast_setup(std::string& err) {
         if (g.n_expert > 512) F->n_ahead = 0;
         const char* ahr = getenv("STRATA_GLM_AHEAD_READ");
         F->ahead_read = F->n_ahead > 0 && (ahr == nullptr || std::atoi(ahr) != 0);
+        const char* dl = getenv("STRATA_GLM_DISK_LANE");
+        F->disk_lane = dl != nullptr && std::atoi(dl) != 0;
+        const char* da = getenv("STRATA_GLM_DISK_ADAPT");
+        F->disk_adapt = F->disk_lane && da != nullptr && std::atoi(da) != 0;
         std::array<std::array<short, 8>, gf::kAhead> none;
         for (auto& r : none) r.fill(-1);
         F->ah_pred.assign((size_t) NL, none);
@@ -1721,7 +1731,7 @@ bool Glm5Model::fast_cpu_lane_setup(std::string& err) {
                                                       : std::max(2, (int) pin_cpus.size() - spare);
         }
     }
-    if (threads <= 0 || g.n_embd > 4096 || g.n_exp_used > 8) return true;
+    if (threads <= 0 || g.n_embd > gf::kMaxEmbd || g.n_exp_used > 8) return true;
     namespace kc = strata::kernels::cpu;
     F->cpu_fmt.assign(F->L.size(), kc::NativeFmt{});
     int il_cal = -1;
@@ -2377,6 +2387,11 @@ void Glm5Model::fast_destroy() {
                      (unsigned long long) F->demotions.load(), (unsigned long long) F->drops.load(),
                      (unsigned long long) F->prefetches.load(), (unsigned long long) F->miss_layers.load(),
                      (double) F->miss_us.load() / 1000.0);
+        if (g_.v41) dsv41_engram_report();
+        if (F->disk_lane)
+            std::fprintf(stderr, "glm fast disk lane CUDA%d: %llu disk experts computed in RAM, %.1f ms; %llu evicted at "
+                                 "the miss\n", dev_, (unsigned long long) F->dlane_experts.load(),
+                         (double) F->dlane_us.load() / 1000.0, (unsigned long long) F->dlane_evict);
     if (F->timing && F->pred_n.load() > 0)
         std::fprintf(stderr, "glm fast predict CUDA%d: %.2f of 8 experts predicted one layer early; %.1f%% of the "
                              "non-resident ones (%llu)\n",
@@ -2810,7 +2825,7 @@ void Glm5Model::fast_service() {
                 //      one the LOOKAHEAD already read (or is reading) is answered from its RAM slot
                 const auto t0 = std::chrono::steady_clock::now();
                 const int cls = F->layer_rc[(size_t) il];
-                int nm = 0, mi[8], nr = 0, rd[8], nw = 0, wt[8], ns = 0, sl[8];
+                int nm = 0, mi[8], nr = 0, rd[8], nw = 0, wt[8], ns = 0, sl[8], nev = 0, evk[8];
                 uint64_t stv[8];
                 uint8_t* dst[8];
                 for (int i = 0; i < K; ++i)
@@ -2867,6 +2882,40 @@ void Glm5Model::fast_service() {
                             rs = s2;
                             break;
                         }
+                    if (rs < 0 && F->disk_lane && F->disk_adapt) {
+                        // ARENA-ADAPT (Xolotl; STRATA_GLM_DISK_ADAPT=1 - measured worse here, 2026-10-18: 11.6K -> 17.4K
+                        // disk reads on seq0's 512 tokens): no free slot - evict the class's least used RAM expert not routed for
+                        // STRATA_GLM_RAM_PROTECT tokens (the boundary's victim rule) and land the miss in its slot,
+                        // instead of staging it (read again next time).  The device's rtab entry is cleared by this
+                        // response, before any later route reads it; none of this route's experts is a candidate.
+                        static const uint64_t protect = [] {
+                            const char* v = getenv("STRATA_GLM_RAM_PROTECT");
+                            return (uint64_t) (v ? std::max(0, std::atoi(v)) : 64) * 42u;
+                        }();
+                        uint32_t bc = UINT32_MAX;
+                        for (int s2 = 0; s2 < R.n; ++s2) {
+                            if (R.st[(size_t) s2] != FastState::kRHold || R.tick[(size_t) s2] + protect > F->clock)
+                                continue;
+                            const int k2 = R.key[(size_t) s2];
+                            bool mine = false;
+                            for (int i = 0; i < K; ++i) mine |= k2 == il * g.n_expert + ids[i];
+                            const uint32_t c = F->cnt[(size_t) k2];
+                            if (!mine && (c < bc || (c == bc && rs >= 0 && R.tick[(size_t) s2] < R.tick[(size_t) rs]))) {
+                                bc = c;
+                                rs = s2;
+                            }
+                        }
+                        if (rs >= 0) {
+                            const int k2 = R.key[(size_t) rs];
+                            evk[nev++] = k2;
+                            F->ram_of[(size_t) k2] = -1;
+                            F->left[(size_t) k2] = 2;
+                            ++F->diag_ram_evict;
+                            ++F->dlane_evict;
+                            R.st[(size_t) rs] = FastState::kRFree;
+                            R.key[(size_t) rs] = -1;
+                        }
+                    }
                     if (rs >= 0) {
                         R.key[(size_t) rs] = key;
                         R.tick[(size_t) rs] = F->clock;
@@ -2901,11 +2950,34 @@ void Glm5Model::fast_service() {
                 }
                 gf::MoeResponse* Rp = F->resp_h + (next % gf::kCpuAnswers);
                 Rp->ptr_mask = 0;
+                Rp->host_mask = 0;
                 Rp->n_upd = 0;
                 Rp->cpu = 0;
-                for (int m = 0; m < nm; ++m) {
-                    Rp->ptr[mi[m]] = (unsigned long long) dst[m];
-                    Rp->ptr_mask |= 1u << mi[m];
+                for (int v = 0; v < nev; ++v) {   // the arena-adapt evictions: their RAM-tier entries leave the table
+                    Rp->upd_key[Rp->n_upd] = (int) F->rtab_key(evk[v]);
+                    Rp->upd_val[Rp->n_upd++] = 0ull;
+                }
+                if (F->disk_lane && promo == 0u && F->cpu_plan != 0ull && F->cpu_fmt[(size_t) il].n_ff > 0) {
+                    // the disk lane (the route claimed no spare): their weighted sum from the RAM landing, by the lane
+                    const uint8_t* blob[8];
+                    float wl[8];
+                    for (int m = 0; m < nm; ++m) {
+                        blob[m] = dst[m];
+                        wl[m] = rq->w[mi[m]];
+                        Rp->host_mask |= 1u << mi[m];
+                    }
+                    const auto tl = std::chrono::steady_clock::now();
+                    fast_cpu_experts(il, nm, blob, wl, rq->x, Rp->cpu_part);
+                    Rp->cpu = 1;
+                    F->dlane_experts.fetch_add((uint64_t) nm, std::memory_order_relaxed);
+                    F->dlane_us.fetch_add((uint64_t) std::chrono::duration_cast<std::chrono::microseconds>(
+                                              std::chrono::steady_clock::now() - tl).count(),
+                                          std::memory_order_relaxed);
+                } else {
+                    for (int m = 0; m < nm; ++m) {
+                        Rp->ptr[mi[m]] = (unsigned long long) dst[m];
+                        Rp->ptr_mask |= 1u << mi[m];
+                    }
                 }
                 std::atomic_thread_fence(std::memory_order_release);
                 Rp->seq = next;
@@ -3031,7 +3103,13 @@ void Glm5Model::fast_ahead_route(int il, const int* ids, unsigned int miss, cons
         if (ahead[d][0] < 0 || la >= (int) F->layer_rc.size() || F->layer_rc[(size_t) la] < 0) continue;
         const int cls = F->layer_rc[(size_t) la];
         auto& R = F->rc[(size_t) cls];
-        for (int i = 0; i < K; ++i) {
+        // STRATA_GLM_AHEAD_TOP=<n>: read only the prediction's first n ranks (Xolotl: top-4 of a two-layers-ahead
+        // prediction used 65% of its reads; all six used 22% here and the wasted reads held the SSD up)
+        static const int ah_top = [] {
+            const char* v = getenv("STRATA_GLM_AHEAD_TOP");
+            return v != nullptr ? std::max(1, std::atoi(v)) : 8;
+        }();
+        for (int i = 0; i < std::min(K, ah_top); ++i) {
             const int e = ahead[d][i];
             if (e < 0) continue;
             const int key = la * g.n_expert + e;
@@ -3398,7 +3476,10 @@ bool Glm5Model::fast_boundary(std::string& err) {
     // (4) a few free RAM slots per class for the next token's disk reads (and its reads ahead); RAM-resident
     // mode plans no disk reads, so no residents are evicted to keep landing room either
     static const char* kf = getenv("STRATA_GLM_RAM_FREE");
-    const int keep_free = F->ram_resident ? 0 : kf ? std::max(1, std::atoi(kf)) : F->ahead_read ? 12 : 4;
+    // (the disk lane lands every miss in a free RAM slot - ~25 a token here - so it keeps more free; 8 / 16 staged most
+    // of them and read them again, 330-340 ms/token; with arena-adapt it evicts at the miss instead)
+    const int keep_free = F->ram_resident ? 0 : kf ? std::max(1, std::atoi(kf)) :
+                          F->disk_lane && !F->disk_adapt ? 32 : F->ahead_read ? 12 : 4;
     for (auto& R : F->rc) {
         int nfree = 0;
         for (char c : R.st) nfree += c == FastState::kRFree;
@@ -3801,7 +3882,7 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     }();
     const bool late = sh_late && FFs > 0;
     int nj = late ? 1 : 3;
-    j[0] = {Ly.router, nullptr, F->x, F->rlog, nullptr, 1.0f, gf::kTypeBF16, g.n_embd, g.n_expert};
+    j[0] = {Ly.router, nullptr, F->x, F->rlog, nullptr, 1.0f, Ly.router_type, g.n_embd, g.n_expert};
     if (!late) {
         j[1] = {Ly.sh_gate.q, F->xq, nullptr, F->sh_g, nullptr, 1.0f, Ly.sh_gate.type, g.n_embd, FFs};
         j[2] = {Ly.sh_up.q, F->xq, nullptr, F->sh_u, nullptr, 1.0f, Ly.sh_up.type, g.n_embd, FFs};
@@ -3810,14 +3891,14 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     // (only with prefetch on: the prediction costs a router GEMV and a second top-k per layer)
     const bool pred = F->max_pf > 0 && il + 1 < l1_ && F->L[(size_t) il + 1].moe;
     if (pred)
-        j[nj++] = {F->L[(size_t) il + 1].router, nullptr, F->x, F->plog, nullptr, 1.0f, gf::kTypeBF16, g.n_embd,
+        j[nj++] = {F->L[(size_t) il + 1].router, nullptr, F->x, F->plog, nullptr, 1.0f, F->L[(size_t) il + 1].router_type, g.n_embd,
                    g.n_expert};
     // LOOKAHEAD: the next layers' routers on this input too (their disk-only experts are read ahead)
     int n_ah = 0;
     const float* ah_bias[gf::kAhead] = {nullptr, nullptr, nullptr, nullptr};
     for (int d = 0; d < F->n_ahead && il + 1 + d < l1_ && F->L[(size_t) il + 1 + d].moe && nj < gf::kMaxMvJobs; ++d) {
         const auto& La = F->L[(size_t) il + 1 + d];
-        j[nj++] = {La.router, nullptr, F->x, F->alog + (size_t) d * g.n_expert, nullptr, 1.0f, gf::kTypeBF16, g.n_embd,
+        j[nj++] = {La.router, nullptr, F->x, F->alog + (size_t) d * g.n_expert, nullptr, 1.0f, La.router_type, g.n_embd,
                    g.n_expert};
         ah_bias[d] = La.router_bias;
         ++n_ah;
@@ -3838,6 +3919,9 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
         const char* v = getenv("STRATA_GLM_PROMOTE_MIN");
         return v ? std::max(0, std::atoi(v)) : 0;
     }();
+    // STRATA_GLM_DISK_LANE=1: a disk-only expert is computed by the CPU / iGPU lane straight from the RAM slot it was
+    // read into (it stays in the RAM tier) instead of being pulled over PCIe into a VRAM spare (-1 tells the route)
+    const bool dlane = lane && F->disk_lane;
     // STRATA_GLM_PREFETCH_RANK=<n>: prefetch only the prediction's first n ranks (unset: any of its top k)
     static const int pf_rank = [] {
         const char* v = getenv("STRATA_GLM_PREFETCH_RANK");
@@ -3848,7 +3932,7 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
                   F->sh_hq, s,
                   pred ? F->plog : nullptr, pred ? F->L[(size_t) il + 1].router_bias : nullptr,
                   pred ? F->max_pf : 0, n_ah > 0 ? F->alog : nullptr, ah_bias, n_ah, fast_skip_from(il),
-                  lane ? F->cpu_plan : 0ull, promote_min, pf_rank, g.gating,
+                  lane ? F->cpu_plan : 0ull, dlane ? -1 : promote_min, pf_rank, g.gating,
                   Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) F->cur_tok * g.n_exp_used : nullptr, fast_skip_w(il));
     if (F->prof_on) F->mark("moe_route");
     ++F->expected;
@@ -3937,9 +4021,20 @@ bool Glm5Model::fast_layers(int64_t p, bool hop_in, std::string& err) {
     for (int il = l0_; il < l1_; ++il) {
         const auto& Ly = F->L[(size_t) il];
         const auto body = [&]() -> bool {
+        // deepseek41: Engram before the layer's read - the previous FFN's write alone first, then the add into the
+        // streams, then a read without a write
+        bool wrote = il != l0_;
+        if (g.v41 && Ly.eng >= 0) {
+            if (il != l0_) {
+                gf::hc_post(F->ffn, Rc, F->post, F->comb, g.n_embd, Ro, s);
+                std::swap(Rc, Ro);
+                wrote = false;
+            }
+            if (!dsv41_engram_add(il, Rc, err)) return false;
+        }
         // ---- the attention-side read (fused with the previous FFN's write)
         gf::HcArgs h;
-        h.block_out = il == l0_ ? nullptr : F->ffn;
+        h.block_out = wrote ? F->ffn : nullptr;
         h.R_old = Rc;
         h.R_new = Ro;
         h.post_in = F->post;
@@ -3959,16 +4054,22 @@ bool Glm5Model::fast_layers(int64_t p, bool hop_in, std::string& err) {
         h.xq = F->xq;
         h.part = F->part;
         h.counter = F->counter;
+        if (g.v41) {   // the collapse with the previous sublayer's pre (layer 0: the one-hot fast_token sets)
+            h.pre = F->v41_pre[0];
+            h.pre_use = F->v41_pre[1];
+        }
         gf::hc(h, s);
         if (F->prof_on) F->mark("hc_attn");
-        if (il != l0_) std::swap(Rc, Ro);
+        if (wrote) std::swap(Rc, Ro);
         if (dumps) {
             const std::string Ls = std::to_string(il);
             if (il != l0_) fast_dump(s, "l_out-" + std::to_string(il - 1), Rc, (int64_t) g.hc * g.n_embd);
             fast_dump(s, "attn_norm-" + Ls, F->x, g.n_embd);
         }
 
-        if (g.dsv4()) {
+        if (g.v41) {
+            if (!fast_dsv41_attn(il, p, err)) return false;
+        } else if (g.dsv4()) {
             if (!fast_dsv4_attn(il, p, err)) return false;
         } else if (Ly.recr) {
             const int DI = g.d_inner();
@@ -4026,6 +4127,10 @@ bool Glm5Model::fast_layers(int64_t p, bool hop_in, std::string& err) {
         h.w_scale = Ly.hc_ffn_scale;
         h.w_base = Ly.hc_ffn_base;
         h.norm_w = Ly.ffn_norm;
+        if (g.v41) {
+            h.pre = F->v41_pre[1];
+            h.pre_use = F->v41_pre[0];
+        }
         gf::hc(h, s);
         if (F->prof_on) F->mark("hc_ffn");
         std::swap(Rc, Ro);
@@ -4115,6 +4220,11 @@ bool Glm5Model::fast_token(int32_t token, std::string& err) {
         cudaMemcpyAsync(F->emb, F->emb_h, (size_t) g.n_embd * sizeof(float), cudaMemcpyHostToDevice, F->cs);
     }
     gf::embed_streams(F->emb, state_, g.n_embd, F->cs);
+    if (g.v41) {
+        static const float onehot[4] = {1.0f, 0.0f, 0.0f, 0.0f};   // layer 0's attention collapses stream 0
+        cudaMemcpyAsync(F->v41_pre[1], onehot, sizeof(onehot), cudaMemcpyHostToDevice, F->cs);
+        if (!dsv41_engram_token(token, err)) return false;
+    }
     if (gp) {
         cudaEventRecord(F->ev_gs, F->cs);
         F->gap_emb += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - te0).count();
@@ -4139,7 +4249,9 @@ bool Glm5Model::fast_token(int32_t token, std::string& err) {
     }
     FastState* FT = tail->fast_;
     cudaSetDevice(tail->dev_);
-    if (g.dsv4()) {
+    if (g.v41) {
+        if (!tail->dsv41_head(err)) return false;
+    } else if (g.dsv4()) {
         if (!tail->dsv4_head(err)) return false;
     } else {
         gf::head_prep(tail->state_, tail->w_.at("output_norm.weight"), g.norm_eps, g.n_embd, FT->head_x, FT->head_xq,

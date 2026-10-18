@@ -73,6 +73,10 @@ void q_prep(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, flo
 /// min(top_k, n_vis) of them (score descending, ties by the lower row) -> sel.
 void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, int idx_dim, int n_vis, int top_k,
              float* score, int* sel, cudaStream_t s);
+/// indexer's two halves (deepseek41 masks the scores in between): the scores alone, then the top-k of a score row.
+void indexer_scores(const float* iq, const uint16_t* K, const float* w, int idx_heads, int n_vis, float* score,
+                    cudaStream_t s);
+void indexer_select(const float* score, int n_vis, int top_k, int* sel, cudaStream_t s);
 
 /// Attention of one token at position p over the raw window (rows p-n_raw+1 .. p of the ring) and n_comp compressed
 /// rows (comp_sel[i] when given, else rows 0..n_comp-1), V = K, scale 1/sqrt(head_dim), the per-head sink in the

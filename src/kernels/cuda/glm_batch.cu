@@ -180,16 +180,19 @@ __global__ void __launch_bounds__(256) hc_finish_kernel(const HcFinishArgs a) {
     }
     __syncthreads();
     const float* Rt = a.R + (size_t) t * hc * E;
-    float mixed[16];   // E <= 16 * blockDim.x
+    float mixed[20];   // E <= 20 * blockDim.x (deepseek41: 5120)
     float ss2 = 0.0f;
     const int per = E / (int) blockDim.x;
+    float use[4];
 #pragma unroll
-    for (int i = 0; i < 16; ++i) {
+    for (int s = 0; s < hc; ++s) use[s] = a.pre_use != nullptr ? a.pre_use[t * 4 + s] : s_pre[s];
+#pragma unroll
+    for (int i = 0; i < 20; ++i) {
         if (i >= per) break;
         const int e = tid + i * (int) blockDim.x;
         float acc = 0.0f;
 #pragma unroll
-        for (int s = 0; s < hc; ++s) acc += s_pre[s] * Rt[s * E + e];
+        for (int s = 0; s < hc; ++s) acc += use[s] * Rt[s * E + e];
         mixed[i] = acc;
         ss2 += acc * acc;
     }
@@ -197,7 +200,7 @@ __global__ void __launch_bounds__(256) hc_finish_kernel(const HcFinishArgs a) {
     const float inv2 = rsqrtf(ss2 / (float) E + a.norm_eps);
     __half* x16 = (__half*) a.x16;
 #pragma unroll
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 20; ++i) {
         if (i >= per) break;
         const int e = tid + i * (int) blockDim.x;
         const float xv = mixed[i] * inv2 * a.norm_w[e];
@@ -1808,7 +1811,7 @@ void hc_update(const float* block_out, float* R, const float* post, const float*
 
 void hc_finish(const HcFinishArgs& a, cudaStream_t s) {
     if (a.T <= 0) return;
-    if (a.n_embd > 16 * 256 || a.n_embd % 256 != 0) {
+    if (a.n_embd > 20 * 256 || a.n_embd % 256 != 0) {   // (the kernel's mixed[20])
         std::fprintf(stderr, "glm_batch hc_finish: n_embd %d unsupported\n", a.n_embd);
         return;
     }

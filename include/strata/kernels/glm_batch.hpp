@@ -37,6 +37,7 @@ struct HcFinishArgs {
     float norm_eps = 1e-5f, hc_eps = 1e-6f;
     int iters = 20, n_embd = 4096, T = 0;
     float* pre = nullptr;    // T x 4
+    const float* pre_use = nullptr;   // T x 4: collapse with these instead of pre (deepseek41's lagged pre)
     float* post = nullptr;   // T x 4
     float* comb = nullptr;   // T x 16
     float* x = nullptr;      // T x n_embd

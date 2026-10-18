@@ -365,6 +365,7 @@ static bool pack_dequant_tensor(const strata::TensorInfo& t, const uint8_t* src,
 
 bool Glm5Geometry::from_gguf(const strata::GgufFile& g, Glm5Geometry& out, std::string& err) {
     if (g.get("deepseek4.block_count")) return from_gguf_dsv4(g, out, err);
+    if (g.get("deepseek41.num_hidden_layers") || g.get("deepseek41.block_count")) return from_gguf_dsv41(g, out, err);
     // two spellings in the wild: llama.cpp's canonical "glm5-next" and unsloth's "glm5next" -
     // the KV PREFIX follows the file's own arch string, so it is detected once here
     const std::string p = g.get("glm5next.block_count") ? "glm5next." : "glm5-next.";
@@ -565,6 +566,172 @@ bool Glm5Geometry::from_gguf_dsv4(const strata::GgufFile& g, Glm5Geometry& out, 
         out.n_exp_used > 8 || out.n_expert > 512 || out.n_embd > 4096) {
         err = "deepseek4: unsupported geometry (hc 4, head_dim 512, rope 64, indexer key 128, <= 8 of <= 512 experts, "
               "n_embd <= 4096 are implemented)";
+        return false;
+    }
+    return true;
+}
+
+// DeepSeek V4.1 Flash (antirez/kyuz0's GGUF: HF config names under deepseek41.*; worklog 2026-10-18_deepseek41-spec.md
+// sections 1 and 9).  The values ds4 checks against its fixed table (ds4.c config_validate_deepseek41_model) are read
+// here and the layer roles derived from the source-layer lists.
+bool Glm5Geometry::from_gguf_dsv41(const strata::GgufFile& g, Glm5Geometry& out, std::string& err) {
+    const std::string p = "deepseek41.";
+    // two layouts: antirez's / kyuz0's (ds4: HF config names, the layer roles as lists) and llama.cpp's converter
+    // (mrfakename's 1017 GGUFs: deepseek4's key names, the roles implied by which tensors a layer has - the default
+    // lists below are ds4's fixed ones, and dsv41_bind checks the tensors agree)
+    const bool llama = g.get(p + "block_count") != nullptr;
+    const auto num2 = [&](const std::string& ds4_key, const std::string& llama_key, double def) -> double {
+        const auto* v = g.get(p + (llama ? llama_key : ds4_key));
+        if (!v) return def;
+        if (v->type == strata::MetaType::ARRAY) return v->items.empty() || !v->items[0].is_num() ? def : v->items[0].num();
+        return v->is_num() ? v->num() : def;
+    };
+    const auto ids = [&](const std::string& key, std::vector<int>& o) {
+        o.clear();
+        const auto* v = g.get(p + key);
+        if (!v || v->type != strata::MetaType::ARRAY) return false;
+        for (const auto& it : v->items) o.push_back((int) it.u);
+        return !o.empty();
+    };
+    out = Glm5Geometry{};
+    out.arch = 1;
+    out.v41 = true;
+    out.n_embd = (int) num2("hidden_size", "embedding_length", 5120);
+    out.n_layers = (int) num2("num_hidden_layers", "block_count", 40);
+    out.nextn = 0;   // (neither layout ships the MTP block in the trunk file)
+    out.n_head = (int) num2("num_attention_heads", "attention.head_count", 64);
+    out.head_dim = (int) num2("head_dim", "attention.key_length", 512);
+    out.n_rot = (int) num2("qk_rope_head_dim", "rope.dimension_count", 64);
+    out.q_lora = (int) num2("q_lora_rank", "attention.q_lora_rank", 1280);
+    out.kv_lora = out.head_dim;
+    out.n_swa = (int) num2("sliding_window", "attention.sliding_window", 128);
+    out.rope_base = (float) num2("rope_theta", "rope.freq_base", 10000.0);
+    out.comp_rope_base = (float) num2("compress_rope_theta", "attention.compress_rope_freq_base", 160000.0);
+    out.yarn_factor = (float) num2("rope_scaling.factor", "rope.scaling.factor", 16.0);
+    out.yarn_orig_ctx = (int) num2("rope_scaling.original_max_position_embeddings", "rope.scaling.original_context_length", 65536);
+    out.yarn_beta_fast = (float) num2("rope_scaling.beta_fast", "rope.scaling.yarn_beta_fast", 32.0);
+    out.yarn_beta_slow = (float) num2("rope_scaling.beta_slow", "rope.scaling.yarn_beta_slow", 1.0);
+    out.o_groups = (int) num2("o_groups", "attention.output_group_count", 8);
+    out.o_lora = (int) num2("o_lora_rank", "attention.output_lora_rank", 1024);
+    out.idx_heads = (int) num2("index_n_heads", "attention.indexer.head_count", 32);
+    out.idx_key = (int) num2("index_head_dim", "attention.indexer.key_length", 128);
+    out.idx_top_k = (int) num2("index_topk", "attention.indexer.top_k", 512);
+    out.hc = (int) num2("hc_mult", "hyper_connection.count", 4);
+    out.sinkhorn_iters = (int) num2("hc_sinkhorn_iters", "hyper_connection.sinkhorn_iterations", 20);
+    out.hc_eps = (float) num2("hc_eps", "hyper_connection.epsilon", 1e-6);
+    out.norm_eps = (float) num2("rms_norm_eps", "attention.layer_norm_rms_epsilon", 1e-20);
+    out.n_expert = (int) num2("n_routed_experts", "expert_count", 384);
+    out.n_exp_used = (int) num2("num_experts_per_tok", "expert_used_count", 6);
+    out.n_ff_exp = (int) num2("moe_intermediate_size", "expert_feed_forward_length", 2304);
+    out.n_shared = (int) num2("n_shared_experts", "expert_shared_count", 1);
+    out.n_ff_dense = out.n_ff_exp;
+    out.dense_lead = 0;
+    out.w_scale = (float) num2("routed_scaling_factor", "expert_weights_scale", 1.5);
+    out.norm_w = 1;
+    out.swiglu_exp = (float) num2("swiglu_limit", "swiglu_clamp_exp", 10.0);
+    out.swiglu_shexp = (float) num2("swiglu_limit", "swiglu_clamp_shexp", 10.0);
+    out.hash_layers = (int) num2("hash_layer_count", "hash_layer_count", 0);
+    out.gating = 1;
+    out.cand_layer = (int) num2("candidate_source_layer_id", "candidate_source_layer_id", 20);
+    out.cand_blocks = (int) num2("candidate_topk_blocks", "candidate_topk_blocks", 2048);
+    out.cand_bs = (int) num2("candidate_block_size", "candidate_block_size", 8);
+    if (out.hash_layers != 0) { err = "deepseek41: hash-routed layers (V4.1 has none)"; return false; }
+    if (llama) {
+        if ((int) num2("", "expert_gating_func", 4) != 4) { err = "deepseek41: expert_gating_func is not 4"; return false; }
+    } else {
+        const auto str = [&](const char* key) -> std::string {
+            const auto* v = g.get(p + key);
+            return v && v->type == strata::MetaType::STRING ? v->s : std::string();
+        };
+        if (str("scoring_func") != "sqrtsoftplus" || str("topk_method") != "noaux_tc" || str("hidden_act") != "silu") {
+            err = "deepseek41: scoring_func / topk_method / hidden_act are not sqrtsoftplus / noaux_tc / silu";
+            return false;
+        }
+    }
+    if (const auto* v = g.get("tokenizer.ggml.tokens"); v && v->type == strata::MetaType::ARRAY)
+        out.n_vocab = (int) v->count;
+    else
+        out.n_vocab = 129280;
+    std::vector<int> ratios, kv_ids, idx_ids, eng_ids;
+    if (!ids(llama ? "attention.compress_ratios" : "compress_ratios", ratios) || ratios.size() < (size_t) out.n_layers ||
+        !ids("engram.layer_ids", eng_ids)) {
+        err = "deepseek41: compress_ratios / engram.layer_ids missing";
+        return false;
+    }
+    if (llama) {
+        kv_ids = {2, 8, 14, 20};
+        idx_ids = {2, 8, 14, 20, 24, 28, 32, 36};
+    } else if (!ids("kv_source_layer_ids", kv_ids) || !ids("index_source_layer_ids", idx_ids)) {
+        err = "deepseek41: kv_source_layer_ids / index_source_layer_ids missing";
+        return false;
+    }
+    const size_t L = (size_t) out.n_layers;
+    out.comp_ratio.assign(L, 0);
+    out.kv_slot.assign(L, -1);
+    out.kv_src.assign(L, 0);
+    out.idx_src.assign(L, 0);
+    out.eng_slot.assign(L, -1);
+    for (int il = 0; il < out.n_layers; ++il) {
+        const int r = ratios[(size_t) il];
+        if (r != 0 && r != 1 && r != 2) {
+            err = "deepseek41: layer " + std::to_string(il) + " compress ratio " + std::to_string(r) + " (0, 1, 2 only)";
+            return false;
+        }
+        out.comp_ratio[(size_t) il] = r;
+    }
+    for (size_t k = 0; k < kv_ids.size(); ++k) {
+        const int s = kv_ids[k];
+        if (s < 0 || s >= out.n_layers || out.comp_ratio[(size_t) s] == 0) {
+            err = "deepseek41: kv source layer " + std::to_string(s) + " is not a compressed layer";
+            return false;
+        }
+        out.kv_src[(size_t) s] = 1;
+    }
+    // a compressed layer reads the last KV source at or before it (llama.cpp's rule; ds4 hard-codes the same 0/1/2/3)
+    int slot = -1, last_src = -1;
+    for (int il = 0; il < out.n_layers; ++il) {
+        if (out.kv_src[(size_t) il]) { ++slot; last_src = il; }
+        if (out.comp_ratio[(size_t) il] == 0) continue;
+        if (slot < 0 || out.comp_ratio[(size_t) last_src] != out.comp_ratio[(size_t) il]) {
+            err = "deepseek41: layer " + std::to_string(il) + " has no KV source of its ratio before it";
+            return false;
+        }
+        out.kv_slot[(size_t) il] = slot;
+    }
+    for (int s : idx_ids) {
+        if (s < 0 || s >= out.n_layers || out.kv_slot[(size_t) s] < 0) {
+            err = "deepseek41: index source layer " + std::to_string(s) + " is not a compressed layer";
+            return false;
+        }
+        out.idx_src[(size_t) s] = 1;
+    }
+    for (int il = 0; il < out.n_layers; ++il)
+        if (out.kv_slot[(size_t) il] >= 0 && !out.idx_src[(size_t) il]) {
+            bool before = false;   // a reader needs an index source of its slot before it
+            for (int j = il - 1; j >= 0 && out.kv_slot[(size_t) j] >= 0; --j) before |= out.idx_src[(size_t) j] != 0;
+            if (!before) {
+                err = "deepseek41: layer " + std::to_string(il) + " reads a top-k no index source made";
+                return false;
+            }
+        }
+    for (size_t k = 0; k < eng_ids.size(); ++k) {
+        const int e = eng_ids[k];
+        if (e < 0 || e >= out.n_layers || k > 1) { err = "deepseek41: engram.layer_ids"; return false; }
+        out.eng_slot[(size_t) e] = (int) k;
+    }
+    if (out.cand_layer < 0 || out.cand_layer >= out.n_layers || !out.idx_src[(size_t) out.cand_layer]) {
+        err = "deepseek41: candidate_source_layer_id is not an index source";
+        return false;
+    }
+    out.n_head_kv.assign(L, 1);
+    out.indexer_full.assign(L, 1);
+    out.idx_kpool = 4;
+    out.qk_nope = out.v_head = out.head_dim;
+    out.kda_head_dim = 32;
+    if (out.hc != 4 || out.head_dim != 512 || out.n_rot != 64 || out.idx_key != 128 || out.n_head % out.o_groups != 0 ||
+        out.n_exp_used > 8 || out.n_expert > 512 || out.n_embd > 5120 || out.n_embd % 512 != 0) {
+        err = "deepseek41: unsupported geometry (hc 4, head_dim 512, rope 64, indexer key 128, <= 8 of <= 512 experts, "
+              "n_embd <= 5120 are implemented)";
         return false;
     }
     return true;

@@ -362,6 +362,8 @@ struct Glm5Model::PrefillState {
     // per chunk, across layers
     float *R = nullptr, *x = nullptr, *mixer = nullptr, *ffn = nullptr;
     float *pre = nullptr, *post = nullptr, *comb = nullptr, *ss = nullptr, *mix = nullptr;
+    float *pre2 = nullptr, *onehot = nullptr;   // deepseek41: the FFN reads' pre (the lag's other half), layer 0's
+    std::vector<int32_t> toks_h;                // ... and the chunk's token ids on the host (the Engram hashes)
     uint16_t* x16 = nullptr;
     int* iota = nullptr;
     uint8_t* uni = nullptr;          // the per-layer region (KDA | DSA | dense | MoE)
@@ -570,7 +572,10 @@ bool Glm5Model::prefill_setup(std::string& err) {
     };
     for (int il = l0_; il < l1_; ++il) {
         const auto& Ly = F->L[(size_t) il];
-        if (g.dsv4()) {
+        if (g.v41) {
+            // deepseek41: the attention runs the token path's kernels a token at a time (fast_dsv41_attn), the
+            // rest batched - nothing of the attention to dequantize
+        } else if (g.dsv4()) {
             has_dsa = true;
             deq_ok(Ly.q_a, "attn_q_a", il);
             deq_ok(Ly.q_b, "attn_q_b", il);
@@ -916,6 +921,8 @@ static std::pair<size_t, size_t> chunk_bytes(const Glm5Geometry& g, size_t T, bo
     a.take<float>(T * E);                        // ffn
     a.take<float>(T * 4);
     a.take<float>(T * 4);
+    a.take<float>(T * 4);                        // pre2
+    a.take<float>(T * 4);                        // onehot
     a.take<float>(T * 16);
     a.take<float>(T);
     a.take<float>(T * 24);
@@ -998,6 +1005,8 @@ size_t Glm5Model::prefill_carve(int Tn) {
     S->ffn = a.take<float>(T * E);
     S->pre = a.take<float>(T * 4);
     S->post = a.take<float>(T * 4);
+    S->pre2 = a.take<float>(T * 4);
+    S->onehot = a.take<float>(T * 4);
     S->comb = a.take<float>(T * 16);
     S->ss = a.take<float>(T);
     S->mix = a.take<float>(T * 24);
@@ -1530,7 +1539,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
     };
     // the mHC read half for the whole chunk: (write half of the previous block,) mix dots, gates, x / x16
     const auto hc_read = [&](const float* block_out, const uint16_t* fn, const float* scale, const float* base,
-                             const float* norm) {
+                             const float* norm, const float* pre_use = nullptr, float* pre_out = nullptr) {
         gb::hc_update(block_out, S->R, S->post, S->comb, S->ss, T, E, s);
         sgemm_bf16(fn, 24, 4 * E, S->R, 4 * E, S->mix, 24, T, 1.0f);
         gb::HcFinishArgs h;
@@ -1545,7 +1554,8 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         h.iters = g.sinkhorn_iters;
         h.n_embd = E;
         h.T = T;
-        h.pre = S->pre;
+        h.pre = pre_out != nullptr ? pre_out : S->pre;
+        h.pre_use = pre_use;
         h.post = S->post;
         h.comb = S->comb;
         h.x = S->x;
@@ -1554,7 +1564,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
     };
 
     // GLM_CB_DIR seam dumps of the chunk's LAST row, under the token path's names (debug only, synchronous)
-    static const char* cb_dir = getenv("GLM_CB_DIR");
+    static const char* cb_dir = getenv("GLM_PF_CB_DIR") != nullptr ? getenv("GLM_PF_CB_DIR") : getenv("GLM_CB_DIR");   // (GLM_PF_CB_DIR: apart from the token path's)
     // A single-device prompt chunk only conditions later tokens; decode computes the last prompt token and its
     // logits separately. The terminal layer's outputs have no reader unless NextN is loaded. Keep its mixer/cache
     // updates, but omit the output projection and FFN (including both mHC write halves). Split boundaries and seam
@@ -1880,6 +1890,13 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
     };
 
     S->mark("start", s);
+    if (g.v41) {   // the chunk's Engram row numbers (the n-gram history advances) and layer 0's one-hot pre
+        if (S->toks_h.size() != (size_t) T) { err = "glm prefill: deepseek41 has no host token ids"; return false; }
+        if (!dsv41_engram_hash(S->toks_h.data(), p0, T, err)) return false;
+        std::vector<float> oh((size_t) T * 4, 0.0f);
+        for (int t = 0; t < T; ++t) oh[(size_t) t * 4] = 1.0f;
+        cudaMemcpyAsync(S->onehot, oh.data(), oh.size() * sizeof(float), cudaMemcpyHostToDevice, s);
+    }
     prestage(next_moe(l0_));   // (the dense layers before the first MoE one run meanwhile)
     for (auto& t : S->tr) t.on = false;
     for (int il = l0_; il < l1_; ++il) {
@@ -1888,7 +1905,21 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         const auto& Ly = F->L[(size_t) il];
         const bool skip_output = tail_skip && il == g.n_layers - 1;
         if (S->trace) cudaEventRecord(S->tr[(size_t) il].start, s);
-        hc_read(il == l0_ ? nullptr : S->ffn, Ly.hc_attn_fn, Ly.hc_attn_scale, Ly.hc_attn_base, Ly.attn_norm);
+        if (g.v41) {
+            // deepseek41: an Engram layer writes the previous FFN alone, adds its rows, then reads without a write;
+            // the read collapses with the previous sublayer's pre (layer 0: the one-hot)
+            const float* blk = il == l0_ ? nullptr : S->ffn;
+            if (Ly.eng >= 0) {
+                if (blk != nullptr) gb::hc_update(blk, S->R, S->post, S->comb, nullptr, T, E, s);
+                if (!dsv41_engram_prompt(il, T, S->R, err)) return false;
+                blk = nullptr;
+                S->mark("engram", s);
+            }
+            hc_read(blk, Ly.hc_attn_fn, Ly.hc_attn_scale, Ly.hc_attn_base, Ly.attn_norm,
+                    il == l0_ ? S->onehot : S->pre2, S->pre);
+        } else {
+            hc_read(il == l0_ ? nullptr : S->ffn, Ly.hc_attn_fn, Ly.hc_attn_scale, Ly.hc_attn_base, Ly.attn_norm);
+        }
         S->mark("hc", s);
         dump_row("attn_norm-" + std::to_string(il), S->x, E);
 
@@ -1898,7 +1929,16 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             const float* xs = S->x + (size_t) t0 * E;
             const uint16_t* x16 = S->x16 + (size_t) t0 * E;
             float* mixer = S->mixer + (size_t) t0 * E;
-            if (g.dsv4()) {
+            if (g.v41) {
+                // a token at a time through the token path's attention (its caches and rings advance in order)
+                for (int t = 0; t < tn; ++t) {
+                    cudaMemcpyAsync(F->x, xs + (size_t) t * E, (size_t) E * sizeof(float), cudaMemcpyDeviceToDevice, s);
+                    gf::quantize_q8_1(F->x, F->xq, E, s);
+                    if (!fast_dsv41_attn(il, p0 + t0 + t, err)) return false;
+                    cudaMemcpyAsync(mixer + (size_t) t * E, F->mixer, (size_t) E * sizeof(float),
+                                    cudaMemcpyDeviceToDevice, s);
+                }
+            } else if (g.dsv4()) {
                 if (!prefill_ds4_mixer(il, p0 + t0, tn, x16, xs, mixer, skip_output, (void*) S->uni, err)) return false;
             } else if (Ly.recr) {
                 Carve c{S->uni};
@@ -2057,7 +2097,10 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         S->mark(Ly.recr ? "kda" : "dsa", s);
         if (skip_output) continue;   // every KDA/DSA cache update above still ran; these output rows feed nothing
         dump_row("mixer-" + std::to_string(il), S->mixer, E);
-        hc_read(S->mixer, Ly.hc_ffn_fn, Ly.hc_ffn_scale, Ly.hc_ffn_base, Ly.ffn_norm);
+        if (g.v41)
+            hc_read(S->mixer, Ly.hc_ffn_fn, Ly.hc_ffn_scale, Ly.hc_ffn_base, Ly.ffn_norm, S->pre, S->pre2);
+        else
+            hc_read(S->mixer, Ly.hc_ffn_fn, Ly.hc_ffn_scale, Ly.hc_ffn_base, Ly.ffn_norm);
         S->mark("hc", s);
         dump_row("ffn_norm-" + std::to_string(il), S->x, E);
         // the CPU lane's x (this layer's FFN input) goes down now, under the shared expert and the routing - not
@@ -2111,7 +2154,12 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             S->mark("shexp", s);
         };
         if (!sh_late) shared_expert();
-        sgemm_bf16(Ly.router, NE, E, S->x, E, M.logits, NE, T, 1.0f);
+        if (Ly.router_type == gf::kTypeF32)   // (deepseek41 from ds4's layout: an F32 router)
+            blas_ck(cublasSgemm(S->blas, CUBLAS_OP_T, CUBLAS_OP_N, NE, T, E, &one, (const float*) Ly.router, E, S->x, E,
+                                &zero, M.logits, NE),
+                    "router sgemm");
+        else
+            sgemm_bf16(Ly.router, NE, E, S->x, E, M.logits, NE, T, 1.0f);
         gb::route(M.logits, Ly.router_bias, NE, K, g.w_scale, g.norm_w != 0, T, M.ids, M.rw, s, g.gating,
                   Ly.tid2eid, S->toks_d);
         gb::expert_count(M.ids, T * K, NE, M.counts, M.rank, s);
@@ -2420,7 +2468,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                     mmq::quantize(S->x, M.row_tok + r0 + a, M.Xq, Ly.gu_type, E, E, nrows, s);
                     // the part's bounds are the set's (from a): the activations and the destination are addressed a
                     // rows back so that bound a is the part's first row
-                    float* GU = M.OUTP + (size_t) o * E;   // 2 * n_ff == n_embd: the set's own OUTP rows hold its gate/up
+                    float* GU = M.OUTP + (size_t) o * E;   // 2 * n_ff <= n_embd: the set's own OUTP rows hold its gate/up
                     mmq::Product gu;
                     gu.w = wbase + (size_t) i0 * stride;
                     gu.type = Ly.gu_type;
@@ -2461,8 +2509,8 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 i0 = i1;
             }
         };
-        if (2 * nff != E) {
-            err = "glm prefill: 2 * n_ff_exp != n_embd (the gate/up rows would not fit the set's output rows)";
+        if (2 * nff > E) {   // (deepseek41: 2 x 2304 < 5120 - the packed rows still fit)
+            err = "glm prefill: 2 * n_ff_exp > n_embd (the gate/up rows would not fit the set's output rows)";
             return false;
         }
         // the disk-only experts (staged last, ascending): their indices in the reader's order - inside the segment
@@ -3140,6 +3188,7 @@ bool Glm5Model::prefill_run(const std::vector<int32_t>& tokens, std::string& err
         if (S->toks_d != nullptr)   // (pageable source: the copy completes before the call returns)
             cudaMemcpyAsync(S->toks_d, tokens.data() + i, (size_t) T * sizeof(int), cudaMemcpyHostToDevice, fast_->cs);
         gb::embed_rows(S->x, S->R, T, E, fast_->cs);
+        if (g.v41) S->toks_h.assign(tokens.begin() + i, tokens.begin() + i + T);
         return true;
     };
     // a later part's copy of the chunk's token ids (deepseek4's hash-routed layers read them; embed() fills only the

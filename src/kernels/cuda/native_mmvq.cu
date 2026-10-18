@@ -1451,6 +1451,7 @@ std::size_t native_mmvq_weight_bytes(int ggml_type, int n_in, int n_out) {
     case 6: block_elems = 32; block_bytes = 22; break;
     case 8: block_elems = 32; block_bytes = 34; break;
     case 20: block_elems = 32; block_bytes = 18; break;
+    case 10: block_elems = 256; block_bytes = 84; break;    // (sizing only: Q2_K is served by glm_fast mv)
     case 11: block_elems = 256; block_bytes = 110; break;
     case 12: block_elems = 256; block_bytes = 144; break;
     case 13: block_elems = 256; block_bytes = 176; break;

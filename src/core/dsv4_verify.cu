@@ -100,7 +100,7 @@ bool Glm5Model::verify_ready() const {
     // MoE layers; the head's weights on the last
     for (const Glm5Model* m = this; m != nullptr; m = m->split_next_.get()) {
         const FastState* F = m->fast_;
-        if (F == nullptr || !m->g_.dsv4() || m->mtp_il_ >= 0 || F->max_pf > 0 || F->n_ahead > 0) return false;
+        if (F == nullptr || !m->g_.dsv4() || m->g_.v41 || m->mtp_il_ >= 0 || F->max_pf > 0 || F->n_ahead > 0) return false;
         for (int il = m->l0_; il < m->l1_; ++il)
             if (!F->L[(size_t) il].moe) return false;
     }

@@ -1642,6 +1642,26 @@ void indexer(const float* iq, const uint16_t* K, const float* w, int idx_heads, 
     check("idx_select");
 }
 
+void indexer_scores(const float* iq, const uint16_t* K, const float* w, int idx_heads, int n_vis, float* score,
+                    cudaStream_t s) {
+    if (n_vis <= 0) return;
+    if (idx_use_mma(idx_heads)) {
+        idx_score_mma_kernel<<<(n_vis + IDXM_WARPS * 16 - 1) / (IDXM_WARPS * 16), IDXM_WARPS * 32, 0, s>>>(iq, K, w, n_vis,
+                                                                                                         score);
+        check("idx_score_mma");
+        return;
+    }
+    const size_t sm = (size_t) (idx_heads * 128 + idx_heads) * sizeof(float);
+    idx_score_kernel<<<(n_vis + IDX_WARPS - 1) / IDX_WARPS, IDX_WARPS * 32, sm, s>>>(iq, K, w, idx_heads, n_vis, score);
+    check("idx_score");
+}
+
+void indexer_select(const float* score, int n_vis, int top_k, int* sel, cudaStream_t s) {
+    if (n_vis <= 0) return;
+    idx_select_kernel<<<1, 1024, 0, s>>>(score, n_vis, std::min(top_k, n_vis), sel);
+    check("idx_select");
+}
+
 void attend(const float* q, const uint16_t* raw, int ring, int n_raw, const uint16_t* comp, const int* comp_sel,
             int n_comp, const float* sinks, int n_head, int head_dim, int n_rot, const Rope& rope, int p, float* out,
             cudaStream_t s, int lane, void* oq) {

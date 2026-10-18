@@ -45,6 +45,8 @@ import gguf_reader as G  # noqa: E402
 FLOAT = {"BF16", "F32", "F16"}
 ROUTERS = ("ffn_gate_inp.weight", "ffn_gate_inp_shexp.weight")
 NOT_IN_PACK = {"per_layer_token_embd.weight"}      # the 28.8 GB PLE table: read from its GGUF by the engine
+# deepseek41's Engram tables (I8 rows of 264 bytes, 2 x 94 GiB): read row by row from the GGUF by the engine
+NOT_IN_PACK_SUFFIX = ("engram_embd.weight", "exp_probs_b_vl.bias")   # (the _vl bias: image tokens only)
 
 # These small projections are read as BF16 by the residual, router, GDN, QSA and PLE kernels.
 # Strata's Qwen files already store them that way. Ordinary GGUF quants (including OrcaRouter's IQ3_XXS)
@@ -116,13 +118,24 @@ DEEPSEEK4_NATIVE_OK = (
     "ffn_gate_tid2eid.weight",            # I32: the hash-routed layers' expert ids, uploaded raw
     "token_embd.weight", "output.weight",
 )
-ARCHITECTURES = ("qwen4exp", "glm5-next", "glm5next", "deepseek4")   # unsloth spells glm5-next without the hyphen
+# deepseek41 (DeepSeek V4.1 Flash, the antirez/kyuz0 GGUF layout): deepseek4's tensors plus the index keys' projection
+# and the Engram projection / norms, all F16 / F32 in that GGUF
+DEEPSEEK41_F16_TO_BF16 = DEEPSEEK4_F16_TO_BF16 + ("indexer.attn_k.weight", "engram_kv.weight", "engram_wkv.weight")
+# mrfakename's 1017 Q2_K quantizes nearly every matrix: the ones the engine reads as BF16 (the index keys' projection)
+# or F32 (indexer.proj) are dequantized at any type; engram_wkv is served by the quantized GEMV
+DEEPSEEK41_ANY_TO_BF16 = ("indexer.attn_k.weight",)
+DEEPSEEK41_ANY_TO_F32 = ("indexer.proj.weight",)
+DEEPSEEK41_NATIVE_OK = DEEPSEEK4_NATIVE_OK + ("engram_wkv.weight", "engram_kv.weight")
+ARCHITECTURES = ("qwen4exp", "glm5-next", "glm5next", "deepseek4", "deepseek41")   # unsloth spells glm5-next without the hyphen
 
 
 def needs_bf16(name: str, type_name: str, arch: str = "qwen4exp") -> bool:
     if arch == "deepseek4":
         return name in DEEPSEEK4_BF16_GLOBAL or (name.startswith("blk.") and name.endswith(DEEPSEEK4_BF16)) or (
             type_name == "F16" and name.startswith("blk.") and name.endswith(DEEPSEEK4_F16_TO_BF16))
+    if arch == "deepseek41":
+        return name.startswith("blk.") and (name.endswith(DEEPSEEK4_BF16) or name.endswith(DEEPSEEK41_ANY_TO_BF16) or (
+            type_name == "F16" and name.endswith(DEEPSEEK41_F16_TO_BF16)))
     if arch in ("glm5-next", "glm5next"):
         # glm5-next has no PLE and no output_hc; its F32 router stays F32 (the runner reads it
         # as F32 by config), so ONLY the listed projections take the BF16 path.
@@ -159,10 +172,20 @@ def bf16_bytes(raw: np.ndarray, type_name: str) -> bytes:
     return quants.quantize(values, Q.BF16).tobytes()
 
 
+def f32_bytes(raw: np.ndarray, type_name: str) -> bytes:
+    from _paths import add_gguf_py
+    add_gguf_py()
+    from gguf import GGMLQuantizationType as Q, quants
+    values = quants.dequantize(raw, Q[type_name]).astype(np.float32)
+    if not np.isfinite(values).all():
+        raise ValueError("cannot widen non-finite weights to F32")
+    return values.tobytes()
+
+
 class Model:
     """All shards of one model: name -> (GGUFFile, TensorInfo, memmap, shard path)."""
 
-    def __init__(self, first: pathlib.Path):
+    def __init__(self, first: pathlib.Path, first_wins: bool = False):
         import re
         m = re.search(r"-(\d{5})-of-(\d{5})\.gguf$", first.name)
         paths = [first]
@@ -183,6 +206,9 @@ class Model:
                 if size is None or g.data_start + t.offset + size > mm.size:
                     raise ValueError(f"{p.name}: unsupported or truncated tensor {t.name}")
                 if t.name in self.where:
+                    if first_wins:   # (a hybrid: shard 1's copy wins - the engine's lookups scan in shard order too)
+                        self.shadowed = getattr(self, "shadowed", 0) + 1
+                        continue
                     raise ValueError(f"{p.name}: duplicate tensor {t.name}")
                 self.where[t.name] = (g, t, mm, p)
 
@@ -235,7 +261,7 @@ def index_standalone(src, out, model: Model, compat_bf16: bool = False, arch: st
     converted = []
     with open(out / "dense.bin", "wb") as fo:
         for name, (g, t, mm, _) in model.where.items():
-            if is_expert(t.name) or t.name in NOT_IN_PACK:
+            if is_expert(t.name) or t.name in NOT_IN_PACK or t.name.endswith(NOT_IN_PACK_SUFFIX):
                 continue
             if block_count is not None and name.startswith("blk."):
                 il = name.split(".")[1]
@@ -250,11 +276,17 @@ def index_standalone(src, out, model: Model, compat_bf16: bool = False, arch: st
                 return 1
             ne0, ne1 = index_shape(t.shape)
             convert = compat_bf16 and needs_bf16(t.name, t.type_name, arch) and t.type_name != "BF16"
-            widen = (compat_bf16 and arch == "deepseek4" and t.type_name == "F16" and name.startswith("blk.")
+            widen = (compat_bf16 and arch in ("deepseek4", "deepseek41") and t.type_name == "F16" and name.startswith("blk.")
                      and name.endswith(DEEPSEEK4_F16_TO_F32))
-            if t.type_name in FLOAT or convert:
+            widen_q = (compat_bf16 and arch == "deepseek41" and t.type_name not in FLOAT and name.startswith("blk.")
+                       and name.endswith(DEEPSEEK41_ANY_TO_F32))
+            if t.type_name in FLOAT or convert or widen_q:
                 raw = tensor_bytes(mm, g, t).tobytes()
-                if widen:
+                if widen_q:
+                    raw = f32_bytes(np.frombuffer(raw, dtype=np.uint8), t.type_name)
+                    kind = "2"
+                    converted.append({"name": t.name, "source_type": t.type_name, "bytes": len(raw), "to": "F32"})
+                elif widen:
                     raw = np.frombuffer(raw, dtype=np.float16).astype(np.float32).tobytes()
                     kind = "2"
                     converted.append({"name": t.name, "source_type": t.type_name, "bytes": len(raw), "to": "F32"})
@@ -277,7 +309,8 @@ def index_standalone(src, out, model: Model, compat_bf16: bool = False, arch: st
                 pad = (-len(raw)) % ALIGN
                 fo.write(b"\0" * pad)
                 at += len(raw) + pad
-            elif arch == "deepseek4" and not name.endswith(DEEPSEEK4_NATIVE_OK):
+            elif arch in ("deepseek4", "deepseek41") and not name.endswith(
+                    DEEPSEEK41_NATIVE_OK if arch == "deepseek41" else DEEPSEEK4_NATIVE_OK):
                 print("%s is %s: not on the BF16 upgrade list nor the deepseek4 native set "
                       "(DEEPSEEK4_NATIVE_OK); refusing to pack it silently" % (t.name, t.type_name))
                 return 1
@@ -365,12 +398,78 @@ def index_from_base(a, src, base, out, g, T, mm) -> int:
     return 0
 
 
+def write_engram(out, g, model: Model) -> int:
+    """deepseek41: what the engine needs to read the Engram rows from the GGUF (worklog 2026-10-18_deepseek41-spec.md
+    section 3): engram.txt (the row format, each table's absolute offset and row count, the primes and multipliers)
+    and the token map as raw uint32 (engram_token_map.u32; the engine's GGUF reader keeps only an array's first
+    items).  Two layouts: ds4's (e4m3 + e8m0 rows of 264 bytes) and llama.cpp's converter (Q8_0 rows of 256)."""
+    m = g.metadata
+    p = "deepseek41.engram."
+    llama = "deepseek41.block_count" in m
+    if not llama and m.get(p + "encoding") != "e4m3_e8m0_32_row264":
+        print("deepseek41: engram.encoding %r (only e4m3_e8m0_32_row264 is implemented)" % m.get(p + "encoding"))
+        return 1
+    layers = list(m[p + "layer_ids"])
+    primes, mult, tmap = list(m[p + "primes"]), list(m[p + "multipliers"]), m[p + "token_map"]
+    if len(layers) != 2 or len(primes) != 48 or len(mult) != 8:
+        print("deepseek41: unexpected engram metadata (layers %d, primes %d, multipliers %d)"
+              % (len(layers), len(primes), len(mult)))
+        return 1
+    if llama and (int(m.get(p + "head_count", 0)) != 8 or int(m.get(p + "key_length", 0)) != 256 or
+                  int(m.get(p + "max_ngram_size", 0)) != 4):
+        print("deepseek41: engram head_count / key_length / max_ngram_size are not 8 / 256 / 4")
+        return 1
+    if llama:
+        offs = list(m[p + "offsets"])
+        for k in range(2):
+            run = 0
+            for c in range(24):
+                if int(offs[24 * k + c]) != run:
+                    print("deepseek41: engram.offsets are not the running sum of the primes")
+                    return 1
+                run += int(primes[24 * k + c])
+    fmt, lines = "row264 264", []
+    for k, il in enumerate(layers):
+        name = "blk.%d.engram_embd.weight" % il
+        if name not in model.where:
+            print("deepseek41: %s is missing" % name)
+            return 1
+        gg, t, _, path = model.where[name]
+        need = sum(int(x) for x in primes[24 * k:24 * k + 24])
+        rows = int(t.shape[1])
+        if llama or t.type_name != "I8":   # any ggml row type (Q8_0 in the PR's converter, Q2_K in mrfakename's Q2_K); the engine decodes
+            rb = t.expected_bytes() // max(rows, 1) if t.expected_bytes() else 0   # with ggml's to_float
+            ok = int(t.shape[0]) == 256 and rows >= need and rb > 0 and rb <= 272
+            fmt = "ggml %d %d" % (t.type_id, rb)
+            ok = ok and (llama or rows == int(m[p + "rows"][k]))
+        else:
+            ok = t.type_name == "I8" and int(t.shape[0]) == 264 and rows == need == int(m[p + "rows"][k])
+        if not ok:
+            print("deepseek41: %s is %s %s for %d rows of buckets" % (name, t.type_name, list(t.shape), need))
+            return 1
+        lines.append("table %d %d %d %d %s" % (k, il, gg.data_start + t.offset, rows, pathlib.Path(path).resolve()))
+    lines.insert(0, "format " + fmt)
+    lines.append("primes " + " ".join(str(int(x)) for x in primes))
+    lines.append("multipliers " + " ".join(str(int(x)) for x in mult))
+    lines.append("pad %d" % int(m[p + "pad_id"]))
+    lines.append("vocab %d" % len(tmap))
+    (out / "engram.txt").write_text("# deepseek41 Engram: format <name> <row bytes>; table <k> <layer> <abs offset> "
+                                    "<rows> <file>\n" + "\n".join(lines) + "\n", encoding="utf-8")
+    np.asarray(tmap, dtype=np.int64).astype(np.uint32).tofile(out / "engram_token_map.u32")
+    print("deepseek41: engram.txt + engram_token_map.u32 (%d tokens, %s rows); the tables stay in the GGUF"
+          % (len(tmap), fmt))
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gguf", required=True, help="the model's shard 1")
     ap.add_argument("--base", help="optional: a Q2_0 canonical pack whose dense.bin holds the shared float tensors")
     ap.add_argument("--out", required=True)
     ap.add_argument("--skip-experts", action="store_true", help="rewrite the index only")
+    ap.add_argument("--first-wins", action="store_true",
+                    help="a hybrid shard set: a tensor in several shards is taken from the first (e.g. shard 1 = "
+                         "another file's dense weights, the rest = the experts' GGUF)")
     ap.add_argument("--compat-bf16", action="store_true",
                     help="dequantize small non-native projections to BF16 for ordinary Qwen4Exp GGUFs "
                          "(rounds weights; leaves experts and the PLE table unchanged)")
@@ -394,6 +493,10 @@ def main() -> int:
     if arch == "deepseek4":
         prefix = "deepseek4."
         print("deepseek4: packing for the Glm5Model runner's deepseek4 path (quantized dense served natively)")
+    if arch == "deepseek41":
+        prefix = "deepseek41."
+        print("deepseek41: packing for the Glm5Model runner's deepseek4 path, V4.1 layout (the Engram tables stay "
+              "in the GGUF)")
     if arch in ("glm5-next", "glm5next"):
         # two spellings in the wild: llama.cpp's canonical "glm5-next" (llama-arch.cpp L156) and
         # unsloth's "glm5next" - the KV PREFIX follows the same spelling, so it is read per file
@@ -402,8 +505,8 @@ def main() -> int:
               "gate remains closed until the pack wiring lands - docs/maya/GLM5-FLASH.md §9)" % arch)
     block_count = None
     trunk = None
-    if arch in ("glm5-next", "glm5next", "deepseek4"):
-        bc = g.metadata.get(prefix + "block_count")
+    if arch in ("glm5-next", "glm5next", "deepseek4", "deepseek41"):
+        bc = g.metadata.get(prefix + "block_count", g.metadata.get(prefix + "num_hidden_layers"))
         if bc is None:
             print("%s: %sblock_count is missing; cannot tell the trunk from the NextN block" % (arch, prefix))
             return 1
@@ -415,7 +518,9 @@ def main() -> int:
         if trunk < 1:
             print("%s: block_count %d - nextn %d leaves no trunk" % (arch, block_count, nextn))
             return 1
-    model = Model(src)
+    model = Model(src, first_wins=a.first_wins)
+    if getattr(model, "shadowed", 0):
+        print("first-wins: %d tensors of the later shards shadowed by earlier ones" % model.shadowed)
     if arch == "deepseek4" and trunk is not None and trunk < block_count and \
             "blk.%d.hc_attn_fn.weight" % (block_count - 1) in model.where:
         # antirez's deepseek-v4-gguf (huihui-ai's copies too) says nextn_predict_layers 1 but ships no draft block:
@@ -437,6 +542,10 @@ def main() -> int:
         rc = index_standalone(src, out, model, a.compat_bf16, arch, trunk)
     if rc:
         return rc
+    if arch == "deepseek41":
+        rc = write_engram(out, g, model)
+        if rc:
+            return rc
     if not (out / "tokenizer" / "vocab.json").exists() or not (out / "tokenizer" / "chat_template.jinja").exists():
         subprocess.run([sys.executable, str(HERE / "strata_tokenizer.py"), "--gguf", str(src), "--out", str(out)],
                        check=True)   # writes <out>/tokenizer/
@@ -459,7 +568,7 @@ def main() -> int:
     else:
         n_layers = 1 + max(int(n.split(".")[1]) for n in T if n.startswith("blk.") and n.endswith("_exps.weight"))
     # the MoE layers only: the leading dense blocks ship no router and no experts
-    if arch in ("glm5-next", "glm5next", "deepseek4"):
+    if arch in ("glm5-next", "glm5next", "deepseek4", "deepseek41"):
         lead = int(g.metadata.get(prefix + "leading_dense_block_count", 0) or 0)
     else:
         lead = int(g.metadata.get("qwen4exp.leading_dense_block_count", 0) or 0)

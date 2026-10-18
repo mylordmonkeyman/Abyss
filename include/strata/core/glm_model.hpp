@@ -83,9 +83,21 @@ struct Glm5Geometry {
     int o_groups = 8, o_lora = 1024;
     int hash_layers = 3;
     int gating = 0;                    // the router's probability: 0 sigmoid, 1 sqrt(softplus)
+    // ---- deepseek41 (DeepSeek V4.1 Flash, worklog 2026-10-18_deepseek41-spec.md): arch stays 1 (the deepseek4 path)
+    // with these differences: ratios 1/2 (rows of 1 or 2 tokens, no overlap / APE), four KV-source layers owning the
+    // compressed caches that the layers after them read (kv_slot), index sources computing the top-k that the layers
+    // after them reuse, the candidate blocks, Engram on two layers, the hyper-connections' pre lagging one sublayer,
+    // no hash layers, no per-head q norm, no output_hc head
+    bool v41 = false;
+    std::vector<int> kv_slot;          // per layer: the compressed cache it reads (0..3), -1 = window only
+    std::vector<char> kv_src;          // per layer: it computes (owns) slot kv_slot's rows and index keys
+    std::vector<char> idx_src;         // per layer: it computes the top-k (readers reuse the last one's)
+    std::vector<int> eng_slot;         // per layer: Engram table 0 / 1, -1 = none
+    int cand_layer = 20, cand_blocks = 2048, cand_bs = 8;
     bool dsv4() const { return arch == 1; }
     int ratio(int il) const { return il < (int) comp_ratio.size() ? comp_ratio[(size_t) il] : 0; }
     static bool from_gguf_dsv4(const strata::GgufFile& g, Glm5Geometry& out, std::string& err);
+    static bool from_gguf_dsv41(const strata::GgufFile& g, Glm5Geometry& out, std::string& err);
 
     int d_inner() const { return kda_head_dim * n_head; }
     int top_pools_max() const { return idx_top_k / idx_kpool; }
@@ -370,6 +382,22 @@ public:
     bool dsv4_bind(std::string& err);                      // in fast_setup: the per-layer weights
     bool fast_dsv4_attn(int il, int64_t p, std::string& err);   // one attention mixer (x -> mixer) at position p
     bool dsv4_head(std::string& err);                      // the hyper-connection head -> head_x / head_xq
+    // ---- deepseek41 (src/core/dsv41_fast_path.cu): the token path only (no prompt batches, verify windows, snapshots
+    // or layer splits yet)
+    void* dsv41_state_ = nullptr;                          // the window rings, the 4 KV slots and the scratch
+    void* v41_eng_ = nullptr;                              // the host's Engram state (dsv41_fast_path.cu V41Engram)
+    bool dsv41_bind(std::string& err);
+    bool dsv41_alloc(std::string& err);
+    bool fast_dsv41_attn(int il, int64_t p, std::string& err);
+    bool dsv41_engram_token(int32_t tok, std::string& err);   // before the layers: hash, read and decode both tables'
+                                                              // rows of this token, upload them
+    // layer il's Engram add into the streams R (rows: that token's 24 x 256 rows on the device; null: the token path's)
+    bool dsv41_engram_add(int il, float* R, std::string& err, const float* rows = nullptr);
+    bool dsv41_engram_hash(const int32_t* toks, int64_t p0, int T, std::string& err);   // the prompt path: a chunk's
+    bool dsv41_engram_prompt(int il, int T, float* R, std::string& err);   // row numbers, then each Engram layer's adds
+    void dsv41_reset();                                    // a new sequence: the Engram history, the pending pairs
+    void dsv41_engram_report() const;                      // STRATA_GLM_TIMING: the Engram rows and the cache's share
+    bool dsv41_head(std::string& err);                     // the collapse with the last sublayer's pre -> head_x / xq
     void* vb_ = nullptr;                                   // the verify window's buffers (dsv4_verify.cu)
     bool verify_alloc(std::string& err);
     // columns tb .. tb + n - 1 on stream s (the batched window: all of them on the compute stream; the pipelined one:

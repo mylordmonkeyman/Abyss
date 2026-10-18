@@ -1234,7 +1234,7 @@ __global__ void __launch_bounds__(HC_THREADS) hc_kernel(const __grid_constant__ 
     // ---- phase 2 (the last block): the gates, the Sinkhorn, mixed, the norm, q8_1
     __shared__ float smix[HC_MIX + 1];
     __shared__ float s_pre[4];
-    __shared__ float s_mixed[4096];
+    __shared__ float s_mixed[kMaxEmbd];
     if (tid == 0) *a.counter = 0;
     if (tid < 25) {
         float acc = 0.0f;
@@ -1283,7 +1283,7 @@ __global__ void __launch_bounds__(HC_THREADS) hc_kernel(const __grid_constant__ 
     for (int e = tid; e < n_embd; e += HC_THREADS) {
         float acc = 0.0f;
 #pragma unroll
-        for (int s = 0; s < hc; ++s) acc += s_pre[s] * __ldcg(&Rn[s * n_embd + e]);
+        for (int s = 0; s < hc; ++s) acc += (a.pre_use != nullptr ? a.pre_use[s] : s_pre[s]) * __ldcg(&Rn[s * n_embd + e]);
         s_mixed[e] = acc;
         ss2 += acc * acc;
     }
@@ -1406,7 +1406,7 @@ __global__ void __launch_bounds__(HC_THREADS) hc2_kernel(const __grid_constant__
     if (tid < HC2_EB) {
         float acc = 0.0f;
 #pragma unroll
-        for (int s = 0; s < hc; ++s) acc += s_pre[s] * sR[s][tid];
+        for (int s = 0; s < hc; ++s) acc += (a.pre_use != nullptr ? a.pre_use[s] : s_pre[s]) * sR[s][tid];
         s_mixed[tid] = acc;
         ss2 = acc * acc;
     }
@@ -1585,7 +1585,7 @@ __global__ void hc_post_kernel(const float* __restrict__ block_out, const float*
 __global__ void head_prep_kernel(const float* __restrict__ R, const float* __restrict__ norm_w, float eps,
                                  int n_embd, float* __restrict__ x, block_q8_1* __restrict__ xq) {
     __shared__ float sred[32];
-    __shared__ float sm[4096];
+    __shared__ float sm[kMaxEmbd];
     const int tid = threadIdx.x, lane = tid & 31;
     float ss = 0.0f;
     for (int e = tid; e < n_embd; e += blockDim.x) {
@@ -2484,7 +2484,8 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
         // clears the bar - one-offs take scratch and do not churn the tier.  The r-th entry that wants one (route
         // order) takes the r-th free spare.
         const unsigned int rc = needs && a.d.dcnt != nullptr ? a.d.dcnt[key] : 0u;
-        const bool want = needs && (a.promote_min <= 1 || rc >= (unsigned int) a.promote_min);
+        // promote_min < 0 (STRATA_GLM_DISK_LANE): a miss never claims a spare - the host computes it from its RAM landing
+        const bool want = needs && a.promote_min >= 0 && (a.promote_min <= 1 || rc >= (unsigned int) a.promote_min);
         unsigned long long sp[kSpares];
 #pragma unroll
         for (int j = 0; j < kSpares; ++j) sp[j] = spares[j];
@@ -2579,7 +2580,7 @@ __global__ void __launch_bounds__(ROUTE_THREADS) moe_route_kernel(const __grid_c
     }
     __syncthreads();
     MoeRequest* rq = (MoeRequest*) a.d.ring + (s_seq % kRingSize);
-    if (s_cpu != 0u && !a.early_x)
+    if ((s_cpu != 0u || (a.promote_min < 0 && s_mask != 0u)) && !a.early_x)   // (the disk lane reads x too)
         for (int e = tid; e < a.n_embd; e += ROUTE_THREADS) rq->x[e] = a.x[e];
     if (tid == 0) {
         rq->layer = a.layer;
@@ -2637,6 +2638,12 @@ __global__ void moe_wait_kernel(MoeDev d, int n_embd) {
     // fetch kernel copies it into the slot the route already planned
     const unsigned int pm = ((volatile const MoeResponse*) r)->ptr_mask;
     if (tid < 8 && (pm >> tid) & 1u) d.fetch_src[tid] = ((volatile const MoeResponse*) r)->ptr[tid];
+    // the disk lane: the host computed these from their RAM landing - no fetch, no expert kernels (null plan entries)
+    const unsigned int hm = ((volatile const MoeResponse*) r)->host_mask;
+    if (tid < 8 && (hm >> tid) & 1u) {
+        d.fetch_src[tid] = 0ull;
+        d.plan_ptr[tid] = 0ull;
+    }
     const int nu = ((volatile const MoeResponse*) r)->n_upd;
     for (int u = tid; u < nu && u < 64; u += blockDim.x)
         d.tab[((volatile const MoeResponse*) r)->upd_key[u]] = ((volatile const MoeResponse*) r)->upd_val[u];
@@ -3538,7 +3545,7 @@ void hc(const HcArgs& a, cudaStream_t s) {
         if (mode == 2 && getenv("STRATA_GLM_HC2") == nullptr && a.n_embd == 4096 && per3 * sms >= a.n_embd / HC2_EB)
             mode = 3;
     }
-    if (mode == 3) {
+    if (mode == 3 && a.pre_use == nullptr) {   // (hc3 has no lagged collapse: deepseek41 runs hc2)
         HcArgs g3 = a;
         // (nsys on an RTX 5090: 8.5 -> 8.1 us a launch; the sums round differently, so off unless asked)
         static const bool gram = [] { const char* v = getenv("STRATA_GLM_HC_GRAM"); return v != nullptr && std::atoi(v) != 0; }();
