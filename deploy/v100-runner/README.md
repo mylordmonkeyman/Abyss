@@ -149,7 +149,9 @@ sudo docker compose exec runner bash -lc '
 ```
 
 The workflow uses GPU 0, the V100, and compiles with 32 jobs. Its default variables
-match this image; no repository-variable changes are needed.
+match this image; no repository-variable changes are needed. GPU jobs are restricted
+to owner `mylordmonkeyman` pushes/manual runs on main or the V100 feature branch;
+other actors' runs are skipped before assignment to the runner. See [security controls](SECURITY.md).
 
 ## 6. Start the workflow
 
@@ -191,9 +193,11 @@ sudo docker compose start
 
 `restart: unless-stopped` starts the container after host/Docker restart unless
 you explicitly stopped it. The named volume retains the runner, auto-updates,
-checkout, build cache and temporary files. Model files are mounted read-only at
-`/models` from `/var/lib/llama/models`; no models are copied into the container layer.
-No host Docker socket, privileged mode or published port is needed.
+checkout, build cache and temporary files. No host model directory is mounted by
+default. To deliberately expose a dedicated model-only directory, set
+`ABYSS_MODEL_DIR` in `.env` and use the optional `compose.models.yml` override described
+in [SECURITY.md](SECURITY.md). Read-only mounts still allow every job to read/copy
+those files. No host Docker socket, privileged mode or published port is needed.
 
 Use `docker compose down` to remove the container while keeping the named volume.
 **Do not use `down -v` or delete `abyss-v100-runner-data`** when preserving the runner

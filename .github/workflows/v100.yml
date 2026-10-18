@@ -25,6 +25,14 @@ concurrency:
 
 jobs:
   build-and-smoke:
+    # Evaluated by GitHub before assigning a runner. Do not add PR/comment triggers
+    # or arbitrary checkout-ref inputs to this persistent self-hosted job.
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/feature/deepseek-v100-perf' || github.ref == 'refs/heads/main')
     # The existing runner must be registered with Abyss (or shared with it at org scope).
     # No new Docker container, model download, GPU reset or driver installation.
     runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
@@ -40,13 +48,13 @@ jobs:
 
     steps:
       - name: Check out Abyss, retaining ignored build directories
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4; verified against actions/checkout
         with:
           clean: false
           persist-credentials: false
 
       - name: Check out the pinned GGML dependency
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4; verified against actions/checkout
         with:
           repository: ggml-org/llama.cpp
           ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
@@ -155,7 +163,7 @@ jobs:
 
       - name: Upload logs and diagnostics even after failure
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4; verified against actions/upload-artifact
         with:
           name: abyss-v100-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.EVIDENCE }}/

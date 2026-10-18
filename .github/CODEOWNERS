@@ -1,0 +1,4 @@
+# Review routing only: enable code-owner review in GitHub branch rules to enforce it.
+/.github/workflows/ @mylordmonkeyman
+/.github/CODEOWNERS @mylordmonkeyman
+/deploy/v100-runner/ @mylordmonkeyman
