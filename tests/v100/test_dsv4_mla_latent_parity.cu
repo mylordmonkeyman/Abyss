@@ -132,7 +132,7 @@ void run_case(int ratio,int p0,int T,bool yarn) {
         Buffer<int> ids(std::vector<int>(n+GUARD,-12345)),status(std::vector<int>(1,0));
         gather<<<n,D>>>(dk.p,dc.p,dsel.p+t*TOP,hist,p0,t,ratio,comp_rows,gathered.p,ids.p,status.p);
         ck(cudaGetLastError());ck(cudaDeviceSynchronize());need(status.get()[0]==0,"valid gather rejected");
-        const auto kv=gathered.get(),row_ids=ids.get();std::vector<int> expected_ids;
+        const auto kv=gathered.get();const auto row_ids=ids.get();std::vector<int> expected_ids;
         for(int j=0;j<n;++j) {
             const int r=j<nr?p-nr+1+j-(p0-hist):ratio==4?selections[t*TOP+j-nr]:j-nr;
             expected_ids.push_back(j<nr?p-nr+1+j:-r-1);
@@ -184,6 +184,13 @@ void run_case(int ratio,int p0,int T,bool yarn) {
                    ev=compare(pv.get(),latent),eo=compare(out.get(),rotated),ef=compare(out.get(),existing);
         need(eq.rel<1e-5 && ep.rel<1e-5 && ed.rel<1e-5,"gathered QK/softmax screen");
         need(ev.rel<1e-5 && eo.rel<1e-5 && ef.rel<1e-5,"gathered PV/inverse RoPE screen");
+        auto stage=[&](const char* name,const Error& e) {
+            std::printf("{\"stage\":\"%s\",\"ratio\":%d,\"p0\":%d,\"t\":%d,"
+                        "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"p99_abs\":%.9g,\"pass\":true}\n",
+                        name,ratio,p0,t,e.rel,e.max_abs,e.p99_abs);
+        };
+        stage("qk",eq);stage("probability",ep);stage("sink_denominator",ed);
+        stage("pv",ev);stage("inverse_rope",eo);stage("versus_existing",ef);
         worst=std::max(worst,eo.rel);worst_f32=std::max(worst_f32,ef.rel);
         worst_qk=std::max(worst_qk,eq.rel);worst_pv=std::max(worst_pv,ev.rel);
         // Before attempting any bad address, reject negative, future and
