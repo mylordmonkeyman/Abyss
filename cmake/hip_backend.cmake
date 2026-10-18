@@ -79,6 +79,20 @@ foreach(_language IN ITEMS CXX HIP)
     "$<$<COMPILE_LANGUAGE:${_language}>:-include>"
     "$<$<COMPILE_LANGUAGE:${_language}>:${STRATA_HIP_COMPAT_INCLUDE_DIR}/cuda_runtime.h>")
 endforeach()
+# The kernels optimized whatever CMAKE_HIP_FLAGS_RELEASE holds: some toolchains leave it EMPTY (Windows 11, CMake +
+# Ninja via tools/abyss_setup.py, TheRock ROCm 7.14.1 - every HIP kernel built at -O0: 1.30 tok/s against 45.90 on an
+# RX 7900 XT, issue #3).  -O3 -DNDEBUG on every build but Debug.
+target_compile_options(strata_hip_runtime INTERFACE
+  "$<$<AND:$<COMPILE_LANGUAGE:HIP>,$<NOT:$<CONFIG:Debug>>>:-O3>"
+  "$<$<AND:$<COMPILE_LANGUAGE:HIP>,$<NOT:$<CONFIG:Debug>>>:-DNDEBUG>")
+# Windows: the CRT's "unsafe function" notes on getenv / fopen / sscanf and the HIP runtime's nodiscard returns made
+# 300+ warnings a translation unit (issue #2)
+if(WIN32)
+  target_compile_options(strata_hip_runtime INTERFACE
+    "$<$<COMPILE_LANGUAGE:CXX,HIP>:-D_CRT_SECURE_NO_WARNINGS>"
+    "$<$<COMPILE_LANGUAGE:CXX,HIP>:-Wno-deprecated-declarations>"
+    "$<$<COMPILE_LANGUAGE:CXX,HIP>:-Wno-unused-value>")
+endif()
 
 # CMake does not infer HIP from Strata's existing CUDA-shaped .cu suffixes.
 file(GLOB_RECURSE _strata_hip_sources CONFIGURE_DEPENDS

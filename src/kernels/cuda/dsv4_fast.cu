@@ -1535,7 +1535,8 @@ Rope make_rope(int n_rot, float base, float freq_scale, float ext_factor, int n_
     if (ext_factor != 0.0f && n_ctx_orig > 0) {
         // ggml_rope_yarn_corr_dims
         const auto corr_dim = [&](float b) {
-            return (float) n_rot * logf((float) n_ctx_orig / (b * 2.0f * (float) M_PI)) / (2.0f * logf(base));
+            // (pi spelled out: MSVC's <cmath> has no M_PI without _USE_MATH_DEFINES - issue #2)
+            return (float) n_rot * logf((float) n_ctx_orig / (b * 2.0f * 3.14159265358979323846f)) / (2.0f * logf(base));
         };
         r.corr_lo = std::max(0.0f, floorf(corr_dim(beta_fast)));
         r.corr_hi = std::min((float) (n_rot - 1), ceilf(corr_dim(beta_slow)));
