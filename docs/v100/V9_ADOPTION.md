@@ -65,3 +65,13 @@ performance or release qualification.
 
 The base remains v1.3.28 until the evidence supports selecting v1.3.31 under v9.
 No new production switch, arithmetic, cache policy or runner privilege is added.
+
+## Initial outcome
+
+Run `39150769368` completed both builds and the full initial matrix. The matched
+32-row teacher-forced screen passed (mean KL 1.5014e-7; 32/32 top-1), but measured
+latencies are mixed and the 600-token case is slower on v1.3.31. No base migration
+is admitted from this initial data. The merge dry run is conflict-free, leaving
+targeted short-prompt variability/placement review as the next step rather than
+source-conflict resolution. Full results and the incomplete-component memory
+worksheet are linked from `STATUS.md`.

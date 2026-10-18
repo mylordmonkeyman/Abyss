@@ -1,0 +1,956 @@
+{
+  "schema_version": 1,
+  "specification": "9.0",
+  "base_shas": {
+    "historical": "47001f31cbfba14bcbf4c083e3af07c50707ec0c",
+    "current": "7c893ac17e61ec45c934b3278356807fc4626c3c"
+  },
+  "binary_sha256": {
+    "historical": "5a75dda569d4d5a18041b4825416741da19fe1b578f4d7aa9ae575699fb8531f",
+    "current": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89"
+  },
+  "pack": {
+    "source_sizes": [
+      5257664,
+      49437013568,
+      47390237120
+    ],
+    "packer_sha256": "4f6edc5cdc111432e3911f0772b19e02738fdf2defa3eb3b4ef7342d72475348"
+  },
+  "model_integrity": "exact sizes, same read-only shards/pack; SHA256 unverified",
+  "harness_commit": "c2d490e4ff7b73f0c8fd89d35e605430696798b5",
+  "settings": {
+    "STRATA_DS4_SPEC": "0",
+    "STRATA_GLM_RAM_GB": "72",
+    "STRATA_GLM_CPU_LANE": "28",
+    "STRATA_GLM_PCIE_SHARE": "0.21",
+    "STRATA_GLM_USAGE": "0",
+    "STRATA_GLM_NO_REUSE": "1",
+    "STRATA_GLM_SLOTS": "0",
+    "STRATA_DS4_IDX": "1",
+    "STRATA_DS4_ATTN": "1"
+  },
+  "selected_base": null,
+  "status": "initial matrix complete; extended P0/placement/thermal review required before base selection",
+  "teacher_forced": {
+    "mean_kl": 1.5013854255981493e-07,
+    "p99_kl": 1.0481589523124647e-06,
+    "max_kl": 1.074063530026454e-06,
+    "top1_matches": 32,
+    "rows": 32,
+    "positions": [
+      {
+        "predicted_token_index_zero_based": 2041,
+        "kl": 1.883506651853302e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2042,
+        "kl": 1.0158617366007912e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2043,
+        "kl": 7.061183189584422e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2044,
+        "kl": 1.4397995696641636e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2045,
+        "kl": 1.0730687170105496e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2046,
+        "kl": 8.180751905917501e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2047,
+        "kl": 2.2623390468741285e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2048,
+        "kl": 8.97836234819469e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2049,
+        "kl": 2.064318938208302e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2050,
+        "kl": 2.2558550124910525e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2051,
+        "kl": 6.121074131199578e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2052,
+        "kl": 9.030341065666616e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2053,
+        "kl": 6.604155984711239e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2054,
+        "kl": 8.382518962769773e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2055,
+        "kl": 6.015679219824899e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2056,
+        "kl": 8.21380162919925e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2057,
+        "kl": 9.905003761103588e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2058,
+        "kl": 2.986534619606823e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2059,
+        "kl": 1.681570600282963e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2060,
+        "kl": 4.689228704614403e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2061,
+        "kl": 2.288496329249718e-09,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2062,
+        "kl": 3.928640116502522e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2063,
+        "kl": 3.043520879087548e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2064,
+        "kl": 1.236425871530391e-07,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2065,
+        "kl": 1.0896977529570378e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2066,
+        "kl": 4.37021257215507e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2067,
+        "kl": 4.3495266428976725e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2068,
+        "kl": 9.797317129260979e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2069,
+        "kl": 5.4579791438329034e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2070,
+        "kl": 1.074063530026454e-06,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2071,
+        "kl": 2.851775737195937e-08,
+        "same_top1": true
+      },
+      {
+        "predicted_token_index_zero_based": 2072,
+        "kl": 9.877736781240154e-09,
+        "same_top1": true
+      }
+    ],
+    "exact_math_review_limit": 0.0005,
+    "within_incremental_screen": true,
+    "interpretation": "Base comparison, not external-reference KL, task quality or complete base admission",
+    "dumps": {
+      "historical": {
+        "bytes": 16547840,
+        "sha256": "a05567b65e188b0ff1fc069db080a6a941954247ee3874b1730ce50ced2d7d44"
+      },
+      "current": {
+        "bytes": 16547840,
+        "sha256": "fe9e3359366bba038e41c1b60d28783457454319f889ffbdde65d9eda0243d28"
+      }
+    }
+  },
+  "unresolved": [
+    "Full memory component/pin ledger incomplete; samples are not additive",
+    "Cold means process start only; OS file cache uncontrolled",
+    "128 output tokens measured; 512/1024 and filled 32K+ remain",
+    "Single teacher-forced corpus, no complete task/reuse/rollback gate",
+    "Actual per-layer dispatch counters and clean sustained matching remain",
+    "QPI/hardware counters unavailable; no fabricated traffic/occupancy"
+  ],
+  "paired_warm": [
+    {
+      "pair": 0,
+      "case": "code-4096",
+      "historical_prefill_ms": 6040.3,
+      "current_prefill_ms": 5975.8,
+      "prefill_ms_change_percent": -1.0678277568994865,
+      "historical_decode_ms": 4654.7,
+      "current_decode_ms": 4535.4,
+      "decode_ms_change_percent": -2.5630008378628055,
+      "historical_ttft_ms": 6042.470630003663,
+      "current_ttft_ms": 5978.111786003865,
+      "ttft_ms_change_percent": -1.065108098005918,
+      "historical_wire_wall_s": 10.697739592003927,
+      "current_wire_wall_s": 10.513853962998837,
+      "wire_wall_s_change_percent": -1.718920407658231,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "mixed-8192",
+      "historical_prefill_ms": 11554.4,
+      "current_prefill_ms": 11584.5,
+      "prefill_ms_change_percent": 0.2605068199127647,
+      "historical_decode_ms": 4821.7,
+      "current_decode_ms": 4916.9,
+      "decode_ms_change_percent": 1.9744073666963846,
+      "historical_ttft_ms": 11987.548356999469,
+      "current_ttft_ms": 11588.061662005202,
+      "ttft_ms_change_percent": -3.3325137308915065,
+      "historical_wire_wall_s": 16.809535218002566,
+      "current_wire_wall_s": 16.5055260070003,
+      "wire_wall_s_change_percent": -1.808552152451437,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "prose-600",
+      "historical_prefill_ms": 2019.2,
+      "current_prefill_ms": 1948.5,
+      "prefill_ms_change_percent": -3.501386687797148,
+      "historical_decode_ms": 4022.0,
+      "current_decode_ms": 4310.4,
+      "decode_ms_change_percent": 7.1705619094977635,
+      "historical_ttft_ms": 2019.9743390039657,
+      "current_ttft_ms": 1949.1916710030637,
+      "ttft_ms_change_percent": -3.5041369899681207,
+      "historical_wire_wall_s": 6.042397826000524,
+      "current_wire_wall_s": 6.2599347829964245,
+      "wire_wall_s_change_percent": 3.600176010586975,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "code-4096",
+      "historical_prefill_ms": 6019.8,
+      "current_prefill_ms": 6060.9,
+      "prefill_ms_change_percent": 0.6827469351141202,
+      "historical_decode_ms": 4408.8,
+      "current_decode_ms": 4756.8,
+      "decode_ms_change_percent": 7.893304300489934,
+      "historical_ttft_ms": 6022.716919003869,
+      "current_ttft_ms": 6063.639317006164,
+      "ttft_ms_change_percent": 0.6794673990598632,
+      "historical_wire_wall_s": 10.432190576997527,
+      "current_wire_wall_s": 10.820508008000616,
+      "wire_wall_s_change_percent": 3.722300011076385,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "mixed-8192",
+      "historical_prefill_ms": 11608.9,
+      "current_prefill_ms": 11589.6,
+      "prefill_ms_change_percent": -0.16625175511890689,
+      "historical_decode_ms": 4879.7,
+      "current_decode_ms": 4744.9,
+      "decode_ms_change_percent": -2.762464905629447,
+      "historical_ttft_ms": 11751.907603997097,
+      "current_ttft_ms": 11593.31276800367,
+      "ttft_ms_change_percent": -1.3495241907746536,
+      "historical_wire_wall_s": 16.63186324099661,
+      "current_wire_wall_s": 16.33865162800066,
+      "wire_wall_s_change_percent": -1.7629510821926209,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "prose-600",
+      "historical_prefill_ms": 1935.6,
+      "current_prefill_ms": 2119.7,
+      "prefill_ms_change_percent": 9.511262657573871,
+      "historical_decode_ms": 4072.3,
+      "current_decode_ms": 4272.3,
+      "decode_ms_change_percent": 4.911229526311911,
+      "historical_ttft_ms": 1936.2726699982886,
+      "current_ttft_ms": 2120.4477829960524,
+      "ttft_ms_change_percent": 9.511837658583833,
+      "historical_wire_wall_s": 6.009160032997897,
+      "current_wire_wall_s": 6.393132947996492,
+      "wire_wall_s_change_percent": 6.389793463480697,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "code-4096",
+      "historical_prefill_ms": 6072.9,
+      "current_prefill_ms": 6064.5,
+      "prefill_ms_change_percent": -0.13831941905843026,
+      "historical_decode_ms": 4683.8,
+      "current_decode_ms": 4586.0,
+      "decode_ms_change_percent": -2.088048166019052,
+      "historical_ttft_ms": 6075.313056004234,
+      "current_ttft_ms": 6066.949518004549,
+      "ttft_ms_change_percent": -0.1376643133051303,
+      "historical_wire_wall_s": 10.759440679998079,
+      "current_wire_wall_s": 10.653397551002854,
+      "wire_wall_s_change_percent": -0.9855821705710088,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "mixed-8192",
+      "historical_prefill_ms": 11608.0,
+      "current_prefill_ms": 11574.4,
+      "prefill_ms_change_percent": -0.28945554789800987,
+      "historical_decode_ms": 4721.4,
+      "current_decode_ms": 4982.0,
+      "decode_ms_change_percent": 5.519549286228664,
+      "historical_ttft_ms": 11611.806207998598,
+      "current_ttft_ms": 11579.101721996267,
+      "ttft_ms_change_percent": -0.2816485688488579,
+      "historical_wire_wall_s": 16.33340633899934,
+      "current_wire_wall_s": 16.561329111995292,
+      "wire_wall_s_change_percent": 1.395439311711355,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "prose-600",
+      "historical_prefill_ms": 1957.6,
+      "current_prefill_ms": 2059.6,
+      "prefill_ms_change_percent": 5.210461789946863,
+      "historical_decode_ms": 4203.1,
+      "current_decode_ms": 4205.0,
+      "decode_ms_change_percent": 0.04520472984224089,
+      "historical_ttft_ms": 1958.5031650058227,
+      "current_ttft_ms": 2060.3851939958986,
+      "ttft_ms_change_percent": 5.202035452915554,
+      "historical_wire_wall_s": 6.161796251006308,
+      "current_wire_wall_s": 6.265688103994762,
+      "wire_wall_s_change_percent": 1.6860643999951686,
+      "generated_ids_equal": false
+    }
+  ],
+  "warm_medians": [
+    {
+      "case": "code-4096",
+      "paired_samples": 3,
+      "prefill_ms_change_percent": -0.13831941905843026,
+      "decode_ms_change_percent": -2.088048166019052,
+      "ttft_ms_change_percent": -0.1376643133051303
+    },
+    {
+      "case": "mixed-8192",
+      "paired_samples": 3,
+      "prefill_ms_change_percent": -0.16625175511890689,
+      "decode_ms_change_percent": 1.9744073666963846,
+      "ttft_ms_change_percent": -1.3495241907746536
+    },
+    {
+      "case": "prose-600",
+      "paired_samples": 3,
+      "prefill_ms_change_percent": 5.210461789946863,
+      "decode_ms_change_percent": 4.911229526311911,
+      "ttft_ms_change_percent": 5.202035452915554
+    }
+  ],
+  "arms": [
+    {
+      "index": 0,
+      "base": "historical",
+      "startup": {
+        "ready_wall_s": 80.81699531400227
+      },
+      "memory": {
+        "peak_rss_bytes": 84415365120,
+        "peak_pss_bytes": 84408888320,
+        "peak_anonymous_bytes": 1278926848,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48731090944,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 55
+      },
+      "thermal": {
+        "samples": 55,
+        "valid_samples": 55,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "peak_sampled_gpu_used_bytes": 33518780416.0,
+      "engine_ram_tier_gib_rounded": 68.28,
+      "engine_expert_pool_gib_rounded": 24.18,
+      "engine_dense_gib_rounded": 6.17,
+      "startup_and_route_log": [
+        "glm prefill: CUDA0 chunks of 32768 tokens (--prefill auto, up to 32768; mixer sub-batches of 2048), borrowing 7010 MB of the expert pool while a prompt runs (activations 5128, weight scratch 80, expert staging 125, prestage 1662: 160 experts); disk landing ring 96 experts (997 MB pinned)",
+        "glm fast: CUDA0 VRAM before the expert pool: 6.86 of 31.73 GB in use - dense weights 6.17, state/KV (12288 ctx) 0.00, activations 0.08, other (context, MTP, scratch, prompt path) 0.61",
+        "glm fast: CUDA0 layers [0,43) expert pool 24.18 GB, 74-74 slots/layer (3182 total)",
+        "glm fast: CUDA0 RAM tier 68.28 GB pinned, 8984 slots",
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.349 ms on the CPU vs 0.841 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6",
+        "glm stat: decode 41.72 ms/tok (23.97 tok/s) | vram hit 66.76% | ram fetches 13.38/tok | disk 0.00 reads/tok in 0.16 waits/tok, 0.01 ms/tok | promotions 13.55/tok | cpu lane 71.55/tok in 20.46 ms/tok | tail skip 0.00/tok | prompt 4.1 ms/tok | vram 3057/3182 ram 7946/8984",
+        "glm stat: decode 31.42 ms/tok (31.83 tok/s) | vram hit 80.98% | ram fetches 4.72/tok | disk 0.00 reads/tok in 0.13 waits/tok, 0.02 ms/tok | promotions 4.85/tok | cpu lane 43.84/tok in 10.38 ms/tok | tail skip 0.00/tok | prompt 3.4 ms/tok | vram 3057/3182 ram 7950/8984",
+        "glm stat: decode 40.43 ms/tok (24.74 tok/s) | vram hit 71.51% | ram fetches 9.77/tok | disk 0.00 reads/tok in 0.19 waits/tok, 0.01 ms/tok | promotions 9.96/tok | cpu lane 62.97/tok in 13.96 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 3057/3182 ram 7950/8984",
+        "glm stat: decode 36.37 ms/tok (27.50 tok/s) | vram hit 78.73% | ram fetches 5.25/tok | disk 0.00 reads/tok in 0.13 waits/tok, 0.01 ms/tok | promotions 5.38/tok | cpu lane 49.05/tok in 11.44 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 2999/3182 ram 8006/8984",
+        "glm stat: decode 39.26 ms/tok (25.47 tok/s) | vram hit 74.56% | ram fetches 7.91/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.00 ms/tok | promotions 8.00/tok | cpu lane 57.12/tok in 13.21 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3024/3182 ram 7984/8984",
+        "glm stat: decode 37.67 ms/tok (26.55 tok/s) | vram hit 77.77% | ram fetches 5.88/tok | disk 0.00 reads/tok in 0.19 waits/tok, 0.02 ms/tok | promotions 6.07/tok | cpu lane 50.84/tok in 12.10 ms/tok | tail skip 0.00/tok | prompt 1.4 ms/tok | vram 2974/3182 ram 8034/8984"
+      ],
+      "warm_requests": [
+        {
+          "prompt_tokens": 600,
+          "output_tokens": 128,
+          "prefill_ms": 2019.2,
+          "decode_ms": 4022.0,
+          "done": "DONE 128 600 2019.2 4022.0 length 0 0 0 26534 32766",
+          "prefill_tokens_s": 297.14738510301106,
+          "decode_tokens_s": 31.82496270512183,
+          "output_ids_sha256": "1f52ce59de3a580836bd3d2b48deeb29357703418c2c815267d63cf15ae65df8",
+          "case": "prose-600",
+          "request": 1,
+          "wire_wall_s": 6.042397826000524,
+          "ttft_ms": 2019.9743390039657,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 4096,
+          "output_tokens": 128,
+          "prefill_ms": 6040.3,
+          "decode_ms": 4654.7,
+          "done": "DONE 128 4096 6040.3 4654.7 length 0 0 0 25798 32766",
+          "prefill_tokens_s": 678.1120143039253,
+          "decode_tokens_s": 27.4990869443788,
+          "output_ids_sha256": "55fbe3077dd0bc78155effc5cc347a5780c58d0037831e28cf935dbc5e7815a0",
+          "case": "code-4096",
+          "request": 1,
+          "wire_wall_s": 10.697739592003927,
+          "ttft_ms": 6042.470630003663,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 8192,
+          "output_tokens": 128,
+          "prefill_ms": 11554.4,
+          "decode_ms": 4821.7,
+          "done": "DONE 128 8192 11554.4 4821.7 length 0 0 0 25482 32766",
+          "prefill_tokens_s": 708.9939763207091,
+          "decode_tokens_s": 26.546653669867474,
+          "output_ids_sha256": "e6c72a9d91998d4c1d6fdb9b9b2541aa5de313979157b871a5bb5543510dc122",
+          "case": "mixed-8192",
+          "request": 1,
+          "wire_wall_s": 16.809535218002566,
+          "ttft_ms": 11987.548356999469,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "base": "current",
+      "startup": {
+        "ready_wall_s": 82.93450603800011
+      },
+      "memory": {
+        "peak_rss_bytes": 84415995904,
+        "peak_pss_bytes": 84409523200,
+        "peak_anonymous_bytes": 1278742528,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48791035904,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 57
+      },
+      "thermal": {
+        "samples": 57,
+        "valid_samples": 57,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "peak_sampled_gpu_used_bytes": 33518780416.0,
+      "engine_ram_tier_gib_rounded": 68.28,
+      "engine_expert_pool_gib_rounded": 24.18,
+      "engine_dense_gib_rounded": 6.17,
+      "startup_and_route_log": [
+        "glm prefill: CUDA0 chunks of 32768 tokens (--prefill auto, up to 32768; mixer sub-batches of 2048), borrowing 7011 MB of the expert pool while a prompt runs (activations 5129, weight scratch 80, expert staging 125, prestage 1662: 160 experts); disk landing ring 96 experts (997 MB pinned)",
+        "glm fast: CUDA0 VRAM before the expert pool: 6.86 of 31.73 GB in use - dense weights 6.17, state/KV (12288 ctx) 0.00, activations 0.08, other (context, MTP, scratch, prompt path) 0.61",
+        "glm fast: CUDA0 layers [0,43) expert pool 24.18 GB, 74-74 slots/layer (3182 total)",
+        "glm fast: CUDA0 RAM tier 68.28 GB pinned, 8984 slots",
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.353 ms on the CPU vs 0.866 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6",
+        "glm stat: decode 41.68 ms/tok (23.99 tok/s) | vram hit 66.47% | ram fetches 13.38/tok | disk 0.00 reads/tok in 0.07 waits/tok, 0.00 ms/tok | promotions 13.45/tok | cpu lane 72.38/tok in 20.47 ms/tok | tail skip 0.00/tok | prompt 4.6 ms/tok | vram 3058/3182 ram 7948/8984",
+        "glm stat: decode 33.67 ms/tok (29.70 tok/s) | vram hit 75.80% | ram fetches 7.02/tok | disk 0.00 reads/tok in 0.08 waits/tok, 0.01 ms/tok | promotions 7.09/tok | cpu lane 54.85/tok in 12.71 ms/tok | tail skip 0.00/tok | prompt 3.2 ms/tok | vram 3060/3182 ram 7944/8984",
+        "glm stat: decode 40.47 ms/tok (24.71 tok/s) | vram hit 71.75% | ram fetches 9.97/tok | disk 0.00 reads/tok in 0.19 waits/tok, 0.01 ms/tok | promotions 10.16/tok | cpu lane 62.17/tok in 14.42 ms/tok | tail skip 0.00/tok | prompt 1.8 ms/tok | vram 3054/3182 ram 7954/8984",
+        "glm stat: decode 35.43 ms/tok (28.22 tok/s) | vram hit 79.63% | ram fetches 5.05/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.00 ms/tok | promotions 5.15/tok | cpu lane 47.00/tok in 10.51 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3015/3182 ram 7989/8984",
+        "glm stat: decode 38.37 ms/tok (26.06 tok/s) | vram hit 75.87% | ram fetches 7.09/tok | disk 0.00 reads/tok in 0.12 waits/tok, 0.01 ms/tok | promotions 7.21/tok | cpu lane 54.56/tok in 12.81 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3002/3182 ram 8001/8984",
+        "glm stat: decode 38.41 ms/tok (26.03 tok/s) | vram hit 80.27% | ram fetches 4.91/tok | disk 0.00 reads/tok in 0.11 waits/tok, 0.02 ms/tok | promotions 5.02/tok | cpu lane 45.48/tok in 13.58 ms/tok | tail skip 0.00/tok | prompt 1.4 ms/tok | vram 2940/3182 ram 8067/8984"
+      ],
+      "warm_requests": [
+        {
+          "prompt_tokens": 600,
+          "output_tokens": 128,
+          "prefill_ms": 1948.5,
+          "decode_ms": 4310.4,
+          "done": "DONE 128 600 1948.5 4310.4 length 0 0 0 24837 32766",
+          "prefill_tokens_s": 307.92917628945344,
+          "decode_tokens_s": 29.695619896065335,
+          "output_ids_sha256": "2b3c3f3f2f147e252239569e42421ddc997ee0f19b4f47362a4b8448ee1f2c8e",
+          "case": "prose-600",
+          "request": 1,
+          "wire_wall_s": 6.2599347829964245,
+          "ttft_ms": 1949.1916710030637,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 4096,
+          "output_tokens": 128,
+          "prefill_ms": 5975.8,
+          "decode_ms": 4535.4,
+          "done": "DONE 128 4096 5975.8 4535.4 length 0 0 0 26091 32766",
+          "prefill_tokens_s": 685.4312393319723,
+          "decode_tokens_s": 28.222428010759803,
+          "output_ids_sha256": "7b4371ccdf4b1bebb2347dc41f2ab0b8f1af91871f3e8c1c3aba0317899a8aaa",
+          "case": "code-4096",
+          "request": 1,
+          "wire_wall_s": 10.513853962998837,
+          "ttft_ms": 5978.111786003865,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 8192,
+          "output_tokens": 128,
+          "prefill_ms": 11584.5,
+          "decode_ms": 4916.9,
+          "done": "DONE 128 8192 11584.5 4916.9 length 0 0 0 26301 32766",
+          "prefill_tokens_s": 707.1517976606673,
+          "decode_tokens_s": 26.03266285667799,
+          "output_ids_sha256": "b8f15f7add527ae33a537261770f9d60e4fd0638f6744cf80cec9a1a670c326a",
+          "case": "mixed-8192",
+          "request": 1,
+          "wire_wall_s": 16.5055260070003,
+          "ttft_ms": 11588.061662005202,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "base": "current",
+      "startup": {
+        "ready_wall_s": 78.99091647900059
+      },
+      "memory": {
+        "peak_rss_bytes": 84407058432,
+        "peak_pss_bytes": 84400561152,
+        "peak_anonymous_bytes": 1276260352,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48877805568,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 55
+      },
+      "thermal": {
+        "samples": 55,
+        "valid_samples": 55,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "peak_sampled_gpu_used_bytes": 33518780416.0,
+      "engine_ram_tier_gib_rounded": 68.28,
+      "engine_expert_pool_gib_rounded": 24.18,
+      "engine_dense_gib_rounded": 6.17,
+      "startup_and_route_log": [
+        "glm prefill: CUDA0 chunks of 32768 tokens (--prefill auto, up to 32768; mixer sub-batches of 2048), borrowing 7011 MB of the expert pool while a prompt runs (activations 5129, weight scratch 80, expert staging 125, prestage 1662: 160 experts); disk landing ring 96 experts (997 MB pinned)",
+        "glm fast: CUDA0 VRAM before the expert pool: 6.86 of 31.73 GB in use - dense weights 6.17, state/KV (12288 ctx) 0.00, activations 0.08, other (context, MTP, scratch, prompt path) 0.61",
+        "glm fast: CUDA0 layers [0,43) expert pool 24.18 GB, 74-74 slots/layer (3182 total)",
+        "glm fast: CUDA0 RAM tier 68.28 GB pinned, 8984 slots",
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.352 ms on the CPU vs 0.838 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6",
+        "glm stat: decode 41.42 ms/tok (24.14 tok/s) | vram hit 67.99% | ram fetches 12.55/tok | disk 0.00 reads/tok in 0.12 waits/tok, 0.01 ms/tok | promotions 12.68/tok | cpu lane 69.26/tok in 19.30 ms/tok | tail skip 0.00/tok | prompt 4.1 ms/tok | vram 3055/3182 ram 7949/8984",
+        "glm stat: decode 33.38 ms/tok (29.96 tok/s) | vram hit 77.16% | ram fetches 6.17/tok | disk 0.00 reads/tok in 0.06 waits/tok, 0.01 ms/tok | promotions 6.23/tok | cpu lane 52.23/tok in 12.26 ms/tok | tail skip 0.00/tok | prompt 3.5 ms/tok | vram 3059/3182 ram 7944/8984",
+        "glm stat: decode 39.80 ms/tok (25.12 tok/s) | vram hit 73.28% | ram fetches 8.83/tok | disk 0.00 reads/tok in 0.12 waits/tok, 0.01 ms/tok | promotions 8.95/tok | cpu lane 59.45/tok in 13.72 ms/tok | tail skip 0.00/tok | prompt 1.7 ms/tok | vram 3066/3182 ram 7935/8984",
+        "glm stat: decode 37.16 ms/tok (26.91 tok/s) | vram hit 78.10% | ram fetches 6.04/tok | disk 0.00 reads/tok in 0.15 waits/tok, 0.02 ms/tok | promotions 6.19/tok | cpu lane 49.88/tok in 11.68 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3019/3182 ram 7985/8984",
+        "glm stat: decode 38.88 ms/tok (25.72 tok/s) | vram hit 75.12% | ram fetches 7.59/tok | disk 0.00 reads/tok in 0.05 waits/tok, 0.00 ms/tok | promotions 7.65/tok | cpu lane 56.03/tok in 12.88 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3027/3182 ram 7978/8984",
+        "glm stat: decode 37.07 ms/tok (26.98 tok/s) | vram hit 78.17% | ram fetches 5.62/tok | disk 0.00 reads/tok in 0.10 waits/tok, 0.01 ms/tok | promotions 5.73/tok | cpu lane 50.16/tok in 11.51 ms/tok | tail skip 0.00/tok | prompt 1.4 ms/tok | vram 2959/3182 ram 8040/8984"
+      ],
+      "warm_requests": [
+        {
+          "prompt_tokens": 600,
+          "output_tokens": 128,
+          "prefill_ms": 2119.7,
+          "decode_ms": 4272.3,
+          "done": "DONE 128 600 2119.7 4272.3 length 0 0 0 25282 32766",
+          "prefill_tokens_s": 283.05892343256124,
+          "decode_tokens_s": 29.960442852795918,
+          "output_ids_sha256": "324f9c7f1b94b7e91a181be5bff30d08fc3e8c56291cd1c000a7735251988be1",
+          "case": "prose-600",
+          "request": 1,
+          "wire_wall_s": 6.393132947996492,
+          "ttft_ms": 2120.4477829960524,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 4096,
+          "output_tokens": 128,
+          "prefill_ms": 6060.9,
+          "decode_ms": 4756.8,
+          "done": "DONE 128 4096 6060.9 4756.8 length 0 0 0 25589 32766",
+          "prefill_tokens_s": 675.8072233496675,
+          "decode_tokens_s": 26.908846283215606,
+          "output_ids_sha256": "4c14262e889ba75d84fc1a39ab65cec4b3fb4046c07a4a15116b359cb8dbda87",
+          "case": "code-4096",
+          "request": 1,
+          "wire_wall_s": 10.820508008000616,
+          "ttft_ms": 6063.639317006164,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 8192,
+          "output_tokens": 128,
+          "prefill_ms": 11589.6,
+          "decode_ms": 4744.9,
+          "done": "DONE 128 8192 11589.6 4744.9 length 0 0 0 25613 32766",
+          "prefill_tokens_s": 706.8406157244426,
+          "decode_tokens_s": 26.97633248329786,
+          "output_ids_sha256": "153211b8c99083ec59594147042c7323e560f2ef5e71e44d117496e6ed4ffa33",
+          "case": "mixed-8192",
+          "request": 1,
+          "wire_wall_s": 16.33865162800066,
+          "ttft_ms": 11593.31276800367,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "base": "historical",
+      "startup": {
+        "ready_wall_s": 81.49877398600074
+      },
+      "memory": {
+        "peak_rss_bytes": 84410953728,
+        "peak_pss_bytes": 84404472832,
+        "peak_anonymous_bytes": 1278140416,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48775958528,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 54
+      },
+      "thermal": {
+        "samples": 54,
+        "valid_samples": 54,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "peak_sampled_gpu_used_bytes": 33518780416.0,
+      "engine_ram_tier_gib_rounded": 68.28,
+      "engine_expert_pool_gib_rounded": 24.18,
+      "engine_dense_gib_rounded": 6.17,
+      "startup_and_route_log": [
+        "glm prefill: CUDA0 chunks of 32768 tokens (--prefill auto, up to 32768; mixer sub-batches of 2048), borrowing 7010 MB of the expert pool while a prompt runs (activations 5128, weight scratch 80, expert staging 125, prestage 1662: 160 experts); disk landing ring 96 experts (997 MB pinned)",
+        "glm fast: CUDA0 VRAM before the expert pool: 6.86 of 31.73 GB in use - dense weights 6.17, state/KV (12288 ctx) 0.00, activations 0.08, other (context, MTP, scratch, prompt path) 0.61",
+        "glm fast: CUDA0 layers [0,43) expert pool 24.18 GB, 74-74 slots/layer (3182 total)",
+        "glm fast: CUDA0 RAM tier 68.28 GB pinned, 8984 slots",
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.346 ms on the CPU vs 0.910 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6",
+        "glm stat: decode 39.19 ms/tok (25.52 tok/s) | vram hit 66.49% | ram fetches 13.41/tok | disk 0.00 reads/tok in 0.11 waits/tok, 0.01 ms/tok | promotions 13.52/tok | cpu lane 72.26/tok in 16.77 ms/tok | tail skip 0.00/tok | prompt 4.6 ms/tok | vram 3063/3182 ram 7939/8984",
+        "glm stat: decode 31.82 ms/tok (31.43 tok/s) | vram hit 79.70% | ram fetches 4.85/tok | disk 0.00 reads/tok in 0.07 waits/tok, 0.02 ms/tok | promotions 4.91/tok | cpu lane 47.03/tok in 11.39 ms/tok | tail skip 0.00/tok | prompt 3.2 ms/tok | vram 3067/3182 ram 7937/8984",
+        "glm stat: decode 39.69 ms/tok (25.20 tok/s) | vram hit 72.70% | ram fetches 9.21/tok | disk 0.00 reads/tok in 0.13 waits/tok, 0.01 ms/tok | promotions 9.34/tok | cpu lane 60.54/tok in 14.26 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 3058/3182 ram 7944/8984",
+        "glm stat: decode 34.44 ms/tok (29.03 tok/s) | vram hit 80.95% | ram fetches 4.12/tok | disk 0.00 reads/tok in 0.12 waits/tok, 0.01 ms/tok | promotions 4.25/tok | cpu lane 44.51/tok in 9.90 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 2976/3182 ram 8027/8984",
+        "glm stat: decode 38.41 ms/tok (26.03 tok/s) | vram hit 75.59% | ram fetches 7.54/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.01 ms/tok | promotions 7.63/tok | cpu lane 54.85/tok in 12.75 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3027/3182 ram 7975/8984",
+        "glm stat: decode 38.12 ms/tok (26.23 tok/s) | vram hit 76.64% | ram fetches 7.23/tok | disk 0.00 reads/tok in 0.25 waits/tok, 0.03 ms/tok | promotions 7.48/tok | cpu lane 52.31/tok in 12.22 ms/tok | tail skip 0.00/tok | prompt 1.4 ms/tok | vram 2990/3182 ram 8014/8984"
+      ],
+      "warm_requests": [
+        {
+          "prompt_tokens": 600,
+          "output_tokens": 128,
+          "prefill_ms": 1935.6,
+          "decode_ms": 4072.3,
+          "done": "DONE 128 600 1935.6 4072.3 length 0 0 0 26116 32766",
+          "prefill_tokens_s": 309.98140111593307,
+          "decode_tokens_s": 31.431868968396238,
+          "output_ids_sha256": "284884f28bb762c439214cc5a99d807e70f16e398ed13559400aee7e89a49ec3",
+          "case": "prose-600",
+          "request": 1,
+          "wire_wall_s": 6.009160032997897,
+          "ttft_ms": 1936.2726699982886,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 4096,
+          "output_tokens": 128,
+          "prefill_ms": 6019.8,
+          "decode_ms": 4408.8,
+          "done": "DONE 128 4096 6019.8 4408.8 length 0 0 0 26525 32766",
+          "prefill_tokens_s": 680.4212764543672,
+          "decode_tokens_s": 29.032843404100888,
+          "output_ids_sha256": "c2f3c701e31f6778a2aaeb2a7eb1ca154f68e1bcb5732a7831980e70b982e951",
+          "case": "code-4096",
+          "request": 1,
+          "wire_wall_s": 10.432190576997527,
+          "ttft_ms": 6022.716919003869,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 8192,
+          "output_tokens": 128,
+          "prefill_ms": 11608.9,
+          "decode_ms": 4879.7,
+          "done": "DONE 128 8192 11608.9 4879.7 length 0 0 0 25112 32766",
+          "prefill_tokens_s": 705.6654807949074,
+          "decode_tokens_s": 26.231120765620837,
+          "output_ids_sha256": "377de7aa10d74db645d51d5c3ecbceb9db58c40a1a3f5d232ebea77af90d7339",
+          "case": "mixed-8192",
+          "request": 1,
+          "wire_wall_s": 16.63186324099661,
+          "ttft_ms": 11751.907603997097,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "base": "historical",
+      "startup": {
+        "ready_wall_s": 79.57169468099892
+      },
+      "memory": {
+        "peak_rss_bytes": 84392873984,
+        "peak_pss_bytes": 84386379776,
+        "peak_anonymous_bytes": 1267802112,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48652128256,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 54
+      },
+      "thermal": {
+        "samples": 54,
+        "valid_samples": 54,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "peak_sampled_gpu_used_bytes": 33518780416.0,
+      "engine_ram_tier_gib_rounded": 68.28,
+      "engine_expert_pool_gib_rounded": 24.18,
+      "engine_dense_gib_rounded": 6.17,
+      "startup_and_route_log": [
+        "glm prefill: CUDA0 chunks of 32768 tokens (--prefill auto, up to 32768; mixer sub-batches of 2048), borrowing 7010 MB of the expert pool while a prompt runs (activations 5128, weight scratch 80, expert staging 125, prestage 1662: 160 experts); disk landing ring 96 experts (997 MB pinned)",
+        "glm fast: CUDA0 VRAM before the expert pool: 6.86 of 31.73 GB in use - dense weights 6.17, state/KV (12288 ctx) 0.00, activations 0.08, other (context, MTP, scratch, prompt path) 0.61",
+        "glm fast: CUDA0 layers [0,43) expert pool 24.18 GB, 74-74 slots/layer (3182 total)",
+        "glm fast: CUDA0 RAM tier 68.28 GB pinned, 8984 slots",
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.351 ms on the CPU vs 0.864 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6",
+        "glm stat: decode 40.86 ms/tok (24.47 tok/s) | vram hit 65.86% | ram fetches 13.59/tok | disk 0.00 reads/tok in 0.10 waits/tok, 0.02 ms/tok | promotions 13.69/tok | cpu lane 73.70/tok in 19.28 ms/tok | tail skip 0.00/tok | prompt 4.0 ms/tok | vram 3057/3182 ram 7946/8984",
+        "glm stat: decode 32.84 ms/tok (30.45 tok/s) | vram hit 77.50% | ram fetches 5.64/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.01 ms/tok | promotions 5.73/tok | cpu lane 51.85/tok in 12.42 ms/tok | tail skip 0.00/tok | prompt 3.3 ms/tok | vram 3066/3182 ram 7931/8984",
+        "glm stat: decode 40.00 ms/tok (25.00 tok/s) | vram hit 72.57% | ram fetches 9.41/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.01 ms/tok | promotions 9.50/tok | cpu lane 60.73/tok in 14.51 ms/tok | tail skip 0.00/tok | prompt 1.7 ms/tok | vram 3056/3182 ram 7948/8984",
+        "glm stat: decode 36.59 ms/tok (27.33 tok/s) | vram hit 77.40% | ram fetches 6.66/tok | disk 0.00 reads/tok in 0.16 waits/tok, 0.01 ms/tok | promotions 6.82/tok | cpu lane 51.03/tok in 11.15 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3038/3182 ram 7956/8984",
+        "glm stat: decode 39.32 ms/tok (25.43 tok/s) | vram hit 74.33% | ram fetches 8.10/tok | disk 0.00 reads/tok in 0.05 waits/tok, 0.00 ms/tok | promotions 8.15/tok | cpu lane 57.55/tok in 13.66 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3033/3182 ram 7964/8984",
+        "glm stat: decode 36.89 ms/tok (27.11 tok/s) | vram hit 78.75% | ram fetches 5.49/tok | disk 0.00 reads/tok in 0.16 waits/tok, 0.03 ms/tok | promotions 5.64/tok | cpu lane 48.76/tok in 11.67 ms/tok | tail skip 0.00/tok | prompt 1.4 ms/tok | vram 2958/3182 ram 8049/8984"
+      ],
+      "warm_requests": [
+        {
+          "prompt_tokens": 600,
+          "output_tokens": 128,
+          "prefill_ms": 1957.6,
+          "decode_ms": 4203.1,
+          "done": "DONE 128 600 1957.6 4203.1 length 0 0 0 25395 32766",
+          "prefill_tokens_s": 306.4977523498161,
+          "decode_tokens_s": 30.453712735837833,
+          "output_ids_sha256": "c18386ef4d20513a0715284a82acd67a233ed1a1921ae209932c73edfebf4f8e",
+          "case": "prose-600",
+          "request": 1,
+          "wire_wall_s": 6.161796251006308,
+          "ttft_ms": 1958.5031650058227,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 4096,
+          "output_tokens": 128,
+          "prefill_ms": 6072.9,
+          "decode_ms": 4683.8,
+          "done": "DONE 128 4096 6072.9 4683.8 length 0 0 0 25361 32766",
+          "prefill_tokens_s": 674.4718338849644,
+          "decode_tokens_s": 27.328237755668475,
+          "output_ids_sha256": "d49dd422a400605ff71c3bf346d2dc0d70e4376cf9a052bc0bddbcd60c6a2f21",
+          "case": "code-4096",
+          "request": 1,
+          "wire_wall_s": 10.759440679998079,
+          "ttft_ms": 6075.313056004234,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 8192,
+          "output_tokens": 128,
+          "prefill_ms": 11608.0,
+          "decode_ms": 4721.4,
+          "done": "DONE 128 8192 11608.0 4721.4 length 0 0 0 25802 32766",
+          "prefill_tokens_s": 705.7201929703652,
+          "decode_tokens_s": 27.110602787308853,
+          "output_ids_sha256": "a74df43621b11c0dd2cbce4ad040dec5087da715e3c38be0288ac5f7b89d15f6",
+          "case": "mixed-8192",
+          "request": 1,
+          "wire_wall_s": 16.33340633899934,
+          "ttft_ms": 11611.806207998598,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "base": "current",
+      "startup": {
+        "ready_wall_s": 80.0894615319994
+      },
+      "memory": {
+        "peak_rss_bytes": 84398317568,
+        "peak_pss_bytes": 84391825408,
+        "peak_anonymous_bytes": 1269448704,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48765612032,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 54
+      },
+      "thermal": {
+        "samples": 54,
+        "valid_samples": 54,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "peak_sampled_gpu_used_bytes": 33518780416.0,
+      "engine_ram_tier_gib_rounded": 68.28,
+      "engine_expert_pool_gib_rounded": 24.18,
+      "engine_dense_gib_rounded": 6.17,
+      "startup_and_route_log": [
+        "glm prefill: CUDA0 chunks of 32768 tokens (--prefill auto, up to 32768; mixer sub-batches of 2048), borrowing 7011 MB of the expert pool while a prompt runs (activations 5129, weight scratch 80, expert staging 125, prestage 1662: 160 experts); disk landing ring 96 experts (997 MB pinned)",
+        "glm fast: CUDA0 VRAM before the expert pool: 6.86 of 31.73 GB in use - dense weights 6.17, state/KV (12288 ctx) 0.00, activations 0.08, other (context, MTP, scratch, prompt path) 0.61",
+        "glm fast: CUDA0 layers [0,43) expert pool 24.18 GB, 74-74 slots/layer (3182 total)",
+        "glm fast: CUDA0 RAM tier 68.28 GB pinned, 8984 slots",
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.351 ms on the CPU vs 0.809 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6",
+        "glm stat: decode 40.83 ms/tok (24.49 tok/s) | vram hit 66.67% | ram fetches 13.37/tok | disk 0.00 reads/tok in 0.05 waits/tok, 0.01 ms/tok | promotions 13.42/tok | cpu lane 71.90/tok in 18.00 ms/tok | tail skip 0.00/tok | prompt 4.0 ms/tok | vram 3055/3182 ram 7945/8984",
+        "glm stat: decode 32.85 ms/tok (30.44 tok/s) | vram hit 77.80% | ram fetches 5.89/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.02 ms/tok | promotions 5.97/tok | cpu lane 50.84/tok in 11.55 ms/tok | tail skip 0.00/tok | prompt 3.4 ms/tok | vram 3060/3182 ram 7945/8984",
+        "glm stat: decode 39.76 ms/tok (25.15 tok/s) | vram hit 73.04% | ram fetches 8.91/tok | disk 0.00 reads/tok in 0.07 waits/tok, 0.00 ms/tok | promotions 8.98/tok | cpu lane 60.04/tok in 13.57 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 3057/3182 ram 7943/8984",
+        "glm stat: decode 35.83 ms/tok (27.91 tok/s) | vram hit 80.15% | ram fetches 4.90/tok | disk 0.00 reads/tok in 0.12 waits/tok, 0.00 ms/tok | promotions 5.02/tok | cpu lane 45.80/tok in 10.84 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 3002/3182 ram 8001/8984",
+        "glm stat: decode 38.09 ms/tok (26.25 tok/s) | vram hit 77.05% | ram fetches 6.37/tok | disk 0.00 reads/tok in 0.09 waits/tok, 0.00 ms/tok | promotions 6.46/tok | cpu lane 52.28/tok in 12.41 ms/tok | tail skip 0.00/tok | prompt 1.5 ms/tok | vram 2989/3182 ram 8012/8984",
+        "glm stat: decode 38.92 ms/tok (25.69 tok/s) | vram hit 77.50% | ram fetches 6.36/tok | disk 0.00 reads/tok in 0.11 waits/tok, 0.01 ms/tok | promotions 6.46/tok | cpu lane 51.12/tok in 13.44 ms/tok | tail skip 0.00/tok | prompt 1.4 ms/tok | vram 2984/3182 ram 8021/8984"
+      ],
+      "warm_requests": [
+        {
+          "prompt_tokens": 600,
+          "output_tokens": 128,
+          "prefill_ms": 2059.6,
+          "decode_ms": 4205.0,
+          "done": "DONE 128 600 2059.6 4205.0 length 0 0 0 25493 32766",
+          "prefill_tokens_s": 291.3187026607108,
+          "decode_tokens_s": 30.439952437574316,
+          "output_ids_sha256": "638bf3dc3b505546cff7c2e6749399187cd1de31a67c320124f9243af19bd773",
+          "case": "prose-600",
+          "request": 1,
+          "wire_wall_s": 6.265688103994762,
+          "ttft_ms": 2060.3851939958986,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 4096,
+          "output_tokens": 128,
+          "prefill_ms": 6064.5,
+          "decode_ms": 4586.0,
+          "done": "DONE 128 4096 6064.5 4586.0 length 0 0 0 26261 32766",
+          "prefill_tokens_s": 675.4060516118394,
+          "decode_tokens_s": 27.911033580462277,
+          "output_ids_sha256": "7279fe2812012711d92dfedf5fa61dc36b6a4b067455ea91e23e170d2545efd9",
+          "case": "code-4096",
+          "request": 1,
+          "wire_wall_s": 10.653397551002854,
+          "ttft_ms": 6066.949518004549,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        },
+        {
+          "prompt_tokens": 8192,
+          "output_tokens": 128,
+          "prefill_ms": 11574.4,
+          "decode_ms": 4982.0,
+          "done": "DONE 128 8192 11574.4 4982.0 length 0 0 0 25394 32766",
+          "prefill_tokens_s": 707.7688692286425,
+          "decode_tokens_s": 25.69249297470895,
+          "output_ids_sha256": "1a87013a4c30626fd10ab8e5596dfe40bf0d07559a6d1c7cdf8c8a3f9a0127c3",
+          "case": "mixed-8192",
+          "request": 1,
+          "wire_wall_s": 16.561329111995292,
+          "ttft_ms": 11579.101721996267,
+          "cache_state": "same-process warmed tiers; prefix reuse disabled"
+        }
+      ]
+    }
+  ],
+  "interpretation": "Negative paired latency change favors current. Three process pairs, initial screen only; no base selection from medians alone. Greedy-string equality is diagnostic, not a substitute for fixed-token logits and existing repeat variability.",
+  "run_id": 39150769368,
+  "artifact_id": 12145906706,
+  "artifact_bytes": 2869760,
+  "artifact_sha256": "e7570b41bbeaf6502b678b4e2e12d65eb9ed7508768183d49c85af33a58963e7",
+  "review_decision": "Retain v1.3.28 for isolation. No v1.3.31 base migration yet: small-sample mixed latency, unmatched power/placement and greedy output variation require targeted review.",
+  "merge_dry_run": {
+    "result": "clean",
+    "upstream_sha": "7c893ac17e61ec45c934b3278356807fc4626c3c",
+    "branch_changed": false
+  }
+}

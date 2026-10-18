@@ -9,8 +9,44 @@ The implementation now follows **v9** (`IMPLEMENTATION_SPEC.md`).
 See [v9 adoption and paired-base campaign](V9_ADOPTION.md). It supersedes v8's
 task ordering; the [v8 applicability audit](V8_ADOPTION.md) retains actual-format corrections,
 newer-Abyss differences and the isolated quantize-once/scatter contract. The pinned
-base and measured baseline are preserved. P0 counter/NUMA/quality gates remain open;
-adopting v8 does not mark its proposed flags implemented or enable production paths.
+base and measured baseline are preserved. P0 base-selection, dispatch, memory and
+quality gates remain open; unavailable counters are disclosed under v9's event/
+timeline alternative. Adopting v9 does not make proposed flags functional.
+
+### v9 initial paired-base result
+
+[Run 39150769368](https://github.com/mylordmonkeyman/Abyss/actions/runs/39150769368)
+completed on `c2d490e`: both **unmodified upstream SHAs** built for SM70 and
+completed 36 total requests, 128 output tokens each, across 600/4K/8K prompts.
+Three process pairs used A/B, B/A, A/B ordering, identical pack and fixture IDs,
+explicit FP32 overrides, speculation/prefix reuse/persistent usage disabled.
+
+| v1.3.31 versus v1.3.28 | Median paired prefill latency change | Median paired decode latency change |
+| --- | --- | --- |
+| 600 prose | +5.21% | +4.91% |
+| 4,096 code | -0.14% | -2.09% |
+| 8,192 mixed language/numeric | -0.17% | +1.97% |
+
+Negative values favor v1.3.31. These are three-pair initial observations, not
+clean causal speedups: per-pair variation is substantial, power-limit activity
+is not matched in every arm, and greedy strings differ. Teacher forcing across
+the 2,048 boundary gives **mean KL 1.5014e-7**, max **1.0741e-6**, top-1 **32/32**.
+This passes the small v9 incremental screen, not the full quality/reuse gate.
+
+All six process arms report the same rounded **24.18 GiB GPU expert pool** and
+**68.28 GiB pinned RAM tier**. Peak sampled RSS is about **78.60–78.62 GiB**;
+minimum host MemAvailable remains above **45 GiB**. No sampled thermal slowdown;
+power-cap activity occurs in five arms. AnonHugePages is zero in these samples,
+so the newer THP policy has no demonstrated realized benefit here. RSS, CUDA
+registered pages, cgroup memory and file cache are overlapping views.
+
+**Decision: retain v1.3.28 for isolation**, investigate short-prompt variability
+and actual placement/dispatch before adopting v1.3.31. The merge dry run is clean;
+no merge/rebase or production optimization was performed. Extended 512/1024-output,
+filled 32K+, full unique memory accounting and per-layer dispatch remain open.
+See [paired evidence](v9-bases-2026-10-18.json) and
+[memory worksheet](v9-memory-2026-10-18.csv). Artifact `12145906706` is
+2,869,760 bytes, SHA256 `e7570b41bbeaf6502b678b4e2e12d65eb9ed7508768183d49c85af33a58963e7`.
 
 [v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
 commit `f7138de`, passed **89 isolated Q8_1 scatter byte/guard cases**, with zero
@@ -21,7 +57,7 @@ supports the relevant IQ2_XS type, retained as a separately validated CPU candid
 Scatter integration is deferred: all MMQ quantization represents only 0.638% of
 the existing 2K trace's prefill wall time, and full-route scatter needs a resource
 design for Abyss's smaller W-row buffers. The ~1.5x isolated quantizer result is
-not a whole-model speedup. Latest hosted CI passes 130 server / 206 tool tests.
+not a whole-model speedup. v9 hosted CI passes 130 server / 209 tool tests.
 
 ## Confirmed on the actual V100
 

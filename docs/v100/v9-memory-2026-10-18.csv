@@ -1,0 +1,97 @@
+base,arm,category,bytes,decimal_gb,binary_gib,evidence,note
+historical,0,model_disk,,,,source metadata,see tensor_inventory.csv and fixed shard sizes; not physical residency
+historical,0,gpu_total_used,33518780416.0,33.518780416,31.216796875,sampled,CUPTI not required; sampled NVML used includes overlapping allocations
+historical,0,gpu_dense,6624987054.08,6.62498705408,6.17,engine log,rounded engine allocation; subcomponent of GPU total
+historical,0,gpu_expert_pool,25963077304.32,25.96307730432,24.18,engine log,rounded engine allocation; subcomponent of GPU total
+historical,0,host_expert_pinned,73315091742.72,73.31509174272,68.28,engine log,rounded engine tier; aliases overlap process and cgroup accounting
+historical,0,host_other_pinned,,,,unmeasured remainder,"token embedding, staging and mailbox allocation ledger incomplete"
+historical,0,process_rss,84415365120,84.41536512,78.61793518066406,sampled,physical resident view; includes pinned/model/heap/file pages
+historical,0,process_pss,84408888320,84.40888832,78.6119031906128,sampled,proportional resident view; overlaps RSS
+historical,0,host_unpinned_unique,,,,not separately measured,requires allocator/page-type separation from registered pages
+historical,0,file_page_cache_working_set,,,,partial,host and cgroup file/cache samples available; unique model working set unknown
+historical,0,os_docker_other_workloads,,,,partial,host/cgroup pressure sampled; unique OS/other-workload attribution unknown
+historical,0,free_safety_floor,48731090944,48.731090944,45.38436508178711,sampled,"minimum sampled system MemAvailable, not container limit minus RSS"
+historical,0,socket0_socket1,,,,placement measured; traffic unavailable,ready_placement.json and per-sample NUMA maps; QPI traffic unmeasured
+historical,0,thp,0,0.0,0.0,sampled,AnonHugePages is a subcomponent of resident anonymous pages
+historical,0,ssd_fetch,,,,raw samples retained,per-process /proc/io and faults plus engine route stats; no system cache drop
+historical,0,unique_memory_budget_total,,,,incomplete unique component ledger,"not computed by adding overlapping RSS, pinned, cache and cgroup views"
+current,1,model_disk,,,,source metadata,see tensor_inventory.csv and fixed shard sizes; not physical residency
+current,1,gpu_total_used,33518780416.0,33.518780416,31.216796875,sampled,CUPTI not required; sampled NVML used includes overlapping allocations
+current,1,gpu_dense,6624987054.08,6.62498705408,6.17,engine log,rounded engine allocation; subcomponent of GPU total
+current,1,gpu_expert_pool,25963077304.32,25.96307730432,24.18,engine log,rounded engine allocation; subcomponent of GPU total
+current,1,host_expert_pinned,73315091742.72,73.31509174272,68.28,engine log,rounded engine tier; aliases overlap process and cgroup accounting
+current,1,host_other_pinned,,,,unmeasured remainder,"token embedding, staging and mailbox allocation ledger incomplete"
+current,1,process_rss,84415995904,84.415995904,78.61852264404297,sampled,physical resident view; includes pinned/model/heap/file pages
+current,1,process_pss,84409523200,84.4095232,78.61249446868896,sampled,proportional resident view; overlaps RSS
+current,1,host_unpinned_unique,,,,not separately measured,requires allocator/page-type separation from registered pages
+current,1,file_page_cache_working_set,,,,partial,host and cgroup file/cache samples available; unique model working set unknown
+current,1,os_docker_other_workloads,,,,partial,host/cgroup pressure sampled; unique OS/other-workload attribution unknown
+current,1,free_safety_floor,48791035904,48.791035904,45.44019317626953,sampled,"minimum sampled system MemAvailable, not container limit minus RSS"
+current,1,socket0_socket1,,,,placement measured; traffic unavailable,ready_placement.json and per-sample NUMA maps; QPI traffic unmeasured
+current,1,thp,0,0.0,0.0,sampled,AnonHugePages is a subcomponent of resident anonymous pages
+current,1,ssd_fetch,,,,raw samples retained,per-process /proc/io and faults plus engine route stats; no system cache drop
+current,1,unique_memory_budget_total,,,,incomplete unique component ledger,"not computed by adding overlapping RSS, pinned, cache and cgroup views"
+current,2,model_disk,,,,source metadata,see tensor_inventory.csv and fixed shard sizes; not physical residency
+current,2,gpu_total_used,33518780416.0,33.518780416,31.216796875,sampled,CUPTI not required; sampled NVML used includes overlapping allocations
+current,2,gpu_dense,6624987054.08,6.62498705408,6.17,engine log,rounded engine allocation; subcomponent of GPU total
+current,2,gpu_expert_pool,25963077304.32,25.96307730432,24.18,engine log,rounded engine allocation; subcomponent of GPU total
+current,2,host_expert_pinned,73315091742.72,73.31509174272,68.28,engine log,rounded engine tier; aliases overlap process and cgroup accounting
+current,2,host_other_pinned,,,,unmeasured remainder,"token embedding, staging and mailbox allocation ledger incomplete"
+current,2,process_rss,84407058432,84.407058432,78.61019897460938,sampled,physical resident view; includes pinned/model/heap/file pages
+current,2,process_pss,84400561152,84.400561152,78.60414791107178,sampled,proportional resident view; overlaps RSS
+current,2,host_unpinned_unique,,,,not separately measured,requires allocator/page-type separation from registered pages
+current,2,file_page_cache_working_set,,,,partial,host and cgroup file/cache samples available; unique model working set unknown
+current,2,os_docker_other_workloads,,,,partial,host/cgroup pressure sampled; unique OS/other-workload attribution unknown
+current,2,free_safety_floor,48877805568,48.877805568,45.52100372314453,sampled,"minimum sampled system MemAvailable, not container limit minus RSS"
+current,2,socket0_socket1,,,,placement measured; traffic unavailable,ready_placement.json and per-sample NUMA maps; QPI traffic unmeasured
+current,2,thp,0,0.0,0.0,sampled,AnonHugePages is a subcomponent of resident anonymous pages
+current,2,ssd_fetch,,,,raw samples retained,per-process /proc/io and faults plus engine route stats; no system cache drop
+current,2,unique_memory_budget_total,,,,incomplete unique component ledger,"not computed by adding overlapping RSS, pinned, cache and cgroup views"
+historical,3,model_disk,,,,source metadata,see tensor_inventory.csv and fixed shard sizes; not physical residency
+historical,3,gpu_total_used,33518780416.0,33.518780416,31.216796875,sampled,CUPTI not required; sampled NVML used includes overlapping allocations
+historical,3,gpu_dense,6624987054.08,6.62498705408,6.17,engine log,rounded engine allocation; subcomponent of GPU total
+historical,3,gpu_expert_pool,25963077304.32,25.96307730432,24.18,engine log,rounded engine allocation; subcomponent of GPU total
+historical,3,host_expert_pinned,73315091742.72,73.31509174272,68.28,engine log,rounded engine tier; aliases overlap process and cgroup accounting
+historical,3,host_other_pinned,,,,unmeasured remainder,"token embedding, staging and mailbox allocation ledger incomplete"
+historical,3,process_rss,84410953728,84.410953728,78.61382675170898,sampled,physical resident view; includes pinned/model/heap/file pages
+historical,3,process_pss,84404472832,84.404472832,78.60779094696045,sampled,proportional resident view; overlaps RSS
+historical,3,host_unpinned_unique,,,,not separately measured,requires allocator/page-type separation from registered pages
+historical,3,file_page_cache_working_set,,,,partial,host and cgroup file/cache samples available; unique model working set unknown
+historical,3,os_docker_other_workloads,,,,partial,host/cgroup pressure sampled; unique OS/other-workload attribution unknown
+historical,3,free_safety_floor,48775958528,48.775958528,45.426151275634766,sampled,"minimum sampled system MemAvailable, not container limit minus RSS"
+historical,3,socket0_socket1,,,,placement measured; traffic unavailable,ready_placement.json and per-sample NUMA maps; QPI traffic unmeasured
+historical,3,thp,0,0.0,0.0,sampled,AnonHugePages is a subcomponent of resident anonymous pages
+historical,3,ssd_fetch,,,,raw samples retained,per-process /proc/io and faults plus engine route stats; no system cache drop
+historical,3,unique_memory_budget_total,,,,incomplete unique component ledger,"not computed by adding overlapping RSS, pinned, cache and cgroup views"
+historical,4,model_disk,,,,source metadata,see tensor_inventory.csv and fixed shard sizes; not physical residency
+historical,4,gpu_total_used,33518780416.0,33.518780416,31.216796875,sampled,CUPTI not required; sampled NVML used includes overlapping allocations
+historical,4,gpu_dense,6624987054.08,6.62498705408,6.17,engine log,rounded engine allocation; subcomponent of GPU total
+historical,4,gpu_expert_pool,25963077304.32,25.96307730432,24.18,engine log,rounded engine allocation; subcomponent of GPU total
+historical,4,host_expert_pinned,73315091742.72,73.31509174272,68.28,engine log,rounded engine tier; aliases overlap process and cgroup accounting
+historical,4,host_other_pinned,,,,unmeasured remainder,"token embedding, staging and mailbox allocation ledger incomplete"
+historical,4,process_rss,84392873984,84.392873984,78.59698867797852,sampled,physical resident view; includes pinned/model/heap/file pages
+historical,4,process_pss,84386379776,84.386379776,78.59094047546387,sampled,proportional resident view; overlaps RSS
+historical,4,host_unpinned_unique,,,,not separately measured,requires allocator/page-type separation from registered pages
+historical,4,file_page_cache_working_set,,,,partial,host and cgroup file/cache samples available; unique model working set unknown
+historical,4,os_docker_other_workloads,,,,partial,host/cgroup pressure sampled; unique OS/other-workload attribution unknown
+historical,4,free_safety_floor,48652128256,48.652128256,45.31082534790039,sampled,"minimum sampled system MemAvailable, not container limit minus RSS"
+historical,4,socket0_socket1,,,,placement measured; traffic unavailable,ready_placement.json and per-sample NUMA maps; QPI traffic unmeasured
+historical,4,thp,0,0.0,0.0,sampled,AnonHugePages is a subcomponent of resident anonymous pages
+historical,4,ssd_fetch,,,,raw samples retained,per-process /proc/io and faults plus engine route stats; no system cache drop
+historical,4,unique_memory_budget_total,,,,incomplete unique component ledger,"not computed by adding overlapping RSS, pinned, cache and cgroup views"
+current,5,model_disk,,,,source metadata,see tensor_inventory.csv and fixed shard sizes; not physical residency
+current,5,gpu_total_used,33518780416.0,33.518780416,31.216796875,sampled,CUPTI not required; sampled NVML used includes overlapping allocations
+current,5,gpu_dense,6624987054.08,6.62498705408,6.17,engine log,rounded engine allocation; subcomponent of GPU total
+current,5,gpu_expert_pool,25963077304.32,25.96307730432,24.18,engine log,rounded engine allocation; subcomponent of GPU total
+current,5,host_expert_pinned,73315091742.72,73.31509174272,68.28,engine log,rounded engine tier; aliases overlap process and cgroup accounting
+current,5,host_other_pinned,,,,unmeasured remainder,"token embedding, staging and mailbox allocation ledger incomplete"
+current,5,process_rss,84398317568,84.398317568,78.60205841064453,sampled,physical resident view; includes pinned/model/heap/file pages
+current,5,process_pss,84391825408,84.391825408,78.59601211547852,sampled,proportional resident view; overlaps RSS
+current,5,host_unpinned_unique,,,,not separately measured,requires allocator/page-type separation from registered pages
+current,5,file_page_cache_working_set,,,,partial,host and cgroup file/cache samples available; unique model working set unknown
+current,5,os_docker_other_workloads,,,,partial,host/cgroup pressure sampled; unique OS/other-workload attribution unknown
+current,5,free_safety_floor,48765612032,48.765612032,45.4165153503418,sampled,"minimum sampled system MemAvailable, not container limit minus RSS"
+current,5,socket0_socket1,,,,placement measured; traffic unavailable,ready_placement.json and per-sample NUMA maps; QPI traffic unmeasured
+current,5,thp,0,0.0,0.0,sampled,AnonHugePages is a subcomponent of resident anonymous pages
+current,5,ssd_fetch,,,,raw samples retained,per-process /proc/io and faults plus engine route stats; no system cache drop
+current,5,unique_memory_budget_total,,,,incomplete unique component ledger,"not computed by adding overlapping RSS, pinned, cache and cgroup views"
