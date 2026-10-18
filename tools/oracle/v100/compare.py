@@ -33,9 +33,16 @@ def main():
             'An index speeds up selective queries; a full scan may still win when most records qualify. '
             'Floating point addition is not associative. A numerical comparison should examine probability '
             'distributions, rare outliers, and prediction margins rather than only generated strings. '
-            'A chef adjusts salt after tasting the soup, and a musician practices a difficult passage slowly.')
+            'A chef adjusts salt after tasting the soup, and a musician practices a difficult passage slowly. '
+            'In a network protocol, sequence numbers identify packets and acknowledgments confirm delivery. '
+            'A retransmission can recover lost information but also increases delay. An experiment should '
+            'record its inputs, hardware configuration, measurement interval, and any excluded observations. '
+            'A telescope collects light from distant galaxies; atmospheric turbulence can blur the image. '
+            'Repeated measurements help distinguish stable behavior from transient noise, but repeating '
+            'a biased procedure does not remove the bias. A battery stores chemical energy and delivers '
+            'electrical current through a circuit whose resistance affects the rate of heat production.')
     ids = [0] + tok.encode(text)[:129]
-    assert len(ids) == 130
+    assert len(ids) == 130, f'not enough fixture tokens: {len(ids)}'
     tokens = out / 'input.txt'
     tokens.write_text(','.join(map(str, ids)) + '\n')
     (out / 'source-text.txt').write_text(text)
