@@ -1,0 +1,10 @@
+{
+  "source_run_id": 39150769368,
+  "source_artifact_id": 12145906706,
+  "source_arm": "0-historical",
+  "source_request": 1,
+  "prompt_tokens": 600,
+  "forced_continuation_tokens": 128,
+  "input_sha256": "d98730d177a097eca4c4c648d3ea827d0853565df96ef56799394155a3fa7601",
+  "scope": "historical warm greedy response frozen for identical-token replay; not a new sampling run"
+}

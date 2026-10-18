@@ -1,0 +1,72 @@
+name: V100 fixed-token base replay
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-replay.yml'
+      - 'tools/bench/v100_base_replay.py'
+      - 'tools/bench/fixtures/v100-replay-600.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-replay-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out only the replay harness, retain caches and model pack
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+
+      - name: Select the V100 and check existing runtime
+        run: |
+          set -euo pipefail
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          /actions-runner/abyss-v100-python/bin/python -c 'import numpy, regex, jinja2'
+
+      - name: Replay identical prompt and continuation, three interleaved process pairs
+        run: /actions-runner/abyss-v100-python/bin/python tools/bench/v100_base_replay.py
+
+      - name: Check bounded evidence before upload
+        id: cap
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE'])
+          total=sum(p.stat().st_size for p in root.rglob('*') if p.is_file())
+          print('Evidence bytes:',total)
+          if total>64*1024*1024: raise SystemExit('Evidence exceeds 64 MiB cap')
+          PY
+
+      - name: Upload bounded replay evidence
+        if: always() && steps.cap.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-v100-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}/
+          if-no-files-found: warn
+          retention-days: 30

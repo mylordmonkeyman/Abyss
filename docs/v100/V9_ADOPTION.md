@@ -75,3 +75,31 @@ is admitted from this initial data. The merge dry run is conflict-free, leaving
 targeted short-prompt variability/placement review as the next step rather than
 source-conflict resolution. Full results and the incomplete-component memory
 worksheet are linked from `STATUS.md`.
+
+## Fixed-token follow-up
+
+The initial free-generation pairs produce different greedy strings and therefore
+different subsequent expert workloads. Ready-time mapped placement also alternates
+between roughly 24/54 and 52/26 GiB across nodes 0/1. Neither observation proves
+the cause of the small latency difference. A second whole generation matrix would
+retain these confounders.
+
+`v100-replay.yml` instead reuses the checksum-verified, unmodified upstream binaries.
+The historical 600-token prompt and its 128-token continuation are frozen from
+run `39150769368`, historical arm 0, warm request 1. Each process performs one
+excluded warmup and five measured replays; three process pairs use A/B, B/A, A/B.
+Both versions consume identical input token histories. This removes free-generation
+trajectory differences, but does not by itself prove identical floating-point router
+selections, hardware placement or cache residency.
+
+The existing `LOGP` wire command includes prefill, token-path forward, full host
+logits transfer and CPU log-softmax. Its elapsed time is a **fixed-token replay
+wall time**, not ordinary generation throughput or a decode-only timing. LOGP can
+restore an equal cached context independently of GEN's prefix-reuse switch. A small
+`LOGP 2` request between every `LOGP 600` changes the context, forcing reset/prefill
+for every measured replay. The separator's time is excluded; its fixed work can
+affect expert residency equally in the defined experiment. All original likelihood
+replies, per-request CPU/placement snapshots, phase timestamps, thermal/clock samples
+and immutable fixture/binary hashes are retained. No base code or public control
+changes, rebuild, model conversion, memory binding, clock setting or privilege
+change is involved.
