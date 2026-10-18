@@ -75,7 +75,9 @@ jobs:
           git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
           sha256sum build-v100-diagnostics/strata > "$EVIDENCE/binary-sha256.txt"
 
+      # Full-vocabulary screen passed in run 39138840797. Re-run on explicit manual requests.
       - name: Run score
+        if: github.event_name == 'workflow_dispatch'
         run: /actions-runner/abyss-v100-python/bin/python tools/v100/model_baseline.py score
 
       - name: Upload score evidence

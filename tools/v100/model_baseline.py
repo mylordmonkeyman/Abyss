@@ -163,7 +163,7 @@ def bench(out, tok, template, length):
     assert len(ids) == length
     (out / 'input.txt').write_text(','.join(map(str, ids)) + '\n')
     argv = [str(ENGINE), '--glm-pack', str(PACK), '--serve', '--max-context', '36864',
-            '--max-new', '256', '--prefill', 'auto', '--temperature', '0', '--eos-ids', '-1']
+            '--max-new', '256', '--prefill', 'auto', '--temperature', '0', '--eos-ids', '2147483647']
     env = fixed_env()
     results, lines = [], queue.Queue()
     with Monitor(out) as monitor, (out / 'engine.log').open('w') as stderr:
