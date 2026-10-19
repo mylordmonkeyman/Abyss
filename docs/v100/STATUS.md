@@ -86,10 +86,28 @@ L2 versus existing FP32 attention is **1.0040e-6**; versus FP64 after inverse Ro
 **1.4413e-6**. See [all case/extrema evidence](p2-latent-gathers-2026-10-18.json).
 Hosted Python/CPU-build CI passes.
 
-The staged gather path is diagnostic only. Full P2 still requires learned input
+The staged gather path is diagnostic only. At that stage, full P2 still required learned input
 projections and actual compressor/norm construction, grouped output projection,
 real stage dumps and same-branch logits, then a fused profitable geometry. No
 production dispatch, public switch or performance improvement is enabled.
+
+### P2 compressor construction and grouped output result
+
+[Run 39178758945](https://github.com/mylordmonkeyman/Abyss/actions/runs/39178758945),
+commit `a7a0727`, passes **10 actual-kernel compressor cases / 54 paired grouped
+output-projection checks**, plus the 21 cached-row attention cases. Both
+sanitizers report zero errors; hosted Python and CPU-build CI pass. Compressor
+cache/ring state is byte-identical for full versus split input; incomplete blocks
+leave the cache untouched. Rounded-FP64 compressor relative L2 reaches 2.0676e-5;
+the broader pre-storage FP64 comparison reaches 2.0848e-4, including F16 rounding.
+
+The 8-group × 1024-rank output check uses the actual prefill cuBLAS shapes,
+leading dimensions and two F16 conversion points with synthetic sparse weights.
+Maximum candidate-versus-fallback post-output relative L2 is **5.8131e-5**.
+See [all case results](p2-components-2026-10-18.json). Learned input GEMMs, raw-KV
+and independent query preparation, real quantized output weights, bounded model
+stage capture/logits and fused resource/performance gates remain open. No
+production dispatch or performance claim is enabled.
 
 [v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
 commit `f7138de`, passed **89 isolated Q8_1 scatter byte/guard cases**, with zero

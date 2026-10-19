@@ -95,7 +95,7 @@ per-token max/p99/relative stage observations remain in artifact `12153153780`
 (117,185 bytes, SHA256
 `569d02af98f02baf2b5f43c738220e84d4662552932e0956d061d88a4a61ca19`).
 
-## Compressor construction and output projection follow-up (pending V100)
+## Compressor construction and output projection follow-up
 
 The cached-row test now builds ratio-4 overlapping CSA and ratio-128 HCA caches
 with the actual `compress_batch` kernel. Independent FP64 softmax pooling,
@@ -120,3 +120,30 @@ is 2e-4, with 0.004 maximum absolute limits. Projection GEMM stage screens are
 1e-5; the post-projection candidate/fallback screen is 1e-3 because two explicit
 FP16 conversion boundaries are included. All measured errors are retained. These
 component screens do not replace or widen the model delta-KL or semantic gates.
+
+### Physical result
+
+[Run 39178758945](https://github.com/mylordmonkeyman/Abyss/actions/runs/39178758945),
+commit `a7a0727`, passes 10 compressor cases, the 21 attention cases and 54
+paired output-projection checks. Memcheck and synccheck each report zero errors;
+hosted Python tests and CPU build also pass. All full/split cache and ring bytes
+match, and both incomplete-block cases leave the cache untouched.
+
+Maximum compressor relative L2 versus FP64 before F16 storage rounding is
+2.0848e-4 (max absolute 0.0019342); versus the rounded FP64 cache it is 2.0676e-5
+(max absolute 0.001953125). The difference between the two comparisons exposes
+the storage-rounding floor. Maximum grouped GEMM backend relative L2 is
+7.6659e-9 for `wo_a` and zero for `wo_b` on these sparse matrices. After both
+conversion boundaries, candidate versus fallback maximum relative L2 is
+5.8131e-5, maximum absolute 3.0518e-5 and maximum per-check p99 absolute
+4.2915e-6. These component observations do not qualify arbitrary learned weights
+or model distributions.
+
+See [all compressor, projection and latent cases](p2-components-2026-10-18.json).
+Artifact `12155207022`: 123,710 bytes, SHA256
+`d8ac23db76563fb0437b550c5cd13c0944c965a483a9d43150a5fc19ef3a3e8d`.
+The earlier cached-row section's compressor/projection gaps are now covered
+for synthetic inputs as described here. Remaining P2 work requires real learned
+projection activations and quantized weights, raw-KV/query preparation oracles,
+bounded real stage dumps and same-branch full-model logits, then a fused
+profitable kernel with validated resources. No production path is enabled.
