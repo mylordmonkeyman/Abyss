@@ -4,6 +4,8 @@
 #include "qkpv_math.cuh"
 #include "strata/kernels/dsv4_fast.hpp"
 #include <numeric>
+#include <filesystem>
+#include <fstream>
 #include <cublas_v2.h>
 
 using namespace v100diag;
@@ -212,11 +214,14 @@ void run_case(int ratio,int p0,int T,bool yarn,OutputProjection& projection) {
                 "\"split_identity\":true,\"production_enabled\":false,\"pass\":true}\n",
                 ratio,p0,T,yarn?"true":"false",tokens.size(),worst_qk,worst_pv,worst,worst_f32);
 }
+#include "real_stage_replay.cuh"
 }
-int main() {
+int main(int argc,char** argv) {
     try {
         cudaDeviceProp device{};ck(cudaGetDeviceProperties(&device,0));
         need(device.major==7 && device.minor==0,"latent diagnostic requires actual SM70");
+        if(argc==2) {real_stages(argv[1]);return 0;}
+        need(argc==1,"expected optional real-stage capture directory");
         OutputProjection projection;
         for(int T:{1,7,8,15,16,31,32,33,127,128,129})run_case(0,0,T,false,projection);
         run_case(0,127,7,false,projection);run_case(0,129,8,false,projection);

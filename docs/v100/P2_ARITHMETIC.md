@@ -147,3 +147,28 @@ for synthetic inputs as described here. Remaining P2 work requires real learned
 projection activations and quantized weights, raw-KV/query preparation oracles,
 bounded real stage dumps and same-branch full-model logits, then a fused
 profitable kernel with validated resources. No production path is enabled.
+
+## Bounded real-model stage replay (pending V100)
+
+`STRATA_V100_CAPTURE_STAGES` is an internal compile-time diagnostic, default OFF
+and requiring CUDA plus V100 tests. Only `glm_prefill.cu` receives the definition.
+It captures one token at absolute position 2,048 from the first raw, CSA and HCA
+layers encountered, into a fresh per-run directory. Device tensor writes have
+a combined hard 32-MiB cap; the workflow caps all uploaded evidence at 64 MiB.
+There is no new public environment control or candidate inference dispatch.
+Normal build configuration explicitly disables capture, and the capture workflow
+restores/rebuilds the normal engine cache even after failure.
+
+A deterministic 2,400-token repeated frozen fixture reaches position 2,048. This
+is a diagnostic activation workload, not a semantic-quality or throughput corpus.
+Captures retain actual pre/post-preparation queries, KV projection output and norm
+weights, raw/constructed compressed cache rows, real CSA selections, sinks and
+FP32 latent output. Existing `wo_a`/mixer outputs are retained as provenance, but
+actual output-weight replay and same-branch full-model delta-KL remain open.
+
+The latent executable accepts the capture root as its sole optional argument.
+It independently checks query RMS/RoPE and raw-KV RMS/norm/RoPE/F16 storage from
+real learned projection outputs, exact gather identities/causality, QK, sink
+softmax, PV and inverse RoPE versus FP64 and captured FP32 attention. Three graph
+replays run per captured layer. Every tensor has an exact size and a manifest
+SHA256; the original model itself remains only size/structure checked.

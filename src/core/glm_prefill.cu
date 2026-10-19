@@ -18,6 +18,7 @@
 // experts.  STRATA_GLM_NO_PREFILL=1 keeps the token-at-a-time prompt (A/B).
 #include "glm_fast_state.hpp"
 #include "strata/kernels/dsv4_fast.hpp"
+#include "v100_stage_capture.hpp"
 
 #include "strata/core/progress.hpp"
 #include "strata/kernels/cpu/kq_avx512.hpp"
@@ -1442,6 +1443,14 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     // 3. q (and the indexer's q), per-head norm and RoPE
     hgemm(Ly.q_b, HD, g.q_lora, B.qr16, g.q_lora, B.q, HD);
     if (r == 4) hgemm(Ly.idx_q_b_q, IQ, g.q_lora, B.qr16, g.q_lora, B.iq, IQ);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    v100diag::StageCapture capture(il,p0,tn,n_hist,r,g.n_head,D,g.n_rot,rope,g.norm_eps,s);
+    if(capture.enabled) {
+        capture.copy("q_raw.f32",B.q+(size_t)capture.t*HD,HD);
+        capture.copy("kv_raw.f32",B.kv_raw+(size_t)capture.t*D,D);
+        capture.copy("kv_norm.f32",Ly.kv_a_norm,D);
+    }
+#endif
     ds::q_prep_batch(B.q, g.n_head, D, g.n_rot, rope, r == 4 ? B.iq : nullptr, g.idx_heads, g.idx_key, crope, p0, tn,
                      g.norm_eps, s);
     S->mark("ds4_q", s);
@@ -1449,9 +1458,21 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     if (r == 4) ds::indexer_batch(B.iq, Ly.idx_cache, B.iw, g.idx_heads, 4, p0, tn, g.idx_top_k, B.score, B.score_ld,
                                   B.sel, s);
     S->mark("ds4_index", s);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    if(capture.enabled) {
+        capture.copy("q.f32",B.q+(size_t)capture.t*HD,HD);
+        capture.copy("keys.f16",B.keys,(size_t)(n_hist+tn)*D);
+        capture.copy("comp.f16",Ly.comp_cache,(size_t)capture.comp_rows*D);
+        capture.copy("sinks.f32",Ly.sinks,g.n_head);
+        if(r==4)capture.copy("selection.i32",B.sel+(size_t)capture.t*g.idx_top_k,g.idx_top_k);
+    }
+#endif
     ds::attend_batch(B.q, B.keys, n_hist, g.n_swa, Ly.comp_cache, B.sel, g.idx_top_k, r, Ly.sinks, g.n_head, D, g.n_rot,
                      rope, p0, tn, B.o, s);
     S->mark("ds4_attn", s);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    if(capture.enabled)capture.copy("attention.f32",B.o+(size_t)capture.t*HD,HD);
+#endif
     if (skip_output) return true;
     // 5. the grouped output LoRA, then wo_b
     ds::to_f16(B.o, B.o16, (int64_t) tn * HD, s);
@@ -1469,6 +1490,13 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     ds::to_f16(B.oa, B.oa16, (int64_t) tn * OL, s);
     hgemm(Ly.out_b, E, OL, B.oa16, OL, mixer, E);
     S->mark("ds4_out", s);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    if(capture.enabled) {
+        capture.copy("wo_a.f32",B.oa+(size_t)capture.t*OL,OL);
+        capture.copy("mixer.f32",mixer+(size_t)capture.t*E,E);
+        capture.finish();
+    }
+#endif
     return true;
 }
 
