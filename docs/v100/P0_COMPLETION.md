@@ -49,6 +49,15 @@ collection instructions and remaining physical-accounting gaps. Real cudart
 interposition must be verified on the runner after the unprofiled campaign.
 Do not mark the unique-memory gate complete from host tests or virtual ranges.
 
+## Dispatch instrumentation checkpoint
+
+`ABYSS_V100_DISPATCH=1` adds bounded host counters at the actual CPU row and
+MMQ branches, with worker scopes and decode request/position joins. See
+`P0_DISPATCH_LEDGER.md`. 29 local tooling tests pass; CUDA compilation and
+physical capture remain pending. Prefill counters identify chunks and expert
+batch sizes, not individual gathered row tokens. No dispatch gate is closed
+from source presence or host-only tests.
+
 ## Running campaign
 
 Active run: https://github.com/mylordmonkeyman/Abyss/actions/runs/39184856034

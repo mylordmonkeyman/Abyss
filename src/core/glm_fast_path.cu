@@ -16,6 +16,7 @@
 // slot while it is overwritten: the device is parked in that layer's wait kernel, the layer's
 // resident experts are excluded, and every other layer's slots are untouched.
 #include "glm_fast_state.hpp"
+#include "strata/core/v100_dispatch.hpp"
 #include "strata/core/glm_model.hpp"
 #include "strata/kernels/glm_fast.hpp"
 #include "strata/kernels/iq_kernels.hpp"
@@ -1481,6 +1482,9 @@ void Glm5Model::fast_igpu_setup() {
 }
 
 void Glm5Model::fast_cpu_experts(int il, int ne, const uint8_t* const* blob, const float* w, const float* x, float* out) {
+    auto dispatch_context = v100dispatch::current();
+    dispatch_context.layer = il;
+    v100dispatch::Scope cpu_scope(dispatch_context);
     FastState* F = fast_;
     const Glm5Geometry& g = g_;
     const auto& Ly = F->L[(size_t) il];
@@ -1529,6 +1533,7 @@ void Glm5Model::fast_cpu_experts(int il, int ne, const uint8_t* const* blob, con
     kc::native_quant_act(nf, x, F->cpu_act.data());
     const int gu_tot = ne * n_ff;
     F->cpu_pool->run(T, [&](int job) {
+        v100dispatch::Scope worker_scope(dispatch_context);
         const void* a[1] = {F->cpu_act.data()};
         const int q1 = (int) ((int64_t) gu_tot * (job + 1) / T);
         for (int q = (int) ((int64_t) gu_tot * job / T); q < q1;) {
@@ -1542,6 +1547,7 @@ void Glm5Model::fast_cpu_experts(int il, int ne, const uint8_t* const* blob, con
         kc::native_quant_h(nf, F->cpu_ff.data() + (size_t) i * n_ff, F->cpu_hq.data() + (size_t) i * kc::kNativeHBytes);
     const int dn_tot = ne * n_embd;
     F->cpu_pool->run(T, [&](int job) {
+        v100dispatch::Scope worker_scope(dispatch_context);
         const int q1 = (int) ((int64_t) dn_tot * (job + 1) / T);
         for (int q = (int) ((int64_t) dn_tot * job / T); q < q1;) {
             const int i = q / n_embd, r0 = q % n_embd, r1 = std::min(n_embd, r0 + (q1 - q));
@@ -2941,6 +2947,7 @@ void Glm5Model::fast_service() {
                     w[ne++] = rq->w[i];
                 }
             gf::CpuAnswer* ans = F->cpu_ans_h + (next % gf::kCpuAnswers);
+            v100dispatch::Scope service_scope({2,rq->layer,1,-1,next});
             fast_cpu_experts(rq->layer, ne, blob, w, rq->x, ans->part);
             const auto t1 = std::chrono::steady_clock::now();
             std::atomic_thread_fence(std::memory_order_release);
@@ -3857,6 +3864,11 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
                   Ly.tid2eid != nullptr ? Ly.tid2eid + (size_t) F->cur_tok * g.n_exp_used : nullptr, fast_skip_w(il));
     if (F->prof_on) F->mark("moe_route");
     ++F->expected;
+    if (v100dispatch::enabled()) {
+        auto c=v100dispatch::current();c.layer=il;c.request_seq=F->expected;
+        v100dispatch::Scope issue_scope(c);
+        v100dispatch::record("request_issue", Ly.gu_type, 1);
+    }
     // the side stream copies the next layer's predicted experts while this layer computes.  STRATA_GLM_PREFETCH_AT:
     // when that copy starts - "route" (the default: at once, beside this layer's own PCIe fetch and CPU lane),
     // "fetch" (after this layer's own fetch: the link is free) or "cpu" (after this layer's CPU-lane answer: RAM is
@@ -3934,12 +3946,13 @@ bool Glm5Model::fast_layers(int64_t p, bool hop_in, std::string& err) {
     float* Ro = state_ + (int64_t) g.hc * g.n_embd;
     const char* graph_opt = getenv("STRATA_GLM_KDA_GRAPH");
     const bool graphs = graph_opt && std::atoi(graph_opt) != 0 && n_parts_ == 1 && !hop_in &&
-                        mtp_il_ < 0 && !F->prof_on && !dumps && F->max_pf == 0 && F->n_ahead == 0 &&
+                        mtp_il_ < 0 && !F->prof_on && !v100dispatch::enabled() && !dumps && F->max_pf == 0 && F->n_ahead == 0 &&
                         getenv("GLM_DUMP_H") == nullptr;
     F->kda_graph_on = graphs;
     if (graphs) F->bg_drain(nullptr, SIZE_MAX);   // (paced copies are not issued from inside a capture)
     if (F->prof_on) F->mark("start");
     for (int il = l0_; il < l1_; ++il) {
+        v100dispatch::Scope token_scope({2,il,1,p,0});
         const auto& Ly = F->L[(size_t) il];
         const auto body = [&]() -> bool {
         // ---- the attention-side read (fused with the previous FFN's write)
