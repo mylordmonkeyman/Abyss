@@ -1,0 +1,317 @@
+name: V100 CUDA 12.8 build and device smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf, main]
+    paths:
+      - '.github/workflows/v100.yml'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'cmake/**'
+      - 'include/**'
+      - 'src/**'
+      - 'third_party/ggml/**'
+      - 'tools/v100/**'
+      - 'tools/test_v100_p0.py'
+      - 'tests/v100/**'
+
+permissions:
+  contents: read
+
+# Queue this repository's GPU jobs instead of cancelling an in-flight build/test.
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+
+jobs:
+  build-and-smoke:
+    # Evaluated by GitHub before assigning a runner. Do not add PR/comment triggers
+    # or arbitrary checkout-ref inputs to this persistent self-hosted job.
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/feature/deepseek-v100-perf' || github.ref == 'refs/heads/main')
+    # The existing runner must be registered with Abyss (or shared with it at org scope).
+    # No new Docker container, model download, GPU reset or driver installation.
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: ${{ vars.ABYSS_NVCC || '/usr/local/cuda-12.8/bin/nvcc' }}
+      ABYSS_GPU: ${{ vars.ABYSS_GPU || '0' }}
+      BUILD_JOBS: ${{ vars.ABYSS_BUILD_JOBS || '32' }}
+      EVIDENCE: results/ci-v100-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Check out Abyss, retaining ignored build directories
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4; verified against actions/checkout
+        with:
+          clean: false
+          persist-credentials: false
+
+      - name: Check out the pinned GGML dependency
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4; verified against actions/checkout
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+
+      - name: Check toolkit, select one SM70 GPU, and record provenance
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE"
+          test -x "$NVCC"
+          export PATH="$(dirname "$NVCC"):$PATH"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          command -v cmake
+          command -v ninja
+          command -v python3
+          command -v nvidia-smi
+          command -v cuobjdump
+          "$NVCC" --version | tee "$EVIDENCE/nvcc-version.txt"
+          grep -Eq 'release 12\.8([, ]|$)' "$EVIDENCE/nvcc-version.txt"
+          cmake --version | tee "$EVIDENCE/cmake-version.txt"
+          git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
+          git -C third_party/llama.cpp rev-parse HEAD > "$EVIDENCE/ggml-sha.txt"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          sys.path.insert(0, 'tools/v100')
+          import p0
+          out = pathlib.Path(os.environ['EVIDENCE'])
+          manifest = p0.manifest(os.environ['ABYSS_GPU'])
+          (out / 'toolchain_manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          identity = manifest['commands']['gpu_identity']
+          lines = identity.get('stdout', '').strip().splitlines()
+          if identity['returncode'] != 0 or len(lines) != 1:
+              raise SystemExit('ABYSS_GPU must select one accessible GPU; see toolchain_manifest.json')
+          fields = [v.strip() for v in lines[0].split(',')]
+          if len(fields) != 3 or fields[2] != '7.0':
+              raise SystemExit('This workflow requires compute capability 7.0 (V100)')
+          # UUID selection avoids confusing CUDA ordinal 0 with the host's other GPU.
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('CUDA_VISIBLE_DEVICES=' + fields[0] + '\n')
+          PY
+
+      - name: Run GPU-free capture tooling checks
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools -p test_v100_p0.py -v 2>&1 | tee "$EVIDENCE/p0-tooling-tests.log"
+
+      - name: Configure CUDA SM70 diagnostics build
+        run: |
+          set -euo pipefail
+          cmake --preset v100-diagnostics \
+            -DCMAKE_CUDA_COMPILER="$NVCC" \
+            -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+            -DSTRATA_V100_TESTS=ON -DSTRATA_V100_CAPTURE_STAGES=OFF \
+            2>&1 | tee "$EVIDENCE/configure.log"
+
+      - name: Build engine and device test, retaining ptxas resource reports
+        run: |
+          set -euo pipefail
+          cmake --build build-v100-diagnostics --target strata strata-device dsv4_fallback_parity test_mma884_fragment_contract test_v100_mmq_scatter dsv4_qkpv_parity test_dsv4_mla_latent_parity --parallel "$BUILD_JOBS" \
+            2>&1 | tee "$EVIDENCE/build-ptxas.log"
+          cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/CMakeCache.txt"
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/strata-device build-v100-diagnostics/dsv4_fallback_parity build-v100-diagnostics/test_mma884_fragment_contract build-v100-diagnostics/test_v100_mmq_scatter build-v100-diagnostics/dsv4_qkpv_parity build-v100-diagnostics/test_dsv4_mla_latent_parity \
+            > "$EVIDENCE/binary-sha256.txt"
+
+      - name: Audit v9 ancestry, actual formats and source-feature differences
+        run: |
+          set -euo pipefail
+          python3 tools/v100/upstream_delta.py --output "$EVIDENCE" \
+            --model /models/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf
+
+      - name: Check isolated Q8_1 gather versus scatter bytes on V100
+        run: |
+          set -euo pipefail
+          timeout 300s build-v100-diagnostics/test_v100_mmq_scatter 2>&1 | tee "$EVIDENCE/mmq-scatter-parity.jsonl"
+          timeout 600s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/test_v100_mmq_scatter 2>&1 | tee "$EVIDENCE/mmq-scatter-memcheck.log"
+          timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/test_v100_mmq_scatter 2>&1 | tee "$EVIDENCE/mmq-scatter-synccheck.log"
+
+      - name: Measure isolated vendor quantizers with telemetry, no engine change
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys, threading, time
+          sys.path.insert(0, 'tools/v100')
+          import p0
+          out = pathlib.Path(os.environ['EVIDENCE'])
+          stop = threading.Event()
+          def monitor():
+              with (out / 'mmq-scatter-telemetry.jsonl').open('w') as f:
+                  while not stop.is_set():
+                      f.write(json.dumps({'utc': p0.now(), 'monotonic_s': time.monotonic(),
+                                          'gpu': p0.command(['nvidia-smi', '-i', os.environ['ABYSS_GPU'], '-q', '-x'])})+'\n')
+                      f.flush()
+                      stop.wait(1)
+          thread = threading.Thread(target=monitor, daemon=True)
+          thread.start()
+          try:
+              with (out / 'mmq-scatter-events.jsonl').open('w') as log:
+                  subprocess.run(['build-v100-diagnostics/test_v100_mmq_scatter', '--bench'],
+                                 stdout=log, stderr=subprocess.STDOUT, check=True, timeout=300)
+          finally:
+              stop.set(); thread.join()
+          PY
+
+      - name: Record code-object images and inspect SM70 device-test SASS
+        run: |
+          set -euo pipefail
+          for target in strata strata-device; do
+            cuobjdump --list-elf "build-v100-diagnostics/$target" > "$EVIDENCE/$target-elf.txt"
+            cuobjdump --list-ptx "build-v100-diagnostics/$target" > "$EVIDENCE/$target-ptx.txt"
+            grep -q 'sm_70' "$EVIDENCE/$target-elf.txt"
+          done
+          # Limit disassembly to the small device test, not the engine's entire fatbin.
+          # This is an image/launch smoke gate, not the later full opcode/fragment audit.
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/strata-device \
+            > "$EVIDENCE/strata-device-sm70-sass.txt"
+          test -s "$EVIDENCE/strata-device-sm70-sass.txt"
+
+      - name: Launch real SM70 device self-test
+        run: |
+          set -euo pipefail
+          timeout 120s build-v100-diagnostics/strata-device --selftest \
+            2>&1 | tee "$EVIDENCE/device-selftest.log"
+
+      - name: Sanitize the device self-test
+        run: |
+          set -euo pipefail
+          command -v compute-sanitizer
+          timeout 300s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/strata-device --selftest \
+            2>&1 | tee "$EVIDENCE/device-memcheck.log"
+          timeout 300s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/strata-device --selftest \
+            2>&1 | tee "$EVIDENCE/device-synccheck.log"
+
+      - name: DeepSeek FP32 component parity, default and forced dispatch
+        run: |
+          set -euo pipefail
+          timeout 300s build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-default-parity.jsonl"
+          STRATA_DS4_IDX=1 STRATA_DS4_ATTN=1 timeout 300s build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-forced-f32-parity.jsonl"
+
+      - name: Sanitize DeepSeek FP32 component kernels
+        run: |
+          set -euo pipefail
+          timeout 600s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-memcheck.log"
+          timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/dsv4_fallback_parity \
+            2>&1 | tee "$EVIDENCE/dsv4-synccheck.log"
+
+      - name: Validate isolated Volta MMA884 fragment/register contract
+        run: |
+          set -euo pipefail
+          timeout 120s build-v100-diagnostics/test_mma884_fragment_contract \
+            2>&1 | tee "$EVIDENCE/mma884-contract.jsonl"
+          timeout 300s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/test_mma884_fragment_contract \
+            2>&1 | tee "$EVIDENCE/mma884-memcheck.log"
+          timeout 300s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/test_mma884_fragment_contract \
+            2>&1 | tee "$EVIDENCE/mma884-synccheck.log"
+          "$NVCC" -std=c++17 --ptx -arch=compute_70 -Isrc/kernels/cuda \
+            tests/v100/test_mma884_fragment_contract.cu -o "$EVIDENCE/mma884-sm70.ptx" \
+            2>&1 | tee "$EVIDENCE/mma884-ptx-compile.log"
+          cuobjdump --list-elf build-v100-diagnostics/test_mma884_fragment_contract > "$EVIDENCE/mma884-elf.txt"
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/test_mma884_fragment_contract \
+            > "$EVIDENCE/mma884-sm70-sass.txt"
+          grep -q 'sm_70' "$EVIDENCE/mma884-elf.txt"
+          grep -q 'HMMA' "$EVIDENCE/mma884-sm70-sass.txt"
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          out = pathlib.Path(os.environ['EVIDENCE'])
+          ptx = (out / 'mma884-sm70.ptx').read_text()
+          assert re.search(r'\.target\s+sm_70\b', ptx), 'wrong PTX target'
+          assert 'mma.sync.aligned.m8n8k4.row.col.f32.f16.f16.f32' in ptx, 'missing MMA884 instruction'
+          assert not re.search(r'\b(ldmatrix|cp\.async|wgmma|mbarrier)\b|mma\.sync[^;]*m16n8k16', ptx), 'unsupported SM70 instruction'
+          report = {'scope': 'isolated MMA884 contract executable only', 'target': 'sm_70',
+                    'ptx_mma884_present': True, 'sm70_sass_hmma_present': True,
+                    'whole_engine_opcode_audit': 'not claimed'}
+          (out / 'sm70_arch_manifest.json').write_text(json.dumps(report, indent=2) + '\n')
+          PY
+
+      - name: Validate staged 512-D latent QK, sink-softmax and PV arithmetic
+        run: |
+          set -euo pipefail
+          timeout 300s build-v100-diagnostics/dsv4_qkpv_parity 2>&1 | tee "$EVIDENCE/qkpv-parity.jsonl"
+          timeout 600s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/dsv4_qkpv_parity 2>&1 | tee "$EVIDENCE/qkpv-memcheck.log"
+          timeout 600s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/dsv4_qkpv_parity 2>&1 | tee "$EVIDENCE/qkpv-synccheck.log"
+          cuobjdump --list-elf build-v100-diagnostics/dsv4_qkpv_parity > "$EVIDENCE/qkpv-elf.txt"
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/dsv4_qkpv_parity \
+            > "$EVIDENCE/qkpv-sm70-sass.txt"
+          grep -q sm_70 "$EVIDENCE/qkpv-elf.txt"
+          grep -q HMMA "$EVIDENCE/qkpv-sm70-sass.txt"
+
+      - name: Validate raw-ring and CSA HCA cached-row latent parity
+        run: |
+          set -euo pipefail
+          timeout 600s build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers.jsonl"
+          timeout 900s compute-sanitizer --tool memcheck --error-exitcode 1 \
+            build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers-memcheck.log"
+          timeout 900s compute-sanitizer --tool synccheck --error-exitcode 1 \
+            build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers-synccheck.log"
+
+      - name: Collect bounded P0 per-token route evidence after device checks
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[v100:p0-routes]')
+        env:
+          EVIDENCE: results/ci-v100-p0-routes-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_accounting.py --phase dispatch
+
+      - name: Upload bounded P0 per-token route evidence
+        if: always() && env.P0_ACCOUNTING_DISPATCH_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-routes-${{ github.run_id }}
+          path: results/ci-v100-p0-routes-${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 30
+
+      - name: Record model availability without copying model data
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('/models')
+          report = {'models_directory_present': root.is_dir(),
+                    'gguf_files_at_depth_2': len(list(root.glob('*.gguf'))) + len(list(root.glob('*/*.gguf'))) if root.is_dir() else 0,
+                    'full_model_P0': 'Separate bounded route artifact when the trusted p0-routes commit marker is present; otherwise model-free'}
+          (pathlib.Path(os.environ['EVIDENCE']) / 'model_availability.json').write_text(json.dumps(report, indent=2) + '\n')
+          PY
+
+      - name: Summarize scope and outstanding P0 gates
+        if: always()
+        run: |
+          {
+            echo '### V100 build/device smoke'
+            echo "- Build SHA: $GITHUB_SHA"
+            echo '- Includes SM70 engine compilation, code-object listings, a real device allocation/kernel launch, and device-test sanitizers.'
+            echo '- Full DeepSeek inference, model parity, thermal/performance A/B and supported hardware-counter collection remain separate P0 gates.'
+            echo '- Profiler absence does not block compilation; toolchain_manifest.json records counter-gate blockers.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload logs and diagnostics even after failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4; verified against actions/upload-artifact
+        with:
+          name: abyss-v100-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}/
+          if-no-files-found: warn
+          retention-days: 14
+
+# Trigger V100 runner bring-up.

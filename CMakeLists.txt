@@ -4,9 +4,8 @@
 # `strata-pack` are added when their sources exist - a target with no sources would make the build graph
 # claim something the tree does not have, which is worse than an absent target.
 #
-# CUDA targets arrive in Phase 2.  The kernels need sm_80 or newer (tf32 mma, bf16 math) and the guard
-# below refuses anything older: silently building for a pre-Ampere arch would produce a binary that runs
-# and is wrong about its own performance, which is the worst of both outcomes.
+# CUDA targets support sm_70+ with architecture-gated FP32 fallbacks below Ampere.
+# The V100 preset pins SM70 and a portable AVX2 CPU baseline; real-GPU parity is a separate gate.
 cmake_minimum_required(VERSION 3.24)
 project(strata VERSION 0.1.27 LANGUAGES CXX)
 add_compile_definitions(STRATA_VERSION="${PROJECT_VERSION}")
@@ -33,6 +32,12 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(STRATA_ENABLE_CUDA "Build the CUDA targets (Phase 2+)" OFF)
+option(STRATA_V100_DIAGNOSTICS "Emit CUDA line information, register usage and spill warnings" OFF)
+option(STRATA_V100_TESTS "Build model-free DeepSeek component parity on actual SM70" OFF)
+option(STRATA_V100_CAPTURE_STAGES "Internal bounded real-stage capture diagnostic" OFF)
+if(STRATA_V100_CAPTURE_STAGES AND (NOT STRATA_V100_TESTS OR NOT STRATA_ENABLE_CUDA))
+  message(FATAL_ERROR "STRATA_V100_CAPTURE_STAGES requires CUDA and V100 tests")
+endif()
 option(STRATA_ENABLE_HIP "Build the HIP targets for gfx1100 wave32 hardware" OFF)
 option(STRATA_PREFILL_MMQ "Build the GGML MMQ prompt path for HIP (a HIP build needs it)" OFF)
 if(STRATA_PREFILL_MMQ AND NOT STRATA_ENABLE_HIP)
@@ -75,12 +80,20 @@ if(STRATA_ENABLE_CUDA)
     if(_base STREQUAL "native" OR _base STREQUAL "all" OR _base STREQUAL "all-major")
       continue()
     endif()
+    if(_base EQUAL 70 AND CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 13)
+      message(FATAL_ERROR "SM70 requires CUDA 12.x: CUDA 13 removed offline compilation for Volta. "
+                          "Select -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.8/bin/nvcc in a fresh build directory.")
+    endif()
     if(_base LESS 70)
       message(FATAL_ERROR
         "Strata needs an NVIDIA GPU of compute capability 7.0 or newer (V100, RTX 20 / 30 / 40 / 50 series), but "
         "CMAKE_CUDA_ARCHITECTURES is '${CMAKE_CUDA_ARCHITECTURES}'.")
     endif()
   endforeach()
+  if(STRATA_V100_DIAGNOSTICS)
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+                        $<$<COMPILE_LANGUAGE:CUDA>:-Xptxas=-v,-warn-spills>)
+  endif()
   message(STATUS "Strata: CUDA enabled, arch ${CMAKE_CUDA_ARCHITECTURES}")
   # CMake links CUDA code with the static runtime (CMAKE_CUDA_RUNTIME_LIBRARY's default); on Windows the same runtime
   # must be named here too - MSVC's linker refuses cudart_static.lib and cudart.lib (the DLL's) in one program,
@@ -249,6 +262,29 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
                           src/ngram/ple_reader.cpp
                           src/platform/direct_file.cpp)
   target_link_libraries(strata_kernels PUBLIC strata_core strata_artifact)
+  if(STRATA_V100_TESTS)
+    if(NOT STRATA_ENABLE_CUDA)
+      message(FATAL_ERROR "STRATA_V100_TESTS requires CUDA")
+    endif()
+    add_executable(dsv4_fallback_parity tests/v100/dsv4_fallback_parity.cu)
+    target_link_libraries(dsv4_fallback_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    add_executable(test_mma884_fragment_contract tests/v100/test_mma884_fragment_contract.cu)
+    target_include_directories(test_mma884_fragment_contract PRIVATE src/kernels/cuda)
+    target_link_libraries(test_mma884_fragment_contract PRIVATE ${_strata_gpu_runtime_target})
+    set_target_properties(test_mma884_fragment_contract PROPERTIES CUDA_ARCHITECTURES 70)
+    add_executable(test_dsv4_volta_indexer tests/v100/test_dsv4_volta_indexer.cu)
+    target_include_directories(test_dsv4_volta_indexer PRIVATE src/kernels/cuda)
+    target_link_libraries(test_dsv4_volta_indexer PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    set_target_properties(test_dsv4_volta_indexer PROPERTIES CUDA_ARCHITECTURES 70)
+    add_executable(dsv4_qkpv_parity tests/v100/dsv4_qkpv_parity.cu)
+    target_include_directories(dsv4_qkpv_parity PRIVATE src/kernels/cuda)
+    target_link_libraries(dsv4_qkpv_parity PRIVATE ${_strata_gpu_runtime_target})
+    set_target_properties(dsv4_qkpv_parity PROPERTIES CUDA_ARCHITECTURES 70)
+    add_executable(test_dsv4_mla_latent_parity tests/v100/test_dsv4_mla_latent_parity.cu)
+    target_include_directories(test_dsv4_mla_latent_parity PRIVATE src/kernels/cuda)
+    target_link_libraries(test_dsv4_mla_latent_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target} ${_strata_gpu_blas_target})
+    set_target_properties(test_dsv4_mla_latent_parity PROPERTIES CUDA_ARCHITECTURES 70)
+  endif()
   if(STRATA_BUILD_TESTS AND STRATA_ENABLE_CUDA)
     add_executable(glm_layer_graph_test tests/glm_layer_graph_test.cu)
     target_link_libraries(glm_layer_graph_test PRIVATE strata_kernels ${_strata_gpu_runtime_target})
@@ -328,6 +364,9 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     src/core/expert_cache.cpp src/core/native_head.cpp src/core/native_dense.cpp src/core/verify.cpp src/core/mtp.cpp
     src/core/glm_model.cu src/core/glm_fast_path.cu src/core/glm_prefill.cu src/core/dsv4_fast_path.cu src/core/dsv41_fast_path.cu
     src/core/dsv4_verify.cu)
+  if(STRATA_V100_CAPTURE_STAGES)
+    set_property(SOURCE src/core/glm_prefill.cu APPEND PROPERTY COMPILE_DEFINITIONS STRATA_V100_CAPTURE_STAGES)
+  endif()
   target_include_directories(strata_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(strata_engine PUBLIC strata_core strata_kernels strata_kernels_cpu ${_strata_gpu_runtime_target})
   if(STRATA_BUILD_TESTS AND STRATA_ENABLE_CUDA)
@@ -902,6 +941,13 @@ if(STRATA_NATIVE_EXPERTS)
       set(_strata_mmq ${_strata_gg}/src/ggml-cuda)
     endif()
     add_library(strata_mmq STATIC src/prefill/moe_mmq.cu src/prefill/ggml_cuda_host.cu ${_strata_mmq}/quantize.cu)
+    if(STRATA_V100_TESTS)
+      # Isolated P3.12 vendor API parity only. No engine flag/dispatch changes.
+      add_executable(test_v100_mmq_scatter tests/v100/test_mmq_scatter.cu)
+      target_include_directories(test_v100_mmq_scatter PRIVATE ${_strata_gg}/include ${_strata_gg}/src ${_strata_mmq})
+      target_link_libraries(test_v100_mmq_scatter PRIVATE strata_mmq)
+      set_target_properties(test_v100_mmq_scatter PROPERTIES CUDA_ARCHITECTURES 70)
+    endif()
     if(_strata_mmq_glu)
       target_compile_definitions(strata_mmq PRIVATE STRATA_MMQ_GLU=1)
     endif()

@@ -7,6 +7,8 @@
 #include "strata/kernels/cpu/iq_avx2.hpp"
 #include "strata/kernels/cpu/expert_layout.hpp"
 
+#include "strata/core/v100_dispatch.hpp"
+
 #include "ggml.h"
 #include "ggml-cpu.h"
 
@@ -150,6 +152,15 @@ RowsFn exact_rows1(int type) {
 // the exact rows for nt tokens of a weight type (nt >= 1), nullptr: ggml-cpu's dot
 RowsFn exact_rows_nt(int type, int nt) { return nt >= 2 ? exact_rows(type) : exact_rows1(type); }
 
+void dispatch_rows(const char* op, RowsFn fn, int type, int nt, int rows, size_t row_bytes, int matrices) {
+    if (!v100dispatch::enabled() || rows <= 0) return;
+    const char* isa = fn == iq512_rows ? "iq512" : fn == iq256_rows ? "iq256" :
+                      fn == iq256_rows1 ? "iq256_rows1" : "ggml_vec_dot";
+    const std::string path = std::string(op) + ":" + isa;
+    v100dispatch::record(path.c_str(), type, nt, (uint64_t) rows * matrices,
+                         (uint64_t) rows * matrices * row_bytes);
+}
+
 }  // namespace
 
 bool native_experts_available() noexcept { return true; }
@@ -214,14 +225,17 @@ void native_gu_rows(const NativeFmt& f, const uint8_t* blob, const void* const* 
     static const bool avx2 = cpu_avx2_ok() && std::getenv("STRATA_NO_IQ256") == nullptr;   // pre-AVX2: ggml's vec_dot
     if (nt >= 2 && iq512_supported(f.gu_type)) {   // one token: ggml-cpu is as fast or faster
         if (avx512) {
+            dispatch_rows("cpu_gu", iq512_rows, f.gu_type, nt, r1-r0, f.gu_row, 2);
             iq512_gu_rows(f.gu_type, blob, f.gu_row, f.up_off, (int) f.n_embd, act, nt, ff, r0, r1);
             return;
         }
         if (avx2) {
+            dispatch_rows("cpu_gu", iq256_rows, f.gu_type, nt, r1-r0, f.gu_row, 2);
             iq256_gu_rows(f.gu_type, blob, f.gu_row, f.up_off, (int) f.n_embd, act, nt, ff, r0, r1);
             return;
         }
     }
+    dispatch_rows("cpu_gu", nullptr, f.gu_type, nt, r1-r0, f.gu_row, 2);
     const ggml_vec_dot_t dot = traits(f.gu_type)->vec_dot;
     const int n = (int) f.n_embd;
     for (int r = r0; r < r1; ++r) {
@@ -243,6 +257,7 @@ void native_gu_rows_split(const NativeFmt& f, const uint8_t* gate_base, const ui
     const bool clamp = swiglu_limit != std::numeric_limits<float>::infinity();
     if (r1 > r0) {
         if (const RowsFn fn = exact_rows_nt(f.gu_type, nt)) {
+            dispatch_rows("cpu_gu", fn, f.gu_type, nt, r1-r0, f.gu_row, 2);
             // every gate row of the range for all tokens (each row decoded once per group of tokens), then every up
             // row, then the same epilogue as below on the same values
             const int nr = r1 - r0;
@@ -270,6 +285,7 @@ void native_gu_rows_split(const NativeFmt& f, const uint8_t* gate_base, const ui
             return;
         }
     }
+    dispatch_rows("cpu_gu", nullptr, f.gu_type, nt, r1-r0, f.gu_row, 2);
     const ggml_vec_dot_t dot = traits(f.gu_type)->vec_dot;
     for (int r = r0; r < r1; ++r) {
         const uint8_t* gr = gate_base + (size_t) r * f.gu_row;
@@ -291,6 +307,7 @@ void native_down_rows_split(const NativeFmt& f, const uint8_t* down_base, const 
                             int nt, float* const* out, int r0, int r1) {
     if (r1 > r0) {
         if (const RowsFn fn = exact_rows_nt(f.d_type, nt)) {
+            dispatch_rows("cpu_down", fn, f.d_type, nt, r1-r0, f.d_row, 1);
             thread_local std::vector<float*> o;
             o.resize((size_t) nt);
             for (int t = 0; t < nt; ++t) o[(size_t) t] = out[t] + r0;
@@ -298,6 +315,7 @@ void native_down_rows_split(const NativeFmt& f, const uint8_t* down_base, const 
             return;
         }
     }
+    dispatch_rows("cpu_down", nullptr, f.d_type, nt, r1-r0, f.d_row, 1);
     const ggml_vec_dot_t dot = traits(f.d_type)->vec_dot;
     const int n = (int) f.n_ff;
     for (int r = r0; r < r1; ++r) {
@@ -316,9 +334,11 @@ void native_down_rows(const NativeFmt& f, const uint8_t* blob, const void* const
     // block instead of once per token; ggml-cpu's dot is single-token.  STRATA_NO_IQ4NL falls back to it.
     static const bool iq4nl_mt = std::getenv("STRATA_NO_IQ4NL") == nullptr;
     if (nt >= 2 && f.d_type == 20 && iq4nl_mt) {
+        v100dispatch::record("cpu_down:iq4nl256", f.d_type, nt, (uint64_t) (r1-r0), (uint64_t) (r1-r0)*f.d_row);
         iq4nl256_down_rows(blob + f.down_off, f.d_row, (int) f.n_ff, hq, nt, out, r0, r1);
         return;
     }
+    dispatch_rows("cpu_down", nullptr, f.d_type, nt, r1-r0, f.d_row, 1);
     const ggml_vec_dot_t dot = traits(f.d_type)->vec_dot;
     const int n = (int) f.n_ff;
     for (int r = r0; r < r1; ++r) {

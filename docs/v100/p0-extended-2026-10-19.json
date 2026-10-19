@@ -1,0 +1,4641 @@
+{
+  "schema": 1,
+  "phase": "extended",
+  "complete_arms": [
+    {
+      "index": 0,
+      "base": "historical",
+      "telemetry": {
+        "active_samples": 42,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1327.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 42
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 42
+        },
+        "power_w": {
+          "min": 108.66,
+          "median": 134.58499999999998,
+          "max": 253.8,
+          "samples": 42
+        },
+        "temperature_c": {
+          "min": 46.0,
+          "median": 58.0,
+          "max": 66.0,
+          "samples": 42
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 3,
+        "min_host_memavailable_bytes": 48746967040,
+        "numa_mapped_bytes": [
+          {
+            "0": 56310124544,
+            "1": 27738898432
+          },
+          {
+            "0": 56345743360,
+            "1": 27721342976
+          },
+          {
+            "0": 56345743360,
+            "1": 27721342976
+          },
+          {
+            "0": 56343334912,
+            "1": 27726848000
+          },
+          {
+            "0": 56343166976,
+            "1": 27727077376
+          },
+          {
+            "0": 56343134208,
+            "1": 27727114240
+          },
+          {
+            "0": 56343130112,
+            "1": 27727118336
+          },
+          {
+            "0": 56337768448,
+            "1": 27732484096
+          },
+          {
+            "0": 56337715200,
+            "1": 27732541440
+          },
+          {
+            "0": 56337715200,
+            "1": 27732541440
+          },
+          {
+            "0": 56337715200,
+            "1": 27732541440
+          },
+          {
+            "0": 56346808320,
+            "1": 27883479040
+          },
+          {
+            "0": 56346808320,
+            "1": 27883511808
+          },
+          {
+            "0": 56345899008,
+            "1": 27884433408
+          },
+          {
+            "0": 56345899008,
+            "1": 27884433408
+          },
+          {
+            "0": 56345907200,
+            "1": 27884433408
+          },
+          {
+            "0": 56345907200,
+            "1": 27884433408
+          },
+          {
+            "0": 56345903104,
+            "1": 27884462080
+          },
+          {
+            "0": 56345903104,
+            "1": 27884462080
+          },
+          {
+            "0": 56345903104,
+            "1": 27884462080
+          },
+          {
+            "0": 56345903104,
+            "1": 27884462080
+          },
+          {
+            "0": 56345849856,
+            "1": 27884515328
+          },
+          {
+            "0": 56345845760,
+            "1": 27884519424
+          },
+          {
+            "0": 56345845760,
+            "1": 27884519424
+          },
+          {
+            "0": 56345833472,
+            "1": 27884531712
+          },
+          {
+            "0": 56313454592,
+            "1": 28084670464
+          },
+          {
+            "0": 56313450496,
+            "1": 28084674560
+          },
+          {
+            "0": 56313446400,
+            "1": 28084678656
+          },
+          {
+            "0": 56313446400,
+            "1": 28084678656
+          },
+          {
+            "0": 56313446400,
+            "1": 28084678656
+          },
+          {
+            "0": 56313446400,
+            "1": 28084678656
+          },
+          {
+            "0": 56313438208,
+            "1": 28084686848
+          },
+          {
+            "0": 56313421824,
+            "1": 28084703232
+          },
+          {
+            "0": 56313380864,
+            "1": 28084744192
+          },
+          {
+            "0": 56312504320,
+            "1": 28085620736
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          },
+          {
+            "0": 56312500224,
+            "1": 28085624832
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee."
+      },
+      "cases": [
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 242.78719702181036,
+          "decode_tokens_s": 23.31511839708561,
+          "ttft_ms": 2475.2533290011343,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3982,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 72,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 309.91735537190084,
+          "decode_tokens_s": 31.10797871047707,
+          "ttft_ms": 1936.789184997906,
+          "active_samples": 0,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3941,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 68,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 316.92372702302976,
+          "decode_tokens_s": 31.332040070741872,
+          "ttft_ms": 1893.9739019988338,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14707,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 536,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 305.07957492245896,
+          "decode_tokens_s": 32.019011287952225,
+          "ttft_ms": 1967.4863410036778,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14703,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 184,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 310.9613889608707,
+          "decode_tokens_s": 32.099810347800194,
+          "ttft_ms": 1930.186428988236,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29061,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 616,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 299.5656298367367,
+          "decode_tokens_s": 31.47486160589416,
+          "ttft_ms": 2003.5563480050769,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29076,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 448,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 622.0669754727011,
+          "decode_tokens_s": 24.571439540821224,
+          "ttft_ms": 6586.926385003608,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3962,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 232,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 677.8987785905796,
+          "decode_tokens_s": 28.17335416987652,
+          "ttft_ms": 6044.388699010597,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3938,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 104,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 670.2557641013892,
+          "decode_tokens_s": 27.912403028931863,
+          "ttft_ms": 6112.980693011195,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 8192,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14598,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 508,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 672.9537015739493,
+          "decode_tokens_s": 27.314678972498598,
+          "ttft_ms": 6088.771966009517,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14536,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 448,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 681.7349622183017,
+          "decode_tokens_s": 27.98907769975701,
+          "ttft_ms": 6010.561229995801,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28734,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 4,
+            "pgpgout": 948,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 671.4644022229144,
+          "decode_tokens_s": 27.08457316669973,
+          "ttft_ms": 6101.495754002826,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28905,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 996,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 670.1351395569517,
+          "decode_tokens_s": 25.04549278963743,
+          "ttft_ms": 12228.454898999189,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3955,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 352,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 701.4599477672647,
+          "decode_tokens_s": 26.179616714049043,
+          "ttft_ms": 11682.074265001575,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3958,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 304,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 704.5305996078296,
+          "decode_tokens_s": 27.27887858235078,
+          "ttft_ms": 11631.203210010426,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14464,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 460,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 702.7175404886083,
+          "decode_tokens_s": 26.1119242754196,
+          "ttft_ms": 11661.001690998091,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14558,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 412,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 702.3018560589824,
+          "decode_tokens_s": 28.38656738760416,
+          "ttft_ms": 11668.118800007505,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28544,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 944,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 705.6594021879577,
+          "decode_tokens_s": 28.01304357341387,
+          "ttft_ms": 11612.253154002246,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28550,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 1076,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "base": "current",
+      "telemetry": {
+        "active_samples": 43,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1327.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 43
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 43
+        },
+        "power_w": {
+          "min": 101.28,
+          "median": 133.7,
+          "max": 246.84,
+          "samples": 43
+        },
+        "temperature_c": {
+          "min": 48.0,
+          "median": 58.0,
+          "max": 66.0,
+          "samples": 43
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 1,
+        "min_host_memavailable_bytes": 48644087808,
+        "numa_mapped_bytes": [
+          {
+            "1": 57766260736,
+            "0": 26290065408
+          },
+          {
+            "1": 57765949440,
+            "0": 26299052032
+          },
+          {
+            "1": 57765949440,
+            "0": 26299052032
+          },
+          {
+            "1": 57765871616,
+            "0": 26313670656
+          },
+          {
+            "1": 57765871616,
+            "0": 26313682944
+          },
+          {
+            "1": 57765871616,
+            "0": 26313682944
+          },
+          {
+            "1": 57765871616,
+            "0": 26313682944
+          },
+          {
+            "1": 57765851136,
+            "0": 26314911744
+          },
+          {
+            "1": 57765814272,
+            "0": 26314948608
+          },
+          {
+            "1": 57765814272,
+            "0": 26314948608
+          },
+          {
+            "1": 57765814272,
+            "0": 26314948608
+          },
+          {
+            "1": 57766621184,
+            "0": 26466660352
+          },
+          {
+            "1": 57766600704,
+            "0": 26466697216
+          },
+          {
+            "1": 57766510592,
+            "0": 26466787328
+          },
+          {
+            "1": 57766510592,
+            "0": 26466787328
+          },
+          {
+            "1": 57766490112,
+            "0": 26466807808
+          },
+          {
+            "1": 57766490112,
+            "0": 26466807808
+          },
+          {
+            "1": 57766490112,
+            "0": 26466832384
+          },
+          {
+            "1": 57766477824,
+            "0": 26466844672
+          },
+          {
+            "1": 57766477824,
+            "0": 26466844672
+          },
+          {
+            "1": 57766477824,
+            "0": 26466844672
+          },
+          {
+            "1": 57766473728,
+            "0": 26466848768
+          },
+          {
+            "1": 57766473728,
+            "0": 26466848768
+          },
+          {
+            "1": 57766473728,
+            "0": 26466848768
+          },
+          {
+            "1": 57766465536,
+            "0": 26466856960
+          },
+          {
+            "1": 57767489536,
+            "0": 26634375168
+          },
+          {
+            "1": 57767489536,
+            "0": 26634375168
+          },
+          {
+            "1": 57767489536,
+            "0": 26634375168
+          },
+          {
+            "1": 57767456768,
+            "0": 26634407936
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          },
+          {
+            "1": 57767432192,
+            "0": 26634432512
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee."
+      },
+      "cases": [
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 251.8574486840448,
+          "decode_tokens_s": 25.198338484556174,
+          "ttft_ms": 2383.3111629937775,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3959,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 284,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 262.9964057157885,
+          "decode_tokens_s": 30.187967264922996,
+          "ttft_ms": 2282.0438869966893,
+          "active_samples": 0,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3957,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 76,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 315.6897821740503,
+          "decode_tokens_s": 31.24408833777789,
+          "ttft_ms": 1901.7084480001358,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14724,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 156,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 300.5108684764099,
+          "decode_tokens_s": 31.78544822448473,
+          "ttft_ms": 1997.2139640012756,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14666,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 696,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 304.61491597705236,
+          "decode_tokens_s": 31.440747700281246,
+          "ttft_ms": 1970.3581500070868,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29032,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 600,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 299.6553962942616,
+          "decode_tokens_s": 31.461903137894694,
+          "ttft_ms": 2003.133563004667,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29108,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 524,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 624.8665141113654,
+          "decode_tokens_s": 24.06105492687695,
+          "ttft_ms": 6557.6628419948975,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3978,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 344,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 674.0167845976633,
+          "decode_tokens_s": 27.938448106515335,
+          "ttft_ms": 6078.977882993058,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3923,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 152,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 675.4951597209624,
+          "decode_tokens_s": 27.44337124663658,
+          "ttft_ms": 6065.693661003024,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 8192,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14567,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 328,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 680.1275239107333,
+          "decode_tokens_s": 27.395647730495316,
+          "ttft_ms": 6024.37348300009,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14576,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 556,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 676.0972550055296,
+          "decode_tokens_s": 27.108736743457104,
+          "ttft_ms": 6060.227673006011,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28730,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 512,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 681.0435129607768,
+          "decode_tokens_s": 26.852466152518858,
+          "ttft_ms": 6016.371550009353,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28733,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 4,
+            "pgpgout": 952,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 671.9545905686842,
+          "decode_tokens_s": 24.410244674561856,
+          "ttft_ms": 12196.090797995566,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3964,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 236,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 702.5487976398751,
+          "decode_tokens_s": 27.25956214328307,
+          "ttft_ms": 11663.885265996214,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3932,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 584,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 708.8099399518923,
+          "decode_tokens_s": 26.256410256410255,
+          "ttft_ms": 11560.870777990203,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14571,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 672,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 705.5013951565676,
+          "decode_tokens_s": 26.769702134779177,
+          "ttft_ms": 11615.422199000022,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14495,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 288,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 705.5135470313658,
+          "decode_tokens_s": 26.59602098592281,
+          "ttft_ms": 11615.0451709982,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28739,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 788,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 704.8336860943334,
+          "decode_tokens_s": 26.850283448793046,
+          "ttft_ms": 11626.373292994685,
+          "active_samples": 5,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28743,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 936,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "base": "current",
+      "telemetry": {
+        "active_samples": 42,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1320.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 42
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 42
+        },
+        "power_w": {
+          "min": 54.52,
+          "median": 131.81,
+          "max": 256.77,
+          "samples": 42
+        },
+        "temperature_c": {
+          "min": 47.0,
+          "median": 58.0,
+          "max": 66.0,
+          "samples": 42
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 2,
+        "min_host_memavailable_bytes": 48616407040,
+        "numa_mapped_bytes": [
+          {
+            "0": 56324583424,
+            "1": 27728449536
+          },
+          {
+            "0": 56324517888,
+            "1": 27750748160
+          },
+          {
+            "0": 56324472832,
+            "1": 27750793216
+          },
+          {
+            "0": 56324440064,
+            "1": 27756949504
+          },
+          {
+            "0": 56324440064,
+            "1": 27756949504
+          },
+          {
+            "0": 56324427776,
+            "1": 27756982272
+          },
+          {
+            "0": 56324427776,
+            "1": 27756982272
+          },
+          {
+            "0": 56324427776,
+            "1": 27756982272
+          },
+          {
+            "0": 56324390912,
+            "1": 27757027328
+          },
+          {
+            "0": 56324390912,
+            "1": 27757027328
+          },
+          {
+            "0": 56324390912,
+            "1": 27757027328
+          },
+          {
+            "0": 56325029888,
+            "1": 27887808512
+          },
+          {
+            "0": 56325021696,
+            "1": 27887849472
+          },
+          {
+            "0": 56325021696,
+            "1": 27887865856
+          },
+          {
+            "0": 56325001216,
+            "1": 27887886336
+          },
+          {
+            "0": 56324988928,
+            "1": 27887902720
+          },
+          {
+            "0": 56324984832,
+            "1": 27887906816
+          },
+          {
+            "0": 56324980736,
+            "1": 27887935488
+          },
+          {
+            "0": 56324980736,
+            "1": 27887935488
+          },
+          {
+            "0": 56324980736,
+            "1": 27887935488
+          },
+          {
+            "0": 56324976640,
+            "1": 27887939584
+          },
+          {
+            "0": 56324972544,
+            "1": 27887943680
+          },
+          {
+            "0": 56324964352,
+            "1": 27887955968
+          },
+          {
+            "0": 56324964352,
+            "1": 27887955968
+          },
+          {
+            "0": 56324964352,
+            "1": 27887955968
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339046400,
+            "1": 28074213376
+          },
+          {
+            "0": 56339042304,
+            "1": 28074217472
+          },
+          {
+            "0": 56339005440,
+            "1": 28074254336
+          },
+          {
+            "0": 56339005440,
+            "1": 28074254336
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee."
+      },
+      "cases": [
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 247.83147459727385,
+          "decode_tokens_s": 24.276908487434802,
+          "ttft_ms": 2421.8955550022656,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3982,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 100,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 313.0380341211457,
+          "decode_tokens_s": 30.523429116489805,
+          "ttft_ms": 1917.5623240007553,
+          "active_samples": 0,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3939,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 268,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 311.13876789047913,
+          "decode_tokens_s": 32.58241058928344,
+          "ttft_ms": 1929.1948800091632,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14641,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 204,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 296.9561989606533,
+          "decode_tokens_s": 32.30141255591236,
+          "ttft_ms": 2021.4237280015368,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14658,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 656,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 302.8009084027252,
+          "decode_tokens_s": 32.00580105144057,
+          "ttft_ms": 1982.0705800084397,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 28984,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 588,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 292.8972418843056,
+          "decode_tokens_s": 32.171009019820985,
+          "ttft_ms": 2049.0167630050564,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 28961,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 516,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 632.0987654320987,
+          "decode_tokens_s": 24.810048069468134,
+          "ttft_ms": 6481.8216580024455,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3955,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 476,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 671.1783309027152,
+          "decode_tokens_s": 27.380264818498794,
+          "ttft_ms": 6105.176069002482,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3947,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 120,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 682.803227312129,
+          "decode_tokens_s": 27.727383498957515,
+          "ttft_ms": 6000.791461003246,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 8192,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14502,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 516,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 679.1576852926546,
+          "decode_tokens_s": 28.07587065358653,
+          "ttft_ms": 6033.191547991009,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14533,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 292,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 678.2130675232639,
+          "decode_tokens_s": 27.658930809455896,
+          "ttft_ms": 6041.684596013511,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28800,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 688,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 674.6495808146525,
+          "decode_tokens_s": 27.007566866146384,
+          "ttft_ms": 6073.575311005698,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28854,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 744,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 669.7844785296138,
+          "decode_tokens_s": 25.24256527569614,
+          "ttft_ms": 12234.483309002826,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3955,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 228,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 703.4476836546305,
+          "decode_tokens_s": 28.216828692987676,
+          "ttft_ms": 11648.964734995388,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3926,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 4,
+            "pgpgout": 184,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 707.9156584860007,
+          "decode_tokens_s": 27.11677691684365,
+          "ttft_ms": 11575.43209400319,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14444,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 888,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 703.3208557986194,
+          "decode_tokens_s": 25.881068402855007,
+          "ttft_ms": 11651.892837006017,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14580,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 464,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 704.7791112831763,
+          "decode_tokens_s": 27.634075189512007,
+          "ttft_ms": 11627.278473009937,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28668,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 892,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 706.0912436756049,
+          "decode_tokens_s": 27.380557664951816,
+          "ttft_ms": 11606.788927005255,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28673,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 860,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "base": "historical",
+      "telemetry": {
+        "active_samples": 42,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1327.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 42
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 42
+        },
+        "power_w": {
+          "min": 106.52,
+          "median": 131.825,
+          "max": 252.1,
+          "samples": 42
+        },
+        "temperature_c": {
+          "min": 50.0,
+          "median": 58.0,
+          "max": 67.0,
+          "samples": 42
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 2,
+        "min_host_memavailable_bytes": 48689127424,
+        "numa_mapped_bytes": [
+          {
+            "1": 57692524544,
+            "0": 26358718464
+          },
+          {
+            "1": 57692102656,
+            "0": 26385346560
+          },
+          {
+            "1": 57701249024,
+            "0": 26376200192
+          },
+          {
+            "1": 57701191680,
+            "0": 26376261632
+          },
+          {
+            "1": 57701208064,
+            "0": 26376261632
+          },
+          {
+            "1": 57701208064,
+            "0": 26376261632
+          },
+          {
+            "1": 57701203968,
+            "0": 26376265728
+          },
+          {
+            "1": 57700818944,
+            "0": 26376658944
+          },
+          {
+            "1": 57700818944,
+            "0": 26376658944
+          },
+          {
+            "1": 57700810752,
+            "0": 26376667136
+          },
+          {
+            "1": 57693937664,
+            "0": 26533797888
+          },
+          {
+            "1": 57693958144,
+            "0": 26533797888
+          },
+          {
+            "1": 57693933568,
+            "0": 26533830656
+          },
+          {
+            "1": 57693929472,
+            "0": 26533834752
+          },
+          {
+            "1": 57693929472,
+            "0": 26533834752
+          },
+          {
+            "1": 57693908992,
+            "0": 26533859328
+          },
+          {
+            "1": 57693888512,
+            "0": 26533879808
+          },
+          {
+            "1": 57693884416,
+            "0": 26533908480
+          },
+          {
+            "1": 57693884416,
+            "0": 26533908480
+          },
+          {
+            "1": 57693884416,
+            "0": 26533908480
+          },
+          {
+            "1": 57693884416,
+            "0": 26533908480
+          },
+          {
+            "1": 57698680832,
+            "0": 26529116160
+          },
+          {
+            "1": 57698697216,
+            "0": 26529099776
+          },
+          {
+            "1": 57698902016,
+            "0": 26528894976
+          },
+          {
+            "1": 57698926592,
+            "0": 26528870400
+          },
+          {
+            "1": 57768390656,
+            "0": 26623873024
+          },
+          {
+            "1": 57768333312,
+            "0": 26623930368
+          },
+          {
+            "1": 57768325120,
+            "0": 26623938560
+          },
+          {
+            "1": 57768300544,
+            "0": 26623963136
+          },
+          {
+            "1": 57767247872,
+            "0": 26625015808
+          },
+          {
+            "1": 57767243776,
+            "0": 26625019904
+          },
+          {
+            "1": 57766641664,
+            "0": 26625622016
+          },
+          {
+            "1": 57766641664,
+            "0": 26625622016
+          },
+          {
+            "1": 57766637568,
+            "0": 26625626112
+          },
+          {
+            "1": 57766637568,
+            "0": 26625626112
+          },
+          {
+            "1": 57766637568,
+            "0": 26625626112
+          },
+          {
+            "1": 57766637568,
+            "0": 26625626112
+          },
+          {
+            "1": 57766637568,
+            "0": 26625626112
+          },
+          {
+            "1": 57766580224,
+            "0": 26625683456
+          },
+          {
+            "1": 57766576128,
+            "0": 26625687552
+          },
+          {
+            "1": 57766576128,
+            "0": 26625687552
+          },
+          {
+            "1": 57766576128,
+            "0": 26625687552
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee."
+      },
+      "cases": [
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 247.04574463704864,
+          "decode_tokens_s": 23.23049001814882,
+          "ttft_ms": 2492.1117589983623,
+          "active_samples": 0,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3983,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 68,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 312.20730565095226,
+          "decode_tokens_s": 32.247499559116214,
+          "ttft_ms": 1922.827315996983,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3938,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 72,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 298.5223145430121,
+          "decode_tokens_s": 31.23703541010811,
+          "ttft_ms": 2010.770845998195,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14694,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 520,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 299.11760307094073,
+          "decode_tokens_s": 31.92716615221526,
+          "ttft_ms": 2006.999828008702,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14694,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 204,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 305.21924916064705,
+          "decode_tokens_s": 31.43254434782075,
+          "ttft_ms": 1966.4784240012523,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 28969,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 4,
+            "pgpgout": 712,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 295.3628039775524,
+          "decode_tokens_s": 31.54399216328945,
+          "ttft_ms": 2032.0382030040491,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 28927,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 544,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 625.162166699736,
+          "decode_tokens_s": 25.26448760461077,
+          "ttft_ms": 6555.060403989046,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3944,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 236,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 674.3829955381399,
+          "decode_tokens_s": 28.00936563163308,
+          "ttft_ms": 6075.886040998739,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3924,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 272,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 676.7451466336224,
+          "decode_tokens_s": 26.89852636003047,
+          "ttft_ms": 6054.609108992736,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 8192,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14555,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 356,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 672.6442670870694,
+          "decode_tokens_s": 27.652208666158987,
+          "ttft_ms": 6091.430915010278,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14500,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 728,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 686.7989067556465,
+          "decode_tokens_s": 26.714321119705726,
+          "ttft_ms": 5965.991446006228,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28892,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 736,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 670.277700502381,
+          "decode_tokens_s": 26.34788470742012,
+          "ttft_ms": 6113.550367997959,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28856,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 652,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 670.436782361751,
+          "decode_tokens_s": 25.524956627515106,
+          "ttft_ms": 12222.86673799681,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3945,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 352,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 702.5909757540932,
+          "decode_tokens_s": 25.792411388961654,
+          "ttft_ms": 11664.46514800191,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3953,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 356,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 705.3373858088736,
+          "decode_tokens_s": 26.897678499193596,
+          "ttft_ms": 11618.938284998876,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14522,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 672,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 702.8260608452445,
+          "decode_tokens_s": 27.38802736663047,
+          "ttft_ms": 11659.630116002518,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14484,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 440,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 704.9307288529386,
+          "decode_tokens_s": 28.986820055256125,
+          "ttft_ms": 11625.396126997657,
+          "active_samples": 5,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28457,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 1008,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 707.0297328787814,
+          "decode_tokens_s": 26.75536348363194,
+          "ttft_ms": 11590.783926003496,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28645,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 820,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "base": "historical",
+      "telemetry": {
+        "active_samples": 42,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1327.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 42
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 42
+        },
+        "power_w": {
+          "min": 55.1,
+          "median": 130.035,
+          "max": 256.97,
+          "samples": 42
+        },
+        "temperature_c": {
+          "min": 51.0,
+          "median": 58.0,
+          "max": 67.0,
+          "samples": 42
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 2,
+        "min_host_memavailable_bytes": 48620208128,
+        "numa_mapped_bytes": [
+          {
+            "1": 57720184832,
+            "0": 26338734080
+          },
+          {
+            "1": 57720164352,
+            "0": 26358558720
+          },
+          {
+            "1": 57720164352,
+            "0": 26358558720
+          },
+          {
+            "1": 57720156160,
+            "0": 26359472128
+          },
+          {
+            "1": 57720139776,
+            "0": 26359566336
+          },
+          {
+            "1": 57720139776,
+            "0": 26359566336
+          },
+          {
+            "1": 57720139776,
+            "0": 26359566336
+          },
+          {
+            "1": 57720102912,
+            "0": 26359611392
+          },
+          {
+            "1": 57720102912,
+            "0": 26359611392
+          },
+          {
+            "1": 57720102912,
+            "0": 26359611392
+          },
+          {
+            "1": 57720156160,
+            "0": 26416955392
+          },
+          {
+            "1": 57721081856,
+            "0": 26524082176
+          },
+          {
+            "1": 57721085952,
+            "0": 26524098560
+          },
+          {
+            "1": 57721090048,
+            "0": 26524098560
+          },
+          {
+            "1": 57721090048,
+            "0": 26524098560
+          },
+          {
+            "1": 57721094144,
+            "0": 26524098560
+          },
+          {
+            "1": 57721094144,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57721118720,
+            "0": 26524098560
+          },
+          {
+            "1": 57746120704,
+            "0": 26674794496
+          },
+          {
+            "1": 57746120704,
+            "0": 26674794496
+          },
+          {
+            "1": 57746075648,
+            "0": 26674839552
+          },
+          {
+            "1": 57746034688,
+            "0": 26674880512
+          },
+          {
+            "1": 57745981440,
+            "0": 26674933760
+          },
+          {
+            "1": 57745956864,
+            "0": 26674958336
+          },
+          {
+            "1": 57745924096,
+            "0": 26674991104
+          },
+          {
+            "1": 57745911808,
+            "0": 26675003392
+          },
+          {
+            "1": 57745793024,
+            "0": 26675122176
+          },
+          {
+            "1": 57745793024,
+            "0": 26675122176
+          },
+          {
+            "1": 57745793024,
+            "0": 26675122176
+          },
+          {
+            "1": 57745793024,
+            "0": 26675126272
+          },
+          {
+            "1": 57745784832,
+            "0": 26675134464
+          },
+          {
+            "1": 57745756160,
+            "0": 26675163136
+          },
+          {
+            "1": 57745756160,
+            "0": 26675163136
+          },
+          {
+            "1": 57745756160,
+            "0": 26675163136
+          },
+          {
+            "1": 57745756160,
+            "0": 26675163136
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee."
+      },
+      "cases": [
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 251.25628140703517,
+          "decode_tokens_s": 24.356827523215102,
+          "ttft_ms": 2388.8547419919632,
+          "active_samples": 0,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3962,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 56,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 309.78934324659235,
+          "decode_tokens_s": 31.03857998496569,
+          "ttft_ms": 1937.5286659924313,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3917,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 48,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 301.76532716390886,
+          "decode_tokens_s": 31.289149631802488,
+          "ttft_ms": 1989.6586279937765,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14678,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 712,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 306.6700741119346,
+          "decode_tokens_s": 31.495481751690114,
+          "ttft_ms": 1957.3273139976664,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14762,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 380,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 300.67652217489353,
+          "decode_tokens_s": 31.39062940664353,
+          "ttft_ms": 1996.2333120056428,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 28975,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 536,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 296.2377801915671,
+          "decode_tokens_s": 31.239989627347192,
+          "ttft_ms": 2026.0770540044177,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29056,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 816,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 568.021078907225,
+          "decode_tokens_s": 24.354510341153414,
+          "ttft_ms": 7213.40803799103,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3969,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 300,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 680.4212764543672,
+          "decode_tokens_s": 27.87577856178405,
+          "ttft_ms": 6021.820284993737,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3929,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 136,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 674.8941358685802,
+          "decode_tokens_s": 27.852274149064066,
+          "ttft_ms": 6071.195317999809,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 8192,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14535,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 408,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 677.5287403854106,
+          "decode_tokens_s": 27.026599029787324,
+          "ttft_ms": 6047.814310993999,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14537,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 488,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 685.9477835647178,
+          "decode_tokens_s": 26.82074626631115,
+          "ttft_ms": 5973.3791280013975,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28733,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 644,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 668.2546415636115,
+          "decode_tokens_s": 27.294075000066634,
+          "ttft_ms": 6131.302606998361,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28719,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 824,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 667.916836526702,
+          "decode_tokens_s": 24.86547390096548,
+          "ttft_ms": 12268.649356992682,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3950,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 300,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 702.5186735157664,
+          "decode_tokens_s": 28.02346965583676,
+          "ttft_ms": 11665.108444009093,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3926,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 296,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 709.3439088382241,
+          "decode_tokens_s": 26.622988326443597,
+          "ttft_ms": 11552.386393988854,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14521,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 472,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 704.251990165231,
+          "decode_tokens_s": 26.933051377951724,
+          "ttft_ms": 11635.868453988223,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14541,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 556,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 705.325240001722,
+          "decode_tokens_s": 27.195419271566443,
+          "ttft_ms": 11618.396885998663,
+          "active_samples": 5,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28719,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 1108,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 704.3912673367785,
+          "decode_tokens_s": 26.302405745431752,
+          "ttft_ms": 11633.880925990525,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28774,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 660,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "base": "current",
+      "telemetry": {
+        "active_samples": 42,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1335.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 42
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 42
+        },
+        "power_w": {
+          "min": 54.78,
+          "median": 133.45499999999998,
+          "max": 245.29,
+          "samples": 42
+        },
+        "temperature_c": {
+          "min": 49.0,
+          "median": 58.0,
+          "max": 66.0,
+          "samples": 42
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 1,
+        "min_host_memavailable_bytes": 48714977280,
+        "numa_mapped_bytes": [
+          {
+            "0": 56320073728,
+            "1": 27731451904
+          },
+          {
+            "0": 56320073728,
+            "1": 27751424000
+          },
+          {
+            "0": 56320073728,
+            "1": 27751424000
+          },
+          {
+            "0": 56320020480,
+            "1": 27753263104
+          },
+          {
+            "0": 56320004096,
+            "1": 27753644032
+          },
+          {
+            "0": 56320004096,
+            "1": 27753648128
+          },
+          {
+            "0": 56320004096,
+            "1": 27753648128
+          },
+          {
+            "0": 56319991808,
+            "1": 27754622976
+          },
+          {
+            "0": 56319991808,
+            "1": 27754627072
+          },
+          {
+            "0": 56319991808,
+            "1": 27754627072
+          },
+          {
+            "0": 56319991808,
+            "1": 27754627072
+          },
+          {
+            "0": 56320647168,
+            "1": 27901452288
+          },
+          {
+            "0": 56320630784,
+            "1": 27901489152
+          },
+          {
+            "0": 56320618496,
+            "1": 27901505536
+          },
+          {
+            "0": 56320618496,
+            "1": 27901505536
+          },
+          {
+            "0": 56320622592,
+            "1": 27901505536
+          },
+          {
+            "0": 56320622592,
+            "1": 27901505536
+          },
+          {
+            "0": 56320626688,
+            "1": 27901530112
+          },
+          {
+            "0": 56320626688,
+            "1": 27901530112
+          },
+          {
+            "0": 56320626688,
+            "1": 27901530112
+          },
+          {
+            "0": 56320626688,
+            "1": 27901530112
+          },
+          {
+            "0": 56320630784,
+            "1": 27901530112
+          },
+          {
+            "0": 56320630784,
+            "1": 27901530112
+          },
+          {
+            "0": 56320630784,
+            "1": 27901530112
+          },
+          {
+            "0": 56320630784,
+            "1": 27901530112
+          },
+          {
+            "0": 56352768000,
+            "1": 27977617408
+          },
+          {
+            "0": 56352768000,
+            "1": 27977617408
+          },
+          {
+            "0": 56352768000,
+            "1": 27977617408
+          },
+          {
+            "0": 56352768000,
+            "1": 27977617408
+          },
+          {
+            "0": 56352735232,
+            "1": 27977650176
+          },
+          {
+            "0": 56352735232,
+            "1": 27977650176
+          },
+          {
+            "0": 56352727040,
+            "1": 27977658368
+          },
+          {
+            "0": 56352727040,
+            "1": 27977658368
+          },
+          {
+            "0": 56352727040,
+            "1": 27977658368
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          },
+          {
+            "0": 56352722944,
+            "1": 27977662464
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee."
+      },
+      "cases": [
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 250.2606882168926,
+          "decode_tokens_s": 24.74864655839134,
+          "ttft_ms": 2398.395415992127,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3982,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 296,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 314.2512962865972,
+          "decode_tokens_s": 32.10917118201886,
+          "ttft_ms": 1910.0263019936392,
+          "active_samples": 0,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 3936,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 36,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 309.8533360875852,
+          "decode_tokens_s": 31.785250898616223,
+          "ttft_ms": 1937.210641001002,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14686,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 176,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 304.0745996351105,
+          "decode_tokens_s": 31.641462676051987,
+          "ttft_ms": 1974.0428170043742,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 2914,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 14695,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 504,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 304.90903547108445,
+          "decode_tokens_s": 32.28450721987515,
+          "ttft_ms": 1968.5582719976082,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29058,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 1192,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "prose-600",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 297.2209838014564,
+          "decode_tokens_s": 31.74307945069593,
+          "ttft_ms": 2019.4165049906587,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 2915,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 1,
+            "wchar": 29031,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 512,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 629.3695548624022,
+          "decode_tokens_s": 25.07984403471991,
+          "ttft_ms": 6511.0655019962,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3962,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 4,
+            "pgpgout": 276,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 677.0471751132269,
+          "decode_tokens_s": 27.97019426173983,
+          "ttft_ms": 6051.836676997482,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 3934,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 160,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 677.2598753286265,
+          "decode_tokens_s": 27.817923000858443,
+          "ttft_ms": 6049.998329006485,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 8192,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14603,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 556,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 677.797819000182,
+          "decode_tokens_s": 27.552953332185293,
+          "ttft_ms": 6045.529053997598,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 18404,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 14572,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 356,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 677.1926924030752,
+          "decode_tokens_s": 27.1538808305269,
+          "ttft_ms": 6050.665371003561,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28830,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 760,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "code-4096",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 666.3629856185332,
+          "decode_tokens_s": 27.209365973943843,
+          "ttft_ms": 6148.8365279947175,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 18405,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 5,
+            "wchar": 28773,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 752,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 128,
+          "prefill_tokens_s": 675.8574033281358,
+          "decode_tokens_s": 25.052355508582387,
+          "ttft_ms": 12126.069664009265,
+          "active_samples": 1,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3964,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 216,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 128,
+          "prefill_tokens_s": 702.6874018922466,
+          "decode_tokens_s": 26.221985495964276,
+          "ttft_ms": 11662.483006992261,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 166,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 3939,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 424,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 512,
+          "prefill_tokens_s": 705.0763431050212,
+          "decode_tokens_s": 27.810670171969885,
+          "ttft_ms": 11622.258239993243,
+          "active_samples": 3,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 0,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14490,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 344,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 512,
+          "prefill_tokens_s": 702.832090736721,
+          "decode_tokens_s": 27.598697686452923,
+          "ttft_ms": 11659.70964099688,
+          "active_samples": 2,
+          "process_io_delta": {
+            "rchar": 38870,
+            "syscw": 646,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 14537,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 676,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 704.6336197627711,
+          "decode_tokens_s": 26.971074576074763,
+          "ttft_ms": 11629.60461700277,
+          "active_samples": 5,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28772,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 768,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 705.0095957726963,
+          "decode_tokens_s": 27.736170512442,
+          "ttft_ms": 11623.292267002398,
+          "active_samples": 4,
+          "process_io_delta": {
+            "rchar": 38871,
+            "syscw": 1286,
+            "write_bytes": 4096,
+            "read_bytes": 0,
+            "syscr": 10,
+            "wchar": 28652,
+            "cancelled_write_bytes": 0
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 1124,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    }
+  ],
+  "warm_summary": [
+    {
+      "case": "code-4096",
+      "output_tokens": 128,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 671.1783309027152,
+        "median": 674.0167845976633,
+        "max": 677.0471751132269,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 27.380264818498794,
+        "median": 27.938448106515335,
+        "max": 27.97019426173983,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 6051.836676997482,
+        "median": 6078.977882993058,
+        "max": 6105.176069002482,
+        "samples": 3
+      }
+    },
+    {
+      "case": "code-4096",
+      "output_tokens": 128,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 674.3829955381399,
+        "median": 677.8987785905796,
+        "max": 680.4212764543672,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 27.87577856178405,
+        "median": 28.00936563163308,
+        "max": 28.17335416987652,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 6021.820284993737,
+        "median": 6044.388699010597,
+        "max": 6075.886040998739,
+        "samples": 3
+      }
+    },
+    {
+      "case": "code-4096",
+      "output_tokens": 512,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 677.797819000182,
+        "median": 679.1576852926546,
+        "max": 680.1275239107333,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 27.395647730495316,
+        "median": 27.552953332185293,
+        "max": 28.07587065358653,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 6024.37348300009,
+        "median": 6033.191547991009,
+        "max": 6045.529053997598,
+        "samples": 3
+      }
+    },
+    {
+      "case": "code-4096",
+      "output_tokens": 512,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 672.6442670870694,
+        "median": 672.9537015739493,
+        "max": 677.5287403854106,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 27.026599029787324,
+        "median": 27.314678972498598,
+        "max": 27.652208666158987,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 6047.814310993999,
+        "median": 6088.771966009517,
+        "max": 6091.430915010278,
+        "samples": 3
+      }
+    },
+    {
+      "case": "code-4096",
+      "output_tokens": 1024,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 666.3629856185332,
+        "median": 674.6495808146525,
+        "max": 681.0435129607768,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 26.852466152518858,
+        "median": 27.007566866146384,
+        "max": 27.209365973943843,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 6016.371550009353,
+        "median": 6073.575311005698,
+        "max": 6148.8365279947175,
+        "samples": 3
+      }
+    },
+    {
+      "case": "code-4096",
+      "output_tokens": 1024,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 668.2546415636115,
+        "median": 670.277700502381,
+        "max": 671.4644022229144,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 26.34788470742012,
+        "median": 27.08457316669973,
+        "max": 27.294075000066634,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 6101.495754002826,
+        "median": 6113.550367997959,
+        "max": 6131.302606998361,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-8192",
+      "output_tokens": 128,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 702.5487976398751,
+        "median": 702.6874018922466,
+        "max": 703.4476836546305,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 26.221985495964276,
+        "median": 27.25956214328307,
+        "max": 28.216828692987676,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 11648.964734995388,
+        "median": 11662.483006992261,
+        "max": 11663.885265996214,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-8192",
+      "output_tokens": 128,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 701.4599477672647,
+        "median": 702.5186735157664,
+        "max": 702.5909757540932,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 25.792411388961654,
+        "median": 26.179616714049043,
+        "max": 28.02346965583676,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 11664.46514800191,
+        "median": 11665.108444009093,
+        "max": 11682.074265001575,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-8192",
+      "output_tokens": 512,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 702.832090736721,
+        "median": 703.3208557986194,
+        "max": 705.5013951565676,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 25.881068402855007,
+        "median": 26.769702134779177,
+        "max": 27.598697686452923,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 11615.422199000022,
+        "median": 11651.892837006017,
+        "max": 11659.70964099688,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-8192",
+      "output_tokens": 512,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 702.7175404886083,
+        "median": 702.8260608452445,
+        "max": 704.251990165231,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 26.1119242754196,
+        "median": 26.933051377951724,
+        "max": 27.38802736663047,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 11635.868453988223,
+        "median": 11659.630116002518,
+        "max": 11661.001690998091,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-8192",
+      "output_tokens": 1024,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 704.8336860943334,
+        "median": 705.0095957726963,
+        "max": 706.0912436756049,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 26.850283448793046,
+        "median": 27.380557664951816,
+        "max": 27.736170512442,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 11606.788927005255,
+        "median": 11623.292267002398,
+        "max": 11626.373292994685,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-8192",
+      "output_tokens": 1024,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 704.3912673367785,
+        "median": 705.6594021879577,
+        "max": 707.0297328787814,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 26.302405745431752,
+        "median": 26.75536348363194,
+        "max": 28.01304357341387,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 11590.783926003496,
+        "median": 11612.253154002246,
+        "max": 11633.880925990525,
+        "samples": 3
+      }
+    },
+    {
+      "case": "prose-600",
+      "output_tokens": 128,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 262.9964057157885,
+        "median": 313.0380341211457,
+        "max": 314.2512962865972,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 30.187967264922996,
+        "median": 30.523429116489805,
+        "max": 32.10917118201886,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 1910.0263019936392,
+        "median": 1917.5623240007553,
+        "max": 2282.0438869966893,
+        "samples": 3
+      }
+    },
+    {
+      "case": "prose-600",
+      "output_tokens": 128,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 309.78934324659235,
+        "median": 309.91735537190084,
+        "max": 312.20730565095226,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 31.03857998496569,
+        "median": 31.10797871047707,
+        "max": 32.247499559116214,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 1922.827315996983,
+        "median": 1936.789184997906,
+        "max": 1937.5286659924313,
+        "samples": 3
+      }
+    },
+    {
+      "case": "prose-600",
+      "output_tokens": 512,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 296.9561989606533,
+        "median": 300.5108684764099,
+        "max": 304.0745996351105,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 31.641462676051987,
+        "median": 31.78544822448473,
+        "max": 32.30141255591236,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 1974.0428170043742,
+        "median": 1997.2139640012756,
+        "max": 2021.4237280015368,
+        "samples": 3
+      }
+    },
+    {
+      "case": "prose-600",
+      "output_tokens": 512,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 299.11760307094073,
+        "median": 305.07957492245896,
+        "max": 306.6700741119346,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 31.495481751690114,
+        "median": 31.92716615221526,
+        "max": 32.019011287952225,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 1957.3273139976664,
+        "median": 1967.4863410036778,
+        "max": 2006.999828008702,
+        "samples": 3
+      }
+    },
+    {
+      "case": "prose-600",
+      "output_tokens": 1024,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 292.8972418843056,
+        "median": 297.2209838014564,
+        "max": 299.6553962942616,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 31.461903137894694,
+        "median": 31.74307945069593,
+        "max": 32.171009019820985,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 2003.133563004667,
+        "median": 2019.4165049906587,
+        "max": 2049.0167630050564,
+        "samples": 3
+      }
+    },
+    {
+      "case": "prose-600",
+      "output_tokens": 1024,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 295.3628039775524,
+        "median": 296.2377801915671,
+        "max": 299.5656298367367,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 31.239989627347192,
+        "median": 31.47486160589416,
+        "max": 31.54399216328945,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 2003.5563480050769,
+        "median": 2026.0770540044177,
+        "max": 2032.0382030040491,
+        "samples": 3
+      }
+    }
+  ],
+  "interpretation": "Request 0 is excluded from warm summaries. Process order and output trajectories matter. Clock/power/NUMA distributions are observations, not proof of matched conditions or causal speedup.",
+  "workflow_run": 39184856034,
+  "artifact_id": 12159757253,
+  "artifact_zip_sha256": "dee681bdf77fb57f92bf997693b00e1bf74ef0db27321d50d68f32db84f3a8e3",
+  "paired": [
+    {
+      "pair": 0,
+      "case": "prose-600",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": 17.840909090909097,
+      "decode_ms_change_percent": 3.0476097892920606,
+      "ttft_ms_change_percent": 17.826137437831502,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "prose-600",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": 1.5203132150302556,
+      "decode_ms_change_percent": 0.7348112942059393,
+      "ttft_ms_change_percent": 1.5109443139733614,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "prose-600",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": -0.029956562983679547,
+      "decode_ms_change_percent": 0.04118780717958792,
+      "ttft_ms_change_percent": -0.021101727477290666,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "code-4096",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": 0.5759491575916043,
+      "decode_ms_change_percent": 0.8407985385072481,
+      "ttft_ms_change_percent": 0.572252806774709,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "code-4096",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": -1.0547760654552762,
+      "decode_ms_change_percent": -0.2955533623196227,
+      "ttft_ms_change_percent": -1.0576596293789708,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "code-4096",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": -1.4065343191095203,
+      "decode_ms_change_percent": 0.8643787608278775,
+      "ttft_ms_change_percent": -1.3951366587058311,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "mixed-8192",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": -0.1549856574046382,
+      "decode_ms_change_percent": -3.9617123105556984,
+      "ttft_ms_change_percent": -0.1557000802490438,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "mixed-8192",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": -0.394592368926705,
+      "decode_ms_change_percent": -2.4571728741986765,
+      "ttft_ms_change_percent": -0.390871155033401,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 0,
+      "case": "mixed-8192",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.11715048669136419,
+      "decode_ms_change_percent": 4.330532028975997,
+      "ttft_ms_change_percent": 0.12159689256836526,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "prose-600",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": -0.265376209803303,
+      "decode_ms_change_percent": 5.648351094651449,
+      "ttft_ms_change_percent": -0.27381512382446127,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "prose-600",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": 0.7278528341392754,
+      "decode_ms_change_percent": -1.1586069279456157,
+      "ttft_ms_change_percent": 0.7186796825561226,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "prose-600",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.8417839913360092,
+      "decode_ms_change_percent": -1.9490120939173017,
+      "ttft_ms_change_percent": 0.8355433463754336,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "code-4096",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": 0.47746842945814993,
+      "decode_ms_change_percent": 2.297643274469907,
+      "ttft_ms_change_percent": 0.48207006856448853,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "code-4096",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": -0.9590435839327283,
+      "decode_ms_change_percent": -1.5089896682275117,
+      "ttft_ms_change_percent": -0.9560868018014812,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "code-4096",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": -0.6480223862278756,
+      "decode_ms_change_percent": -2.442582710229868,
+      "ttft_ms_change_percent": -0.6538763007746806,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "mixed-8192",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": -0.1217870099573859,
+      "decode_ms_change_percent": -8.592097043947843,
+      "ttft_ms_change_percent": -0.13288575866828856,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "mixed-8192",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": -0.07035124144202376,
+      "decode_ms_change_percent": 5.822630427456499,
+      "ttft_ms_change_percent": -0.06635955788925063,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "mixed-8192",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.13291330427651626,
+      "decode_ms_change_percent": -2.2833507957368937,
+      "ttft_ms_change_percent": 0.13808385268792023,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "prose-600",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": -1.4198678232135498,
+      "decode_ms_change_percent": -3.334222459322478,
+      "ttft_ms_change_percent": -1.4194558502031218,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "prose-600",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": 0.853565039611559,
+      "decode_ms_change_percent": -0.4613595959720218,
+      "ttft_ms_change_percent": 0.8539963084951863,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "prose-600",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": -0.330798854547254,
+      "decode_ms_change_percent": -1.5848803331452,
+      "ttft_ms_change_percent": -0.3287411503227311,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "code-4096",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": 0.4983554270906021,
+      "decode_ms_change_percent": -0.3375582560216084,
+      "ttft_ms_change_percent": 0.4984604419123073,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "code-4096",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": -0.039698949631949976,
+      "decode_ms_change_percent": -1.9103371462656171,
+      "ttft_ms_change_percent": -0.03778649407683021,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "code-4096",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.2838777041798579,
+      "decode_ms_change_percent": 0.3113230429695024,
+      "ttft_ms_change_percent": 0.28597383166739654,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "mixed-8192",
+      "output_tokens": 128,
+      "prefill_ms_change_percent": -0.024011868723672336,
+      "decode_ms_change_percent": 6.870128732813718,
+      "ttft_ms_change_percent": -0.02250675190405005,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "mixed-8192",
+      "output_tokens": 512,
+      "prefill_ms_change_percent": 0.20202541221781,
+      "decode_ms_change_percent": -2.4118757923419665,
+      "ttft_ms_change_percent": 0.2048939200621991,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "mixed-8192",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": -0.0877049673685848,
+      "decode_ms_change_percent": -5.169296051043104,
+      "ttft_ms_change_percent": -0.09101570710141615,
+      "generated_ids_equal": false
+    }
+  ]
+}

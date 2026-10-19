@@ -1,0 +1,11 @@
+# Optional: only enable when intentionally testing trusted model assets.
+# docker compose -f compose.yml -f compose.models.yml up -d
+services:
+  runner:
+    volumes:
+      - type: bind
+        source: ${ABYSS_MODEL_DIR:?Set ABYSS_MODEL_DIR to a dedicated model-only host directory}
+        target: /models
+        read_only: true
+        bind:
+          create_host_path: false

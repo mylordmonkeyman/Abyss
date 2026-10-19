@@ -1,0 +1,95 @@
+name: V100 pinned llama.cpp CPU reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf, main]
+    paths:
+      - '.github/workflows/v100-oracle.yml'
+      - 'tools/oracle/v100/**'
+
+permissions:
+  contents: read
+
+# Queue this repository's GPU jobs instead of cancelling an in-flight build/test.
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+
+jobs:
+  model-bringup:
+    # Evaluated by GitHub before assigning a runner. Do not add PR/comment triggers
+    # or arbitrary checkout-ref inputs to this persistent self-hosted job.
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/feature/deepseek-v100-perf' || github.ref == 'refs/heads/main')
+    # The existing runner must be registered with Abyss (or shared with it at org scope).
+    # No new Docker container, model download, GPU reset or driver installation.
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: ${{ vars.ABYSS_NVCC || '/usr/local/cuda-12.8/bin/nvcc' }}
+      ABYSS_GPU: ${{ vars.ABYSS_GPU || '0' }}
+      BUILD_JOBS: ${{ vars.ABYSS_BUILD_JOBS || '32' }}
+      EVIDENCE: results/ci-v100-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Check out Abyss, retaining ignored build directories
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4; verified against actions/checkout
+        with:
+          clean: false
+          persist-credentials: false
+
+      - name: Check out the pinned GGML dependency
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4; verified against actions/checkout
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+
+      - name: Select the V100 and prepare Python dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE"
+          export PATH="$(dirname "$NVCC"):$PATH"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          python3 -m venv --system-site-packages /actions-runner/abyss-v100-python
+          /actions-runner/abyss-v100-python/bin/pip install 'regex==2024.11.6' 'Jinja2==3.1.6'
+
+      - name: Build the current engine using the existing SM70 cache
+        run: |
+          set -euo pipefail
+          cmake --preset v100-diagnostics -DCMAKE_CUDA_COMPILER="$NVCC" \
+            -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" 2>&1 | tee "$EVIDENCE/configure.log"
+          cmake --build build-v100-diagnostics --target strata --parallel "$BUILD_JOBS" 2>&1 | tee "$EVIDENCE/build.log"
+          git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
+          sha256sum build-v100-diagnostics/strata > "$EVIDENCE/binary-sha256.txt"
+
+      - name: Build the CPU-only oracle against pinned llama.cpp
+        run: |
+          set -euo pipefail
+          cmake -S tools/oracle/v100 -B build-v100-oracle -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DLLAMA_SOURCE="$GITHUB_WORKSPACE/third_party/llama.cpp" 2>&1 | tee "$EVIDENCE/oracle-configure.log"
+          cmake --build build-v100-oracle --target v100_cpu_oracle --parallel "$BUILD_JOBS" \
+            2>&1 | tee "$EVIDENCE/oracle-build.log"
+
+      - name: Compare 129 teacher-forced positions with the CPU reference
+        run: /actions-runner/abyss-v100-python/bin/python tools/oracle/v100/compare.py
+
+      - name: Upload bounded reference evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v100-oracle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}
+          retention-days: 30

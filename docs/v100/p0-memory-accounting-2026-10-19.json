@@ -1,0 +1,1621 @@
+{
+  "schema": 1,
+  "source_run": 39194149121,
+  "geometry_artifact_id": 12140800382,
+  "memory_artifact_id": 12161799551,
+  "memory_artifact_zip_sha256": "fa1995c21d2fba4cacb9fa877d5c447def118fe47575d617466d2fa8f8c6e8e2",
+  "model_shard_sha256": {
+    "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": "de65c5bb660817b95cc281bf54935f9d1bcc3b22535f2eae63b35a14c7c5724b",
+    "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": "c8728a298862cd8736782e2e4056e5e3e03c415ba552a38173264494e41ef327",
+    "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": "a4bae0788c025c1b2388754592c98fefa1372981748ac9875039bf6a30e6eeb4"
+  },
+  "matches_local_SHA256SUMS": {
+    "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": true,
+    "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": true,
+    "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": true
+  },
+  "allocator_source_comparison": "dsv4_alloc function text is identical in the historical working source and upstream 7c893ac17e61ec45c934b3278356807fc4626c3c; metadata-derived total matches the observed 948249856-byte allocation in both immutable binaries.",
+  "gguf_tensor_bytes_by_role": {
+    "vocabulary_output": 297861120,
+    "other": 146323292,
+    "embedding": 364052480,
+    "q_kv_projection_or_norm": 1753647104,
+    "output_projection": 3066036224,
+    "routed_expert_down": 35987128320,
+    "shared_expert": 796131328,
+    "routed_expert_gate": 26893877248,
+    "router": 90177536,
+    "routed_expert_up": 26893877248,
+    "compressor": 281970688,
+    "indexer": 256080384
+  },
+  "dsv4_allocation": {
+    "bytes": {
+      "raw_window_rings": 5812224,
+      "csa_compressed_kv": 726684672,
+      "csa_indexer_keys": 181671168,
+      "compressor_recurrence_rings": 12206080,
+      "hca_compressed_kv": 21647360,
+      "attention_activation_and_selection": 228352
+    },
+    "sum_bytes": 948249856,
+    "context": 135168,
+    "evidence": "Source-derived aligned suballocations in dsv4_alloc; independently match a measured cudaMalloc byte count before accepting this decomposition. kSpecSlack=4."
+  },
+  "bases": {
+    "historical": {
+      "sample_utc": "2026-10-19T03:35:42.588679+00:00",
+      "sample_monotonic_s": 1963.060376314,
+      "host_physical_partition": {
+        "bytes": {
+          "app_anonymous_pss": 1162002432,
+          "app_shared_backing_pss": 77159919616,
+          "app_file_cache_pss": 7243390976,
+          "other_anonymous": 3869544448,
+          "other_shared_tmpfs": 115408896,
+          "other_file_cache": 5610921984,
+          "free": 36504678400,
+          "buffers": 219152384,
+          "slab": 965685248,
+          "kernel_stacks": 31113216,
+          "page_tables": 203194368,
+          "unassigned_kernel_driver_reserved_and_other": 1983438848
+        },
+        "sum_bytes": 135068450816,
+        "interpretation": "Disjoint measured host categories with proportional PSS attribution inside anonymous/shmem/file-cache categories. PSS assigns shared-page fractions, not ownership. CUDA API pin bytes are overlapping evidence and are NOT added. Free is the observed physical safety floor; MemAvailable is separate reclaim-aware headroom. Observed file cache is not proof of the minimum required working set."
+      },
+      "headroom_bytes": 48938418176,
+      "swap": {
+        "total_bytes": 8589930496,
+        "free_bytes": 8589930496
+      },
+      "host_pinned_api_requested_bytes": 77146795432,
+      "host_pinned_backing": {
+        "shared_backing_page_bytes": 77146800128,
+        "shared_backing_objects": 41,
+        "unresolved_virtual_page_bytes": 0,
+        "virtual_page_union_bytes": 77146800128,
+        "method": "Union by shared mapping (device,inode,file offset), excluding device-pointer aliases. Not PFN/pagemap measurement. Unresolved private/anonymous mappings are separate."
+      },
+      "host_registered_calls": 0,
+      "cuda_alloc_calls": [
+        {
+          "seq": 1,
+          "api": "cudaMalloc",
+          "bytes": 6620498688,
+          "caller": 109277404239442
+        },
+        {
+          "seq": 2,
+          "api": "cudaMalloc",
+          "bytes": 131072,
+          "caller": 109277404247737
+        },
+        {
+          "seq": 3,
+          "api": "cudaMalloc",
+          "bytes": 1336992,
+          "caller": 109277404248491
+        },
+        {
+          "seq": 4,
+          "api": "cudaMalloc",
+          "bytes": 4,
+          "caller": 109277404248518
+        },
+        {
+          "seq": 5,
+          "api": "cudaMalloc",
+          "bytes": 4,
+          "caller": 109277404248640
+        },
+        {
+          "seq": 6,
+          "api": "cudaMalloc",
+          "bytes": 948249856,
+          "caller": 109277404744992
+        },
+        {
+          "seq": 7,
+          "api": "cudaMalloc",
+          "bytes": 833068,
+          "caller": 109277404490870
+        },
+        {
+          "seq": 8,
+          "api": "cudaHostAlloc",
+          "bytes": 1077252,
+          "caller": 109277404492522
+        },
+        {
+          "seq": 10,
+          "api": "cudaMalloc",
+          "bytes": 64,
+          "caller": 109277404492682
+        },
+        {
+          "seq": 11,
+          "api": "cudaHostAlloc",
+          "bytes": 68960,
+          "caller": 109277404492767
+        },
+        {
+          "seq": 13,
+          "api": "cudaHostAlloc",
+          "bytes": 16384,
+          "caller": 109277404492881
+        },
+        {
+          "seq": 14,
+          "api": "cudaHostAlloc",
+          "bytes": 65536,
+          "caller": 109277404492936
+        },
+        {
+          "seq": 15,
+          "api": "cudaHostAlloc",
+          "bytes": 64,
+          "caller": 109277404492980
+        },
+        {
+          "seq": 16,
+          "api": "cudaHostAlloc",
+          "bytes": 256,
+          "caller": 109277404493024
+        },
+        {
+          "seq": 19,
+          "api": "cudaHostAlloc",
+          "bytes": 364052480,
+          "caller": 109277404494596
+        },
+        {
+          "seq": 21,
+          "api": "cudaMalloc",
+          "bytes": 87031808,
+          "caller": 109277404494806
+        },
+        {
+          "seq": 22,
+          "api": "cudaHostAlloc",
+          "bytes": 536870912,
+          "caller": 109277404730531
+        },
+        {
+          "seq": 23,
+          "api": "cudaHostAlloc",
+          "bytes": 16384,
+          "caller": 109277404730561
+        },
+        {
+          "seq": 24,
+          "api": "cudaHostAlloc",
+          "bytes": 16384,
+          "caller": 109277404730588
+        },
+        {
+          "seq": 25,
+          "api": "cudaHostAlloc",
+          "bytes": 32768,
+          "caller": 109277404730615
+        },
+        {
+          "seq": 26,
+          "api": "cudaHostAlloc",
+          "bytes": 1045341696,
+          "caller": 109277404734246
+        },
+        {
+          "seq": 27,
+          "api": "cudaMalloc",
+          "bytes": 131072,
+          "caller": 109277404733959
+        },
+        {
+          "seq": 28,
+          "api": "cudaMalloc",
+          "bytes": 17541568000,
+          "caller": 109277404497636
+        },
+        {
+          "seq": 29,
+          "api": "cudaMalloc",
+          "bytes": 7367458560,
+          "caller": 109277404497707
+        },
+        {
+          "seq": 30,
+          "api": "cudaHostAlloc",
+          "bytes": 69864062976,
+          "caller": 109277404502752
+        },
+        {
+          "seq": 31,
+          "api": "cudaHostAlloc",
+          "bytes": 2393374720,
+          "caller": 109277404502752
+        },
+        {
+          "seq": 32,
+          "api": "cudaHostAlloc",
+          "bytes": 2047344640,
+          "caller": 109277404502752
+        },
+        {
+          "seq": 33,
+          "api": "cudaHostAlloc",
+          "bytes": 32768,
+          "caller": 109277404504382
+        },
+        {
+          "seq": 34,
+          "api": "cudaHostAlloc",
+          "bytes": 65536,
+          "caller": 109277404504412
+        },
+        {
+          "seq": 37,
+          "api": "cudaMalloc",
+          "bytes": 32768,
+          "caller": 109277404504495
+        },
+        {
+          "seq": 38,
+          "api": "cudaMalloc",
+          "bytes": 65536,
+          "caller": 109277404504520
+        },
+        {
+          "seq": 39,
+          "api": "cudaHostAlloc",
+          "bytes": 32768,
+          "caller": 109277404504575
+        },
+        {
+          "seq": 40,
+          "api": "cudaHostAlloc",
+          "bytes": 65536,
+          "caller": 109277404504605
+        },
+        {
+          "seq": 43,
+          "api": "cudaMalloc",
+          "bytes": 32768,
+          "caller": 109277404504688
+        },
+        {
+          "seq": 44,
+          "api": "cudaMalloc",
+          "bytes": 65536,
+          "caller": 109277404504713
+        },
+        {
+          "seq": 45,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 46,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 47,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 48,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 49,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 50,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 51,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 52,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 53,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 54,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 55,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 56,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 57,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 58,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 59,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 60,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 61,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 62,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 63,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 64,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 65,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 66,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 67,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 68,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 69,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 70,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 71,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 72,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 73,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 74,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 75,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 76,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109277404505014
+        },
+        {
+          "seq": 77,
+          "api": "cudaHostAlloc",
+          "bytes": 65600,
+          "caller": 109277404466962
+        },
+        {
+          "seq": 78,
+          "api": "cudaMalloc",
+          "bytes": 64,
+          "caller": 109277404466983
+        },
+        {
+          "seq": 80,
+          "api": "cudaMalloc",
+          "bytes": 45056,
+          "caller": 109277404482464
+        },
+        {
+          "seq": 81,
+          "api": "cudaHostAlloc",
+          "bytes": 536854528,
+          "caller": 109277404582991
+        },
+        {
+          "seq": 82,
+          "api": "cudaHostAlloc",
+          "bytes": 2244,
+          "caller": 109277404583254
+        },
+        {
+          "seq": 83,
+          "api": "cudaHostAlloc",
+          "bytes": 9191424,
+          "caller": 109277404583301
+        },
+        {
+          "seq": 84,
+          "api": "cudaMalloc",
+          "bytes": 4587520,
+          "caller": 109277407053906
+        },
+        {
+          "seq": 85,
+          "api": "cudaMalloc",
+          "bytes": 5242880,
+          "caller": 109277407053906
+        },
+        {
+          "seq": 86,
+          "api": "cudaMalloc",
+          "bytes": 18018304,
+          "caller": 109277404742414
+        },
+        {
+          "seq": 88,
+          "api": "cudaHostAlloc",
+          "bytes": 536870912,
+          "caller": 109277404582991
+        }
+      ],
+      "device_live_api_bytes": 32595329620,
+      "device_nvml": {
+        "total_bytes": 34359738368,
+        "used_bytes": 33304870912,
+        "reserved_bytes": 287309824,
+        "free_bytes": 768606208,
+        "process_used_bytes": null,
+        "processes": [
+          {
+            "host_pid": "8838",
+            "type": "C",
+            "used_memory": "31614 MiB"
+          }
+        ],
+        "process_attribution": "PID match only. NVIDIA may report host PIDs while /proc uses container PIDs; do not substitute a sole process without a verified namespace mapping.",
+        "resolution_bytes": 1048576
+      },
+      "device_capacity_partition": {
+        "bytes": {
+          "application_live_api_requested": 32595329620,
+          "unattributed_used": 709541292,
+          "driver_reserved": 287309824,
+          "free": 768606208
+        },
+        "rounding_adjustment_bytes": -1048576,
+        "sum_with_rounding_bytes": 34359738368,
+        "interpretation": "Application requested bytes are inside NVML used. The remaining used bytes include context/modules/vendor pools/other clients/alignment; they are not split by guesswork. Reserved and free are separate. Signed rounding reflects MiB-granularity NVML reporting."
+      },
+      "device_nvml_minus_api_bytes": null,
+      "device_residual_scope": "Combined CUDA context/modules/vendor-internal/reserved/rounding; not separately measured occupancy or a fabricated per-component split.",
+      "source_attention_arena_event_seq": 6,
+      "node_host_memory_bytes": {
+        "node0": {
+          "MemTotal": 67437940736,
+          "MemFree": 36323852288,
+          "MemUsed": 31114088448,
+          "SwapCached": 0,
+          "Active": 26899423232,
+          "Inactive": 2390212608,
+          "Unevictable": 8593408,
+          "Mlocked": 4444160,
+          "Dirty": 45056,
+          "Writeback": 0,
+          "FilePages": 26808905728,
+          "Mapped": 23942406144,
+          "AnonPages": 2489716736,
+          "Shmem": 23469355008,
+          "KernelStack": 16506880,
+          "PageTables": 62005248,
+          "SecPageTables": 0,
+          "NFS_Unstable": 0,
+          "Bounce": 0,
+          "WritebackTmp": 0,
+          "KReclaimable": 155615232,
+          "Slab": 467685376,
+          "SReclaimable": 155615232,
+          "SUnreclaim": 312070144,
+          "AnonHugePages": 0,
+          "ShmemHugePages": 0,
+          "ShmemPmdMapped": 0,
+          "FileHugePages": 0,
+          "FilePmdMapped": 0,
+          "Unaccepted": 0
+        },
+        "node1": {
+          "MemTotal": 67630510080,
+          "MemFree": 181309440,
+          "MemUsed": 67449200640,
+          "SwapCached": 0,
+          "Active": 64230547456,
+          "Inactive": 1823178752,
+          "Unevictable": 27754496,
+          "Mlocked": 23609344,
+          "Dirty": 77824,
+          "Writeback": 0,
+          "FilePages": 63539888128,
+          "Mapped": 61877518336,
+          "AnonPages": 2541830144,
+          "Shmem": 53805973504,
+          "KernelStack": 14589952,
+          "PageTables": 141189120,
+          "SecPageTables": 0,
+          "NFS_Unstable": 0,
+          "Bounce": 0,
+          "WritebackTmp": 0,
+          "KReclaimable": 294445056,
+          "Slab": 497999872,
+          "SReclaimable": 294445056,
+          "SUnreclaim": 203554816,
+          "AnonHugePages": 0,
+          "ShmemHugePages": 0,
+          "ShmemPmdMapped": 0,
+          "FileHugePages": 0,
+          "FilePmdMapped": 0,
+          "Unaccepted": 0
+        }
+      },
+      "process_numa_mapped_bytes": {
+        "1": 61985579008,
+        "0": 23586148352
+      },
+      "realized_anon_huge_bytes": 0,
+      "cgroup_memory_current": "87387500544\n",
+      "cgroup_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+      "page_cache_scope": "Whole-host observed file-cache working footprint; per-file resident pages and a minimum sufficient cache size are not measured.",
+      "numa_scope": "Node placement counts and node meminfo; QPI bytes/latency not measured.",
+      "units": "All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000",
+      "device_application_components": {
+        "bytes": {
+          "dense_weight_arena": 6620498688,
+          "model_load_auxiliary_buffers": 1468072,
+          "attention_raw_csa_hca_indexer_arena": 948249856,
+          "fast_activation_routing_and_expert_scratch": 88061548,
+          "prefill_auxiliary_device_buffers": 131072,
+          "expert_pool_including_borrowable_prompt_tail": 24909026560,
+          "other_or_unresolved_application_allocations": 45120,
+          "ggml_mmq_cached_workspace": 9830400,
+          "attention_state_snapshot": 18018304
+        },
+        "sum_bytes": 32595329620,
+        "events": [
+          {
+            "seq": 1,
+            "bytes": 6620498688,
+            "group": "dense_weight_arena",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 2,
+            "bytes": 131072,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 3,
+            "bytes": 1336992,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 4,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 5,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 6,
+            "bytes": 948249856,
+            "group": "attention_raw_csa_hca_indexer_arena",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_alloc(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 7,
+            "bytes": 833068,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 10,
+            "bytes": 64,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 21,
+            "bytes": 87031808,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 27,
+            "bytes": 131072,
+            "group": "prefill_auxiliary_device_buffers",
+            "caller_symbol": "strata::core::Glm5Model::prefill_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 28,
+            "bytes": 17541568000,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 29,
+            "bytes": 7367458560,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 37,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 38,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 43,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 44,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 78,
+            "bytes": 64,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 80,
+            "bytes": 45056,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 84,
+            "bytes": 4587520,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 85,
+            "bytes": 5242880,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 86,
+            "bytes": 18018304,
+            "group": "attention_state_snapshot",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_snap_copy(bool)"
+          }
+        ],
+        "interpretation": "Actual allocation return addresses symbolicated against the exact immutable ELF. Function/size-based source attribution within this capture; source line numbers unavailable. The expert pool includes its borrowable prefill workspace/staging tail, counted once. This classifies application API bytes only, not the NVML driver/context residual."
+      },
+      "host_pin_components": {
+        "requested_bytes": {
+          "fast_routing_embedding_staging_and_reader_buffers": 713604772,
+          "prefill_embedding_and_disk_landing_buffers": 1582278144,
+          "pinned_expert_ram_tier": 74304782336,
+          "other_or_unresolved_host_pin_calls": 65600,
+          "prefill_cpu_exchange_buffers": 546064580
+        },
+        "unique_union_bytes": 77146795432,
+        "groups_disjoint": true,
+        "interpretation": "Captured host-pin API requested ranges grouped by symbol/source allocation role. These groups are inside the deduplicated backing/PSS physical budget, not added to it. If groups overlap they are not an additive component partition; page-rounding remains separate."
+      },
+      "compiled_cpu_getter_disassembly": {
+        "ggml_cpu_has_avx2": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx2",
+            "/actions-runner/abyss-base-builds/47001f31/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/47001f31/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000315970 <ggml_cpu_has_avx2>:\n  315970:\tf3 0f 1e fa          \tendbr64\n  315974:\tb8 01 00 00 00       \tmov    $0x1,%eax\n  315979:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        },
+        "ggml_cpu_has_avx512": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx512",
+            "/actions-runner/abyss-base-builds/47001f31/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/47001f31/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000315980 <ggml_cpu_has_avx512>:\n  315980:\tf3 0f 1e fa          \tendbr64\n  315984:\t31 c0                \txor    %eax,%eax\n  315986:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        }
+      }
+    },
+    "current": {
+      "sample_utc": "2026-10-19T03:45:48.806491+00:00",
+      "sample_monotonic_s": 2569.278197432,
+      "host_physical_partition": {
+        "bytes": {
+          "app_anonymous_pss": 1161682944,
+          "app_shared_backing_pss": 77159919616,
+          "app_file_cache_pss": 7246196736,
+          "other_anonymous": 3886137344,
+          "other_shared_tmpfs": 116088832,
+          "other_file_cache": 5798006784,
+          "free": 36232273920,
+          "buffers": 222904320,
+          "slab": 973856768,
+          "kernel_stacks": 31178752,
+          "page_tables": 203726848,
+          "unassigned_kernel_driver_reserved_and_other": 2036477952
+        },
+        "sum_bytes": 135068450816,
+        "interpretation": "Disjoint measured host categories with proportional PSS attribution inside anonymous/shmem/file-cache categories. PSS assigns shared-page fractions, not ownership. CUDA API pin bytes are overlapping evidence and are NOT added. Free is the observed physical safety floor; MemAvailable is separate reclaim-aware headroom. Observed file cache is not proof of the minimum required working set."
+      },
+      "headroom_bytes": 48860446720,
+      "swap": {
+        "total_bytes": 8589930496,
+        "free_bytes": 8589930496
+      },
+      "host_pinned_api_requested_bytes": 77147090504,
+      "host_pinned_backing": {
+        "shared_backing_page_bytes": 77147095040,
+        "shared_backing_objects": 41,
+        "unresolved_virtual_page_bytes": 0,
+        "virtual_page_union_bytes": 77147095040,
+        "method": "Union by shared mapping (device,inode,file offset), excluding device-pointer aliases. Not PFN/pagemap measurement. Unresolved private/anonymous mappings are separate."
+      },
+      "host_registered_calls": 0,
+      "cuda_alloc_calls": [
+        {
+          "seq": 1,
+          "api": "cudaMalloc",
+          "bytes": 6620498688,
+          "caller": 109960644952282
+        },
+        {
+          "seq": 2,
+          "api": "cudaMalloc",
+          "bytes": 131072,
+          "caller": 109960644960336
+        },
+        {
+          "seq": 3,
+          "api": "cudaMalloc",
+          "bytes": 1336992,
+          "caller": 109960644961091
+        },
+        {
+          "seq": 4,
+          "api": "cudaMalloc",
+          "bytes": 4,
+          "caller": 109960644961118
+        },
+        {
+          "seq": 5,
+          "api": "cudaMalloc",
+          "bytes": 4,
+          "caller": 109960644961240
+        },
+        {
+          "seq": 6,
+          "api": "cudaMalloc",
+          "bytes": 948249856,
+          "caller": 109960645475920
+        },
+        {
+          "seq": 7,
+          "api": "cudaMalloc",
+          "bytes": 837164,
+          "caller": 109960645215697
+        },
+        {
+          "seq": 8,
+          "api": "cudaHostAlloc",
+          "bytes": 1339396,
+          "caller": 109960645217305
+        },
+        {
+          "seq": 10,
+          "api": "cudaMalloc",
+          "bytes": 64,
+          "caller": 109960645217465
+        },
+        {
+          "seq": 11,
+          "api": "cudaHostAlloc",
+          "bytes": 85504,
+          "caller": 109960645217550
+        },
+        {
+          "seq": 13,
+          "api": "cudaHostAlloc",
+          "bytes": 16384,
+          "caller": 109960645217664
+        },
+        {
+          "seq": 14,
+          "api": "cudaHostAlloc",
+          "bytes": 65536,
+          "caller": 109960645217712
+        },
+        {
+          "seq": 15,
+          "api": "cudaHostAlloc",
+          "bytes": 64,
+          "caller": 109960645217756
+        },
+        {
+          "seq": 16,
+          "api": "cudaHostAlloc",
+          "bytes": 256,
+          "caller": 109960645217800
+        },
+        {
+          "seq": 19,
+          "api": "cudaHostAlloc",
+          "bytes": 364052480,
+          "caller": 109960645219320
+        },
+        {
+          "seq": 21,
+          "api": "cudaMalloc",
+          "bytes": 87031808,
+          "caller": 109960645219629
+        },
+        {
+          "seq": 22,
+          "api": "cudaHostAlloc",
+          "bytes": 536870912,
+          "caller": 109960645458277
+        },
+        {
+          "seq": 23,
+          "api": "cudaHostAlloc",
+          "bytes": 16384,
+          "caller": 109960645458307
+        },
+        {
+          "seq": 24,
+          "api": "cudaHostAlloc",
+          "bytes": 16384,
+          "caller": 109960645458334
+        },
+        {
+          "seq": 25,
+          "api": "cudaHostAlloc",
+          "bytes": 32768,
+          "caller": 109960645458361
+        },
+        {
+          "seq": 26,
+          "api": "cudaHostAlloc",
+          "bytes": 1045341696,
+          "caller": 109960645460800
+        },
+        {
+          "seq": 27,
+          "api": "cudaMalloc",
+          "bytes": 131072,
+          "caller": 109960645460484
+        },
+        {
+          "seq": 28,
+          "api": "cudaMalloc",
+          "bytes": 17541568000,
+          "caller": 109960645222265
+        },
+        {
+          "seq": 29,
+          "api": "cudaMalloc",
+          "bytes": 7367458560,
+          "caller": 109960645222336
+        },
+        {
+          "seq": 30,
+          "api": "cudaHostAlloc",
+          "bytes": 69864062976,
+          "caller": 109960645227473
+        },
+        {
+          "seq": 31,
+          "api": "cudaHostAlloc",
+          "bytes": 2393374720,
+          "caller": 109960645227473
+        },
+        {
+          "seq": 32,
+          "api": "cudaHostAlloc",
+          "bytes": 2047344640,
+          "caller": 109960645227473
+        },
+        {
+          "seq": 33,
+          "api": "cudaHostAlloc",
+          "bytes": 32768,
+          "caller": 109960645228744
+        },
+        {
+          "seq": 34,
+          "api": "cudaHostAlloc",
+          "bytes": 65536,
+          "caller": 109960645228774
+        },
+        {
+          "seq": 37,
+          "api": "cudaMalloc",
+          "bytes": 32768,
+          "caller": 109960645228857
+        },
+        {
+          "seq": 38,
+          "api": "cudaMalloc",
+          "bytes": 65536,
+          "caller": 109960645228882
+        },
+        {
+          "seq": 39,
+          "api": "cudaHostAlloc",
+          "bytes": 32768,
+          "caller": 109960645228937
+        },
+        {
+          "seq": 40,
+          "api": "cudaHostAlloc",
+          "bytes": 65536,
+          "caller": 109960645228967
+        },
+        {
+          "seq": 43,
+          "api": "cudaMalloc",
+          "bytes": 32768,
+          "caller": 109960645229050
+        },
+        {
+          "seq": 44,
+          "api": "cudaMalloc",
+          "bytes": 65536,
+          "caller": 109960645229075
+        },
+        {
+          "seq": 45,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 46,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 47,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 48,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 49,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 50,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 51,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 52,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 53,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 54,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 55,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 56,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 57,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 58,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 59,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 60,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 61,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 62,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 63,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 64,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 65,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 66,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 67,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 68,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 69,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 70,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 71,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 72,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 73,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 74,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 75,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 76,
+          "api": "cudaHostAlloc",
+          "bytes": 10878976,
+          "caller": 109960645229364
+        },
+        {
+          "seq": 77,
+          "api": "cudaHostAlloc",
+          "bytes": 81984,
+          "caller": 109960645191542
+        },
+        {
+          "seq": 78,
+          "api": "cudaMalloc",
+          "bytes": 64,
+          "caller": 109960645191563
+        },
+        {
+          "seq": 80,
+          "api": "cudaMalloc",
+          "bytes": 45056,
+          "caller": 109960645206283
+        },
+        {
+          "seq": 81,
+          "api": "cudaHostAlloc",
+          "bytes": 536854528,
+          "caller": 109960645333460
+        },
+        {
+          "seq": 82,
+          "api": "cudaHostAlloc",
+          "bytes": 2244,
+          "caller": 109960645333751
+        },
+        {
+          "seq": 83,
+          "api": "cudaHostAlloc",
+          "bytes": 9191424,
+          "caller": 109960645333968
+        },
+        {
+          "seq": 84,
+          "api": "cudaMalloc",
+          "bytes": 4587520,
+          "caller": 109960647864594
+        },
+        {
+          "seq": 85,
+          "api": "cudaMalloc",
+          "bytes": 5242880,
+          "caller": 109960647864594
+        },
+        {
+          "seq": 86,
+          "api": "cudaMalloc",
+          "bytes": 18018304,
+          "caller": 109960645472044
+        },
+        {
+          "seq": 88,
+          "api": "cudaHostAlloc",
+          "bytes": 536870912,
+          "caller": 109960645333460
+        }
+      ],
+      "device_live_api_bytes": 32595333716,
+      "device_nvml": {
+        "total_bytes": 34359738368,
+        "used_bytes": 33304870912,
+        "reserved_bytes": 287309824,
+        "free_bytes": 768606208,
+        "process_used_bytes": null,
+        "processes": [
+          {
+            "host_pid": "10137",
+            "type": "C",
+            "used_memory": "31614 MiB"
+          }
+        ],
+        "process_attribution": "PID match only. NVIDIA may report host PIDs while /proc uses container PIDs; do not substitute a sole process without a verified namespace mapping.",
+        "resolution_bytes": 1048576
+      },
+      "device_capacity_partition": {
+        "bytes": {
+          "application_live_api_requested": 32595333716,
+          "unattributed_used": 709537196,
+          "driver_reserved": 287309824,
+          "free": 768606208
+        },
+        "rounding_adjustment_bytes": -1048576,
+        "sum_with_rounding_bytes": 34359738368,
+        "interpretation": "Application requested bytes are inside NVML used. The remaining used bytes include context/modules/vendor pools/other clients/alignment; they are not split by guesswork. Reserved and free are separate. Signed rounding reflects MiB-granularity NVML reporting."
+      },
+      "device_nvml_minus_api_bytes": null,
+      "device_residual_scope": "Combined CUDA context/modules/vendor-internal/reserved/rounding; not separately measured occupancy or a fabricated per-component split.",
+      "source_attention_arena_event_seq": 6,
+      "node_host_memory_bytes": {
+        "node0": {
+          "MemTotal": 67437940736,
+          "MemFree": 36129677312,
+          "MemUsed": 31308263424,
+          "SwapCached": 0,
+          "Active": 27055951872,
+          "Inactive": 2396012544,
+          "Unevictable": 8593408,
+          "Mlocked": 4444160,
+          "Dirty": 28672,
+          "Writeback": 0,
+          "FilePages": 26946945024,
+          "Mapped": 24073613312,
+          "AnonPages": 2514173952,
+          "Shmem": 23580217344,
+          "KernelStack": 16834560,
+          "PageTables": 62541824,
+          "SecPageTables": 0,
+          "NFS_Unstable": 0,
+          "Bounce": 0,
+          "WritebackTmp": 0,
+          "KReclaimable": 156905472,
+          "Slab": 474124288,
+          "SReclaimable": 156905472,
+          "SUnreclaim": 317218816,
+          "AnonHugePages": 0,
+          "ShmemHugePages": 0,
+          "ShmemPmdMapped": 0,
+          "FileHugePages": 0,
+          "FilePmdMapped": 0,
+          "Unaccepted": 0
+        },
+        "node1": {
+          "MemTotal": 67630510080,
+          "MemFree": 118882304,
+          "MemUsed": 67511627776,
+          "SwapCached": 0,
+          "Active": 64117710848,
+          "Inactive": 1983516672,
+          "Unevictable": 27754496,
+          "Mlocked": 23609344,
+          "Dirty": 36864,
+          "Writeback": 0,
+          "FilePages": 63596163072,
+          "Mapped": 61775867904,
+          "AnonPages": 2532917248,
+          "Shmem": 53695791104,
+          "KernelStack": 14327808,
+          "PageTables": 141041664,
+          "SecPageTables": 0,
+          "NFS_Unstable": 0,
+          "Bounce": 0,
+          "WritebackTmp": 0,
+          "KReclaimable": 294768640,
+          "Slab": 499707904,
+          "SReclaimable": 294768640,
+          "SUnreclaim": 204939264,
+          "AnonHugePages": 0,
+          "ShmemHugePages": 0,
+          "ShmemPmdMapped": 0,
+          "FileHugePages": 0,
+          "FilePmdMapped": 0,
+          "Unaccepted": 0
+        }
+      },
+      "process_numa_mapped_bytes": {
+        "1": 61869039616,
+        "0": 23705186304
+      },
+      "realized_anon_huge_bytes": 0,
+      "cgroup_memory_current": "87551553536\n",
+      "cgroup_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+      "page_cache_scope": "Whole-host observed file-cache working footprint; per-file resident pages and a minimum sufficient cache size are not measured.",
+      "numa_scope": "Node placement counts and node meminfo; QPI bytes/latency not measured.",
+      "units": "All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000",
+      "device_application_components": {
+        "bytes": {
+          "dense_weight_arena": 6620498688,
+          "model_load_auxiliary_buffers": 1468072,
+          "attention_raw_csa_hca_indexer_arena": 948249856,
+          "fast_activation_routing_and_expert_scratch": 88065644,
+          "prefill_auxiliary_device_buffers": 131072,
+          "expert_pool_including_borrowable_prompt_tail": 24909026560,
+          "other_or_unresolved_application_allocations": 45120,
+          "ggml_mmq_cached_workspace": 9830400,
+          "attention_state_snapshot": 18018304
+        },
+        "sum_bytes": 32595333716,
+        "events": [
+          {
+            "seq": 1,
+            "bytes": 6620498688,
+            "group": "dense_weight_arena",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 2,
+            "bytes": 131072,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 3,
+            "bytes": 1336992,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 4,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 5,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 6,
+            "bytes": 948249856,
+            "group": "attention_raw_csa_hca_indexer_arena",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_alloc(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 7,
+            "bytes": 837164,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 10,
+            "bytes": 64,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 21,
+            "bytes": 87031808,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 27,
+            "bytes": 131072,
+            "group": "prefill_auxiliary_device_buffers",
+            "caller_symbol": "strata::core::Glm5Model::prefill_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 28,
+            "bytes": 17541568000,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 29,
+            "bytes": 7367458560,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 37,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 38,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 43,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 44,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 78,
+            "bytes": 64,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 80,
+            "bytes": 45056,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 84,
+            "bytes": 4587520,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 85,
+            "bytes": 5242880,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 86,
+            "bytes": 18018304,
+            "group": "attention_state_snapshot",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_snap_copy(bool)"
+          }
+        ],
+        "interpretation": "Actual allocation return addresses symbolicated against the exact immutable ELF. Function/size-based source attribution within this capture; source line numbers unavailable. The expert pool includes its borrowable prefill workspace/staging tail, counted once. This classifies application API bytes only, not the NVML driver/context residual."
+      },
+      "host_pin_components": {
+        "requested_bytes": {
+          "fast_routing_embedding_staging_and_reader_buffers": 713883460,
+          "prefill_embedding_and_disk_landing_buffers": 1582278144,
+          "pinned_expert_ram_tier": 74304782336,
+          "other_or_unresolved_host_pin_calls": 81984,
+          "prefill_cpu_exchange_buffers": 546064580
+        },
+        "unique_union_bytes": 77147090504,
+        "groups_disjoint": true,
+        "interpretation": "Captured host-pin API requested ranges grouped by symbol/source allocation role. These groups are inside the deduplicated backing/PSS physical budget, not added to it. If groups overlap they are not an additive component partition; page-rounding remains separate."
+      },
+      "compiled_cpu_getter_disassembly": {
+        "ggml_cpu_has_avx2": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx2",
+            "/actions-runner/abyss-base-builds/7c893ac1/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/7c893ac1/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000332230 <ggml_cpu_has_avx2>:\n  332230:\tf3 0f 1e fa          \tendbr64\n  332234:\tb8 01 00 00 00       \tmov    $0x1,%eax\n  332239:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        },
+        "ggml_cpu_has_avx512": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx512",
+            "/actions-runner/abyss-base-builds/7c893ac1/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/7c893ac1/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000332240 <ggml_cpu_has_avx512>:\n  332240:\tf3 0f 1e fa          \tendbr64\n  332244:\t31 c0                \txor    %eax,%eax\n  332246:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        }
+      }
+    }
+  },
+  "symbol_artifact_id": 12162959473,
+  "symbol_artifact_zip_sha256": "0ff5133baf49ac92989fe57f3a649f399064dd3ce0e881e4d498c63fad258441"
+}

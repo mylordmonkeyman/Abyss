@@ -1,0 +1,1807 @@
+{
+  "schema": 1,
+  "phase": "long",
+  "complete_arms": [
+    {
+      "index": 0,
+      "base": "historical",
+      "telemetry": {
+        "active_samples": 32,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1282.0,
+          "median": 1334.5,
+          "max": 1380.0,
+          "samples": 32
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 32
+        },
+        "power_w": {
+          "min": 121.2,
+          "median": 209.515,
+          "max": 269.85,
+          "samples": 32
+        },
+        "temperature_c": {
+          "min": 57.0,
+          "median": 67.5,
+          "max": 71.0,
+          "samples": 32
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 7,
+        "min_host_memavailable_bytes": 48739807232,
+        "numa_mapped_bytes": [
+          {
+            "0": 60020396032,
+            "1": 25546653696
+          },
+          {
+            "0": 60020363264,
+            "1": 25547513856
+          },
+          {
+            "0": 60020297728,
+            "1": 25550614528
+          },
+          {
+            "0": 60020191232,
+            "1": 25550983168
+          },
+          {
+            "0": 60020133888,
+            "1": 25551040512
+          },
+          {
+            "0": 60020109312,
+            "1": 25551192064
+          },
+          {
+            "0": 60019933184,
+            "1": 25551368192
+          },
+          {
+            "0": 60019929088,
+            "1": 25551372288
+          },
+          {
+            "0": 60019822592,
+            "1": 25551478784
+          },
+          {
+            "0": 60019683328,
+            "1": 25551618048
+          },
+          {
+            "0": 60019679232,
+            "1": 25551622144
+          },
+          {
+            "0": 60019593216,
+            "1": 25551708160
+          },
+          {
+            "0": 60019056640,
+            "1": 25552306176
+          },
+          {
+            "0": 60019056640,
+            "1": 25552306176
+          },
+          {
+            "0": 60019056640,
+            "1": 25552306176
+          },
+          {
+            "0": 60019048448,
+            "1": 25552314368
+          },
+          {
+            "0": 60018421760,
+            "1": 25553248256
+          },
+          {
+            "0": 60018421760,
+            "1": 25553248256
+          },
+          {
+            "0": 60018413568,
+            "1": 25553256448
+          },
+          {
+            "0": 60018413568,
+            "1": 25553256448
+          },
+          {
+            "0": 60018413568,
+            "1": 25553256448
+          },
+          {
+            "0": 60018405376,
+            "1": 25553264640
+          },
+          {
+            "0": 60018405376,
+            "1": 25553264640
+          },
+          {
+            "0": 60018401280,
+            "1": 25553268736
+          },
+          {
+            "0": 60018401280,
+            "1": 25553268736
+          },
+          {
+            "0": 60018286592,
+            "1": 25553383424
+          },
+          {
+            "0": 60018286592,
+            "1": 25553383424
+          },
+          {
+            "0": 60018278400,
+            "1": 25553391616
+          },
+          {
+            "0": 60018278400,
+            "1": 25553391616
+          },
+          {
+            "0": 60018278400,
+            "1": 25553391616
+          },
+          {
+            "0": 60018274304,
+            "1": 25553395712
+          },
+          {
+            "0": 60018274304,
+            "1": 25553395712
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+        "warm_wall_phases": {
+          "prefill_to_first_token": {
+            "samples": 12,
+            "sm_clock_mhz": {
+              "min": 1282.0,
+              "median": 1312.0,
+              "max": 1380.0,
+              "samples": 12
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 12
+            },
+            "power_w": {
+              "min": 181.56,
+              "median": 212.98000000000002,
+              "max": 269.85,
+              "samples": 12
+            },
+            "temperature_c": {
+              "min": 64.0,
+              "median": 70.0,
+              "max": 71.0,
+              "samples": 12
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 4
+          },
+          "decode_after_first_token": {
+            "samples": 4,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 127.86,
+              "median": 131.67000000000002,
+              "max": 135.21,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 60.0,
+              "median": 61.5,
+              "max": 64.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0
+          }
+        },
+        "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup."
+      },
+      "cases": [
+        {
+          "case": "mixed-65536",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 495.9779740250305,
+          "decode_tokens_s": 22.328388670959356,
+          "ttft_ms": 132155.59471100004,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28932,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 4,
+            "pgpgout": 3448,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-65536",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.22767649852665,
+          "decode_tokens_s": 23.497556162371783,
+          "ttft_ms": 131839.83407799952,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28703,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 2,
+            "pgpgin": 380,
+            "pgpgout": 3264,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "base": "current",
+      "telemetry": {
+        "active_samples": 32,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1297.0,
+          "median": 1338.5,
+          "max": 1380.0,
+          "samples": 32
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 32
+        },
+        "power_w": {
+          "min": 111.07,
+          "median": 201.04500000000002,
+          "max": 271.76,
+          "samples": 32
+        },
+        "temperature_c": {
+          "min": 54.0,
+          "median": 67.5,
+          "max": 71.0,
+          "samples": 32
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 5,
+        "min_host_memavailable_bytes": 48707739648,
+        "numa_mapped_bytes": [
+          {
+            "0": 59993624576,
+            "1": 25573978112
+          },
+          {
+            "0": 59993657344,
+            "1": 25575063552
+          },
+          {
+            "0": 59993542656,
+            "1": 25575858176
+          },
+          {
+            "0": 59993481216,
+            "1": 25578409984
+          },
+          {
+            "0": 59993567232,
+            "1": 25579143168
+          },
+          {
+            "0": 59993563136,
+            "1": 25579278336
+          },
+          {
+            "0": 59993329664,
+            "1": 25579511808
+          },
+          {
+            "0": 59993329664,
+            "1": 25579515904
+          },
+          {
+            "0": 59993329664,
+            "1": 25579515904
+          },
+          {
+            "0": 59993165824,
+            "1": 25579745280
+          },
+          {
+            "0": 59993088000,
+            "1": 25579823104
+          },
+          {
+            "0": 59993088000,
+            "1": 25579823104
+          },
+          {
+            "0": 59992555520,
+            "1": 25580408832
+          },
+          {
+            "0": 59992551424,
+            "1": 25580412928
+          },
+          {
+            "0": 59992551424,
+            "1": 25580412928
+          },
+          {
+            "0": 59992551424,
+            "1": 25580412928
+          },
+          {
+            "0": 59991887872,
+            "1": 25581387776
+          },
+          {
+            "0": 59991883776,
+            "1": 25581391872
+          },
+          {
+            "0": 59991883776,
+            "1": 25581391872
+          },
+          {
+            "0": 59991883776,
+            "1": 25581391872
+          },
+          {
+            "0": 59991883776,
+            "1": 25581391872
+          },
+          {
+            "0": 59991879680,
+            "1": 25581400064
+          },
+          {
+            "0": 59991879680,
+            "1": 25581400064
+          },
+          {
+            "0": 59991879680,
+            "1": 25581400064
+          },
+          {
+            "0": 59991879680,
+            "1": 25581400064
+          },
+          {
+            "0": 59991756800,
+            "1": 25581522944
+          },
+          {
+            "0": 59991756800,
+            "1": 25581527040
+          },
+          {
+            "0": 59991752704,
+            "1": 25581531136
+          },
+          {
+            "0": 59991752704,
+            "1": 25581531136
+          },
+          {
+            "0": 59991752704,
+            "1": 25581531136
+          },
+          {
+            "0": 59991752704,
+            "1": 25581531136
+          },
+          {
+            "0": 59991752704,
+            "1": 25581531136
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+        "warm_wall_phases": {
+          "prefill_to_first_token": {
+            "samples": 12,
+            "sm_clock_mhz": {
+              "min": 1305.0,
+              "median": 1327.0,
+              "max": 1380.0,
+              "samples": 12
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 12
+            },
+            "power_w": {
+              "min": 181.61,
+              "median": 220.67,
+              "max": 262.95,
+              "samples": 12
+            },
+            "temperature_c": {
+              "min": 65.0,
+              "median": 70.0,
+              "max": 71.0,
+              "samples": 12
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 2
+          },
+          "decode_after_first_token": {
+            "samples": 4,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 123.65,
+              "median": 132.245,
+              "max": 142.54,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 61.0,
+              "median": 62.0,
+              "max": 65.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0
+          }
+        },
+        "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup."
+      },
+      "cases": [
+        {
+          "case": "mixed-65536",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.24842618172,
+          "decode_tokens_s": 22.80278265207051,
+          "ttft_ms": 131817.34399000014,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28973,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 1,
+            "pgpgin": 132,
+            "pgpgout": 3672,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-65536",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 496.87406650360964,
+          "decode_tokens_s": 24.05444196748422,
+          "ttft_ms": 131925.11142399962,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28955,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 2864,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "base": "current",
+      "telemetry": {
+        "active_samples": 32,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1282.0,
+          "median": 1380.0,
+          "max": 1380.0,
+          "samples": 32
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 32
+        },
+        "power_w": {
+          "min": 84.01,
+          "median": 208.51,
+          "max": 256.79,
+          "samples": 32
+        },
+        "temperature_c": {
+          "min": 58.0,
+          "median": 68.0,
+          "max": 71.0,
+          "samples": 32
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 5,
+        "min_host_memavailable_bytes": 48749453312,
+        "numa_mapped_bytes": [
+          {
+            "0": 30170218496,
+            "1": 55396380672
+          },
+          {
+            "0": 30171762688,
+            "1": 55396380672
+          },
+          {
+            "0": 30174478336,
+            "1": 55396380672
+          },
+          {
+            "0": 30174502912,
+            "1": 55396642816
+          },
+          {
+            "0": 30174699520,
+            "1": 55396577280
+          },
+          {
+            "0": 30174699520,
+            "1": 55396577280
+          },
+          {
+            "0": 30174703616,
+            "1": 55396577280
+          },
+          {
+            "0": 30174703616,
+            "1": 55396577280
+          },
+          {
+            "0": 30174703616,
+            "1": 55396577280
+          },
+          {
+            "0": 30174703616,
+            "1": 55396577280
+          },
+          {
+            "0": 30174703616,
+            "1": 55396577280
+          },
+          {
+            "0": 30174703616,
+            "1": 55396577280
+          },
+          {
+            "0": 30174593024,
+            "1": 55396741120
+          },
+          {
+            "0": 30174507008,
+            "1": 55396827136
+          },
+          {
+            "0": 30174429184,
+            "1": 55396904960
+          },
+          {
+            "0": 30174154752,
+            "1": 55397179392
+          },
+          {
+            "0": 30172114944,
+            "1": 55399530496
+          },
+          {
+            "0": 30171447296,
+            "1": 55400198144
+          },
+          {
+            "0": 30171635712,
+            "1": 55400009728
+          },
+          {
+            "0": 30171656192,
+            "1": 55399989248
+          },
+          {
+            "0": 30172004352,
+            "1": 55399645184
+          },
+          {
+            "0": 30172729344,
+            "1": 55398920192
+          },
+          {
+            "0": 30173396992,
+            "1": 55398252544
+          },
+          {
+            "0": 30173634560,
+            "1": 55398014976
+          },
+          {
+            "0": 30173679616,
+            "1": 55397969920
+          },
+          {
+            "0": 30173618176,
+            "1": 55398031360
+          },
+          {
+            "0": 30173614080,
+            "1": 55398039552
+          },
+          {
+            "0": 30173634560,
+            "1": 55398019072
+          },
+          {
+            "0": 30173745152,
+            "1": 55397908480
+          },
+          {
+            "0": 30173712384,
+            "1": 55397941248
+          },
+          {
+            "0": 30173691904,
+            "1": 55397961728
+          },
+          {
+            "0": 30173675520,
+            "1": 55397978112
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+        "warm_wall_phases": {
+          "prefill_to_first_token": {
+            "samples": 12,
+            "sm_clock_mhz": {
+              "min": 1282.0,
+              "median": 1353.5,
+              "max": 1380.0,
+              "samples": 12
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 12
+            },
+            "power_w": {
+              "min": 107.31,
+              "median": 235.735,
+              "max": 256.79,
+              "samples": 12
+            },
+            "temperature_c": {
+              "min": 66.0,
+              "median": 70.0,
+              "max": 71.0,
+              "samples": 12
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 2
+          },
+          "decode_after_first_token": {
+            "samples": 4,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 133.02,
+              "median": 134.35,
+              "max": 140.56,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 60.0,
+              "median": 61.5,
+              "max": 64.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0
+          }
+        },
+        "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup."
+      },
+      "cases": [
+        {
+          "case": "mixed-65536",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 496.6270644169315,
+          "decode_tokens_s": 22.715525751287174,
+          "ttft_ms": 131980.48936399937,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28896,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 8,
+            "pgpgout": 3272,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-65536",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.1545005317769,
+          "decode_tokens_s": 23.021893280934545,
+          "ttft_ms": 131849.15730400008,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28880,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 1,
+            "pgpgin": 72,
+            "pgpgout": 3304,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "base": "historical",
+      "telemetry": {
+        "active_samples": 32,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1297.0,
+          "median": 1342.0,
+          "max": 1380.0,
+          "samples": 32
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 32
+        },
+        "power_w": {
+          "min": 105.22,
+          "median": 199.01999999999998,
+          "max": 263.32,
+          "samples": 32
+        },
+        "temperature_c": {
+          "min": 55.0,
+          "median": 67.5,
+          "max": 71.0,
+          "samples": 32
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 4,
+        "min_host_memavailable_bytes": 48750010368,
+        "numa_mapped_bytes": [
+          {
+            "0": 59933798400,
+            "1": 25637027840
+          },
+          {
+            "0": 59933782016,
+            "1": 25637961728
+          },
+          {
+            "0": 59933646848,
+            "1": 25638649856
+          },
+          {
+            "0": 59933569024,
+            "1": 25639464960
+          },
+          {
+            "0": 59933646848,
+            "1": 25639514112
+          },
+          {
+            "0": 59933409280,
+            "1": 25639755776
+          },
+          {
+            "0": 59933270016,
+            "1": 25639895040
+          },
+          {
+            "0": 59933265920,
+            "1": 25639899136
+          },
+          {
+            "0": 59933241344,
+            "1": 25639923712
+          },
+          {
+            "0": 59933118464,
+            "1": 25640046592
+          },
+          {
+            "0": 59933048832,
+            "1": 25640116224
+          },
+          {
+            "0": 59933048832,
+            "1": 25640116224
+          },
+          {
+            "0": 59932573696,
+            "1": 25640656896
+          },
+          {
+            "0": 59932573696,
+            "1": 25640656896
+          },
+          {
+            "0": 59932577792,
+            "1": 25640656896
+          },
+          {
+            "0": 59932577792,
+            "1": 25640656896
+          },
+          {
+            "0": 59932844032,
+            "1": 25641607168
+          },
+          {
+            "0": 59932831744,
+            "1": 25641619456
+          },
+          {
+            "0": 59932831744,
+            "1": 25641619456
+          },
+          {
+            "0": 59932831744,
+            "1": 25641619456
+          },
+          {
+            "0": 59932831744,
+            "1": 25641619456
+          },
+          {
+            "0": 59932823552,
+            "1": 25641627648
+          },
+          {
+            "0": 59932823552,
+            "1": 25641627648
+          },
+          {
+            "0": 59932823552,
+            "1": 25641627648
+          },
+          {
+            "0": 59932823552,
+            "1": 25641627648
+          },
+          {
+            "0": 59932753920,
+            "1": 25641697280
+          },
+          {
+            "0": 59932749824,
+            "1": 25641701376
+          },
+          {
+            "0": 59932745728,
+            "1": 25641705472
+          },
+          {
+            "0": 59932446720,
+            "1": 25642004480
+          },
+          {
+            "0": 59932442624,
+            "1": 25642008576
+          },
+          {
+            "0": 59932442624,
+            "1": 25642008576
+          },
+          {
+            "0": 59932442624,
+            "1": 25642008576
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+        "warm_wall_phases": {
+          "prefill_to_first_token": {
+            "samples": 12,
+            "sm_clock_mhz": {
+              "min": 1305.0,
+              "median": 1327.0,
+              "max": 1380.0,
+              "samples": 12
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 12
+            },
+            "power_w": {
+              "min": 179.06,
+              "median": 219.075,
+              "max": 263.32,
+              "samples": 12
+            },
+            "temperature_c": {
+              "min": 65.0,
+              "median": 70.0,
+              "max": 71.0,
+              "samples": 12
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 1
+          },
+          "decode_after_first_token": {
+            "samples": 4,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 105.22,
+              "median": 128.195,
+              "max": 138.21,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 60.0,
+              "median": 61.5,
+              "max": 64.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0
+          }
+        },
+        "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup."
+      },
+      "cases": [
+        {
+          "case": "mixed-65536",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.87021006178554,
+          "decode_tokens_s": 22.616039719419756,
+          "ttft_ms": 131654.0047239996,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28893,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 8,
+            "pgpgout": 3856,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-65536",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.20956909920216,
+          "decode_tokens_s": 23.50030637606457,
+          "ttft_ms": 131834.49954699972,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28824,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 3004,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "base": "historical",
+      "telemetry": {
+        "active_samples": 32,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1282.0,
+          "median": 1372.5,
+          "max": 1380.0,
+          "samples": 32
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 32
+        },
+        "power_w": {
+          "min": 93.76,
+          "median": 221.42,
+          "max": 264.19,
+          "samples": 32
+        },
+        "temperature_c": {
+          "min": 58.0,
+          "median": 68.0,
+          "max": 70.0,
+          "samples": 32
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 3,
+        "min_host_memavailable_bytes": 48761028608,
+        "numa_mapped_bytes": [
+          {
+            "1": 61871996928,
+            "0": 23695785984
+          },
+          {
+            "1": 61872242688,
+            "0": 23696990208
+          },
+          {
+            "1": 61872361472,
+            "0": 23702061056
+          },
+          {
+            "1": 61872652288,
+            "0": 23702355968
+          },
+          {
+            "1": 61871996928,
+            "0": 23703138304
+          },
+          {
+            "1": 61871771648,
+            "0": 23703363584
+          },
+          {
+            "1": 61871517696,
+            "0": 23703617536
+          },
+          {
+            "1": 61871464448,
+            "0": 23703670784
+          },
+          {
+            "1": 61871292416,
+            "0": 23703842816
+          },
+          {
+            "1": 61870985216,
+            "0": 23704154112
+          },
+          {
+            "1": 61870813184,
+            "0": 23704326144
+          },
+          {
+            "1": 61870772224,
+            "0": 23704367104
+          },
+          {
+            "1": 61869182976,
+            "0": 23705976832
+          },
+          {
+            "1": 61868933120,
+            "0": 23706226688
+          },
+          {
+            "1": 61868908544,
+            "0": 23706251264
+          },
+          {
+            "1": 61868892160,
+            "0": 23706267648
+          },
+          {
+            "1": 61867343872,
+            "0": 23708127232
+          },
+          {
+            "1": 61867339776,
+            "0": 23708131328
+          },
+          {
+            "1": 61867331584,
+            "0": 23708139520
+          },
+          {
+            "1": 61867216896,
+            "0": 23708254208
+          },
+          {
+            "1": 61867212800,
+            "0": 23708258304
+          },
+          {
+            "1": 61867212800,
+            "0": 23708262400
+          },
+          {
+            "1": 61867212800,
+            "0": 23708262400
+          },
+          {
+            "1": 61867212800,
+            "0": 23708262400
+          },
+          {
+            "1": 61867212800,
+            "0": 23708262400
+          },
+          {
+            "1": 61867143168,
+            "0": 23708332032
+          },
+          {
+            "1": 61867139072,
+            "0": 23708336128
+          },
+          {
+            "1": 61867130880,
+            "0": 23708348416
+          },
+          {
+            "1": 61867130880,
+            "0": 23708348416
+          },
+          {
+            "1": 61867130880,
+            "0": 23708348416
+          },
+          {
+            "1": 61867130880,
+            "0": 23708348416
+          },
+          {
+            "1": 61867130880,
+            "0": 23708348416
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+        "warm_wall_phases": {
+          "prefill_to_first_token": {
+            "samples": 12,
+            "sm_clock_mhz": {
+              "min": 1290.0,
+              "median": 1327.0,
+              "max": 1380.0,
+              "samples": 12
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 12
+            },
+            "power_w": {
+              "min": 178.33,
+              "median": 222.36,
+              "max": 247.8,
+              "samples": 12
+            },
+            "temperature_c": {
+              "min": 66.0,
+              "median": 70.0,
+              "max": 70.0,
+              "samples": 12
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 2
+          },
+          "decode_after_first_token": {
+            "samples": 4,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 122.83,
+              "median": 131.065,
+              "max": 134.54,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 60.0,
+              "median": 61.0,
+              "max": 64.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0
+          }
+        },
+        "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup."
+      },
+      "cases": [
+        {
+          "case": "mixed-65536",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 496.63609675067715,
+          "decode_tokens_s": 22.111329681221132,
+          "ttft_ms": 131978.6221639997,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 29056,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 1,
+            "pgpgin": 128,
+            "pgpgout": 3092,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-65536",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.6358198165909,
+          "decode_tokens_s": 22.913147089426165,
+          "ttft_ms": 131721.63508600078,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28911,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 8,
+            "pgpgout": 10236,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "base": "current",
+      "telemetry": {
+        "active_samples": 32,
+        "sample_interval_s": 10,
+        "sm_clock_mhz": {
+          "min": 1297.0,
+          "median": 1342.0,
+          "max": 1380.0,
+          "samples": 32
+        },
+        "memory_clock_mhz": {
+          "min": 877.0,
+          "median": 877.0,
+          "max": 877.0,
+          "samples": 32
+        },
+        "power_w": {
+          "min": 118.72,
+          "median": 183.57,
+          "max": 258.53,
+          "samples": 32
+        },
+        "temperature_c": {
+          "min": 57.0,
+          "median": 67.5,
+          "max": 71.0,
+          "samples": 32
+        },
+        "thermal_reason_samples": 0,
+        "power_cap_samples": 2,
+        "min_host_memavailable_bytes": 48793165824,
+        "numa_mapped_bytes": [
+          {
+            "0": 59994578944,
+            "1": 25570508800
+          },
+          {
+            "0": 59994574848,
+            "1": 25571495936
+          },
+          {
+            "0": 59994513408,
+            "1": 25574424576
+          },
+          {
+            "0": 59994427392,
+            "1": 25575337984
+          },
+          {
+            "0": 59994529792,
+            "1": 25575362560
+          },
+          {
+            "0": 59994308608,
+            "1": 25575583744
+          },
+          {
+            "0": 59994157056,
+            "1": 25575735296
+          },
+          {
+            "0": 59994075136,
+            "1": 25575817216
+          },
+          {
+            "0": 59994058752,
+            "1": 25575833600
+          },
+          {
+            "0": 59993849856,
+            "1": 25576042496
+          },
+          {
+            "0": 59993808896,
+            "1": 25576083456
+          },
+          {
+            "0": 59993808896,
+            "1": 25576083456
+          },
+          {
+            "0": 59993292800,
+            "1": 25576665088
+          },
+          {
+            "0": 59993292800,
+            "1": 25576665088
+          },
+          {
+            "0": 59993292800,
+            "1": 25576665088
+          },
+          {
+            "0": 59993292800,
+            "1": 25576665088
+          },
+          {
+            "0": 59992666112,
+            "1": 25577598976
+          },
+          {
+            "0": 59992666112,
+            "1": 25577598976
+          },
+          {
+            "0": 59992666112,
+            "1": 25577598976
+          },
+          {
+            "0": 59992657920,
+            "1": 25577607168
+          },
+          {
+            "0": 59992657920,
+            "1": 25577607168
+          },
+          {
+            "0": 59992649728,
+            "1": 25577615360
+          },
+          {
+            "0": 59992645632,
+            "1": 25577619456
+          },
+          {
+            "0": 59992645632,
+            "1": 25577619456
+          },
+          {
+            "0": 59992645632,
+            "1": 25577619456
+          },
+          {
+            "0": 59992555520,
+            "1": 25577709568
+          },
+          {
+            "0": 59992555520,
+            "1": 25577709568
+          },
+          {
+            "0": 59992547328,
+            "1": 25577717760
+          },
+          {
+            "0": 59992543232,
+            "1": 25577721856
+          },
+          {
+            "0": 59992543232,
+            "1": 25577721856
+          },
+          {
+            "0": 59992539136,
+            "1": 25577725952
+          },
+          {
+            "0": 59992539136,
+            "1": 25577725952
+          }
+        ],
+        "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+        "warm_wall_phases": {
+          "prefill_to_first_token": {
+            "samples": 12,
+            "sm_clock_mhz": {
+              "min": 1297.0,
+              "median": 1316.0,
+              "max": 1372.0,
+              "samples": 12
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 12
+            },
+            "power_w": {
+              "min": 171.25,
+              "median": 217.06,
+              "max": 257.77,
+              "samples": 12
+            },
+            "temperature_c": {
+              "min": 65.0,
+              "median": 70.0,
+              "max": 71.0,
+              "samples": 12
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 1
+          },
+          "decode_after_first_token": {
+            "samples": 4,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 123.73,
+              "median": 130.93,
+              "max": 139.39,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 60.0,
+              "median": 61.5,
+              "max": 64.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0
+          }
+        },
+        "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup."
+      },
+      "cases": [
+        {
+          "case": "mixed-65536",
+          "request": 0,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.75298734579076,
+          "decode_tokens_s": 22.43940921242933,
+          "ttft_ms": 131683.84930499998,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 28883,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 8,
+            "pgpgout": 3916,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        },
+        {
+          "case": "mixed-65536",
+          "request": 1,
+          "output_tokens": 1024,
+          "prefill_tokens_s": 497.1492206251384,
+          "decode_tokens_s": 22.431298671427477,
+          "ttft_ms": 131868.44716199994,
+          "active_samples": 16,
+          "process_io_delta": {
+            "read_bytes": 0,
+            "cancelled_write_bytes": 0,
+            "syscw": 1287,
+            "rchar": 306542,
+            "wchar": 29162,
+            "syscr": 75,
+            "write_bytes": 4096
+          },
+          "global_vm_delta": {
+            "pgmajfault": 0,
+            "pgpgin": 0,
+            "pgpgout": 3740,
+            "pswpin": 0,
+            "pswpout": 0
+          }
+        }
+      ]
+    }
+  ],
+  "warm_summary": [
+    {
+      "case": "mixed-65536",
+      "output_tokens": 1024,
+      "base": "current",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 496.87406650360964,
+        "median": 497.1492206251384,
+        "max": 497.1545005317769,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 22.431298671427477,
+        "median": 23.021893280934545,
+        "max": 24.05444196748422,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 131849.15730400008,
+        "median": 131868.44716199994,
+        "max": 131925.11142399962,
+        "samples": 3
+      }
+    },
+    {
+      "case": "mixed-65536",
+      "output_tokens": 1024,
+      "base": "historical",
+      "warm_repeats": 3,
+      "prefill_tokens_s": {
+        "min": 497.20956909920216,
+        "median": 497.22767649852665,
+        "max": 497.6358198165909,
+        "samples": 3
+      },
+      "decode_tokens_s": {
+        "min": 22.913147089426165,
+        "median": 23.497556162371783,
+        "max": 23.50030637606457,
+        "samples": 3
+      },
+      "ttft_ms": {
+        "min": 131721.63508600078,
+        "median": 131834.49954699972,
+        "max": 131839.83407799952,
+        "samples": 3
+      }
+    }
+  ],
+  "interpretation": "Request 0 is excluded from warm summaries. Process order and output trajectories matter. Clock/power/NUMA distributions are observations, not proof of matched conditions or causal speedup.",
+  "source_run": 39194497860,
+  "artifacts": [
+    {
+      "unit": 11,
+      "artifact_id": 12164184563,
+      "zip_sha256": "a393a88d85c73c23d755abf5fdd19e7ee972182eb275ff0d5be33f46f4d39b35"
+    },
+    {
+      "unit": 9,
+      "artifact_id": 12164092528,
+      "zip_sha256": "225bc08f375f2d7f1d37ac0f56b986bad510b060cfd6321c38483c33bc624a86"
+    },
+    {
+      "unit": 7,
+      "artifact_id": 12163666764,
+      "zip_sha256": "e235be472e154056d07f14140200d3c8ef1104caa5e81a5c0d1a18d1a86fdd94"
+    },
+    {
+      "unit": 10,
+      "artifact_id": 12163494515,
+      "zip_sha256": "2e0bdc9f9349ffe4f2cc71945ca78030cfd44aba781004c88e531dd98c07dc21"
+    },
+    {
+      "unit": 8,
+      "artifact_id": 12163329973,
+      "zip_sha256": "0a230571537a37a602010f430c861c32acee5150033def0421d940c7e44ae36b"
+    },
+    {
+      "unit": 6,
+      "artifact_id": 12163083916,
+      "zip_sha256": "51405ffa09db54391c6a7a56012925b7bcef5acb03fce7c55bbb0998573c30cb"
+    }
+  ],
+  "actual_process_order": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "paired": [
+    {
+      "pair": 0,
+      "case": "mixed-65536",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.07116692513362555,
+      "decode_ms_change_percent": -2.315105899630554,
+      "ttft_ms_change_percent": 0.0646825343770141,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 1,
+      "case": "mixed-65536",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.011076751264726958,
+      "decode_ms_change_percent": 2.078078849953746,
+      "ttft_ms_change_percent": 0.011118301393575614,
+      "generated_ids_equal": false
+    },
+    {
+      "pair": 2,
+      "case": "mixed-65536",
+      "output_tokens": 1024,
+      "prefill_ms_change_percent": 0.09787789485833365,
+      "decode_ms_change_percent": 2.1481075396337035,
+      "ttft_ms_change_percent": 0.11145631156439517,
+      "generated_ids_equal": false
+    }
+  ],
+  "paired_median_percent": {
+    "prefill_ms_change_percent": 0.07116692513362555,
+    "decode_ms_change_percent": 2.078078849953746,
+    "ttft_ms_change_percent": 0.0646825343770141
+  },
+  "disposition": "64K, 1024-output, three process pairs complete. Negative elapsed-time changes favor current. Generated trajectories differ; no causal base-speedup claim. Fresh process per context; separate from original carry-over-residency campaign."
+}

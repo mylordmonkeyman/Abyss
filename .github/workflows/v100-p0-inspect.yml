@@ -1,0 +1,43 @@
+name: V100 P0 interrupted campaign inspection
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-p0-inspect.yml'
+      - 'tools/profiling/p0_inspect.py'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    env:
+      EVIDENCE: results/ci-v100-p0-inspect-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+      - name: Preserve bounded partial arms and read current process and memory state
+        run: python3 tools/profiling/p0_inspect.py
+      - name: Upload recovery evidence
+        if: always() && env.P0_INSPECT_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-inspect-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          if-no-files-found: error
+          retention-days: 30

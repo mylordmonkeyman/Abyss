@@ -17,7 +17,9 @@
 // routing also feeds the expert tiers' LFU counts, so the decode that follows starts from this conversation's
 // experts.  STRATA_GLM_NO_PREFILL=1 keeps the token-at-a-time prompt (A/B).
 #include "glm_fast_state.hpp"
+#include "strata/core/v100_dispatch.hpp"
 #include "strata/kernels/dsv4_fast.hpp"
+#include "v100_stage_capture.hpp"
 
 #include "strata/core/progress.hpp"
 #include "strata/kernels/cpu/kq_avx512.hpp"
@@ -557,6 +559,7 @@ bool Glm5Model::prefill_setup(std::string& err) {
         std::fprintf(stderr, "glm prefill: --prefill %s: the prompt runs token by token\n", prefill_mode().c_str());
         return true;
     }
+    v100dispatch::record(mmq::built() ? "mmq_built" : "mmq_not_built", -1, 0);
     if (!mmq::built()) {
         std::fprintf(stderr, "glm prefill: this build has no MMQ kernels - the prompt runs token by token\n");
         return true;
@@ -608,6 +611,9 @@ bool Glm5Model::prefill_setup(std::string& err) {
             deq_ok(Ly.sh_gate, "ffn_gate_shexp", il);
             deq_ok(Ly.sh_up, "ffn_up_shexp", il);
             deq_ok(Ly.sh_down, "ffn_down_shexp", il);
+            v100dispatch::Scope setup_scope({0,il,0,-1,0});
+            v100dispatch::record(mmq::supported(Ly.gu_type) ? "mmq_gu_supported" : "mmq_gu_unsupported", Ly.gu_type, 0);
+            v100dispatch::record(mmq::supported(Ly.d_type) ? "mmq_down_supported" : "mmq_down_unsupported", Ly.d_type, 0);
             if (!mmq::supported(Ly.gu_type) || !mmq::supported(Ly.d_type))
                 why += "blk." + std::to_string(il) + " experts (types " + std::to_string(Ly.gu_type) + "/" +
                        std::to_string(Ly.d_type) + ") ";
@@ -620,6 +626,7 @@ bool Glm5Model::prefill_setup(std::string& err) {
         }
     }
     if (!why.empty()) {
+        v100dispatch::record("prefill_fallback_unsupported", -1, 0);
         std::fprintf(stderr, "glm prefill: CUDA%d has no prompt path (not covered: %s) - token by token\n", dev_,
                      why.substr(0, 400).c_str());
         return true;
@@ -637,7 +644,9 @@ bool Glm5Model::prefill_setup(std::string& err) {
     S->max_pools = (int) std::max<int64_t>(1, max_ctx_ / g.idx_kpool);
     if (const char* v = getenv("STRATA_GLM_PREFILL_SUB"))
         S->sub_env = std::clamp(std::atoi(v), 16, 8192);
-    S->prof = getenv("STRATA_GLM_PREFILL_PROF") != nullptr;
+    const char* v100_profile = getenv("ABYSS_V100_PROFILE");
+    S->prof = getenv("STRATA_GLM_PREFILL_PROF") != nullptr ||
+              (g.dsv4() && v100_profile && std::strcmp(v100_profile, "1") == 0);
     S->gstride = gstride;
 
     // ---- sizes: the chunk T from the budget (per device)
@@ -1449,6 +1458,14 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     // 3. q (and the indexer's q), per-head norm and RoPE
     hgemm(Ly.q_b, HD, g.q_lora, B.qr16, g.q_lora, B.q, HD);
     if (r == 4) hgemm(Ly.idx_q_b_q, IQ, g.q_lora, B.qr16, g.q_lora, B.iq, IQ);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    v100diag::StageCapture capture(il,p0,tn,n_hist,r,g.n_head,D,g.n_rot,rope,g.norm_eps,s);
+    if(capture.enabled) {
+        capture.copy("q_raw.f32",B.q+(size_t)capture.t*HD,HD);
+        capture.copy("kv_raw.f32",B.kv_raw+(size_t)capture.t*D,D);
+        capture.copy("kv_norm.f32",Ly.kv_a_norm,D);
+    }
+#endif
     ds::q_prep_batch(B.q, g.n_head, D, g.n_rot, rope, r == 4 ? B.iq : nullptr, g.idx_heads, g.idx_key, crope, p0, tn,
                      g.norm_eps, s);
     S->mark("ds4_q", s);
@@ -1456,9 +1473,21 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     if (r == 4) ds::indexer_batch(B.iq, Ly.idx_cache, B.iw, g.idx_heads, 4, p0, tn, g.idx_top_k, B.score, B.score_ld,
                                   B.sel, s);
     S->mark("ds4_index", s);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    if(capture.enabled) {
+        capture.copy("q.f32",B.q+(size_t)capture.t*HD,HD);
+        capture.copy("keys.f16",B.keys,(size_t)(n_hist+tn)*D);
+        capture.copy("comp.f16",Ly.comp_cache,(size_t)capture.comp_rows*D);
+        capture.copy("sinks.f32",Ly.sinks,g.n_head);
+        if(r==4)capture.copy("selection.i32",B.sel+(size_t)capture.t*g.idx_top_k,g.idx_top_k);
+    }
+#endif
     ds::attend_batch(B.q, B.keys, n_hist, g.n_swa, Ly.comp_cache, B.sel, g.idx_top_k, r, Ly.sinks, g.n_head, D, g.n_rot,
                      rope, p0, tn, B.o, s);
     S->mark("ds4_attn", s);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    if(capture.enabled)capture.copy("attention.f32",B.o+(size_t)capture.t*HD,HD);
+#endif
     if (skip_output) return true;
     // 5. the grouped output LoRA, then wo_b
     ds::to_f16(B.o, B.o16, (int64_t) tn * HD, s);
@@ -1476,6 +1505,13 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     ds::to_f16(B.oa, B.oa16, (int64_t) tn * OL, s);
     hgemm(Ly.out_b, E, OL, B.oa16, OL, mixer, E);
     S->mark("ds4_out", s);
+#ifdef STRATA_V100_CAPTURE_STAGES
+    if(capture.enabled) {
+        capture.copy("wo_a.f32",B.oa+(size_t)capture.t*OL,OL);
+        capture.copy("mixer.f32",mixer+(size_t)capture.t*E,E);
+        capture.finish();
+    }
+#endif
     return true;
 }
 
@@ -1900,6 +1936,8 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
     prestage(next_moe(l0_));   // (the dense layers before the first MoE one run meanwhile)
     for (auto& t : S->tr) t.on = false;
     for (int il = l0_; il < l1_; ++il) {
+        const v100dispatch::Context dispatch_context{1,il,T,p0,0};
+        v100dispatch::Scope dispatch_scope(dispatch_context);
         progress_at("the prompt: layer", il);   // a layer is the serve watchdog's heartbeat (issue #40)
         progress_beat();
         const auto& Ly = F->L[(size_t) il];
@@ -2405,6 +2443,33 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         if (n_light > 0)
             cudaMemcpyAsync(M.bounds + kLightOff, h_light, (size_t) 3 * n_light * sizeof(int), cudaMemcpyHostToDevice, s);
         gb::expert_scatter(M.ids, M.rank, M.base, T * K, K, M.row_tok, M.pos, s);
+        v100dispatch::InputRows input_rows;
+        if (v100dispatch::enabled()) {
+            input_rows.tokens.resize((size_t) T * K);
+            input_rows.seen.resize((size_t) T, 0);
+            if (!glmfast::cuda_ok(cudaMemcpyAsync(input_rows.tokens.data(), M.row_tok,
+                    (size_t) T * K * sizeof(int), cudaMemcpyDeviceToHost, s),
+                    "P0 input gather IDs", err) ||
+                !glmfast::cuda_ok(cudaStreamSynchronize(s), "P0 input gather IDs sync", err)) return false;
+            std::vector<int8_t> lanes((size_t) T*K,-1);
+            const auto tag=[&](int first,int last,int8_t lane) {
+                if(first<0 || last<first || last>rows)
+                    throw std::runtime_error("P0 route range out of bounds");
+                std::fill(lanes.begin()+first,lanes.begin()+last,lane);
+            };
+            tag(0,rows_mmq,0);tag(rows_mmq,rows_res,1);
+            tag(rows_res,rows_res+rows_pre,2);
+            for(const auto& group:groups)
+                for(int j=0;j<group.n;++j) {
+                    const auto& st=staged[(size_t)group.first+j];
+                    tag(group.r0+S->h_bounds[group.b_off+j],group.r0+S->h_bounds[group.b_off+j+1],
+                        st.dev ? 4 : st.ram ? 3 : 5);
+                }
+            tag(cpu_r0,rows,6);
+            if(!v100dispatch::prefill_routes(input_rows,lanes,K,Ly.gu_type,Ly.d_type)) {
+                err="P0 per-token route conservation failed";return false;
+            }
+        }
         if (cpu_nrows > 0) {
             if (!cpu_bufs(cpu_nrows)) {
                 err = "glm prefill: the CPU experts' host buffers did not allocate";
@@ -2453,6 +2518,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             return v == nullptr || std::atoi(v) != 0;
         }();
         const bool glu = glu_on && mmq::glu_supported(Ly.gu_type, nff);
+        v100dispatch::record(glu ? "mmq_glu_selected" : "mmq_glu_not_selected", Ly.gu_type, T);
         // one expert set through gate/up, swiglu and down: its rows [r0 + hb[0], r0 + hb[n_exp]) of the sorted order
         // (hb: the set's bounds on the host, d_bounds the same on the device), in parts of at most W rows
         const auto run_set = [&](const uint8_t* wbase, int n_exp, size_t stride, const int* d_bounds, const int* hb,
@@ -2465,6 +2531,9 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 for (int i = i0; i < i1; ++i) max_rows = std::max(max_rows, hb[i + 1] - hb[i]);
                 if (nrows > 0) {
                     const int o = place(r0 + a, nrows);
+                    if (v100dispatch::enabled() && !input_rows.count(r0 + a, nrows, Ly.gu_type)) {
+                        throw std::runtime_error("P0 MMQ input gather IDs out of range");
+                    }
                     mmq::quantize(S->x, M.row_tok + r0 + a, M.Xq, Ly.gu_type, E, E, nrows, s);
                     // the part's bounds are the set's (from a): the activations and the destination are addressed a
                     // rows back so that bound a is the part's first row
@@ -2778,10 +2847,12 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 };
                 if (pack_a > 0) pack(true);
                 F->cpu_pool->run(ncx * (nff / kGu), [&](int job) {
+                    v100dispatch::Scope worker_scope(dispatch_context);
                     const int j = job % ncx, r0 = (job / ncx) * kGu, b = r_of[(size_t) j];
                     const int cnt = S->h_counts[cpu_set[(size_t) j].e];
                     const uint8_t* blob = cpu_set[(size_t) j].ram;
                     if (off_a[(size_t) j] != SIZE_MAX) {
+                        v100dispatch::record("cpu_gu:kq_packed", nf.gu_type, cnt, 2*kGu, 2*(uint64_t)kGu*nf.gu_row);
                         // gate and up rows [r0, r0 + kGu) for every row of the expert, then the clamped swiglu
                         thread_local std::vector<float> gu_t;
                         thread_local std::vector<float*> go, uo;
@@ -2817,6 +2888,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                         o[(size_t) t] = S->c_ff.data() + (size_t) (b + t) * nff;
                     }
                     if (iq_use(nf.gu_type, nf.gu_act, cnt)) {
+                        v100dispatch::record("cpu_gu:iq512_direct", nf.gu_type, cnt, 2*kGu, 2*(uint64_t)kGu*nf.gu_row);
                         // gate and up rows [r0, r0 + kGu) for every token of the expert, then the clamped swiglu
                         thread_local std::vector<float> gu_t;
                         thread_local std::vector<float*> go, uo;
@@ -2863,6 +2935,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                   const int nj = j1 - j0;
                   if (nj <= 0) return;
                   F->cpu_pool->run(nj * (E / kDn), [&](int job) {
+                    v100dispatch::Scope worker_scope(dispatch_context);
                     const int j = j0 + job % nj, r0 = (job / nj) * kDn, b = r_of[(size_t) j];
                     const int cnt = S->h_counts[cpu_set[(size_t) j].e];
                     thread_local std::vector<const void*> h;
@@ -2871,6 +2944,7 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                     o.resize((size_t) cnt);
                     const uint8_t* down = cpu_set[(size_t) j].ram + Ly.down_off;
                     if (off_h[(size_t) j] != SIZE_MAX) {
+                        v100dispatch::record("cpu_down:kq_packed", nf.d_type, cnt, kDn, (uint64_t)kDn*nf.d_row);
                         for (int t = 0; t < cnt; ++t) o[(size_t) t] = S->out_h + (size_t) (b + t) * E + r0;
                         kc::kq_rows_packed(nf.d_type, down + (size_t) r0 * nf.d_row, nf.d_row, nff, pk_h + off_h[(size_t) j],
                                            cnt, o.data(), 0, kDn);
@@ -2880,7 +2954,8 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                         h[(size_t) t] = S->c_hq.data() + (size_t) (b + t) * kH;
                         o[(size_t) t] = S->out_h + (size_t) (b + t) * E;
                     }
-                    if (iq_use(nf.d_type, nf.d_act, cnt)) {   // (out[t][r] for r in [r0, r0 + kDn), as the split's)
+                    if (iq_use(nf.d_type, nf.d_act, cnt)) {   // same output range as the split path
+                        v100dispatch::record("cpu_down:iq512_direct", nf.d_type, cnt, kDn, (uint64_t)kDn*nf.d_row);
                         kc::iq512_rows(nf.d_type, down, nf.d_row, nff, h.data(), cnt, o.data(), r0, r0 + kDn);
                         return;
                     }
@@ -2947,6 +3022,9 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             }
         }
         S->mark("moe_staged", s);
+        if (v100dispatch::enabled()) {
+            v100dispatch::record("mmq_input_layer_distinct", Ly.gu_type, T, input_rows.unique);
+        }
         dump_row("pf_shexp-" + std::to_string(il), S->ffn, E);
         flush();
         if (cpu_nrows > 0) gb::moe_combine_add(M.OUTPc, cpu_r0, cpu_r0, rows, M.pos, M.rw, T, K, E, S->ffn, s);

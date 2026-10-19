@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-18",
+  "pinned_base": "47001f31cbfba14bcbf4c083e3af07c50707ec0c",
+  "tested_commit": "ed41547eacf83d86924b10f6bbfa748bcbeca724",
+  "gpu": "Tesla V100-PCIE-32GB",
+  "compute_capability": "7.0",
+  "nvcc": "12.8.93",
+  "gpu_run_id": 39101028811,
+  "hosted_ci_run_id": 39101028820,
+  "artifact_id": 12126830748,
+  "artifact_sha256": "5a2dd89b65f3eab6209448e9dadbd14ffec6a4a40389dd1877ba32d5af0bacc5",
+  "dsv4_f32_components": {
+    "synthetic_cases": 26,
+    "default_dispatch": "pass",
+    "legacy_forced_f32": "pass",
+    "memcheck_errors": 0,
+    "synccheck_errors": 0,
+    "attention_max_relative_l2": 6.09602949e-07,
+    "attention_max_absolute_error": 7.3962379e-08
+  },
+  "mma884_contract": {
+    "synthetic_cases": 15,
+    "four_quadpairs_all_accumulator_coordinates": "pass",
+    "host_fp64_and_device_scalar": "pass",
+    "graph_replays": 4,
+    "max_absolute_error": 0,
+    "memcheck_errors": 0,
+    "synccheck_errors": 0,
+    "sm70_ptx_mma884": "pass",
+    "sm70_sass_hmma": "pass",
+    "production_dispatch_enabled": false
+  },
+  "hosted_ci": {
+    "server_tests": 130,
+    "installer_tool_tests": 202,
+    "result": "pass",
+    "host_cpu_build": "pass"
+  },
+  "full_model_p0": {
+    "status": "partial: initial full-model runtime passed",
+    "tested_commit": "852ef953b8b020e6861f974350d745345aecc806",
+    "run_id": 39137399940,
+    "artifact_id": 12140800382,
+    "artifact_sha256": "506165216495d657c35bf9578e6f018ad8a0516981b8d19de3ea86f9b2629a8f",
+    "model_integrity": "exact byte sizes and GGUF structural checks; model SHA256 not verified",
+    "results": [
+      {
+        "case": "short",
+        "argv": [
+          "/actions-runner/_work/Abyss/Abyss/build-v100-diagnostics/strata",
+          "--glm-pack",
+          "/actions-runner/abyss-models/deepseek-v4-flash-0731-ud-q2-k-xl/pack-dsv4",
+          "--tokens-file",
+          "/actions-runner/_work/Abyss/Abyss/results/ci-v100-39137399940-1/short-input.txt",
+          "--max-new",
+          "16",
+          "--max-context",
+          "4096",
+          "--prefill",
+          "auto",
+          "--temperature",
+          "0"
+        ],
+        "status": "completed",
+        "returncode": 0,
+        "wall_s_including_load": 104.02100673699897,
+        "prompt_tokens": 14,
+        "generated_tokens": 16,
+        "done": [
+          "DONE 16 14 844.7 758.9 length 0 0 0 2284 3870"
+        ],
+        "passed": true
+      },
+      {
+        "case": "prefill",
+        "argv": [
+          "/actions-runner/_work/Abyss/Abyss/build-v100-diagnostics/strata",
+          "--glm-pack",
+          "/actions-runner/abyss-models/deepseek-v4-flash-0731-ud-q2-k-xl/pack-dsv4",
+          "--tokens-file",
+          "/actions-runner/_work/Abyss/Abyss/results/ci-v100-39137399940-1/prefill-input.txt",
+          "--max-new",
+          "256",
+          "--max-context",
+          "4096",
+          "--prefill",
+          "auto",
+          "--temperature",
+          "0"
+        ],
+        "status": "completed",
+        "returncode": 0,
+        "wall_s_including_load": 100.93153224800335,
+        "prompt_tokens": 464,
+        "generated_tokens": 256,
+        "done": [
+          "DONE 256 464 1892.4 9449.7 length 0 0 0 49088 65790"
+        ],
+        "passed": true
+      }
+    ],
+    "instrumentation": "ABYSS_V100_PROFILE=1; not an uninstrumented throughput baseline",
+    "settings": {
+      "max_context": 4096,
+      "speculation": 0,
+      "ram_budget_gib": 72,
+      "cpu_lane_threads": 28
+    },
+    "reported_memory_gib": {
+      "dense": 6.17,
+      "expert_pool": 24.18,
+      "pinned_expert_tier": 68.28,
+      "complete_process_ledger": false
+    },
+    "mxfp4_down_layers": [
+      26,
+      42
+    ],
+    "thermal_samples": {
+      "short": {
+        "samples": 21,
+        "valid_samples": 21,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions",
+        "temperature_range": [
+          36.0,
+          39.0
+        ],
+        "power_draw_range": [
+          26.02,
+          46.91
+        ],
+        "sm_clock_range": [
+          135.0,
+          1380.0
+        ]
+      },
+      "prefill": {
+        "samples": 20,
+        "valid_samples": 20,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions",
+        "temperature_range": [
+          39.0,
+          44.0
+        ],
+        "power_draw_range": [
+          38.52,
+          127.06
+        ],
+        "sm_clock_range": [
+          1230.0,
+          1380.0
+        ]
+      }
+    },
+    "full_inference": true,
+    "model_logit_parity": false,
+    "hardware_counter_critical_path": false,
+    "performance_improvement_claim": null,
+    "warm_prompt_baseline_run_id": 39139393175,
+    "same_engine_prefill_reference_run_id": 39138840797,
+    "external_cpu_reference_run_id": 39140902521,
+    "nsight_timeline_run_id": 39140801624,
+    "counter_gate": "ERR_NVGPUCTRPERM",
+    "limited_logit_measurements": {
+      "batch_vs_token_mean_kl": 5.50869736409417e-07,
+      "cpu_reference_mean_kl": 0.013540201894700597,
+      "cpu_reference_top1_agreement": 0.9612403100775194,
+      "broader_qualification": "pending"
+    }
+  }
+}

@@ -1,0 +1,124 @@
+name: V100 P1 isolated indexer and selected-base audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-p1]
+    paths:
+      - '.github/workflows/v100-p1.yml'
+      - 'src/kernels/cuda/dsv4_volta_idx.cuh'
+      - 'tests/v100/test_dsv4_volta_indexer.cu'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  indexer:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-p1'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p1-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+      - name: Check selected base, select SM70 and refuse GPU overlap
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 7c893ac17e61ec45c934b3278356807fc4626c3c HEAD
+          test "$(cat VERSION)" = '1.3.31'
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          mkdir -p "$EVIDENCE"
+          git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
+          git diff --stat 7c893ac17e61ec45c934b3278356807fc4626c3c > "$EVIDENCE/port-stat.txt"
+          "$NVCC" --version > "$EVIDENCE/nvcc.txt"
+      - name: Check tools and build selected-base engine and isolated P1 tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools -p 'test_v100_*.py' 2>&1 | tee "$EVIDENCE/tooling-tests.log"
+          cmake --preset v100-diagnostics -DCMAKE_CUDA_COMPILER="$NVCC" \
+            -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+            -DSTRATA_V100_TESTS=ON -DSTRATA_V100_CAPTURE_STAGES=OFF 2>&1 | tee "$EVIDENCE/configure.log"
+          cmake --build build-v100-diagnostics --target strata test_mma884_fragment_contract \
+            test_dsv4_volta_indexer dsv4_fallback_parity --parallel 32 2>&1 | tee "$EVIDENCE/build-ptxas.log"
+          sha256sum build-v100-diagnostics/{strata,test_mma884_fragment_contract,test_dsv4_volta_indexer,dsv4_fallback_parity} > "$EVIDENCE/binary-sha256.txt"
+      - name: Check fragment, scorer, unchanged top-512 and FP32 components
+        run: |
+          set -euo pipefail
+          for target in test_mma884_fragment_contract test_dsv4_volta_indexer dsv4_fallback_parity; do
+            timeout 600s "build-v100-diagnostics/$target" 2>&1 | tee "$EVIDENCE/$target.jsonl"
+            for tool in memcheck synccheck; do
+              timeout 900s compute-sanitizer --tool "$tool" --error-exitcode 1 \
+                "build-v100-diagnostics/$target" 2>&1 | tee "$EVIDENCE/$target-$tool.log"
+            done
+          done
+      - name: Inspect emitted SM70 instructions and resource usage
+        run: |
+          set -euo pipefail
+          "$NVCC" -std=c++17 --ptx -arch=compute_70 -Isrc/kernels/cuda -Iinclude \
+            tests/v100/test_dsv4_volta_indexer.cu -o "$EVIDENCE/indexer-sm70.ptx"
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-diagnostics/test_dsv4_volta_indexer > "$EVIDENCE/indexer-sm70.sass"
+          grep -q 'mma.sync.aligned.m8n8k4.row.col.f32.f16.f16.f32' "$EVIDENCE/indexer-sm70.ptx"
+          grep -q HMMA "$EVIDENCE/indexer-sm70.sass"
+      - name: Interleave isolated score timings with sustained telemetry
+        run: |
+          set -euo pipefail
+          nvidia-smi -i "$ABYSS_GPU" -q -x -l 1 > "$EVIDENCE/scorer-telemetry.xml" &
+          monitor_pid=$!
+          trap 'kill "$monitor_pid" 2>/dev/null || true; wait "$monitor_pid" 2>/dev/null || true' EXIT
+          STRATA_DS4_IDX=1 timeout 600s build-v100-diagnostics/test_dsv4_volta_indexer --bench 2>&1 | tee "$EVIDENCE/scorer-benchmark.jsonl"
+      - name: Repeat selected-base dispatch audit before production integration
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[v100:p1-base]')
+        env:
+          EVIDENCE: results/ci-v100-p1-base-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_accounting.py --phase dispatch
+      - name: Upload bounded selected-base diagnostic
+        if: always() && env.P0_ACCOUNTING_DISPATCH_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p1-base-${{ github.run_id }}
+          path: results/ci-v100-p1-base-${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 30
+      - name: Enforce bounded artifact cap
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE'])
+          files=list(root.rglob('*'))
+          assert not any(p.is_symlink() for p in files), 'artifact symlink refused'
+          assert sum(p.stat().st_size for p in files if p.is_file())<=64*1024**2, 'artifact exceeds 64 MiB; retained on runner'
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('P1_ARTIFACT_CAP=true\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && env.P1_ARTIFACT_CAP == 'true'
+        with:
+          name: abyss-p1-indexer-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30

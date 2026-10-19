@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "base_shas": {
+    "historical": "47001f31cbfba14bcbf4c083e3af07c50707ec0c",
+    "current": "7c893ac17e61ec45c934b3278356807fc4626c3c"
+  },
+  "binary_sha256": {
+    "historical": "5a75dda569d4d5a18041b4825416741da19fe1b578f4d7aa9ae575699fb8531f",
+    "current": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89"
+  },
+  "fixture": {
+    "source_run_id": 39150769368,
+    "source_artifact_id": 12145906706,
+    "source_arm": "0-historical",
+    "source_request": 1,
+    "prompt_tokens": 600,
+    "forced_continuation_tokens": 128,
+    "input_sha256": "d98730d177a097eca4c4c648d3ea827d0853565df96ef56799394155a3fa7601",
+    "scope": "historical warm greedy response frozen for identical-token replay; not a new sampling run"
+  },
+  "model_integrity": "same read-only size-checked pack; full model SHA256 unverified",
+  "scope": "LOGP host-logit/log-softmax replay wall time, not generated-token throughput",
+  "order": [
+    "historical",
+    "current",
+    "current",
+    "historical",
+    "historical",
+    "current"
+  ],
+  "paired_median_changes_percent": [
+    1.2603045138997127,
+    0.37975433706847195,
+    0.5232898688728893
+  ],
+  "run_id": 39171655697,
+  "artifact_id": 12153042649,
+  "artifact_sha256": "e8874df89dab98a1d15c1b33909fc790a58586a7cbd7e6692b744ca5216fcd0d",
+  "median_paired_change_percent": 0.5232898688728893,
+  "decision": "retain historical base; unresolved likelihood/route/cache repeatability; no causal regression or speedup claim",
+  "arms": [
+    {
+      "index": 0,
+      "base": "historical",
+      "warm_median_ms": 5909.540208995168,
+      "warm_replay_ms": [
+        6088.711169999442,
+        6167.183545003354,
+        5909.540208995168,
+        5877.253320002637,
+        5854.765970994777
+      ],
+      "warm_sum_logprob": [
+        -35.984152,
+        -38.061631,
+        -36.210258,
+        -38.980031,
+        -37.855977
+      ],
+      "numa_mapped_bytes": {
+        "0": 56431726592,
+        "1": 27621937152
+      },
+      "thermal": {
+        "samples": 45,
+        "valid_samples": 45,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "measured_gpu_sm_clocks": [
+        "1380 MHz"
+      ],
+      "measured_gpu_memory_clocks": [
+        "877 MHz"
+      ],
+      "sampled_measured_power_cap_count": 0
+    },
+    {
+      "index": 1,
+      "base": "current",
+      "warm_median_ms": 5984.018410999852,
+      "warm_replay_ms": [
+        6087.644096995064,
+        6069.320552000136,
+        5978.503293998074,
+        5984.018410999852,
+        5964.810239005601
+      ],
+      "warm_sum_logprob": [
+        -38.321669,
+        -36.756955,
+        -36.4522,
+        -36.513437,
+        -37.949538
+      ],
+      "numa_mapped_bytes": {
+        "1": 58307108864,
+        "0": 25743130624
+      },
+      "thermal": {
+        "samples": 45,
+        "valid_samples": 45,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "measured_gpu_sm_clocks": [
+        "1380 MHz"
+      ],
+      "measured_gpu_memory_clocks": [
+        "877 MHz"
+      ],
+      "sampled_measured_power_cap_count": 0
+    },
+    {
+      "index": 2,
+      "base": "current",
+      "warm_median_ms": 5958.718139998382,
+      "warm_replay_ms": [
+        6058.286950996262,
+        6018.181048995757,
+        5932.794747997832,
+        5940.29311399936,
+        5958.718139998382
+      ],
+      "warm_sum_logprob": [
+        -37.158553,
+        -39.033526,
+        -37.379499,
+        -36.97097,
+        -37.670733
+      ],
+      "numa_mapped_bytes": {
+        "1": 58322571264,
+        "0": 25731522560
+      },
+      "thermal": {
+        "samples": 45,
+        "valid_samples": 45,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "measured_gpu_sm_clocks": [
+        "1380 MHz"
+      ],
+      "measured_gpu_memory_clocks": [
+        "877 MHz"
+      ],
+      "sampled_measured_power_cap_count": 0
+    },
+    {
+      "index": 3,
+      "base": "historical",
+      "warm_median_ms": 5936.175257003924,
+      "warm_replay_ms": [
+        6059.848271004739,
+        5975.219972002378,
+        5936.175257003924,
+        5906.150987997535,
+        5923.883663999732
+      ],
+      "warm_sum_logprob": [
+        -37.988679,
+        -36.794686,
+        -36.221711,
+        -36.376465,
+        -38.357198
+      ],
+      "numa_mapped_bytes": {
+        "1": 58332295168,
+        "0": 25720418304
+      },
+      "thermal": {
+        "samples": 45,
+        "valid_samples": 45,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "measured_gpu_sm_clocks": [
+        "1380 MHz"
+      ],
+      "measured_gpu_memory_clocks": [
+        "877 MHz"
+      ],
+      "sampled_measured_power_cap_count": 0
+    },
+    {
+      "index": 4,
+      "base": "historical",
+      "warm_median_ms": 5970.445037994068,
+      "warm_replay_ms": [
+        6227.884779000306,
+        6041.373088999535,
+        5970.445037994068,
+        5962.261304994172,
+        5958.129349004594
+      ],
+      "warm_sum_logprob": [
+        -36.964734,
+        -38.897366,
+        -35.818322,
+        -36.792159,
+        -38.549579
+      ],
+      "numa_mapped_bytes": {
+        "1": 58338021376,
+        "0": 25713803264
+      },
+      "thermal": {
+        "samples": 45,
+        "valid_samples": 45,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "measured_gpu_sm_clocks": [
+        "1380 MHz"
+      ],
+      "measured_gpu_memory_clocks": [
+        "877 MHz"
+      ],
+      "sampled_measured_power_cap_count": 0
+    },
+    {
+      "index": 5,
+      "base": "current",
+      "warm_median_ms": 6001.687772004516,
+      "warm_replay_ms": [
+        6382.070671999827,
+        6019.578013998398,
+        5965.031674000784,
+        6001.687772004516,
+        5991.431742004352
+      ],
+      "warm_sum_logprob": [
+        -35.592681,
+        -35.911151,
+        -35.921638,
+        -36.111961,
+        -37.470118
+      ],
+      "numa_mapped_bytes": {
+        "1": 58341781504,
+        "0": 25711964160
+      },
+      "thermal": {
+        "samples": 45,
+        "valid_samples": 45,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "measured_gpu_sm_clocks": [
+        "1380 MHz"
+      ],
+      "measured_gpu_memory_clocks": [
+        "877 MHz"
+      ],
+      "sampled_measured_power_cap_count": 0
+    }
+  ]
+}

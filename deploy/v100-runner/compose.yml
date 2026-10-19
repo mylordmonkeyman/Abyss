@@ -1,0 +1,45 @@
+name: abyss-v100-runner
+services:
+  runner:
+    image: abyss-v100-runner:cuda12.8
+    build:
+      context: .
+      args:
+        RUNNER_VERSION: ${ABYSS_RUNNER_VERSION:?Set ABYSS_RUNNER_VERSION in .env}
+        RUNNER_SHA256: ${ABYSS_RUNNER_SHA256:?Set ABYSS_RUNNER_SHA256 in .env}
+    container_name: abyss-v100-runner
+    restart: unless-stopped
+    init: true
+    stop_signal: SIGINT
+    stop_grace_period: 2m
+    shm_size: 8gb
+    cpus: 32.0
+    mem_limit: 112g
+    pids_limit: 2048
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      CUDA_DEVICE_ORDER: PCI_BUS_ID
+    volumes:
+      - runner-data:/actions-runner
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${ABYSS_GPU_UUID:?Set ABYSS_GPU_UUID in .env}"]
+              capabilities: [gpu]
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: '3'
+volumes:
+  runner-data:
+    name: abyss-v100-runner-data

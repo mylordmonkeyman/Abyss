@@ -1,0 +1,4745 @@
+{
+  "schema": 1,
+  "source_run": 39194149121,
+  "artifact_id": 12161799551,
+  "artifact_zip_sha256": "fa1995c21d2fba4cacb9fa877d5c447def118fe47575d617466d2fa8f8c6e8e2",
+  "stride_bytes": 10888976,
+  "stride_basis": "cudaHostAlloc seq26 / observed 96 landing slots",
+  "context": 135168,
+  "configured_chunk": 32768,
+  "expert_pool_bytes": 24909026560,
+  "source_pins": {
+    "historical": "47001f31cbfba14bcbf4c083e3af07c50707ec0c",
+    "current": "7c893ac17e61ec45c934b3278356807fc4626c3c",
+    "ggml": "3cf03257f219afbe7334045ff7c6a06ac68c627d"
+  },
+  "layouts": [
+    {
+      "tokens": 512,
+      "base": "historical",
+      "mixer_sub_batch": 256,
+      "prestage_slots": 0,
+      "borrowed_bytes": 440569088,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 209238016,
+          "aligned_bytes": 209238016,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 209238016,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 226015232,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 293124096,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 309901312,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 440569088,
+          "requested_bytes": 0,
+          "aligned_bytes": 0,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 63027200,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 33554432,
+          "aligned_bytes": 33554432,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 33554432,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 41943040,
+          "requested_bytes": 4194304,
+          "aligned_bytes": 4194304,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 46137344,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 54525952,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 62914560,
+          "requested_bytes": 8192,
+          "aligned_bytes": 8192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 62922752,
+          "requested_bytes": 8192,
+          "aligned_bytes": 8192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 62930944,
+          "requested_bytes": 32768,
+          "aligned_bytes": 32768,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 62963712,
+          "requested_bytes": 2048,
+          "aligned_bytes": 2048,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 62965760,
+          "requested_bytes": 49152,
+          "aligned_bytes": 49152,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 63014912,
+          "requested_bytes": 12288,
+          "aligned_bytes": 12288,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 146210816,
+      "union_offset": 63027200,
+      "union_views": {
+        "attention": {
+          "bytes": 146210816,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 1048576,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 2097152,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 2621440,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 3145728,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 4194304,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 5242880,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 5505024,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 5767168,
+              "requested_bytes": 65536,
+              "aligned_bytes": 65536,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 5832704,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 39387136,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 47775744,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 81330176,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 98107392,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 106496000,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 110690304,
+              "requested_bytes": 393216,
+              "aligned_bytes": 393216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 111083520,
+              "requested_bytes": 34603008,
+              "aligned_bytes": 34603008,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 145686528,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 127797248,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 524288,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 536576,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 548864,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 561152,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 573440,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 585728,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 586752,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 587776,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 620544,
+              "requested_bytes": 14174208,
+              "aligned_bytes": 14174208,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 14794752,
+              "requested_bytes": 7096320,
+              "aligned_bytes": 7096320,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 21891072,
+              "requested_bytes": 50331648,
+              "aligned_bytes": 50331648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 72222720,
+              "requested_bytes": 50331648,
+              "aligned_bytes": 50331648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 122554368,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 124651520,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 126748672,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 512,
+      "base": "current",
+      "mixer_sub_batch": 256,
+      "prestage_slots": 0,
+      "borrowed_bytes": 440585472,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 209254400,
+          "aligned_bytes": 209254400,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 209254400,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 226031616,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 293140480,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 309917696,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 440585472,
+          "requested_bytes": 0,
+          "aligned_bytes": 0,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 63043584,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 33554432,
+          "aligned_bytes": 33554432,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 33554432,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 41943040,
+          "requested_bytes": 4194304,
+          "aligned_bytes": 4194304,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 46137344,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 54525952,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 62914560,
+          "requested_bytes": 8192,
+          "aligned_bytes": 8192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 62922752,
+          "requested_bytes": 8192,
+          "aligned_bytes": 8192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre2",
+          "offset": 62930944,
+          "requested_bytes": 8192,
+          "aligned_bytes": 8192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "onehot",
+          "offset": 62939136,
+          "requested_bytes": 8192,
+          "aligned_bytes": 8192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 62947328,
+          "requested_bytes": 32768,
+          "aligned_bytes": 32768,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 62980096,
+          "requested_bytes": 2048,
+          "aligned_bytes": 2048,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 62982144,
+          "requested_bytes": 49152,
+          "aligned_bytes": 49152,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 63031296,
+          "requested_bytes": 12288,
+          "aligned_bytes": 12288,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 146210816,
+      "union_offset": 63043584,
+      "union_views": {
+        "attention": {
+          "bytes": 146210816,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 1048576,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 2097152,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 2621440,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 3145728,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 4194304,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 5242880,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 5505024,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 5767168,
+              "requested_bytes": 65536,
+              "aligned_bytes": 65536,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 5832704,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 39387136,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 47775744,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 81330176,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 98107392,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 106496000,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 110690304,
+              "requested_bytes": 393216,
+              "aligned_bytes": 393216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 111083520,
+              "requested_bytes": 34603008,
+              "aligned_bytes": 34603008,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 145686528,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 127797248,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 524288,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 536576,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 548864,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 561152,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 573440,
+              "requested_bytes": 12288,
+              "aligned_bytes": 12288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 585728,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 586752,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 587776,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 620544,
+              "requested_bytes": 14174208,
+              "aligned_bytes": 14174208,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 14794752,
+              "requested_bytes": 7096320,
+              "aligned_bytes": 7096320,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 21891072,
+              "requested_bytes": 50331648,
+              "aligned_bytes": 50331648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 72222720,
+              "requested_bytes": 50331648,
+              "aligned_bytes": 50331648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 122554368,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 124651520,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 126748672,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 640,
+      "base": "historical",
+      "mixer_sub_batch": 256,
+      "prestage_slots": 0,
+      "borrowed_bytes": 468532992,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 237201920,
+          "aligned_bytes": 237201920,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 237201920,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 253979136,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 321088000,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 337865216,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 468532992,
+          "requested_bytes": 0,
+          "aligned_bytes": 0,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 78784000,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 41943040,
+          "aligned_bytes": 41943040,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 41943040,
+          "requested_bytes": 10485760,
+          "aligned_bytes": 10485760,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 52428800,
+          "requested_bytes": 5242880,
+          "aligned_bytes": 5242880,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 57671680,
+          "requested_bytes": 10485760,
+          "aligned_bytes": 10485760,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 68157440,
+          "requested_bytes": 10485760,
+          "aligned_bytes": 10485760,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 78643200,
+          "requested_bytes": 10240,
+          "aligned_bytes": 10240,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 78653440,
+          "requested_bytes": 10240,
+          "aligned_bytes": 10240,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 78663680,
+          "requested_bytes": 40960,
+          "aligned_bytes": 40960,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 78704640,
+          "requested_bytes": 2560,
+          "aligned_bytes": 2560,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 78707200,
+          "requested_bytes": 61440,
+          "aligned_bytes": 61440,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 78768640,
+          "requested_bytes": 15360,
+          "aligned_bytes": 15360,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 158417920,
+      "union_offset": 78784000,
+      "union_views": {
+        "attention": {
+          "bytes": 146210816,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 1048576,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 2097152,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 2621440,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 3145728,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 4194304,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 5242880,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 5505024,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 5767168,
+              "requested_bytes": 65536,
+              "aligned_bytes": 65536,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 5832704,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 39387136,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 47775744,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 81330176,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 98107392,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 106496000,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 110690304,
+              "requested_bytes": 393216,
+              "aligned_bytes": 393216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 111083520,
+              "requested_bytes": 34603008,
+              "aligned_bytes": 34603008,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 145686528,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 158417920,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 655360,
+              "aligned_bytes": 655360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 655360,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 670720,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 686080,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 701440,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 716800,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 732160,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 733184,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 734208,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 766976,
+              "requested_bytes": 17713152,
+              "aligned_bytes": 17713152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 18480128,
+              "requested_bytes": 8865792,
+              "aligned_bytes": 8865792,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 27345920,
+              "requested_bytes": 62914560,
+              "aligned_bytes": 62914560,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 90260480,
+              "requested_bytes": 62914560,
+              "aligned_bytes": 62914560,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 153175040,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 155272192,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 157369344,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 640,
+      "base": "current",
+      "mixer_sub_batch": 256,
+      "prestage_slots": 0,
+      "borrowed_bytes": 468553472,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 237222400,
+          "aligned_bytes": 237222400,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 237222400,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 253999616,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 321108480,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 337885696,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 468553472,
+          "requested_bytes": 0,
+          "aligned_bytes": 0,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 78804480,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 41943040,
+          "aligned_bytes": 41943040,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 41943040,
+          "requested_bytes": 10485760,
+          "aligned_bytes": 10485760,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 52428800,
+          "requested_bytes": 5242880,
+          "aligned_bytes": 5242880,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 57671680,
+          "requested_bytes": 10485760,
+          "aligned_bytes": 10485760,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 68157440,
+          "requested_bytes": 10485760,
+          "aligned_bytes": 10485760,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 78643200,
+          "requested_bytes": 10240,
+          "aligned_bytes": 10240,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 78653440,
+          "requested_bytes": 10240,
+          "aligned_bytes": 10240,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre2",
+          "offset": 78663680,
+          "requested_bytes": 10240,
+          "aligned_bytes": 10240,
+          "padding_bytes": 0
+        },
+        {
+          "name": "onehot",
+          "offset": 78673920,
+          "requested_bytes": 10240,
+          "aligned_bytes": 10240,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 78684160,
+          "requested_bytes": 40960,
+          "aligned_bytes": 40960,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 78725120,
+          "requested_bytes": 2560,
+          "aligned_bytes": 2560,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 78727680,
+          "requested_bytes": 61440,
+          "aligned_bytes": 61440,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 78789120,
+          "requested_bytes": 15360,
+          "aligned_bytes": 15360,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 158417920,
+      "union_offset": 78804480,
+      "union_views": {
+        "attention": {
+          "bytes": 146210816,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 1048576,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 2097152,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 2621440,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 3145728,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 4194304,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 5242880,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 5505024,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 5767168,
+              "requested_bytes": 65536,
+              "aligned_bytes": 65536,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 5832704,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 39387136,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 47775744,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 81330176,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 98107392,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 106496000,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 110690304,
+              "requested_bytes": 393216,
+              "aligned_bytes": 393216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 111083520,
+              "requested_bytes": 34603008,
+              "aligned_bytes": 34603008,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 145686528,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 158417920,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 655360,
+              "aligned_bytes": 655360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 655360,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 670720,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 686080,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 701440,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 716800,
+              "requested_bytes": 15360,
+              "aligned_bytes": 15360,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 732160,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 733184,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 734208,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 766976,
+              "requested_bytes": 17713152,
+              "aligned_bytes": 17713152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 18480128,
+              "requested_bytes": 8865792,
+              "aligned_bytes": 8865792,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 27345920,
+              "requested_bytes": 62914560,
+              "aligned_bytes": 62914560,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 90260480,
+              "requested_bytes": 62914560,
+              "aligned_bytes": 62914560,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 153175040,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 155272192,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 157369344,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 1024,
+      "base": "historical",
+      "mixer_sub_batch": 256,
+      "prestage_slots": 16,
+      "borrowed_bytes": 781889024,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 376334336,
+          "aligned_bytes": 376334336,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 376334336,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 393111552,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 460220416,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 476997632,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 607665408,
+          "requested_bytes": 174223616,
+          "aligned_bytes": 174223616,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 126054400,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 67108864,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 83886080,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 92274688,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 109051904,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 125829120,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 125845504,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 125861888,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 125927424,
+          "requested_bytes": 4096,
+          "aligned_bytes": 4096,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 125931520,
+          "requested_bytes": 98304,
+          "aligned_bytes": 98304,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 126029824,
+          "requested_bytes": 24576,
+          "aligned_bytes": 24576,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 250279936,
+      "union_offset": 126054400,
+      "union_views": {
+        "attention": {
+          "bytes": 146210816,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 1048576,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 2097152,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 2621440,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 3145728,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 4194304,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 5242880,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 5505024,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 5767168,
+              "requested_bytes": 65536,
+              "aligned_bytes": 65536,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 5832704,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 39387136,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 47775744,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 81330176,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 98107392,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 106496000,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 110690304,
+              "requested_bytes": 393216,
+              "aligned_bytes": 393216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 111083520,
+              "requested_bytes": 34603008,
+              "aligned_bytes": 34603008,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 145686528,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 250279936,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 1048576,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 1073152,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 1097728,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 1122304,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 1146880,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 1171456,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 1172480,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 1173504,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 1206272,
+              "requested_bytes": 28329984,
+              "aligned_bytes": 28329984,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 29536256,
+              "requested_bytes": 14174208,
+              "aligned_bytes": 14174208,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 43710464,
+              "requested_bytes": 100663296,
+              "aligned_bytes": 100663296,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 144373760,
+              "requested_bytes": 100663296,
+              "aligned_bytes": 100663296,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 245037056,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 247134208,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 249231360,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 1024,
+      "base": "current",
+      "mixer_sub_batch": 256,
+      "prestage_slots": 16,
+      "borrowed_bytes": 781921792,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 376367104,
+          "aligned_bytes": 376367104,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 376367104,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 393144320,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 460253184,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 477030400,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 607698176,
+          "requested_bytes": 174223616,
+          "aligned_bytes": 174223616,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 126087168,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 67108864,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 83886080,
+          "requested_bytes": 8388608,
+          "aligned_bytes": 8388608,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 92274688,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 109051904,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 125829120,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 125845504,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre2",
+          "offset": 125861888,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "onehot",
+          "offset": 125878272,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 125894656,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 125960192,
+          "requested_bytes": 4096,
+          "aligned_bytes": 4096,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 125964288,
+          "requested_bytes": 98304,
+          "aligned_bytes": 98304,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 126062592,
+          "requested_bytes": 24576,
+          "aligned_bytes": 24576,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 250279936,
+      "union_offset": 126087168,
+      "union_views": {
+        "attention": {
+          "bytes": 146210816,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 1048576,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 2097152,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 2621440,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 3145728,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 4194304,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 5242880,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 5505024,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 5767168,
+              "requested_bytes": 65536,
+              "aligned_bytes": 65536,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 5832704,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 39387136,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 47775744,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 81330176,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 98107392,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 106496000,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 110690304,
+              "requested_bytes": 393216,
+              "aligned_bytes": 393216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 111083520,
+              "requested_bytes": 34603008,
+              "aligned_bytes": 34603008,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 145686528,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 250279936,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 1048576,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 1073152,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 1097728,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 1122304,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 1146880,
+              "requested_bytes": 24576,
+              "aligned_bytes": 24576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 1171456,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 1172480,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 1173504,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 1206272,
+              "requested_bytes": 28329984,
+              "aligned_bytes": 28329984,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 29536256,
+              "requested_bytes": 14174208,
+              "aligned_bytes": 14174208,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 43710464,
+              "requested_bytes": 100663296,
+              "aligned_bytes": 100663296,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 144373760,
+              "requested_bytes": 100663296,
+              "aligned_bytes": 100663296,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 245037056,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 247134208,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 249231360,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 4096,
+      "base": "historical",
+      "mixer_sub_batch": 1024,
+      "prestage_slots": 32,
+      "borrowed_bytes": 1959972608,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 1380194304,
+          "aligned_bytes": 1380194304,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 1380194304,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 1396971520,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 1464080384,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 1480857600,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 1611525376,
+          "requested_bytes": 348447232,
+          "aligned_bytes": 348447232,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 504217600,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 268435456,
+          "aligned_bytes": 268435456,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 268435456,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 335544320,
+          "requested_bytes": 33554432,
+          "aligned_bytes": 33554432,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 369098752,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 436207616,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 503316480,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 503382016,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 503447552,
+          "requested_bytes": 262144,
+          "aligned_bytes": 262144,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 503709696,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 503726080,
+          "requested_bytes": 393216,
+          "aligned_bytes": 393216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 504119296,
+          "requested_bytes": 98304,
+          "aligned_bytes": 98304,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 875976704,
+      "union_offset": 504217600,
+      "union_views": {
+        "attention": {
+          "bytes": 584450048,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 4194304,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 8388608,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 10485760,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 12582912,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 16777216,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 20971520,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 22020096,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 23068672,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 23330816,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 157548544,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 191102976,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 325320704,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 392429568,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 425984000,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 442761216,
+              "requested_bytes": 1179648,
+              "aligned_bytes": 1179648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 443940864,
+              "requested_bytes": 138412032,
+              "aligned_bytes": 138412032,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 582352896,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 875976704,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 4194304,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 4292608,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 4390912,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 4489216,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 4587520,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 4685824,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 4686848,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 4687872,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 4720640,
+              "requested_bytes": 100583424,
+              "aligned_bytes": 100583424,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 105304064,
+              "requested_bytes": 50300928,
+              "aligned_bytes": 50300928,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 155604992,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 513169408,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 870733824,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 872830976,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 874928128,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 4096,
+      "base": "current",
+      "mixer_sub_batch": 1024,
+      "prestage_slots": 32,
+      "borrowed_bytes": 1960103680,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 1380325376,
+          "aligned_bytes": 1380325376,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 1380325376,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 1397102592,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 1464211456,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 1480988672,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 1611656448,
+          "requested_bytes": 348447232,
+          "aligned_bytes": 348447232,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 504348672,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 268435456,
+          "aligned_bytes": 268435456,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 268435456,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 335544320,
+          "requested_bytes": 33554432,
+          "aligned_bytes": 33554432,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 369098752,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 436207616,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 503316480,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 503382016,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre2",
+          "offset": 503447552,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "onehot",
+          "offset": 503513088,
+          "requested_bytes": 65536,
+          "aligned_bytes": 65536,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 503578624,
+          "requested_bytes": 262144,
+          "aligned_bytes": 262144,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 503840768,
+          "requested_bytes": 16384,
+          "aligned_bytes": 16384,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 503857152,
+          "requested_bytes": 393216,
+          "aligned_bytes": 393216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 504250368,
+          "requested_bytes": 98304,
+          "aligned_bytes": 98304,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 875976704,
+      "union_offset": 504348672,
+      "union_views": {
+        "attention": {
+          "bytes": 584450048,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 4194304,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 8388608,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 10485760,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 12582912,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 16777216,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 20971520,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 22020096,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 23068672,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 23330816,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 157548544,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 191102976,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 325320704,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 392429568,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 425984000,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 442761216,
+              "requested_bytes": 1179648,
+              "aligned_bytes": 1179648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 443940864,
+              "requested_bytes": 138412032,
+              "aligned_bytes": 138412032,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 582352896,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 875976704,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 4194304,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 4292608,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 4390912,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 4489216,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 4587520,
+              "requested_bytes": 98304,
+              "aligned_bytes": 98304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 4685824,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 4686848,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 4687872,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 4720640,
+              "requested_bytes": 100583424,
+              "aligned_bytes": 100583424,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 105304064,
+              "requested_bytes": 50300928,
+              "aligned_bytes": 50300928,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 155604992,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 513169408,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 870733824,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 872830976,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 874928128,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 8192,
+      "base": "historical",
+      "mixer_sub_batch": 1024,
+      "prestage_slots": 64,
+      "borrowed_bytes": 2817323264,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 1889097728,
+          "aligned_bytes": 1889097728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 1889097728,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 1905874944,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 1972983808,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 1989761024,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 2120428800,
+          "requested_bytes": 696894464,
+          "aligned_bytes": 696894464,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 1008435200,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 536870912,
+          "requested_bytes": 134217728,
+          "aligned_bytes": 134217728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 671088640,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 738197504,
+          "requested_bytes": 134217728,
+          "aligned_bytes": 134217728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 872415232,
+          "requested_bytes": 134217728,
+          "aligned_bytes": 134217728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 1006632960,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 1006764032,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 1006895104,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 1007419392,
+          "requested_bytes": 32768,
+          "aligned_bytes": 32768,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 1007452160,
+          "requested_bytes": 786432,
+          "aligned_bytes": 786432,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 1008238592,
+          "requested_bytes": 196608,
+          "aligned_bytes": 196608,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 880662528,
+      "union_offset": 1008435200,
+      "union_views": {
+        "attention": {
+          "bytes": 584450048,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 4194304,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 8388608,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 10485760,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 12582912,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 16777216,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 20971520,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 22020096,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 23068672,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 23330816,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 157548544,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 191102976,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 325320704,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 392429568,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 425984000,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 442761216,
+              "requested_bytes": 1179648,
+              "aligned_bytes": 1179648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 443940864,
+              "requested_bytes": 138412032,
+              "aligned_bytes": 138412032,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 582352896,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 880662528,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 8388608,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 8585216,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 8781824,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 8978432,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 9175040,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 9371648,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 9372672,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 9373696,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 9406464,
+              "requested_bytes": 100583424,
+              "aligned_bytes": 100583424,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 109989888,
+              "requested_bytes": 50300928,
+              "aligned_bytes": 50300928,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 160290816,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 517855232,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 875419648,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 877516800,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 879613952,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 8192,
+      "base": "current",
+      "mixer_sub_batch": 1024,
+      "prestage_slots": 64,
+      "borrowed_bytes": 2817585408,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 1889359872,
+          "aligned_bytes": 1889359872,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 1889359872,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 1906137088,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 1973245952,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 1990023168,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 2120690944,
+          "requested_bytes": 696894464,
+          "aligned_bytes": 696894464,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 1008697344,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 536870912,
+          "requested_bytes": 134217728,
+          "aligned_bytes": 134217728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 671088640,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 738197504,
+          "requested_bytes": 134217728,
+          "aligned_bytes": 134217728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 872415232,
+          "requested_bytes": 134217728,
+          "aligned_bytes": 134217728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 1006632960,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 1006764032,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre2",
+          "offset": 1006895104,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "onehot",
+          "offset": 1007026176,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 1007157248,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 1007681536,
+          "requested_bytes": 32768,
+          "aligned_bytes": 32768,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 1007714304,
+          "requested_bytes": 786432,
+          "aligned_bytes": 786432,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 1008500736,
+          "requested_bytes": 196608,
+          "aligned_bytes": 196608,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 880662528,
+      "union_offset": 1008697344,
+      "union_views": {
+        "attention": {
+          "bytes": 584450048,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 4194304,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 8388608,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 10485760,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 12582912,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 16777216,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 20971520,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 22020096,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 23068672,
+              "requested_bytes": 262144,
+              "aligned_bytes": 262144,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 23330816,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 157548544,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 191102976,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 325320704,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 392429568,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 425984000,
+              "requested_bytes": 16777216,
+              "aligned_bytes": 16777216,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 442761216,
+              "requested_bytes": 1179648,
+              "aligned_bytes": 1179648,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 443940864,
+              "requested_bytes": 138412032,
+              "aligned_bytes": 138412032,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 582352896,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 880662528,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 8388608,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 8585216,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 8781824,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 8978432,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 9175040,
+              "requested_bytes": 196608,
+              "aligned_bytes": 196608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 9371648,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 9372672,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 9373696,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 9406464,
+              "requested_bytes": 100583424,
+              "aligned_bytes": 100583424,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 109989888,
+              "requested_bytes": 50300928,
+              "aligned_bytes": 50300928,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 160290816,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 517855232,
+              "requested_bytes": 357564416,
+              "aligned_bytes": 357564416,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 875419648,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 877516800,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 879613952,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 32768,
+      "base": "historical",
+      "mixer_sub_batch": 2048,
+      "prestage_slots": 160,
+      "borrowed_bytes": 7350343424,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 5376776192,
+          "aligned_bytes": 5376776192,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 5376776192,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 5393553408,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 5460662272,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 5477439488,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 5608107264,
+          "requested_bytes": 1742236160,
+          "aligned_bytes": 1742236160,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 4033740800,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 2147483648,
+          "aligned_bytes": 2147483648,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 2147483648,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 2684354560,
+          "requested_bytes": 268435456,
+          "aligned_bytes": 268435456,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 2952790016,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 3489660928,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 4026531840,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 4027056128,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 4027580416,
+          "requested_bytes": 2097152,
+          "aligned_bytes": 2097152,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 4029677568,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 4029808640,
+          "requested_bytes": 3145728,
+          "aligned_bytes": 3145728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 4032954368,
+          "requested_bytes": 786432,
+          "aligned_bytes": 786432,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 1343035392,
+      "union_offset": 4033740800,
+      "union_views": {
+        "attention": {
+          "bytes": 1168769024,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 8388608,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 16777216,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 20971520,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 25165824,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 33554432,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 41943040,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 44040192,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 46137344,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 46661632,
+              "requested_bytes": 268435456,
+              "aligned_bytes": 268435456,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 315097088,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 382205952,
+              "requested_bytes": 268435456,
+              "aligned_bytes": 268435456,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 650641408,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 784859136,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 851968000,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 885522432,
+              "requested_bytes": 2228224,
+              "aligned_bytes": 2228224,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 887750656,
+              "requested_bytes": 276824064,
+              "aligned_bytes": 276824064,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 1164574720,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 1343035392,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 33554432,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 34340864,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 35127296,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 35913728,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 36700160,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 37486592,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 37487616,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 37488640,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 37521408,
+              "requested_bytes": 151013376,
+              "aligned_bytes": 151013376,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 188534784,
+              "requested_bytes": 75515904,
+              "aligned_bytes": 75515904,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 264050688,
+              "requested_bytes": 536870912,
+              "aligned_bytes": 536870912,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 800921600,
+              "requested_bytes": 536870912,
+              "aligned_bytes": 536870912,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 1337792512,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 1339889664,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 1341986816,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    },
+    {
+      "tokens": 32768,
+      "base": "current",
+      "mixer_sub_batch": 2048,
+      "prestage_slots": 160,
+      "borrowed_bytes": 7351392000,
+      "outer": [
+        {
+          "name": "persistent_plus_reused_union",
+          "offset": 0,
+          "requested_bytes": 5377824768,
+          "aligned_bytes": 5377824768,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f16",
+          "offset": 5377824768,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "weight_f32",
+          "offset": 5394601984,
+          "requested_bytes": 67108864,
+          "aligned_bytes": 67108864,
+          "padding_bytes": 0
+        },
+        {
+          "name": "cublas_workspace",
+          "offset": 5461710848,
+          "requested_bytes": 16777216,
+          "aligned_bytes": 16777216,
+          "padding_bytes": 0
+        },
+        {
+          "name": "staged_expert_groups",
+          "offset": 5478488064,
+          "requested_bytes": 130667712,
+          "aligned_bytes": 130667776,
+          "padding_bytes": 64
+        },
+        {
+          "name": "prestaged_experts",
+          "offset": 5609155840,
+          "requested_bytes": 1742236160,
+          "aligned_bytes": 1742236160,
+          "padding_bytes": 0
+        }
+      ],
+      "persistent_bytes": 4034789376,
+      "persistent": [
+        {
+          "name": "R",
+          "offset": 0,
+          "requested_bytes": 2147483648,
+          "aligned_bytes": 2147483648,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x",
+          "offset": 2147483648,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "x16",
+          "offset": 2684354560,
+          "requested_bytes": 268435456,
+          "aligned_bytes": 268435456,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mixer",
+          "offset": 2952790016,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ffn",
+          "offset": 3489660928,
+          "requested_bytes": 536870912,
+          "aligned_bytes": 536870912,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre",
+          "offset": 4026531840,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "post",
+          "offset": 4027056128,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "pre2",
+          "offset": 4027580416,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "onehot",
+          "offset": 4028104704,
+          "requested_bytes": 524288,
+          "aligned_bytes": 524288,
+          "padding_bytes": 0
+        },
+        {
+          "name": "comb",
+          "offset": 4028628992,
+          "requested_bytes": 2097152,
+          "aligned_bytes": 2097152,
+          "padding_bytes": 0
+        },
+        {
+          "name": "ss",
+          "offset": 4030726144,
+          "requested_bytes": 131072,
+          "aligned_bytes": 131072,
+          "padding_bytes": 0
+        },
+        {
+          "name": "mix",
+          "offset": 4030857216,
+          "requested_bytes": 3145728,
+          "aligned_bytes": 3145728,
+          "padding_bytes": 0
+        },
+        {
+          "name": "iota",
+          "offset": 4034002944,
+          "requested_bytes": 786432,
+          "aligned_bytes": 786432,
+          "padding_bytes": 0
+        }
+      ],
+      "union_bytes": 1343035392,
+      "union_offset": 4034789376,
+      "union_views": {
+        "attention": {
+          "bytes": 1168769024,
+          "regions": [
+            {
+              "name": "qr_raw",
+              "offset": 0,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr",
+              "offset": 8388608,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "qr16",
+              "offset": 16777216,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "kv_raw",
+              "offset": 20971520,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ckv",
+              "offset": 25165824,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "csc",
+              "offset": 33554432,
+              "requested_bytes": 8388608,
+              "aligned_bytes": 8388608,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ikv",
+              "offset": 41943040,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "isc",
+              "offset": 44040192,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iw",
+              "offset": 46137344,
+              "requested_bytes": 524288,
+              "aligned_bytes": 524288,
+              "padding_bytes": 0
+            },
+            {
+              "name": "q",
+              "offset": 46661632,
+              "requested_bytes": 268435456,
+              "aligned_bytes": 268435456,
+              "padding_bytes": 0
+            },
+            {
+              "name": "iq",
+              "offset": 315097088,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o",
+              "offset": 382205952,
+              "requested_bytes": 268435456,
+              "aligned_bytes": 268435456,
+              "padding_bytes": 0
+            },
+            {
+              "name": "o16",
+              "offset": 650641408,
+              "requested_bytes": 134217728,
+              "aligned_bytes": 134217728,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa",
+              "offset": 784859136,
+              "requested_bytes": 67108864,
+              "aligned_bytes": 67108864,
+              "padding_bytes": 0
+            },
+            {
+              "name": "oa16",
+              "offset": 851968000,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "keys",
+              "offset": 885522432,
+              "requested_bytes": 2228224,
+              "aligned_bytes": 2228224,
+              "padding_bytes": 0
+            },
+            {
+              "name": "score",
+              "offset": 887750656,
+              "requested_bytes": 276824064,
+              "aligned_bytes": 276824064,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sel",
+              "offset": 1164574720,
+              "requested_bytes": 4194304,
+              "aligned_bytes": 4194304,
+              "padding_bytes": 0
+            }
+          ]
+        },
+        "moe": {
+          "bytes": 1343035392,
+          "regions": [
+            {
+              "name": "logits",
+              "offset": 0,
+              "requested_bytes": 33554432,
+              "aligned_bytes": 33554432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "ids",
+              "offset": 33554432,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rw",
+              "offset": 34340864,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "rank",
+              "offset": 35127296,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "pos",
+              "offset": 35913728,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "row_tok",
+              "offset": 36700160,
+              "requested_bytes": 786432,
+              "aligned_bytes": 786432,
+              "padding_bytes": 0
+            },
+            {
+              "name": "counts",
+              "offset": 37486592,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "base",
+              "offset": 37487616,
+              "requested_bytes": 1024,
+              "aligned_bytes": 1024,
+              "padding_bytes": 0
+            },
+            {
+              "name": "bounds",
+              "offset": 37488640,
+              "requested_bytes": 32768,
+              "aligned_bytes": 32768,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Xq",
+              "offset": 37521408,
+              "requested_bytes": 151013376,
+              "aligned_bytes": 151013376,
+              "padding_bytes": 0
+            },
+            {
+              "name": "Hq",
+              "offset": 188534784,
+              "requested_bytes": 75515904,
+              "aligned_bytes": 75515904,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTP",
+              "offset": 264050688,
+              "requested_bytes": 536870912,
+              "aligned_bytes": 536870912,
+              "padding_bytes": 0
+            },
+            {
+              "name": "OUTPc",
+              "offset": 800921600,
+              "requested_bytes": 536870912,
+              "aligned_bytes": 536870912,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_g",
+              "offset": 1337792512,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh_u",
+              "offset": 1339889664,
+              "requested_bytes": 2097152,
+              "aligned_bytes": 2097152,
+              "padding_bytes": 0
+            },
+            {
+              "name": "sh16",
+              "offset": 1341986816,
+              "requested_bytes": 1048576,
+              "aligned_bytes": 1048576,
+              "padding_bytes": 0
+            }
+          ]
+        }
+      },
+      "scope": "Source-derived layout for this fixed DeepSeek pack, CUDA, default controls, no KDA/dense/NextN fill. Union views overlap. All bytes belong to expert pool."
+    }
+  ],
+  "limits": "Derived offsets/sizes, not instrumented suballocation addresses or physical pages. Configured maximum reservation differs from actual short-chunk loan. No production arithmetic changed; no additional GPU capacity is claimed.",
+  "capture_corroboration": [
+    {
+      "base": "historical",
+      "landing_api_seq": 26,
+      "landing_requested_bytes": 1045341696,
+      "rounded_startup_fields": [
+        32768,
+        2048,
+        7010,
+        5128,
+        80,
+        125,
+        1662,
+        160
+      ],
+      "status": "pass"
+    },
+    {
+      "base": "current",
+      "landing_api_seq": 26,
+      "landing_requested_bytes": 1045341696,
+      "rounded_startup_fields": [
+        32768,
+        2048,
+        7011,
+        5129,
+        80,
+        125,
+        1662,
+        160
+      ],
+      "status": "pass"
+    }
+  ]
+}

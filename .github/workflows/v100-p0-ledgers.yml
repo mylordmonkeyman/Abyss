@@ -1,0 +1,94 @@
+name: V100 P0 allocation and dispatch ledgers
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Collect dispatch only, or repeat both immutable memory arms too
+        type: choice
+        options: [dispatch, all]
+        default: dispatch
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  ledgers:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p0-ledgers-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+      - name: Select the V100 and refuse overlap with a leftover GPU process
+        run: |
+          set -euo pipefail
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          mkdir -p "$EVIDENCE"
+          cat /proc/uptime > "$EVIDENCE/uptime-before.txt"
+          cat /proc/stat > "$EVIDENCE/host-stat-before.txt"
+      - name: Build the working fork with production arithmetic and stage capture disabled
+        run: |
+          set -euo pipefail
+          cmake --preset v100-diagnostics -DCMAKE_CUDA_COMPILER="$NVCC" \
+            -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+            -DSTRATA_V100_CAPTURE_STAGES=OFF 2>&1 | tee "$EVIDENCE/configure.log"
+          cmake --build build-v100-diagnostics --target strata --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
+          git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
+          sha256sum build-v100-diagnostics/strata > "$EVIDENCE/binary-sha256.txt"
+      - name: Collect both immutable upstream memory ledgers at genuine 32K and 128K
+        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'all'
+        env:
+          EVIDENCE: ${{ env.EVIDENCE }}/memory
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_accounting.py --phase memory
+      - name: Upload bounded memory evidence
+        if: always() && env.P0_ACCOUNTING_MEMORY_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-memory-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/memory/
+          retention-days: 30
+      - name: Collect working-fork actual CPU and MMQ dispatch without performance claims
+        env:
+          EVIDENCE: ${{ env.EVIDENCE }}/dispatch
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_accounting.py --phase dispatch
+      - name: Upload bounded dispatch evidence
+        if: always() && env.P0_ACCOUNTING_DISPATCH_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-dispatch-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/dispatch/
+          retention-days: 30
+      - name: Upload bounded build identity
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-ledger-build-${{ github.run_id }}
+          path: |
+            ${{ env.EVIDENCE }}/*.txt
+            ${{ env.EVIDENCE }}/*.log
+          retention-days: 30

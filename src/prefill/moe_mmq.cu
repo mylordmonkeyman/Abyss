@@ -2,6 +2,7 @@
 // from the pinned llama.cpp checkout the build already takes ggml from; src/prefill/ggml_cuda_host.cu supplies the
 // few host symbols of ggml-cuda.cu it references.
 #include "strata/prefill/moe_mmq.hpp"
+#include "strata/core/v100_dispatch.hpp"
 
 #include "common.cuh"
 #include "mmq.cuh"
@@ -121,12 +122,14 @@ void quantize(const float* x, const int32_t* ids, void* xq, int t, int64_t cols,
         int dev = 0;
         cudaGetDevice(&dev);
         if (blackwell_mma_available(ggml_cuda_info().devices[dev].cc)) {
+            v100dispatch::record("mmq_quantize:fp4", t, (int)rows, rows);
             quantize_mmq_fp4_cuda(x, ids, xq, nullptr, GGML_TYPE_MXFP4, false, cols, ld, rows * ld, rows * ld,
                                   pad512(cols), rows, 1, 1, (cudaStream_t) stream);
             ck(cudaGetLastError(), "quantize fp4");
             return;
         }
     }
+    v100dispatch::record(ids ? "mmq_quantize:q8_1_gather" : "mmq_quantize:q8_1", t, (int)rows, rows);
     quantize_mmq_q8_1_cuda(x, ids, xq, (ggml_type) t, cols, ld, rows * ld, rows * ld, pad512(cols), rows, 1, 1,
                            (cudaStream_t) stream);
     ck(cudaGetLastError(), "quantize");
@@ -170,6 +173,7 @@ void dispatch(ggml_backend_cuda_context& ctx, const mmq_args& a, cudaStream_t s)
 
 void Context::run(const Product& p, void* stream) {
     if (p.n <= 0 || p.max_rows <= 0) return;
+    v100dispatch::record("mmq_run", p.type, (int)p.total_rows, p.w_rows*(uint64_t)p.n, matrix_bytes(p.type,p.w_rows,p.w_cols)*p.n);
     const ggml_type t = (ggml_type) p.type;
     const int64_t qk = ggml_blck_size(t), bpr = p.w_cols / qk;
     const mmq_args a = {(const char*) p.w, t, (const int*) p.xq, p.ids, p.bounds, p.dst, nullptr,
@@ -195,6 +199,7 @@ bool glu_supported(int t, int64_t n_ff) {
 }
 
 void Context::run_glu(const Product& p, float limit, void* stream) {
+    v100dispatch::record("mmq_run_glu", p.type, (int)p.total_rows);
 #if defined(STRATA_MMQ_GLU)
     if (p.n <= 0 || p.max_rows <= 0) return;
     const ggml_type t = (ggml_type) p.type;
@@ -220,6 +225,7 @@ void Context::run_glu(const Product& p, float limit, void* stream) {
 
 void gather_native(const void* gate, const void* up, size_t gu_half_bytes, const void* down, size_t d_bytes,
                    void* gu_dst, void* d_dst, void* stream) {
+    v100dispatch::record("mmq_gather_native", -1, 0, 0, 2*gu_half_bytes+d_bytes);
     const cudaStream_t s = (cudaStream_t) stream;
     const bool a16 = ((uintptr_t) gate | (uintptr_t) up | (uintptr_t) down | (uintptr_t) gu_dst | (uintptr_t) d_dst |
                       gu_half_bytes | d_bytes) % 16 == 0;

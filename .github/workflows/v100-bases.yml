@@ -1,0 +1,148 @@
+name: V100 v9 isolated upstream baseline comparison
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-bases.yml'
+      - 'tools/bench/v100_base_compare.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+
+jobs:
+  compare-bases:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      BUILD_JOBS: '32'
+      EVIDENCE: results/ci-v100-bases-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Check out implementation harness, preserve working builds
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+
+      - name: Check out exact historical upstream source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: zephel01/Abyss
+          ref: 47001f31cbfba14bcbf4c083e3af07c50707ec0c
+          path: baseline-src/v1.3.28
+          clean: false
+          persist-credentials: false
+
+      - name: Check out exact current comparison upstream source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: zephel01/Abyss
+          ref: 7c893ac17e61ec45c934b3278356807fc4626c3c
+          path: baseline-src/v1.3.31
+          clean: false
+          persist-credentials: false
+
+      - name: Check out unchanged GGML vendor
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+
+      - name: Record host, pack and source provenance, select V100
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE/build-historical" "$EVIDENCE/build-current"
+          export PATH="$(dirname "$NVCC"):$PATH"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          "$NVCC" --version | tee "$EVIDENCE/nvcc.txt"
+          grep -Eq 'release 12\.8([, ]|$)' "$EVIDENCE/nvcc.txt"
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          git -C baseline-src/v1.3.28 rev-parse HEAD > "$EVIDENCE/build-historical/source-sha.txt"
+          git -C baseline-src/v1.3.31 rev-parse HEAD > "$EVIDENCE/build-current/source-sha.txt"
+          git -C third_party/llama.cpp rev-parse HEAD > "$EVIDENCE/ggml-sha.txt"
+          python3 -m venv --system-site-packages /actions-runner/abyss-v100-python
+          /actions-runner/abyss-v100-python/bin/pip install 'regex==2024.11.6' 'Jinja2==3.1.6'
+          python3 - <<'PY'
+          import os, pathlib, sys
+          sys.path.insert(0,'tools/v100')
+          import p0
+          out=pathlib.Path(os.environ['EVIDENCE'])
+          p0.write_json(out/'toolchain_manifest.json',p0.manifest(os.environ['ABYSS_GPU']))
+          p0.inventory([pathlib.Path('/models/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf')],out/'tensor_inventory.csv')
+          PY
+
+      - name: Build exact upstream SHAs in separate persistent directories
+        run: |
+          set -euo pipefail
+          for item in historical:v1.3.28:47001f31 current:v1.3.31:7c893ac1; do
+            IFS=: read -r label version short_sha <<< "$item"
+            build="/actions-runner/abyss-base-builds/$short_sha"
+            log="$EVIDENCE/build-$label"
+            cmake -S "baseline-src/$version" -B "$build" -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_COMPILER="$NVCC" \
+              -DCMAKE_CUDA_ARCHITECTURES=70 -DCMAKE_CUDA_FLAGS='-lineinfo -Xptxas=-v' \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSTRATA_ENABLE_CUDA=ON \
+              -DSTRATA_NATIVE_EXPERTS=ON -DSTRATA_PORTABLE=ON -DSTRATA_BUILD_TESTS=OFF \
+              -DGGML_AVX512=OFF -DGGML_AVX512_VNNI=OFF -DGGML_AVX_VNNI=OFF \
+              -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+              2>&1 | tee "$log/configure.log"
+            timeout 2400s cmake --build "$build" --target strata --parallel "$BUILD_JOBS" \
+              2>&1 | tee "$log/build.log"
+            cp "$build/CMakeCache.txt" "$log/CMakeCache.txt"
+            cp "$build/compile_commands.json" "$log/compile_commands.json"
+            sha256sum "$build/strata" > "$log/binary-sha256.txt"
+            cuobjdump --list-elf "$build/strata" > "$log/elf.txt"
+            grep -q sm_70 "$log/elf.txt"
+          done
+
+      - name: Compare new-process and warmed 600, 4K, 8K prompts, then teacher-forced logits
+        run: |
+          set -euo pipefail
+          /actions-runner/abyss-v100-python/bin/python tools/bench/v100_base_compare.py \
+            --historical /actions-runner/abyss-base-builds/47001f31/strata \
+            --current /actions-runner/abyss-base-builds/7c893ac1/strata \
+            --output "$EVIDENCE/p0" 2>&1 | tee "$EVIDENCE/campaign.log"
+
+      - name: Bound uploaded evidence and retain failure logs
+        id: evidence_cap
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE'])
+          files=[p for p in root.rglob('*') if p.is_file()]
+          total=sum(p.stat().st_size for p in files)
+          print('Evidence bytes before compression:',total)
+          # This is an error, not a silent truncation of important evidence.
+          if total>128*1024*1024: raise SystemExit('Evidence exceeds 128 MiB cap; inspect before uploading')
+          PY
+
+      - name: Upload bounded paired-base evidence
+        if: always() && steps.evidence_cap.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-v100-bases-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}/
+          if-no-files-found: warn
+          retention-days: 30
