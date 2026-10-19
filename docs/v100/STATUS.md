@@ -5,9 +5,9 @@ See [P1 progress](P1_PROGRESS.md) for passing ported-base audits and physical
 scorer experiments. Both one-token MMA layouts lose; retain F32. The wider
 batched FP32 cuBLAS prototype reduces synthetic indexer stage elapsed by 9.20%
 at 96K and 11.82% at 120K on the model's actual 2048-token mixer geometry;
-shorter contexts lose or show noise. Candidate model-quality, runtime
-integration and whole-model performance gates remain open. Production arithmetic/
-defaults are unchanged; the P0 branch and evidence below are frozen.
+shorter contexts lose or show noise. Explicit runtime integration and the bounded 100K-context model-KL/repeatability
+screen now pass (mean KL <=2.93e-7, all top-1 32/32); whole-model performance
+and remaining P1 acceptance gates are open. Automatic dispatch/defaults are unchanged; the P0 branch and evidence below are frozen.
 
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
 Production arithmetic and dispatch remain unchanged. No performance improvement is claimed.

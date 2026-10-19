@@ -45,6 +45,12 @@ def summarize(archive,digest,run):
             if row['rows']!=32 or not row['mean_kl']<=.0005:raise ValueError('bounded incremental KL gate failed')
             if [p['predicted_token_index_zero_based'] for p in row['positions']]!=list(range(100354,100386)):
                 raise ValueError('scored position population changed')
+        # Keep the committed ledger bounded: all exact dispatch rows remain in
+        # the digest-identified artifact. Coverage above was checked before this
+        # compact projection; the per-arm populations are retained separately.
+        for arm,record in quality['arms'].items():
+            record.pop('dispatch_records')
+            record['dispatch_summary']=dispatch[arm]
         return dict(schema=1,source_sha=source,run=run,artifact_zip_sha256=digest,
             component=component(archive,digest,run),quality=quality,dispatch=dispatch,memory=memory,thermal=thermal,
             model_identity=read('model-identity.json'),

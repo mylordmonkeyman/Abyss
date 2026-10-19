@@ -12,18 +12,15 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Open**: explicit experimental runtime integration implemented, awaiting physical validation; no candidate model-KL, downstream attention or whole-model performance acceptance yet. Default arithmetic unchanged |
+| Production integration / P1 exit | **Open**: explicit integration, graph/sanitizer and bounded 100K-context model-KL screen pass; direct attention/boundary and whole-model performance acceptance pending. Default arithmetic unchanged |
 
-Current validation: an explicit experimental batched scorer has bounded,
-owned stream/workspace lifetime; it retains F32 for shorter/unsupported shapes and
-the legacy unconditional F32 override. Establish same-branch teacher-forced
-quality at **filled long contexts where this scorer actually executes** and
-record actual dispatch before paired real-model performance. The 2K port
-screen cannot qualify a scorer restricted to approximately 30K compressed rows.
-The prescribed batched MMA correctness/key-reuse experiment and full boundary,
-quality, sm80/HIP and graph/capture checks remain P1 work.
+Next: run the gated same-binary whole-model A/B at 8K and 128K, three
+process pairs with two requests per fixture. Actual long-context dispatch and
+32-position model-KL/repeatability now pass. The batched MMA correctness/key-reuse
+experiment and full boundary, direct downstream-attention and sm80/HIP acceptance
+remain P1 work. No automatic dispatch or default arithmetic is changed.
 
-## Experimental integration checkpoint — pending physical validation
+## Experimental integration checkpoint — bounded model validation passed
 
 The shared cuBLAS scorer now has an **explicit experimental** runtime path.
 `ABYSS_V100_IDX=cublas` on SM70 uses only C4, 64 heads, dimension 128,
@@ -41,7 +38,9 @@ LoRA writes with beta=0), and uses the existing prefill handle/16 MiB workspace
 on the same stream. No new persistent allocation or handle mutation is added.
 The caller checks capacities; existing score/selection buffers remain distinct.
 Nondefault-stream graph capture/replay is added to each component parity case.
-These source lifetime arguments still require physical execution/sanitizers.
+The shared scorer passes nondefault-stream graph capture/replay and both
+CUDA sanitizers; the actual model path additionally passes the bounded logit
+screen below. This does not replace direct attention/selection diagnostics.
 
 The integration workflow builds the engine and shared scorer, runs parity,
 graph replay and both sanitizers, then the 48-shape matrix before four
@@ -55,7 +54,7 @@ profiled quality arms are excluded from ordinary throughput comparisons.
 source `c157de24442a7c4ea71c2af8464b6d214c7548b4`, has passed the SM70 engine
 build, shared scorer parity/nondefault-stream graph replay, both sanitizers
 and the 48-shape matrix. Hosted CI also passed. The four real-model quality
-arms are still running; no model-quality result or P1 exit is claimed yet.
+arms completed successfully. No P1 exit or model speedup is claimed.
 `summarize_p1_integrated.py` will digest-check the bounded artifact and require
 actual target-shape dispatch and all four comparisons. `p1_model_ab.py` is
 prepared for three same-binary process pairs with 8K/128K fixtures and verified
@@ -321,3 +320,40 @@ F32 override; batched correctness and key-reuse candidates; bounded FP32-scratch
 cuBLAS candidate; score/selection boundaries, same-pack teacher-forced logits,
 real-model paired performance and sm80/HIP regression checks. Keep F32 for
 unsupported or losing shapes. P2/P3 work is outside this checkpoint.
+
+## Integrated long-context logit and repeatability result — 19 October 2026
+
+`p1-integrated-quality-2026-10-19.json` is reproduced from artifact `12225080552`,
+ZIP SHA256 `77cd2653b10e360161196c2cf572adda5eadf0e50eebbbb5e9a2925b7f92fa13`,
+run `39328349428`, source `c157de24442a7c4ea71c2af8464b6d214c7548b4`.
+Engine SHA256: `69080a4fd395c987d24048386a8eb9b1f0a4741201ee9a8c03441c47ae4cc584`.
+Each candidate arm has 21 actual cuBLAS calls, one in every C4 layer (2,4,…,42),
+at p0=98,304/T=2,048. The 32 predicted positions are 100,354 through 100,385.
+F32 arms have zero candidate calls; all arms retain 1,029 actual dispatch rows
+in the artifact. The committed summary retains checked coverage counts.
+
+| Comparison | Mean KL | Max position KL | Top-1 matches |
+| --- | --- | --- | --- |
+| F32 repeat | 1.81510e-7 | 2.77680e-6 | 32/32 |
+| cuBLAS repeat | 1.73335e-7 | 4.47440e-6 | 32/32 |
+| F32-0 vs cuBLAS-0 | 2.92070e-7 | 6.34302e-6 | 32/32 |
+| F32-1 vs cuBLAS-1 | 1.33124e-7 | 3.20676e-6 | 32/32 |
+
+This passes the bounded same-pack incremental mean-KL gate (0.0005), where the
+candidate actually executed. It is not a full task-quality, all-context or P1
+exit claim. The exact same binary runs every arm, with original F32 queries,
+FP16 keys, FP32 SGEMM dots and unchanged selection. All 48 component shapes,
+graph replays, memcheck and synccheck pass. Each model arm has 31 telemetry
+samples; no sampled thermal reason, power limiting observed in all four.
+Minimum host MemAvailable is 48,259,117,056 bytes across the arms. RSS/PSS,
+anonymous memory, registered/pinned pages and cgroup charge overlap; never add
+them. Profile/dispatch-enabled arm timings are excluded from ordinary model
+throughput. Model SHA verifies the local manifest, not independent publisher
+authenticity; hardware counters and QPI traffic remain unavailable/unmeasured.
+
+The next workflow reuses the exact verified engine binary and refuses a runtime
+source change, failed quality evidence or overlapping GPU process. It records
+three A/B, B/A, A/B process pairs, short 8K/128-output and long 128K/16-output
+requests, with the second uncached request per case as the primary comparison.
+Completed arm checkpoints live on the existing runner and are reusable only
+with matching binary/model/fixture/quality-evidence identities.

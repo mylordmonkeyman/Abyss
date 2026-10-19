@@ -1,0 +1,68 @@
+name: V100 P1 same-binary whole-model A-B
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-p1]
+    paths:
+      - '.github/workflows/v100-p1-model.yml'
+      - 'tools/profiling/p1_model_ab.py'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  batched:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-p1'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p1-model-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify unchanged runtime and qualified binary, refuse GPU overlap
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 7c893ac17e61ec45c934b3278356807fc4626c3c HEAD
+          git diff --exit-code c157de24442a7c4ea71c2af8464b6d214c7548b4 -- src/core src/kernels include CMakeLists.txt CMakePresets.json
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          mkdir -p "$EVIDENCE"
+          git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
+          test -x build-v100-diagnostics/strata
+      - name: Three same-binary process pairs with long and short requests
+        run: >-
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_model_ab.py
+          --quality docs/v100/p1-integrated-quality-2026-10-19.json
+      - name: Enforce bounded diagnostic artifact
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE']);files=list(root.rglob('*'))
+          assert not any(p.is_symlink() for p in files)
+          assert sum(p.stat().st_size for p in files if p.is_file())<=64*1024**2
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('P1_BATCH_CAP=true\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && env.P1_BATCH_CAP == 'true'
+        with:
+          name: abyss-p1-model-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30
