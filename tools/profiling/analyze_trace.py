@@ -29,7 +29,7 @@ def group(name):
     return 'other kernels'
 
 
-def analyze(database, done):
+def analyze(database, done, prompt_tokens=2048):
     db=sqlite3.connect(database)
     db.row_factory=sqlite3.Row
     kernels=[dict(r) for r in db.execute('SELECT k.*,s.value AS name FROM CUPTI_ACTIVITY_KIND_KERNEL k '
@@ -45,7 +45,7 @@ def analyze(database, done):
     drift_ms=abs((end-split)/1e6-float(fields[4]))
     if drift_ms>1.0:
         raise ValueError('argmax boundary does not match reported decode phase within 1 ms')
-    report={'scope':'one warmed 2048-token prefill + 32 generated tokens; tracing perturbs timings',
+    report={'scope':f'one warmed {prompt_tokens}-token prefill + {int(fields[1])} generated tokens; tracing perturbs timings',
             'timing_kind':'CUPTI activity timestamps; no SM/HBM/L2 hardware-counter claim',
             'phase_boundary':'end of first argmax (final prompt forward); cross-checked against DONE decode time',
             'decode_phase_alignment_error_ms':drift_ms, 'done':done,
@@ -55,6 +55,10 @@ def analyze(database, done):
             'f32_indexer_symbols':sorted({k['name'] for k in kernels if 'idx_score' in k['name']}),
             'f32_attention_symbols':sorted({k['name'] for k in kernels if 'attend_' in k['name']}),
             'phases':{}}
+    main_stream=maxima[0].get('streamId')
+    if main_stream is None or any(k.get('streamId')!=main_stream for k in maxima):
+        raise ValueError('argmax main compute stream is missing or ambiguous')
+    report['main_compute_stream_id']=main_stream
     for phase,lo,hi in [('prefill',prefill_start,split),('decode',split,end)]:
         categories=collections.Counter(); names=collections.defaultdict(lambda:{'calls':0,'ns':0,'registers_per_thread':set(),'blocks':set()})
         for k in kernels:
@@ -67,7 +71,29 @@ def analyze(database, done):
         busy=union_ns([(k['start'],k['end']) for k in kernels+copies],lo,hi)
         compute_busy=union_ns([(k['start'],k['end']) for k in kernels],lo,hi)
         summed=sum(categories.values())
+        # A CUDA stream's activity is ordered; this is its measured wall-lane
+        # budget, not a causal DAG reconstruction from summed GPU kernels.
+        lane=[k for k in kernels if k.get('streamId')==main_stream and k['end']>lo and k['start']<hi]
+        lane_categories=collections.Counter()
+        lane_sum=0
+        for k in lane:
+            duration=max(0,min(k['end'],hi)-max(k['start'],lo))
+            lane_categories[group(k['name'])]+=duration;lane_sum+=duration
+        lane_union=union_ns([(k['start'],k['end']) for k in lane],lo,hi)
+        if lane_sum-lane_union>1000:
+            raise ValueError('main-stream intervals overlap: cannot form a disjoint lane budget')
+        ranked=[dict(name=n,wall_lane_ms=v/1e6,phase_wall_percent=100*v/max(1,hi-lo))
+                for n,v in lane_categories.most_common()]
+        critical_path_proxy=dict(main_stream_id=main_stream,
+            measured_main_stream_kernel_union_ms=lane_union/1e6,
+            unattributed_main_stream_gap_ms=(hi-lo-lane_union)/1e6,
+            contributors=ranked,top_three=ranked[:3],
+            interpretation='Serialized main compute-stream kernel residence and unassigned gaps. '
+            'Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. '
+            'Wait kernel residence measures an exposed device dependency, not standalone CPU work. '
+            'Unassigned gaps require API/CPU/I/O correlation before attributing a cause.')
         report['phases'][phase]={'begin_trace_ns':lo,'end_trace_ns':hi,'wall_ms':(hi-lo)/1e6,
+          'critical_path_proxy':critical_path_proxy,
           'kernel_sum_ms':summed/1e6,'compute_active_union_ms':compute_busy/1e6,
           'compute_or_explicit_copy_active_union_ms':busy/1e6,
           'no_traced_kernel_or_explicit_copy_ms':(hi-lo-busy)/1e6,
@@ -83,6 +109,7 @@ def analyze(database, done):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('database');p.add_argument('capture_windows');p.add_argument('output')
+    p.add_argument('--prompt-tokens',type=int,default=2048)
     a=p.parse_args()
     done=json.loads(Path(a.capture_windows).read_text())[0]['done']
-    Path(a.output).write_text(json.dumps(analyze(a.database,done),indent=2)+'\n')
+    Path(a.output).write_text(json.dumps(analyze(a.database,done,a.prompt_tokens),indent=2)+'\n')
