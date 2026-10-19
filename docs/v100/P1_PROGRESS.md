@@ -12,16 +12,46 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Open**: runtime dispatch absent; no candidate model-KL, downstream attention or whole-model performance acceptance yet. Production arithmetic/defaults unchanged |
+| Production integration / P1 exit | **Open**: explicit experimental runtime integration implemented, awaiting physical validation; no candidate model-KL, downstream attention or whole-model performance acceptance yet. Default arithmetic unchanged |
 
-Next: integrate only an explicit experimental batched scorer with bounded,
-owned stream/workspace lifetime; retain F32 for shorter/unsupported shapes and
+Current validation: an explicit experimental batched scorer has bounded,
+owned stream/workspace lifetime; it retains F32 for shorter/unsupported shapes and
 the legacy unconditional F32 override. Establish same-branch teacher-forced
 quality at **filled long contexts where this scorer actually executes** and
 record actual dispatch before paired real-model performance. The 2K port
 screen cannot qualify a scorer restricted to approximately 30K compressed rows.
 The prescribed batched MMA correctness/key-reuse experiment and full boundary,
 quality, sm80/HIP and graph/capture checks remain P1 work.
+
+## Experimental integration checkpoint — pending physical validation
+
+The shared cuBLAS scorer now has an **explicit experimental** runtime path.
+`ABYSS_V100_IDX=cublas` on SM70 uses only C4, 64 heads, dimension 128,
+512 selection, T=2048 and starting positions 98,304 through 120,000;
+other chunks retain F32 and log the fallback reason. This interval is an
+experimental investigation regime, not a qualified automatic threshold.
+`auto` remains upstream; `f32` forces the old scorer and the legacy
+`STRATA_DS4_IDX=1` wins over every experimental setting. Forced `volta`
+fails clearly because the measured MMA candidate remains unqualified.
+Forced cuBLAS on HIP/non-SM70 or incompatible model geometry fails clearly.
+
+The runtime and microtest share one implementation. It borrows 32 MiB from
+`B.o` (dead until `attend_batch`) and 256 KiB from `B.oa` (dead until output
+LoRA writes with beta=0), and uses the existing prefill handle/16 MiB workspace
+on the same stream. No new persistent allocation or handle mutation is added.
+The caller checks capacities; existing score/selection buffers remain distinct.
+Nondefault-stream graph capture/replay is added to each component parity case.
+These source lifetime arguments still require physical execution/sanitizers.
+
+The integration workflow builds the engine and shared scorer, runs parity,
+graph replay and both sanitizers, then the 48-shape matrix before four
+same-binary long-context quality arms (F32/candidate/candidate/F32).
+A verified frozen mixed-fixture prefix places a full 2048-token chunk at
+98,304, followed by 32 scored positions. Each candidate arm must contain actual
+cuBLAS dispatch records at that shape. Logit dumps stay temporary; identities,
+KL, dispatch records and sustained telemetry are bounded artifacts. These
+profiled quality arms are excluded from ordinary throughput comparisons.
+No physical result or P1 exit is claimed at this checkpoint.
 
 ## Initial checkpoint — 19 October 2026
 

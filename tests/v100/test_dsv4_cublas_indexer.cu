@@ -1,6 +1,6 @@
-// P1e isolated FP32-scratch cuBLAS candidate. No production dispatch.
+// P1e component test of the shared experimental runtime scorer.
 #ifndef STRATA_USE_HIP
-#include "strata/kernels/dsv4_fast.hpp"
+#include "../../src/kernels/cuda/dsv4_cublas_idx.cuh"
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
@@ -22,29 +22,7 @@ template<class T> struct Buffer {
     ~Buffer(){cudaFree(p);} Buffer(const Buffer&)=delete;Buffer& operator=(const Buffer&)=delete;
     std::vector<T> get()const{std::vector<T>x(n);ck(cudaMemcpy(x.data(),p,n*sizeof(T),cudaMemcpyDeviceToHost));return x;}
 };
-constexpr int TT=256, KK=512, HEADS=64, DIM=128;
-constexpr int ROWS_PER_WARP=1;
-__global__ void unpack(const uint16_t* keys,float* out,int rows){
-    const int i=blockIdx.x*blockDim.x+threadIdx.x;
-    if(i<rows*DIM)out[i]=__half2float(__ushort_as_half(keys[i]));
-}
-// One warp per (token,key); contiguous head reads from the FP32 GEMM result.
-__global__ void epilogue(const float* dots,const float* weights,float* scores,
-                         int p0,int t0,int tokens,int j0,int rows,int ld){
-    const int lane=threadIdx.x&31, warp=threadIdx.x/32;
-    // One score per warp; the measured eight-score scheduling variant did not win.
-    for(int step=0;step<ROWS_PER_WARP;++step){
-        const int item=blockIdx.x*8*ROWS_PER_WARP+warp+step*8;
-        if(item>=tokens*rows)break;
-        const int t=item/rows,j=item%rows;
-        if(j0+j>=(p0+t0+t+1)/4)continue; // Uniform warp; later iterations can see a new token.
-        float sum=0;
-        for(int h=lane;h<HEADS;h+=32)
-            sum+=fmaxf(dots[(size_t)j*tokens*HEADS+t*HEADS+h],0.0f)*weights[(t0+t)*HEADS+h];
-        for(int d=16;d;d/=2)sum+=__shfl_xor_sync(0xffffffffu,sum,d);
-        if(!lane)scores[(size_t)(t0+t)*ld+j0+j]=sum;
-    }
-}
+constexpr int TT=256, KK=512, HEADS=64, DIM=128, ROWS_PER_WARP=1;
 struct Scorer {
     // Scratch is capped independently of the common caller-owned score/selection buffers.
     static constexpr size_t WS=16*1024*1024;
@@ -56,23 +34,7 @@ struct Scorer {
         blas(cublasSetWorkspace(handle,workspace.p,WS));}
     ~Scorer(){cublasDestroy(handle);}
     void run(const float* q,const uint16_t* k,const float* w,int p0,int T,int ld,float* score,int* ids){
-        const float one=1,zero=0;
-        // Key-major loop converts each key tile once, reusing it across query tiles.
-        for(int j0=0;j0<(p0+T)/4;j0+=KK){
-            const int rows=std::min(KK,(p0+T)/4-j0);
-            unpack<<<(rows*DIM+255)/256,256>>>(k+(size_t)j0*DIM,key.p,rows);ck(cudaGetLastError());
-            for(int t0=0;t0<T;t0+=TT){
-                const int tokens=std::min(TT,T-t0);
-                if(j0>=(p0+t0+tokens)/4)continue;
-                // Query columns are contiguous 128-D FP32 vectors. C is [keys][tokens*heads].
-                blas(cublasSgemm(handle,CUBLAS_OP_T,CUBLAS_OP_N,tokens*HEADS,rows,DIM,
-                    &one,q+(size_t)t0*HEADS*DIM,DIM,key.p,DIM,&zero,dot.p,tokens*HEADS));
-                epilogue<<<(tokens*rows+8*ROWS_PER_WARP-1)/(8*ROWS_PER_WARP),256>>>(dot.p,w,score,p0,t0,tokens,j0,rows,ld);ck(cudaGetLastError());
-            }
-        }
-        // Reuse upstream selection literally. Separate launches are a prototype penalty;
-        // timings include them and cannot be mislabeled as score-only measurements.
-        for(int t=0;t<T;++t)ds::indexer_select(score+(size_t)t*ld,(p0+t+1)/4,512,ids+(size_t)t*512,nullptr);
+        ds::p1::run(handle,nullptr,q,k,w,p0,T,ld,score,ids,key.p,key.n,dot.p,dot.n);
     }
 };
 uint32_t rng;
@@ -97,6 +59,23 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
     auto oldrun=[&]{ds::indexer_batch(dq.p,dk.p,dw.p,HEADS,4,p0,T,512,old.p,ld,baseline.p,nullptr);};
     auto newrun=[&]{scorer.run(dq.p,dk.p,dw.p,p0,T,ld,out.p,ids.p);};
     oldrun();newrun();ck(cudaDeviceSynchronize());
+    if(!bench){
+        cudaStream_t stream;ck(cudaStreamCreate(&stream));
+        // Set stream before workspace: cuBLAS resets workspace when stream changes.
+        blas(cublasSetStream(scorer.handle,stream));
+        blas(cublasSetWorkspace(scorer.handle,scorer.workspace.p,Scorer::WS));
+        auto launch=[&]{ds::p1::run(scorer.handle,stream,dq.p,dk.p,dw.p,p0,T,ld,out.p,ids.p,
+                                  scorer.key.p,scorer.key.n,scorer.dot.p,scorer.dot.n);};
+        launch();ck(cudaStreamSynchronize(stream)); // initialize library before capture
+        cudaGraph_t graph;cudaGraphExec_t executable;
+        ck(cudaStreamBeginCapture(stream,cudaStreamCaptureModeThreadLocal));launch();
+        ck(cudaStreamEndCapture(stream,&graph));
+        ck(cudaGraphInstantiate(&executable,graph,nullptr,nullptr,0));
+        for(int i=0;i<2;++i)ck(cudaGraphLaunch(executable,stream));
+        ck(cudaStreamSynchronize(stream));ck(cudaGraphExecDestroy(executable));ck(cudaGraphDestroy(graph));
+        blas(cublasSetStream(scorer.handle,nullptr));
+        blas(cublasSetWorkspace(scorer.handle,scorer.workspace.p,Scorer::WS));ck(cudaStreamDestroy(stream));
+    }
     const auto a=old.get(),b=out.get();const auto sel=ids.get(),prior=baseline.get();
     double sq=0,norm=0,max_abs=0,max_cpu=0,min_margin=INFINITY;size_t count=0,overlap=0,selected=0;
     std::vector<float> errors;errors.reserve(size_t(T)*visible);

@@ -20,6 +20,10 @@
 #include "strata/core/v100_dispatch.hpp"
 #include "strata/kernels/dsv4_fast.hpp"
 #include "v100_stage_capture.hpp"
+#include "strata/kernels/v100_indexer_policy.hpp"
+#ifndef STRATA_USE_HIP
+#include "../kernels/cuda/dsv4_cublas_idx.cuh"
+#endif
 
 #include "strata/core/progress.hpp"
 #include "strata/kernels/cpu/kq_avx512.hpp"
@@ -1387,6 +1391,22 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     const ds::Rope rope = make_rope(r != 0), crope = make_rope(true);
     Carve c{(uint8_t*) uni};
     Ds4Bufs B = carve_ds4(c, (size_t) tn, g, S->max_pools);
+    const auto idx_mode=ds::p1::mode();
+    bool experimental_idx=false;
+    if(idx_mode==ds::p1::Mode::cublas) {
+#ifdef STRATA_USE_HIP
+        err="ABYSS_V100_IDX=cublas requires CUDA SM70; HIP is unsupported";return false;
+#else
+        cudaDeviceProp prop{};
+        if(cudaGetDeviceProperties(&prop,dev_)!=cudaSuccess || prop.major!=7 || prop.minor!=0) {
+            err="ABYSS_V100_IDX=cublas requires an SM70 device";return false;
+        }
+        if(g.idx_heads!=64 || g.idx_key!=128 || g.idx_top_k!=512) {
+            err="ABYSS_V100_IDX=cublas requires 64 heads, dimension 128 and top-512";return false;
+        }
+        experimental_idx=r==4 && ds::p1::eligible(g.idx_heads,g.idx_key,g.idx_top_k,tn,p0);
+#endif
+    }
     // 1. the projections
     hgemm(Ly.q_a, g.q_lora, E, x16, E, B.qr_raw, g.q_lora);
     hgemm(Ly.kv, D, E, x16, E, B.kv_raw, D);
@@ -1470,8 +1490,25 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
                      g.norm_eps, s);
     S->mark("ds4_q", s);
     // 4. the indexer, the attention
-    if (r == 4) ds::indexer_batch(B.iq, Ly.idx_cache, B.iw, g.idx_heads, 4, p0, tn, g.idx_top_k, B.score, B.score_ld,
-                                  B.sel, s);
+    if (r == 4) {
+#ifndef STRATA_USE_HIP
+        if(experimental_idx) {
+            // B.o is written next by attend_batch; B.oa is written later by
+            // output LoRA with beta=0. Neither has a live value at this point.
+            // Same stream and existing S->blas/S->ws: no persistent allocation,
+            // handle state mutation, synchronization or cross-stream borrower.
+            ds::p1::run(S->blas,s,B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,
+                        B.oa,(size_t)tn*OL,B.o,(size_t)tn*HD);
+        } else
+#endif
+            ds::indexer_batch(B.iq,Ly.idx_cache,B.iw,g.idx_heads,4,p0,tn,g.idx_top_k,
+                              B.score,B.score_ld,B.sel,s);
+        if(idx_mode!=ds::p1::Mode::automatic)std::fprintf(stderr,
+            "p1_indexer layer=%d p0=%d T=%d heads=%d dim=%d scorer=%s reason=%s dynamic_shared=0 borrowed_scratch_bytes=%zu\n",
+            il,p0,tn,g.idx_heads,g.idx_key,experimental_idx?"cublas":"f32",
+            experimental_idx?"explicit-experiment":idx_mode==ds::p1::Mode::f32?"force-f32":"outside-experimental-regime",
+            experimental_idx?(size_t)(ds::p1::eligible(64,128,512,tn,p0)?(256*64*512+512*128)*sizeof(float):0):0);
+    }
     S->mark("ds4_index", s);
 #ifdef STRATA_V100_CAPTURE_STAGES
     if(capture.enabled) {

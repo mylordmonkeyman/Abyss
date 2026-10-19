@@ -1,4 +1,4 @@
-name: V100 P1 isolated batched cuBLAS scorer
+name: V100 P1 cuBLAS integration and quality
 on:
   workflow_dispatch:
   push:
@@ -7,6 +7,11 @@ on:
       - '.github/workflows/v100-p1-batched.yml'
       - 'tests/v100/test_dsv4_cublas_indexer.cu'
       - 'tools/profiling/p1_cublas_bench.py'
+      - 'tools/profiling/p1_integrated_quality.py'
+      - 'src/kernels/cuda/dsv4_cublas_idx.cuh'
+      - 'include/strata/kernels/v100_indexer_policy.hpp'
+      - 'src/core/glm_prefill.cu'
+      - 'src/kernels/cuda/dsv4_fast.cu'
 permissions:
   contents: read
 concurrency:
@@ -33,6 +38,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           clean: false
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -55,7 +61,7 @@ jobs:
           cmake --preset v100-diagnostics -DCMAKE_CUDA_COMPILER="$NVCC" \
             -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
             -DSTRATA_V100_TESTS=ON -DSTRATA_V100_CAPTURE_STAGES=OFF 2>&1 | tee "$EVIDENCE/configure.log"
-          cmake --build build-v100-diagnostics --target test_dsv4_cublas_indexer --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
+          cmake --build build-v100-diagnostics --target test_dsv4_cublas_indexer strata --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
           sha256sum build-v100-diagnostics/test_dsv4_cublas_indexer > "$EVIDENCE/binary-sha256.txt"
       - name: Validate FP32 scratch, visibility, score error and unchanged selection
         run: |
@@ -67,6 +73,8 @@ jobs:
           done
       - name: Interleave full isolated indexer stages with telemetry
         run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_cublas_bench.py
+      - name: Same-binary long-context F32 and candidate repeatability
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_integrated_quality.py
       - name: Enforce bounded diagnostic artifact
         if: always()
         run: |

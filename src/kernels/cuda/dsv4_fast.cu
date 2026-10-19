@@ -3,6 +3,7 @@
 // Transcribed from llama.cpp's deepseek4 graph (src/models/deepseek4.cpp, MIT) and ggml's CUDA rope (rope.cu: the
 // NORM-mode rope_yarn, offset by ggml_rope_set_offset); docs/deepseek4/SPEC.md has the math these kernels follow.
 #include "strata/kernels/dsv4_fast.hpp"
+#include "strata/kernels/v100_indexer_policy.hpp"
 
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
@@ -1566,7 +1567,7 @@ void q_prep(float* q, int n_head, int head_dim, int n_rot, const Rope& rope, flo
 // the tensor-core indexer kernels: sm_80+ in a CUDA build, 64 heads, unless STRATA_DS4_IDX=1. The first call on a
 // device also lets the batch kernel take its 64 KB of shared memory there.
 static bool idx_use_mma(int idx_heads) {
-    static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
+    static const bool warp_only = p1::mode()==p1::Mode::f32;
 #if !defined(__HIPCC__) && !defined(STRATA_USE_HIP)
     if (warp_only || idx_heads != 64) return false;
     static int state[64] = {};   // per device: 0 unknown, 1 yes, -1 no
@@ -1592,7 +1593,7 @@ static bool idx_use_mma(int idx_heads) {
 // HIP: the WMMA kernels on gfx11 / gfx12 (RDNA3 / 3.5 / 4; gfx1103 has no WMMA), 64 heads, unless STRATA_DS4_IDX=1
 static bool hip_wmma_arch();
 static bool idx_use_wmma(int idx_heads) {
-    static const bool warp_only = [] { const char* v = getenv("STRATA_DS4_IDX"); return v && std::atoi(v) == 1; }();
+    static const bool warp_only = p1::mode()==p1::Mode::f32;
     return !warp_only && idx_heads == 64 && hip_wmma_arch();
 }
 // the current device has RDNA's wave32 WMMA (gfx11 / gfx12; gfx1103 has none)
