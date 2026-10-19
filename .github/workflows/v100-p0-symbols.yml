@@ -1,0 +1,44 @@
+name: P0 read-only allocation symbol attribution
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-p0-symbols.yml'
+      - 'tools/profiling/p0_symbolize.py'
+permissions:
+  contents: read
+# This job performs CPU-only reads between jobs on the existing single runner.
+# It does not launch CUDA, inspect GPU state, or join the GPU workload queue.
+concurrency:
+  group: abyss-p0-readonly
+  cancel-in-progress: false
+jobs:
+  symbols:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    env:
+      EVIDENCE: results/ci-v100-p0-symbols-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+      - name: Attribute captured return addresses and inspect compiled CPU getters
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_symbolize.py
+      - name: Upload bounded symbol evidence
+        if: always() && env.P0_SYMBOLS_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-symbols-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30
