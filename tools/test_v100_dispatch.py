@@ -12,6 +12,35 @@ ROOT=Path(__file__).resolve().parents[1]
 
 @unittest.skipUnless(shutil.which('c++'),'C++ compiler required')
 class DispatchTest(unittest.TestCase):
+    def test_exact_gather_ids_within_and_across_calls(self):
+        with tempfile.TemporaryDirectory() as temp:
+            d=Path(temp)
+            (d/'main.cpp').write_text('''
+#include "strata/core/v100_dispatch.hpp"
+#include <cassert>
+int main() {
+    using namespace strata::v100dispatch;
+    Scope scope({1,7,4,1024,0});
+    InputRows a{{0,1,1,2,1,3},{0,0,0,0},0};
+    assert(a.count(0,4,17)); assert(a.unique==3);
+    assert(a.count(4,2,17)); assert(a.unique==4);
+    assert(!a.count(-1,2,17)); assert(!a.count(5,2,17));
+    a.tokens[0]=4; assert(!a.count(0,1,17)); assert(a.unique==4);
+    InputRows b{{0,0},{0,0,0,0},0};
+    assert(b.count(0,2,17)); assert(b.unique==1);
+}
+''')
+            subprocess.run(['c++','-std=c++17','-pthread','-I'+str(ROOT/'include'),
+                            str(d/'main.cpp'),'-o',str(d/'test')],check=True,capture_output=True)
+            p=subprocess.run([str(d/'test')],env=dict(os.environ,ABYSS_V100_DISPATCH='1'),
+                             capture_output=True,text=True,check=True)
+            rows=parse(p.stderr)['host_records']
+            self.assertEqual(sum(r['calls'] for r in rows),3)
+            self.assertEqual(sum(r['rows'] for r in rows),6)
+            self.assertEqual({(r['nt'],r['path']) for r in rows},
+                             {(4,'mmq_input_distinct:3'),(2,'mmq_input_distinct:2'),
+                              (2,'mmq_input_distinct:1')})
+
     def test_shared_ledger_thread_context_scope_and_default_off(self):
         with tempfile.TemporaryDirectory() as temp:
             d=Path(temp)

@@ -34,7 +34,7 @@ it only after the completion ledger is committed and the user is notified.
 | Exact source/build/model identity | Full shard hashes now measured and match local SHA256SUMS; preserve upstream binaries and selected SM70 image evidence |
 | Baseline repeatability | Completed 32-row screen: both same-base pairs and cross-base top-1 32/32; GPU-only historical pair byte-identical; bounded corpus scope retained |
 | Extended short matrix | Complete: 108 requests, three interleaved pairs and excluded first repetition; active-window telemetry reviewed, no causal speedup claimed |
-| Filled context | 32K three pairs complete with 1024 outputs; 64K/128K units progressing, original historical 128K also preserved |
+| Filled context | 32K and 64K three pairs complete with 1024 outputs; 128K units progressing, original historical 128K also preserved |
 | Chunk settings | 512/1024/4096 plus auto; 128 unsupported on the upstream 256-token chunk grid, not silently relabeled |
 | Runtime dispatch | Captured actual CPU/AVX2, MMQ and GLU/fallback decisions; per-token route/cache and exact per-call input-duplication detail remain open |
 | Unique memory worksheet | Conserved per-SHA host/GPU budget and alias-deduped backing pages captured; borrowed-arena subcomponents/callsite labels need final reconciliation |
@@ -73,6 +73,18 @@ getter disassembly. Actual allocation callers are symbolicated and application
 component bytes reconcile to the API total. 40 local tooling tests pass;
 profile timings are excluded.
 
+The next diagnostic copies actual sorted gather IDs after expert scatter and
+counts the distinct source tokens in each MMQ input call, plus the union within
+each layer/chunk invocation. Its histogram separates duplication within calls
+from duplication across calls, including repeated prompts. Host tests cover
+invalid IDs/ranges, independent invocation unions and incomplete captures.
+42 local tooling tests pass. CUDA compilation and physical collection of this
+extension are pending; the existing 3,615,488 lower bound remains the measured
+result. The added copy/synchronization can perturb planning and overlap, so
+these diagnostic timings and route populations are not production measurements.
+After the remaining matrix and CUDA smoke finish, collect only the working-fork
+dispatch phase of `p0_accounting.py`; do not repeat immutable memory arms.
+
 ## Interrupted long-context campaign
 
 The campaign ended unsuccessfully during the second long arm. Read-only
@@ -106,8 +118,18 @@ A/B, B/A, A/B order, verified by actual request start times. Results are in
 prefill time change is +0.00019%, decode time -5.8683% (negative favors current).
 All three generated trajectories differ, so this is not a causal speedup claim.
 Warm decode sample clocks were 1380/877 MHz in all arms, without sampled
-thermal/power-cap reasons; prefill clock/power behavior varied. The 64K units
-are next; inspect fresh job state before reporting later completion counts.
+thermal/power-cap reasons; prefill clock/power behavior varied.
+
+All six 64K units (6–11) now passed, with artifact ZIP digests verified and actual
+process order 0,1,2,3,4,5. `p0-64k-2026-10-19.json` preserves their summary.
+Paired median prefill time change is +0.07117%, decode +2.07808%, TTFT +0.06468%
+(positive means current took longer). Warm prefill medians are 497.23 / 497.15
+tokens/s, decode 23.50 / 23.02, historical/current respectively. Generated
+trajectories differ in all three pairs; no causal base regression follows.
+Warm decode samples show 1380/877 MHz on both bases and no sampled thermal or
+power-cap reason. Prefill samples include power caps; minimum active-window
+MemAvailable is 45.36 GiB. The 128K units are next; inspect fresh job state
+before reporting later completion counts.
 
 ## Original campaign (preserved, interrupted)
 

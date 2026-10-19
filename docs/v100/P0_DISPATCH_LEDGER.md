@@ -1,5 +1,18 @@
 # P0 dispatch ledger
 
+Pending extension: with the same diagnostic switch, `glm_prefill.cu` copies the
+actual `M.row_tok` IDs after scatter and synchronizes that stream. Each normal
+input quantizer call records `mmq_input_distinct:N`, where N is its exact
+distinct source-token count and `nt` is its routed row count. Identical shapes
+aggregate as a histogram; chronological call identity is not retained.
+`mmq_input_layer_distinct` records the union for each separate layer/chunk
+invocation, so repeated requests cannot share a union. The summarizer reconciles
+call counts, quantized rows and layer invocations before reporting exact totals.
+Old captures continue to report their proven lower bound with `exact: null`.
+No logical-byte field is repurposed. Local tests pass; physical validation is
+pending. Copies and synchronization can change planning/overlap, so exclude all
+timings and avoid generalizing route populations to the clean production run.
+
 Status: CUDA compilation and physical collection passed in run 39194149121.
 See [accounting/dispatch results](P0_ACCOUNTING_RESULTS.md) and
 `p0-dispatch-2026-10-19.json`. No dropped calls or unresolved decode joins.

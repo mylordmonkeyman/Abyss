@@ -7,8 +7,10 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace strata::v100dispatch {
 inline bool enabled() {
@@ -56,4 +58,29 @@ inline void record(const char* path,int type,int nt,uint64_t rows=0,uint64_t log
     }
     ++it->second.calls;it->second.rows+=rows;it->second.logical_weight_bytes+=logical_bytes;
 }
+// Diagnostic host mirror of the actual sorted gather IDs. Lifetime is one
+// layer/chunk invocation, so repeats of a prompt never share a distinct set.
+struct InputRows {
+    std::vector<int> tokens;
+    std::vector<unsigned char> seen;
+    uint64_t unique=0;
+    bool count(int offset,int n,int type) {
+        if(offset<0 || n<0 || (size_t)offset>tokens.size() ||
+           (size_t)n>tokens.size()-(size_t)offset) return false;
+        std::vector<unsigned char> local(seen.size(),0);
+        int distinct=0;
+        for(int i=0;i<n;++i) {
+            const int t=tokens[(size_t)offset+i];
+            if(t<0 || (size_t)t>=seen.size()) return false;
+            if(!local[(size_t)t]) { local[(size_t)t]=1;++distinct; }
+        }
+        for(size_t t=0;t<local.size();++t)
+            if(local[t] && !seen[t]) { seen[t]=1;++unique; }
+        // A histogram preserves exact distinct rows for each call shape even
+        // when identical layer/chunk anchors recur in multiple requests.
+        const std::string path="mmq_input_distinct:"+std::to_string(distinct);
+        record(path.c_str(),type,n,(uint64_t)distinct);
+        return true;
+    }
+};
 } // namespace strata::v100dispatch

@@ -2395,6 +2395,15 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
         if (n_light > 0)
             cudaMemcpyAsync(M.bounds + kLightOff, h_light, (size_t) 3 * n_light * sizeof(int), cudaMemcpyHostToDevice, s);
         gb::expert_scatter(M.ids, M.rank, M.base, T * K, K, M.row_tok, M.pos, s);
+        v100dispatch::InputRows input_rows;
+        if (v100dispatch::enabled()) {
+            input_rows.tokens.resize((size_t) T * K);
+            input_rows.seen.resize((size_t) T, 0);
+            if (!glmfast::cuda_ok(cudaMemcpyAsync(input_rows.tokens.data(), M.row_tok,
+                    (size_t) T * K * sizeof(int), cudaMemcpyDeviceToHost, s),
+                    "P0 input gather IDs", err) ||
+                !glmfast::cuda_ok(cudaStreamSynchronize(s), "P0 input gather IDs sync", err)) return false;
+        }
         if (cpu_nrows > 0) {
             if (!cpu_bufs(cpu_nrows)) {
                 err = "glm prefill: the CPU experts' host buffers did not allocate";
@@ -2456,6 +2465,9 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                 for (int i = i0; i < i1; ++i) max_rows = std::max(max_rows, hb[i + 1] - hb[i]);
                 if (nrows > 0) {
                     const int o = place(r0 + a, nrows);
+                    if (v100dispatch::enabled() && !input_rows.count(r0 + a, nrows, Ly.gu_type)) {
+                        throw std::runtime_error("P0 MMQ input gather IDs out of range");
+                    }
                     mmq::quantize(S->x, M.row_tok + r0 + a, M.Xq, Ly.gu_type, E, E, nrows, s);
                     // the part's bounds are the set's (from a): the activations and the destination are addressed a
                     // rows back so that bound a is the part's first row
@@ -2944,6 +2956,9 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
             }
         }
         S->mark("moe_staged", s);
+        if (v100dispatch::enabled()) {
+            v100dispatch::record("mmq_input_layer_distinct", Ly.gu_type, T, input_rows.unique);
+        }
         dump_row("pf_shexp-" + std::to_string(il), S->ffn, E);
         flush();
         if (cpu_nrows > 0) gb::moe_combine_add(M.OUTPc, cpu_r0, cpu_r0, rows, M.pos, M.rw, T, K, E, S->ffn, s);
