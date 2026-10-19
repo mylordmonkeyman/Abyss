@@ -69,8 +69,39 @@ It corroborates dense/expert/attention allocations against their exact immutable
 ELF callers, and identifies cached MMQ workspace and the attention snapshot.
 Source line numbers are unavailable in the release binaries. The
 prefill workspace/staging borrows the expert-pool tail; adding its rounded log
-totals again would double-count GPU capacity. Fine attribution inside that
-borrowed arena remains a source/accounting follow-up, not new allocated memory.
+totals again would double-count GPU capacity. The fine layout is now reconstructed
+in `p0-prefill-layout-2026-10-19.json` using `tools/profiling/p0_prefill_layout.py`.
+At the observed 32,768-token maximum chunk, its disjoint outer carve is:
+
+| Borrowed expert-pool region | Historical bytes | Current bytes |
+| --- | ---: | ---: |
+| Persistent activations plus reused union | 5,376,776,192 | 5,377,824,768 |
+| F16 projection-weight scratch | 16,777,216 | 16,777,216 |
+| F32 projection-weight scratch | 67,108,864 | 67,108,864 |
+| cuBLAS workspace | 16,777,216 | 16,777,216 |
+| Three staged groups of four experts | 130,667,776 | 130,667,776 |
+| 160 prestaged experts | 1,742,236,160 | 1,742,236,160 |
+| Total inside expert pool | 7,350,343,424 | 7,351,392,000 |
+
+The persistent activations use 4,033,740,800 / 4,034,789,376 bytes. Their
+1,048,576-byte difference is current-base `pre2` and `onehot` routing storage.
+The shared union reserves **1,343,035,392** bytes: its MoE view occupies that
+amount and its attention view 1,168,769,024 bytes at the 2,048-token mixer
+sub-batch. These two views overlap; do not sum them. The JSON lists individual
+buffer offsets, payload and alignment padding, including MMQ quantized inputs,
+output windows, attention score/selection and projections. Short chunks borrow
+less: their prestage carve is zero below 1,024 tokens, then capped by the
+configured slots. The maximum reservation is not every request's actual loan.
+
+The maximum expert stride is 10,888,976 bytes, corroborated by the successful
+1,045,341,696-byte landing-ring allocation (96 slots, sequence 26) in each
+immutable trace. Both rounded startup layouts agree with the reconstructed
+bytes. Host compilation of the actual source sizing functions independently
+matches the Python persistent/union/sub-batch values at six chunk sizes.
+Relevant layout functions are identical between the two pinned sources except
+for the two current-base persistent routing buffers. This is source-derived
+suballocation accounting, not newly observed device addresses, peak residency
+or physical-page measurement. No additional bytes enter the GPU budget.
 
 | Application device component | Historical bytes | Current bytes |
 | --- | ---: | ---: |

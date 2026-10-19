@@ -37,7 +37,7 @@ it only after the completion ledger is committed and the user is notified.
 | Filled context | 32K and 64K three pairs complete with 1024 outputs; 128K units progressing, original historical 128K also preserved |
 | Chunk settings | 512/1024/4096 plus auto; 128 unsupported on the upstream 256-token chunk grid, not silently relabeled |
 | Runtime dispatch | Captured actual CPU/AVX2, MMQ and GLU/fallback decisions; per-token route/cache and exact per-call input-duplication detail remain open |
-| Unique memory worksheet | Conserved per-SHA host/GPU budget and alias-deduped backing pages captured; borrowed-arena subcomponents/callsite labels need final reconciliation |
+| Unique memory worksheet | Conserved per-SHA host/GPU budget and alias-deduped backing pages; symbol-backed allocation components and source-derived borrowed-arena layout reconciled |
 | Long-context critical path | Rootless CUDA timeline/events at filled context; report top three wall-path contributors and overlap limits |
 | Sustained telemetry | Active-window clocks/power/thermal, faults/I/O, NUMA placement, pressure and preserved safety floor |
 | Final decisions | Base, indexer/attention hotspots, repeated quantization, CPU type path, static balance and ≤3 P3 admissions with evidence |
@@ -52,8 +52,14 @@ release of observed allocations. Live host-pin ranges resolve to 41 shared
 backing objects with no unresolved private ranges. Their page footprint is
 about 71.85 GiB, inside PSS/Shmem rather than additive to RSS. Each disjoint
 host budget conserves 135,068,450,816 bytes. The source-derived 948,249,856-byte
-raw/CSA/HCA/indexer arena matches the actual allocation in both bases. Fine
-borrowed-arena/callsite attribution remains open; no PFN/QPI claim is made.
+raw/CSA/HCA/indexer arena matches the actual allocation in both bases.
+`p0-prefill-layout-2026-10-19.json` now resolves the borrowed arena into disjoint
+outer regions and explicitly overlapping MoE/attention union views. Its maximum
+loan is 7,350,343,424 / 7,351,392,000 bytes, historical/current, entirely within
+the existing expert-pool budget. Both startup logs and exact landing-ring API
+bytes corroborate the reconstruction; host-compiled actual sizing functions
+match at six chunk sizes. These derived offsets are not instrumented device
+addresses or physical pages. 44 local tooling tests pass; no PFN/QPI claim is made.
 
 ## Dispatch instrumentation checkpoint
 
