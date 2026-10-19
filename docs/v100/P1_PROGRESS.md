@@ -357,3 +357,29 @@ three A/B, B/A, A/B process pairs, short 8K/128-output and long 128K/16-output
 requests, with the second uncached request per case as the primary comparison.
 Completed arm checkpoints live on the existing runner and are reusable only
 with matching binary/model/fixture/quality-evidence identities.
+
+## Batched MMA experiment — implemented, physical validation queued
+
+The specification's separate batched MMA experiment is now isolated in
+`dsv4_volta_idx_batch.cuh` and `test_dsv4_mma_batched`. The one-query/grid-Y
+variant establishes the batched visibility/output contract; the eight-query
+variant loads each packed K fragment once per head-band/K step and reuses it
+across eight independent query hi/lo accumulator sets. Both use four warps,
+128 compressed rows/CTA, padded shared storage for one eight-head band, and
+per-head ReLU/weights before summation. No global token/key/head intermediate
+or production dispatch is added. Query tails and key tails keep all lanes
+participating in every aligned MMA.
+
+The planned physical test has 19 diagnostic cases per variant (38 total),
+including T=1/3/8/9/33, 510–515-row visibility boundaries, query-tile tails,
+zero/tiny/duplicate/large-query cases, unchanged selection and two graph
+replays. Tiny FP16-residual underflow uses an explicit absolute diagnostic
+bound, records nominal relative acceptance separately, and remains unqualified
+for runtime arithmetic. The matrix has 15 shapes per variant, six interleaved
+pairs each: T=256/1024/4096 at 2K/8K/32K/120K, plus actual mixer T=2048 at
+64K/96K/120K. These full isolated stage times include the T unchanged single-token
+selection launches, compared with the baseline's one batched selector launch.
+Sanitizers, PTX/SASS and actual registers/shared/local bytes/occupancy are gates;
+source register reuse is not a measured DRAM-traffic claim. This test is queued
+in the same `abyss-v100` concurrency group behind whole-model A/B, with no
+container or privilege changes. Physical results remain pending.
