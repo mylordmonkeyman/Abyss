@@ -148,7 +148,7 @@ projection activations and quantized weights, raw-KV/query preparation oracles,
 bounded real stage dumps and same-branch full-model logits, then a fused
 profitable kernel with validated resources. No production path is enabled.
 
-## Bounded real-model stage replay (pending V100)
+## Bounded real-model stage replay
 
 `STRATA_V100_CAPTURE_STAGES` is an internal compile-time diagnostic, default OFF
 and requiring CUDA plus V100 tests. Only `glm_prefill.cu` receives the definition.
@@ -172,3 +172,48 @@ real learned projection outputs, exact gather identities/causality, QK, sink
 softmax, PV and inverse RoPE versus FP64 and captured FP32 attention. Three graph
 replays run per captured layer. Every tensor has an exact size and a manifest
 SHA256; the original model itself remains only size/structure checked.
+
+### Physical real-model result and reduction investigation
+
+Capture source `ce1091a` produced 3,127,475 bytes of tensors at position 2,048:
+raw layer 0 (128 keys), CSA layer 2 (128 raw + 512 selected compressed), and
+HCA layer 3 (128 raw + 16 compressed). The diagnostic explicitly sets existing
+`STRATA_GLM_PREFILL_SUB=256`; the engine otherwise may enlarge mixer sub-batches.
+The 2,400-token repeated fixture is not a semantic-quality corpus. Capture bytes
+are frozen under `/actions-runner/abyss-v100-stage-captures/frozen-2048-v1`, with
+source commit, binary, fixture, pack and every tensor hash. Replay validates all
+hashes, reuses the exact original bytes and does not reload the model.
+
+The first real CSA check exposed relative L2 1.1740e-5 against captured FP32
+attention, above the 1e-5 component target. Captured FP32 itself agrees closely
+with the FP64 oracle. Shortening QK chains improved scores but left the output
+error at 1.1652e-5. A separate scalar PV using identical device probabilities
+isolated the dominant error to the long PV accumulation (1.1679e-5).
+
+New isolated `qk_mma_chunked` / `pv_mma_chunked` retain independent FP16 hi/lo
+chains within 64-dimension / 64-key groups, then use compensated FP32 combination.
+The original variants remain available. On the same captures, the combined
+variant reduces CSA output error to **9.9051e-7**; same-probability PV error is
+**9.4330e-7**. No screen was widened. This is numerical error reduction, not a
+runtime speedup or model quality claim. QK/PV report **64/63 registers and zero
+local bytes**; achieved occupancy and profitable fused geometry are unmeasured.
+
+[Real-stage run 39180592084](https://github.com/mylordmonkeyman/Abyss/actions/runs/39180592084)
+on `d155daf` passes all three ratios / 33 stage checks, graph replays, memcheck
+and synccheck (zero errors). Relative L2 against captured FP32 attention is
+5.6936e-7 raw, 9.9051e-7 CSA and 5.3347e-7 HCA. Independent query-prep error is
+at most 1.4644e-7; all three raw-KV rows match the rounded FP64 preparation
+reference exactly in this capture. The normal-cache restoration step succeeded.
+[Component run 39180592052](https://github.com/mylordmonkeyman/Abyss/actions/runs/39180592052)
+also passes the original/new contiguous arithmetic, cached-row/compressor/output
+checks and sanitizers; hosted Python and CPU-build CI pass.
+
+See [complete real-input evidence](p2-real-stages-2026-10-18.json). Real-stage
+artifact `12156555253`: 2,646,327 bytes, SHA256
+`c0dc2efc09b8206f2de86d88917ad172764eddb07839fd951707cdc1ea0c7e02`.
+The actual learned input projections, prepared raw/compressed caches and CSA
+selection are now represented by captured production stages. This single
+position in three layers does not complete the corpus/long-context gate. Actual
+quantized output-weight replay, candidate downstream/model logits and quality
+gates, broader layer/position coverage, and fused resource/performance validation
+remain open. There is still no optimized inference dispatch or new public flag.

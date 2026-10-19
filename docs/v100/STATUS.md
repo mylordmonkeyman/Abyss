@@ -109,6 +109,29 @@ and independent query preparation, real quantized output weights, bounded model
 stage capture/logits and fused resource/performance gates remain open. No
 production dispatch or performance claim is enabled.
 
+### P2 real model activation replay
+
+[Run 39180592084](https://github.com/mylordmonkeyman/Abyss/actions/runs/39180592084),
+commit `d155daf`, passes **3 actual-model layers / 33 stage checks**, graph replay
+and both sanitizers (zero errors). Frozen capture `ce1091a` covers position 2,048
+in raw layer 0, CSA layer 2 and HCA layer 3. Independent preparation references
+consume actual learned projection outputs; replay uses actual caches, selections
+and sinks. All repeated arithmetic investigations used identical hashed tensors,
+without another model load. The normal engine cache was restored afterward.
+
+Real CSA data exposed a 1.17e-5 relative attention difference that synthetic inputs
+did not. The same-probability scalar comparison isolated long PV accumulation.
+64-element short independent hi/lo chains plus compensated FP32 combination
+reduce it to **9.91e-7**, without widening the target. Raw/HCA differences are
+5.69e-7 / 5.33e-7. New QK/PV use 64/63 registers with zero local bytes.
+[Normal GPU CI 39180592052](https://github.com/mylordmonkeyman/Abyss/actions/runs/39180592052)
+and hosted Python/CPU-build checks also pass. See [all real-stage evidence](p2-real-stages-2026-10-18.json).
+
+This is isolated real-input numerical validation, not a runtime improvement or
+full-model KL pass. Actual output-weight replay, downstream model-logit/quality
+gates, wider layer/position coverage and profitable fused geometry remain.
+Production arithmetic/dispatch stay unchanged.
+
 [v8 run 39149507205](https://github.com/mylordmonkeyman/Abyss/actions/runs/39149507205),
 commit `f7138de`, passed **89 isolated Q8_1 scatter byte/guard cases**, with zero
 memcheck/synccheck errors. Existing DeepSeek/MMA checks also passed; the engine
