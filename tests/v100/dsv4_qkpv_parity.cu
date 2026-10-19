@@ -49,6 +49,12 @@ void run(int n,int mode,float pscale) {
             out[h*D+d]+=prob[h*n+r]*__half2float(__ushort_as_half(keys[r*D+d]));
     }
     const Error eq=compare(dscore.get(),score),ep=compare(dp.get(),prob),ed=compare(dden.get(),den),eo=compare(dout.get(),out);
+    if(n)qk_mma_chunked<<<dim3(H/8,(n+31)/32),32>>>(dq.p,dk.p,dscore.p,n);
+    ck(cudaGetLastError());ck(cudaDeviceSynchronize());
+    const auto chunked=compare(dscore.get(),score);need(chunked.rel<1e-5,"chunked QK FP64 parity");
+    std::printf("{\"diagnostic\":\"chunked_qk\",\"keys\":%d,\"mode\":%d,"
+                "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"pass\":true}\n",n,mode,chunked.rel,chunked.max_abs);
+
     const auto scalar_pv=dpvscalar.get();compare(scalar_pv,out);
     const std::vector<double> scalar_pv_reference(scalar_pv.begin(),scalar_pv.begin()+H*D);
     const Error em=compare(dout.get(),scalar_pv_reference);
@@ -73,6 +79,9 @@ int main() {
             run(n,0,1);run(n,0,1024);
         }
         for(int mode:{1,2,3,4})run(129,mode,1024);
+        cudaFuncAttributes chunked{};ck(cudaFuncGetAttributes(&chunked,qk_mma_chunked));
+        need(chunked.localSizeBytes==0,"chunked QK local-memory spill/storage");
+        std::printf("{\"diagnostic\":\"chunked_qk_resources\",\"registers\":%d,\"local_bytes\":%zu,\"pass\":true}\n",chunked.numRegs,chunked.localSizeBytes);
         cudaFuncAttributes qk{},pv{};ck(cudaFuncGetAttributes(&qk,qk_mma));ck(cudaFuncGetAttributes(&pv,pv_mma));
         int qk_blocks=0,pv_blocks=0;
         ck(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&qk_blocks,qk_mma,32,0));

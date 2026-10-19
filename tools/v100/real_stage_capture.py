@@ -94,7 +94,7 @@ def main():
         with (out/name).open('w') as log:
             subprocess.run(prefix+[str(executable),str(root)],stdout=log,stderr=subprocess.STDOUT,check=True,timeout=300)
     rows=[json.loads(line) for line in (out/'real-stage-replay.jsonl').read_text().splitlines()]
-    if len([x for x in rows if 'real_stage' in x])!=27 or not all(x.get('pass') for x in rows):
+    if len([x for x in rows if 'real_stage' in x])!=33 or not all(x.get('pass') for x in rows):
         raise ValueError('real-stage replay count or result mismatch')
     for name in ('real-stage-memcheck.log','real-stage-synccheck.log'):
         if 'ERROR SUMMARY: 0 errors' not in (out/name).read_text():

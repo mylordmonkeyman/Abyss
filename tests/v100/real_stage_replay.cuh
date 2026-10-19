@@ -45,7 +45,7 @@ void real_stage_case(const std::filesystem::path& root,int expected_ratio) {
     const auto eqprep=compare(q,query_ref),ekv=compare(stored_kv,kv_ref),ekvr=compare(stored_kv,kv_rounded);
     need(eqprep.rel<1e-5,"real query preparation FP64 parity");
     need(ekv.rel<5e-4 && ekvr.rel<2e-4,"real raw KV preparation and F16 storage parity");
-    Buffer<float> dq(q),dsink(sinks),scores(std::vector<float>(H*n+GUARD,sentinel)),
+    Buffer<float> dq(q),dsink(sinks),original(std::vector<float>(H*n+GUARD,sentinel)),scalar_pv(std::vector<float>(H*D+GUARD,sentinel)),scores(std::vector<float>(H*n+GUARD,sentinel)),
                   prob(std::vector<float>(H*n+GUARD,sentinel)),den(std::vector<float>(H+GUARD,sentinel)),
                   pv(std::vector<float>(H*D+GUARD,sentinel)),output(std::vector<float>(H*D+GUARD,sentinel));
     Buffer<uint16_t> dk(keys),dc(comp),gathered(std::vector<uint16_t>(n*D+GUARD,0x7bff));
@@ -63,11 +63,12 @@ void real_stage_case(const std::filesystem::path& root,int expected_ratio) {
     for(size_t i=n*D;i<gv.size();++i)need(gv[i]==0x7bff,"real gather key guard");
     for(size_t i=n;i<row_ids.size();++i)need(row_ids[i]==-12345,"real gather ID guard");
     auto launch=[&](cudaStream_t stream) {
-        qk_mma<<<dim3(H/8,(n+31)/32),32,0,stream>>>(dq.p,gathered.p,scores.p,n);
+        qk_mma_chunked<<<dim3(H/8,(n+31)/32),32,0,stream>>>(dq.p,gathered.p,scores.p,n);
         softmax_sink<<<1,H,0,stream>>>(scores.p,dsink.p,prob.p,den.p,n);
         pv_mma<<<dim3(H/8,D/32),32,0,stream>>>(prob.p,gathered.p,pv.p,n,1024);
         inverse_rope<<<H,D,0,stream>>>(pv.p,output.p,rope,p);
     };
+    qk_mma<<<dim3(H/8,(n+31)/32),32>>>(dq.p,gathered.p,original.p,n);
     launch(nullptr);ck(cudaGetLastError());ck(cudaDeviceSynchronize());
     cudaStream_t stream;cudaGraph_t graph;cudaGraphExec_t executable;
     ck(cudaStreamCreateWithFlags(&stream,cudaStreamNonBlocking));
@@ -75,6 +76,9 @@ void real_stage_case(const std::filesystem::path& root,int expected_ratio) {
     ck(cudaStreamEndCapture(stream,&graph));ck(cudaGraphInstantiate(&executable,graph,nullptr,nullptr,0));
     for(int i=0;i<3;++i)ck(cudaGraphLaunch(executable,stream));
     ck(cudaStreamSynchronize(stream));ck(cudaGraphExecDestroy(executable));ck(cudaGraphDestroy(graph));ck(cudaStreamDestroy(stream));
+    pv_scalar<<<(H*D+127)/128,128>>>(prob.p,gathered.p,scalar_pv.p,n);
+    ck(cudaGetLastError());ck(cudaDeviceSynchronize());
+    const auto sp=scalar_pv.get();const std::vector<double> sp_ref(sp.begin(),sp.begin()+H*D);
     std::vector<double> qk(H*n),pr(H*n),dn(H),latent(H*D),rotated(H*D),f32(baseline.begin(),baseline.end());
     for(int h=0;h<H;++h) {
         double mx=sinks[h];
@@ -102,6 +106,9 @@ void real_stage_case(const std::filesystem::path& root,int expected_ratio) {
     stage("query_prep",eqprep);stage("raw_kv_with_storage",ekv,5e-4);stage("raw_kv_rounded_reference",ekvr,2e-4);
     stage("qk",eq);stage("probability",ep);stage("sink_denominator",ed);
     stage("pv",ev);stage("inverse_rope",eo);stage("versus_captured_fp32",ef);
+    stage("qk_original",compare(original.get(),qk));
+    const auto escalar=compare(pv.get(),sp_ref);stage("pv_vs_scalar_probability",escalar);
+    need(escalar.rel<1e-5,"real PV scalar-probability screen");
     need(eq.rel<1e-5 && ep.rel<1e-5 && ed.rel<1e-5,"real QK/softmax screen");
     need(ev.rel<1e-5 && eo.rel<1e-5 && ef.rel<1e-5,"real PV/inverse RoPE screen");
 }
