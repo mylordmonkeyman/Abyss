@@ -34,11 +34,11 @@ it only after the completion ledger is committed and the user is notified.
 | Exact source/build/model identity | Full shard hashes now measured and match local SHA256SUMS; preserve upstream binaries and selected SM70 image evidence |
 | Baseline repeatability | Completed 32-row screen: both same-base pairs and cross-base top-1 32/32; GPU-only historical pair byte-identical; bounded corpus scope retained |
 | Extended short matrix | Complete: 108 requests, three interleaved pairs and excluded first repetition; active-window telemetry reviewed, no causal speedup claimed |
-| Filled context | 32K and 64K three pairs complete with 1024 outputs; 128K units progressing, original historical 128K also preserved |
-| Chunk settings | 512/1024/4096 plus auto; 128 unsupported on the upstream 256-token chunk grid, not silently relabeled |
-| Runtime dispatch | Captured actual CPU/AVX2, MMQ and GLU/fallback decisions; per-token route/cache and exact per-call input-duplication detail remain open |
+| Filled context | 32K/64K/128K three pairs each complete with 1024 outputs; summaries and exact artifact digests preserved |
+| Chunk settings | 512/1024/4096 completed three pairs each, plus existing auto; 128 unsupported on the upstream 256-token chunk grid |
+| Runtime dispatch | Captured CPU/AVX2, MMQ and GLU/fallback decisions and exact per-call input duplication; detailed per-token route/cache remains open |
 | Unique memory worksheet | Conserved per-SHA host/GPU budget and alias-deduped backing pages; symbol-backed allocation components and source-derived borrowed-arena layout reconciled |
-| Long-context critical path | Rootless CUDA timeline/events at filled context; report top three wall-path contributors and overlap limits |
+| Long-context critical path | 32K/128K rootless timelines reviewed in P0_LONG_RESULTS.md; top three main-stream contributors and unassigned/overlap limits preserved |
 | Sustained telemetry | Active-window clocks/power/thermal, faults/I/O, NUMA placement, pressure and preserved safety floor |
 | Final decisions | Base, indexer/attention hotspots, repeated quantization, CPU type path, static balance and ≤3 P3 admissions with evidence |
 
@@ -92,8 +92,20 @@ CUDA build/device run `39203344685` passed this extension. All remaining matrix
 and timeline units in run `39194497860` passed. A dispatch-only ledger collection
 is next: the workflow now defaults to that phase and requires the exact-count
 summary to reconcile before accepting the capture. Immutable memory arms are
-repeated only by an explicit manual `phase=all` selection. The long/chunk/trace
-artifacts still need review; workflow success alone does not close P0.
+repeated only by an explicit manual `phase=all` selection. Long/chunk/trace
+artifact review is recorded below; workflow success alone does not close P0.
+
+Dispatch-only run `39221345537` passed; artifact `12172151257` ZIP digest was
+verified and its exact counts independently recomputed from the host ledger.
+See `p0-exact-input-reuse-2026-10-19.json`. It captures 26,367 keys, no drops,
+and no unresolved decode joins. Of 4,354,054 actual input rows, the per-call
+distinct sum is 3,287,086 and the layer-invocation union sum is 738,354.
+Thus 1,066,968 repeats occur within calls and 2,548,732 across calls, totaling
+3,615,700 repeated rows (83.04%). The full 2,992-cell exact per-call shape
+histogram stays in the bounded artifact with its canonical digest recorded in
+the compact evidence. Diagnostic synchronization changes planning opportunities;
+do not pool this population with the earlier capture or claim a timing gain.
+Detailed per-token route/cache evidence remains open.
 
 ## Interrupted long-context campaign
 
@@ -119,7 +131,7 @@ observations do not establish a causal base performance improvement/regression.
 
 `P0_RECOVERY.md` defines the separate accounting and replacement long-context
 collection. Allocation/dispatch run `39194149121` completed successfully after
-a passing CUDA rebuild. Remaining run `39194497860` is active under the same GPU lock.
+a passing CUDA rebuild. Remaining run `39194497860` completed under the same GPU lock.
 New long units use consistent fresh processes per context and immediately upload
 individual checkpoints. Do not merge their timing strata with the original
 carry-over-residency long arm. All six 32K units passed in the intended
@@ -138,8 +150,20 @@ tokens/s, decode 23.50 / 23.02, historical/current respectively. Generated
 trajectories differ in all three pairs; no causal base regression follows.
 Warm decode samples show 1380/877 MHz on both bases and no sampled thermal or
 power-cap reason. Prefill samples include power caps; minimum active-window
-MemAvailable is 45.36 GiB. The 128K units are next; inspect fresh job state
-before reporting later completion counts.
+MemAvailable is 45.36 GiB. The later 128K/chunk/timeline closure is recorded below.
+
+The complete remaining run has now passed all 23 units. See
+`P0_LONG_RESULTS.md` and `p0-remaining-2026-10-19.json` for digest-verified
+128K/chunk/timeline results and the reproducible checkpoint parser. At 128K,
+paired median prefill elapsed change is -0.01239%, decode -0.47698%; output
+trajectories differ. Minimum active-window MemAvailable stays above 44.94 GiB.
+No thermal reason was sampled. The 128K prefill main-stream wall-lane leaders
+are indexer 49.38%, attention 21.14%, MMQ 16.24%. Decode exposes CPU-expert waits
+(22.81% at 128K). These are bounded timeline observations, not a complete causal
+CPU/GPU graph or proof of a better static split. P1/P2 are not P0 prerequisites.
+46 local tooling tests pass, including rejection of changed artifact ZIPs and
+incomplete/shape-mismatched process pairs. Detailed per-token route/cache,
+current-base THP/fetch dispositions and final base/P3 decisions remain open.
 
 ## Original campaign (preserved, interrupted)
 

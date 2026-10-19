@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "source_run": 39221345537,
+  "artifact_id": 12172151257,
+  "artifact_zip_sha256": "0e582613e939b39bca910c0d34a8ab8675c86627bca064c5d9da2a4326036410",
+  "binary_sha256": "e63bb97c870fb4b43bc5ab33a8dab713107d3475d72222d9828e79f310950714",
+  "capture": {
+    "keys": 26367,
+    "dropped_calls": 0,
+    "semantics": "host_calls_not_device_execution_or_physical_traffic"
+  },
+  "unresolved_decode_service": [],
+  "input_quantization": {
+    "actual_routed_input_rows": 4354054,
+    "exact": {
+      "distinct_rows_summed_per_call": 3287086,
+      "distinct_rows_summed_per_layer_invocation": 738354,
+      "repeated_rows_within_calls": 1066968,
+      "repeated_rows_across_calls": 2548732,
+      "total_repeated_input_rows": 3615700,
+      "method": "Actual sorted GPU gather IDs copied to the host in a diagnostic run; each layer invocation has a separate union. Histogram preserves per-call (input rows, distinct rows) counts; no chronology inferred.",
+      "histogram_cells": 2992,
+      "histogram_canonical_sha256": "e35ce8d409cbcc8400f5988ea5f75602935406c315d33e4fc4a5f14dca78458b",
+      "histogram_location": "Digest-verified artifact dispatch-summary.json: input_quantization.exact.per_call_histogram"
+    },
+    "distinct_layer_chunk_input_rows_upper_bound": 738360,
+    "repeated_input_rows_lower_bound": 3615694,
+    "method": "Each full-prompt layer/chunk invocation has at most chunk_tokens distinct input rows. Account for repeated requests via the GLU-decision call count. Routed MMQ input rows above this bound prove repeated quantization. See exact when gather IDs were captured."
+  },
+  "scope": "Working-fork host dispatch capture, 600/8192 prompts, two requests each, 16 outputs. Phase 0 setup/calibration; phase 1 prefill; phase 2 decode. T2-8 here are expert prefill batches, not an enabled speculative verifier. No timings/DRAM bandwidth inferred from counters.",
+  "limitation": "Additional diagnostic gather-ID copy/synchronization can perturb routing plans and timing. Not pooled with previous diagnostic population or clean timings."
+}

@@ -1,0 +1,5682 @@
+{
+  "schema": 1,
+  "source_run": 39194497860,
+  "matrix": [
+    {
+      "schema": 1,
+      "phase": "chunk",
+      "complete_arms": [
+        {
+          "index": 0,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 5,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 5
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 5
+            },
+            "power_w": {
+              "min": 126.51,
+              "median": 169.87,
+              "max": 225.71,
+              "samples": 5
+            },
+            "temperature_c": {
+              "min": 51.0,
+              "median": 56.0,
+              "max": 59.0,
+              "samples": 5
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 55784542208,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 195.4,
+                  "median": 210.555,
+                  "max": 225.71,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 57.5,
+                  "max": 59.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 126.51,
+                  "median": 126.51,
+                  "max": 126.51,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 59957944320,
+                "median": 59968204800,
+                "max": 59987308544,
+                "samples": 5
+              },
+              "1": {
+                "min": 18758701056,
+                "median": 18765647872,
+                "max": 18775453696,
+                "samples": 5
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 355.99127404201323,
+              "decode_tokens_s": 22.417205204994836,
+              "ttft_ms": 23014.841811000224,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4146
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 216,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 378.18248967061373,
+              "decode_tokens_s": 25.949803349146492,
+              "ttft_ms": 21666.297894998934,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4116
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 600,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 5,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 5
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 5
+            },
+            "power_w": {
+              "min": 125.36,
+              "median": 160.22,
+              "max": 202.61,
+              "samples": 5
+            },
+            "temperature_c": {
+              "min": 52.0,
+              "median": 56.0,
+              "max": 58.0,
+              "samples": 5
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 55722663936,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 160.22,
+                  "median": 175.945,
+                  "max": 191.67,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 57.0,
+                  "max": 58.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 128.22,
+                  "median": 128.22,
+                  "max": 128.22,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 59954012160,
+                "median": 59954589696,
+                "max": 59954794496,
+                "samples": 5
+              },
+              "1": {
+                "min": 18777800704,
+                "median": 18780295168,
+                "max": 18802180096,
+                "samples": 5
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 360.49198002156265,
+              "decode_tokens_s": 22.700670379172134,
+              "ttft_ms": 22727.169203999438,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4158
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 384,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 388.49500865482656,
+              "decode_tokens_s": 27.808555475895634,
+              "ttft_ms": 21090.986720999354,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4111
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 388,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 6,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 6
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 6
+            },
+            "power_w": {
+              "min": 49.3,
+              "median": 156.20999999999998,
+              "max": 211.26,
+              "samples": 6
+            },
+            "temperature_c": {
+              "min": 46.0,
+              "median": 54.5,
+              "max": 59.0,
+              "samples": 6
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 55727423488,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 179.52,
+                  "median": 195.39,
+                  "max": 211.26,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 58.0,
+                  "median": 58.5,
+                  "max": 59.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 49.3,
+                  "median": 49.3,
+                  "max": 49.3,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 54.0,
+                  "median": 54.0,
+                  "max": 54.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 17283330048,
+                "median": 17322891264.0,
+                "max": 17331474432,
+                "samples": 6
+              },
+              "1": {
+                "min": 60344332288,
+                "median": 61412624384.0,
+                "max": 61417140224,
+                "samples": 6
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 344.6505953132231,
+              "decode_tokens_s": 22.203719122953093,
+              "ttft_ms": 23772.095733000242,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4145
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 332,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 385.1687464149027,
+              "decode_tokens_s": 26.902059688944934,
+              "ttft_ms": 21273.14785800081,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4114
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 612,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 5,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 5
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 5
+            },
+            "power_w": {
+              "min": 64.92,
+              "median": 106.06,
+              "max": 188.98,
+              "samples": 5
+            },
+            "temperature_c": {
+              "min": 50.0,
+              "median": 54.0,
+              "max": 58.0,
+              "samples": 5
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 55711911936,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 64.92,
+                  "median": 92.77000000000001,
+                  "max": 120.62,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.5,
+                  "max": 58.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 17324929024,
+                "median": 17330618368,
+                "max": 17342758912,
+                "samples": 5
+              },
+              "1": {
+                "min": 61381099520,
+                "median": 61407260672,
+                "max": 61411287040,
+                "samples": 5
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 358.03413386945215,
+              "decode_tokens_s": 21.868379689742365,
+              "ttft_ms": 22883.422318000157,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4144
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 648,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 381.54144233097975,
+              "decode_tokens_s": 26.533446653261745,
+              "ttft_ms": 21474.506329999713,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4130
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 364,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 5,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 5
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 5
+            },
+            "power_w": {
+              "min": 93.36,
+              "median": 188.67,
+              "max": 201.05,
+              "samples": 5
+            },
+            "temperature_c": {
+              "min": 49.0,
+              "median": 54.0,
+              "max": 59.0,
+              "samples": 5
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 55670308864,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 188.67,
+                  "median": 194.86,
+                  "max": 201.05,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 57.5,
+                  "max": 59.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 17348620288,
+                "median": 17369669632,
+                "max": 17382715392,
+                "samples": 5
+              },
+              "1": {
+                "min": 61361913856,
+                "median": 61362454528,
+                "max": 61362724864,
+                "samples": 5
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 358.37715345646717,
+              "decode_tokens_s": 22.32999546421967,
+              "ttft_ms": 22861.421263998636,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4150
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 944,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 385.799998116211,
+              "decode_tokens_s": 26.937160654909718,
+              "ttft_ms": 21237.57377899892,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4107
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 320,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 5,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 5
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 5
+            },
+            "power_w": {
+              "min": 124.68,
+              "median": 152.56,
+              "max": 210.99,
+              "samples": 5
+            },
+            "temperature_c": {
+              "min": 53.0,
+              "median": 57.0,
+              "max": 58.0,
+              "samples": 5
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 55626452992,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 152.56,
+                  "median": 181.775,
+                  "max": 210.99,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.5,
+                  "max": 58.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 124.68,
+                  "median": 124.68,
+                  "max": 124.68,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 17321676800,
+                "median": 17342697472,
+                "max": 17342705664,
+                "samples": 5
+              },
+              "1": {
+                "min": 61410848768,
+                "median": 61411782656,
+                "max": 61411786752,
+                "samples": 5
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 354.561429325762,
+              "decode_tokens_s": 21.97990898943934,
+              "ttft_ms": 23108.440251999127,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4157
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 304,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 386.62299538431046,
+              "decode_tokens_s": 25.260000394687506,
+              "ttft_ms": 21191.182436001327,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 173,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4119
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 1200,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        }
+      ],
+      "warm_summary": [
+        {
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "base": "current",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 385.1687464149027,
+            "median": 386.62299538431046,
+            "max": 388.49500865482656,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 25.260000394687506,
+            "median": 26.902059688944934,
+            "max": 27.808555475895634,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 21090.986720999354,
+            "median": 21191.182436001327,
+            "max": 21273.14785800081,
+            "samples": 3
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "base": "historical",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 378.18248967061373,
+            "median": 381.54144233097975,
+            "max": 385.799998116211,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 25.949803349146492,
+            "median": 26.533446653261745,
+            "max": 26.937160654909718,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 21237.57377899892,
+            "median": 21474.506329999713,
+            "max": 21666.297894998934,
+            "samples": 3
+          }
+        }
+      ],
+      "interpretation": "Request 0 is excluded from warm summaries. Process order and output trajectories matter. Clock/power/NUMA distributions are observations, not proof of matched conditions or causal speedup.",
+      "length": 8192,
+      "prefill": "1024",
+      "artifacts": [
+        {
+          "unit": 19,
+          "artifact_id": 12168534691,
+          "zip_sha256": "1d52fcdbae8fcf08145b1121d21c2b8a0976edbcf080d4d025143efe47bed8a1"
+        }
+      ],
+      "actual_process_order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "paired": [
+        {
+          "pair": 0,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -2.654479145026889,
+          "decode_ms_change_percent": -6.684101690791888,
+          "ttft_ms_change_percent": -2.6553275358240813,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 1,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -0.9417441362222223,
+          "decode_ms_change_percent": -1.370203768578604,
+          "ttft_ms_change_percent": -0.937662868261635,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 2,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -0.21286816302310552,
+          "decode_ms_change_percent": 6.639589208300012,
+          "ttft_ms_change_percent": -0.21843993800962913,
+          "generated_ids_equal": false
+        }
+      ],
+      "paired_median_percent": {
+        "prefill_ms_change_percent": -0.9417441362222223,
+        "decode_ms_change_percent": -1.370203768578604,
+        "ttft_ms_change_percent": -0.937662868261635
+      }
+    },
+    {
+      "schema": 1,
+      "phase": "chunk",
+      "complete_arms": [
+        {
+          "index": 0,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 3,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1357.0,
+              "median": 1357.0,
+              "max": 1365.0,
+              "samples": 3
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 3
+            },
+            "power_w": {
+              "min": 216.35,
+              "median": 239.84,
+              "max": 247.12,
+              "samples": 3
+            },
+            "temperature_c": {
+              "min": 56.0,
+              "median": 57.0,
+              "max": 61.0,
+              "samples": 3
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 54508736512,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1357.0,
+                  "median": 1357.0,
+                  "max": 1357.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 216.35,
+                  "median": 231.735,
+                  "max": 247.12,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 59.0,
+                  "max": 61.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 59984838656,
+                "median": 59985661952,
+                "max": 60016287744,
+                "samples": 3
+              },
+              "1": {
+                "min": 19897913344,
+                "median": 19900481536,
+                "max": 19932340224,
+                "samples": 3
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 614.8257668435391,
+              "decode_tokens_s": 21.80579216354344,
+              "ttft_ms": 13327.437912999812,
+              "active_samples": 1,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3988
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 648,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 624.0572865087224,
+              "decode_tokens_s": 25.27546305438174,
+              "ttft_ms": 13130.565344999923,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3965
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 348,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 3,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1372.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 3
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 3
+            },
+            "power_w": {
+              "min": 120.82,
+              "median": 211.82,
+              "max": 235.31,
+              "samples": 3
+            },
+            "temperature_c": {
+              "min": 57.0,
+              "median": 58.0,
+              "max": 58.0,
+              "samples": 3
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 54521315328,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1372.0,
+                  "median": 1376.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 120.82,
+                  "median": 178.065,
+                  "max": 235.31,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 58.0,
+                  "median": 58.0,
+                  "max": 58.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 18656264192,
+                "median": 18673868800,
+                "max": 18734075904,
+                "samples": 3
+              },
+              "1": {
+                "min": 61211303936,
+                "median": 61224919040,
+                "max": 61239541760,
+                "samples": 3
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 617.2625550992728,
+              "decode_tokens_s": 21.10504707414797,
+              "ttft_ms": 13419.920260999788,
+              "active_samples": 1,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4003
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 536,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 627.6769363971406,
+              "decode_tokens_s": 24.39303274002363,
+              "ttft_ms": 13055.034368999259,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3984
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 224,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 4,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1357.0,
+              "median": 1376.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 120.29,
+              "median": 179.905,
+              "max": 221.3,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 46.0,
+              "median": 57.0,
+              "max": 58.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 1,
+            "min_host_memavailable_bytes": 54529437696,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1357.0,
+                  "median": 1357.0,
+                  "max": 1357.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 208.06,
+                  "median": 208.06,
+                  "max": 208.06,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 58.0,
+                  "median": 58.0,
+                  "max": 58.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 120.29,
+                  "median": 120.29,
+                  "max": 120.29,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 18419179520,
+                "median": 18553749504.0,
+                "max": 18607009792,
+                "samples": 4
+              },
+              "1": {
+                "min": 61335965696,
+                "median": 61337313280.0,
+                "max": 61352042496,
+                "samples": 4
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 578.163596584092,
+              "decode_tokens_s": 20.78394440294872,
+              "ttft_ms": 14171.829289000016,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3995
+              },
+              "global_vm_delta": {
+                "pgmajfault": 1,
+                "pgpgin": 128,
+                "pgpgout": 356,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 636.474527810798,
+              "decode_tokens_s": 26.71731824918074,
+              "ttft_ms": 12874.976796998453,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3950
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 292,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 4,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 4
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 4
+            },
+            "power_w": {
+              "min": 128.37,
+              "median": 180.82999999999998,
+              "max": 232.46,
+              "samples": 4
+            },
+            "temperature_c": {
+              "min": 47.0,
+              "median": 57.5,
+              "max": 58.0,
+              "samples": 4
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 54530347008,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 228.34,
+                  "median": 228.34,
+                  "max": 228.34,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 58.0,
+                  "median": 58.0,
+                  "max": 58.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 128.37,
+                  "median": 128.37,
+                  "max": 128.37,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 58.0,
+                  "median": 58.0,
+                  "max": 58.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 18531315712,
+                "median": 18554515456.0,
+                "max": 18624765952,
+                "samples": 4
+              },
+              "1": {
+                "min": 61330554880,
+                "median": 61330876416.0,
+                "max": 61331693568,
+                "samples": 4
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 600.3004433371194,
+              "decode_tokens_s": 20.33069140234121,
+              "ttft_ms": 13649.922624999817,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3986
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 484,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 632.7530007878516,
+              "decode_tokens_s": 27.760307098397277,
+              "ttft_ms": 12950.477140999283,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3950
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 184,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 3,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1357.0,
+              "median": 1372.0,
+              "max": 1380.0,
+              "samples": 3
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 3
+            },
+            "power_w": {
+              "min": 118.76,
+              "median": 213.85,
+              "max": 215.91,
+              "samples": 3
+            },
+            "temperature_c": {
+              "min": 56.0,
+              "median": 58.0,
+              "max": 59.0,
+              "samples": 3
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 54539026432,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 2,
+                "sm_clock_mhz": {
+                  "min": 1372.0,
+                  "median": 1376.0,
+                  "max": 1380.0,
+                  "samples": 2
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 2
+                },
+                "power_w": {
+                  "min": 118.76,
+                  "median": 167.335,
+                  "max": 215.91,
+                  "samples": 2
+                },
+                "temperature_c": {
+                  "min": 58.0,
+                  "median": 58.5,
+                  "max": 59.0,
+                  "samples": 2
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 18541711360,
+                "median": 18565959680,
+                "max": 18607128576,
+                "samples": 3
+              },
+              "1": {
+                "min": 61341663232,
+                "median": 61341851648,
+                "max": 61342035968,
+                "samples": 3
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 617.5277781965657,
+              "decode_tokens_s": 20.690212559605595,
+              "ttft_ms": 13268.704252001044,
+              "active_samples": 1,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3983
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 488,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 629.814715153379,
+              "decode_tokens_s": 25.341516531379924,
+              "ttft_ms": 13010.66640099998,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3980
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 360,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 3,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1365.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 3
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 3
+            },
+            "power_w": {
+              "min": 52.33,
+              "median": 172.26,
+              "max": 196.85,
+              "samples": 3
+            },
+            "temperature_c": {
+              "min": 51.0,
+              "median": 56.0,
+              "max": 61.0,
+              "samples": 3
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 1,
+            "min_host_memavailable_bytes": 54599602176,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1365.0,
+                  "median": 1365.0,
+                  "max": 1365.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 196.85,
+                  "median": 196.85,
+                  "max": 196.85,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 61.0,
+                  "median": 61.0,
+                  "max": 61.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 1
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 60240728064,
+                "median": 60240728064,
+                "max": 60240728064,
+                "samples": 3
+              },
+              "1": {
+                "min": 19640848384,
+                "median": 19640905728,
+                "max": 19677507584,
+                "samples": 3
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 616.1436866331719,
+              "decode_tokens_s": 20.41532425276723,
+              "ttft_ms": 13298.600256999634,
+              "active_samples": 2,
+              "process_io_delta": {
+                "write_bytes": 0,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4007
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 300,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 643.6861087320358,
+              "decode_tokens_s": 25.998293861965312,
+              "ttft_ms": 12905.756984999243,
+              "active_samples": 1,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 167,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 3976
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 252,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        }
+      ],
+      "warm_summary": [
+        {
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "base": "current",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 627.6769363971406,
+            "median": 636.474527810798,
+            "max": 643.6861087320358,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 24.39303274002363,
+            "median": 25.998293861965312,
+            "max": 26.71731824918074,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 12874.976796998453,
+            "median": 12905.756984999243,
+            "max": 13055.034368999259,
+            "samples": 3
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "base": "historical",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 624.0572865087224,
+            "median": 629.814715153379,
+            "max": 632.7530007878516,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 25.27546305438174,
+            "median": 25.341516531379924,
+            "max": 27.760307098397277,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 12950.477140999283,
+            "median": 13010.66640099998,
+            "max": 13130.565344999923,
+            "samples": 3
+          }
+        }
+      ],
+      "interpretation": "Request 0 is excluded from warm summaries. Process order and output trajectories matter. Clock/power/NUMA distributions are observations, not proof of matched conditions or causal speedup.",
+      "length": 8192,
+      "prefill": "4096",
+      "artifacts": [
+        {
+          "unit": 20,
+          "artifact_id": 12169117881,
+          "zip_sha256": "f923a876ab8f5724e1a9687738ff4b88af2ca3ff9be63d94b247c938170bb213"
+        }
+      ],
+      "actual_process_order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "paired": [
+        {
+          "pair": 0,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -0.5766740306239138,
+          "decode_ms_change_percent": 3.6175506496583854,
+          "ttft_ms_change_percent": -0.5752301901412515,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 1,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -0.5847094990190538,
+          "decode_ms_change_percent": 3.9037931857121233,
+          "ttft_ms_change_percent": -0.5829927590992545,
+          "generated_ids_equal": true
+        },
+        {
+          "pair": 2,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -2.1549934650572755,
+          "decode_ms_change_percent": -2.526232429221942,
+          "ttft_ms_change_percent": -0.8063339168597361,
+          "generated_ids_equal": false
+        }
+      ],
+      "paired_median_percent": {
+        "prefill_ms_change_percent": -0.5847094990190538,
+        "decode_ms_change_percent": 3.6175506496583854,
+        "ttft_ms_change_percent": -0.5829927590992545
+      }
+    },
+    {
+      "schema": 1,
+      "phase": "chunk",
+      "complete_arms": [
+        {
+          "index": 0,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 7,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 7
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 7
+            },
+            "power_w": {
+              "min": 86.11,
+              "median": 144.03,
+              "max": 169.78,
+              "samples": 7
+            },
+            "temperature_c": {
+              "min": 50.0,
+              "median": 54.0,
+              "max": 59.0,
+              "samples": 7
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 57573654528,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 3,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 3
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 3
+                },
+                "power_w": {
+                  "min": 146.5,
+                  "median": 152.46,
+                  "max": 169.78,
+                  "samples": 3
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 57.0,
+                  "max": 59.0,
+                  "samples": 3
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 0,
+                "sm_clock_mhz": null,
+                "memory_clock_mhz": null,
+                "power_w": null,
+                "temperature_c": null,
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 15589093376,
+                "median": 15592136704,
+                "max": 15592607744,
+                "samples": 7
+              },
+              "1": {
+                "min": 61352407040,
+                "median": 61355360256,
+                "max": 61358809088,
+                "samples": 7
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 227.02771611558683,
+              "decode_tokens_s": 22.246554391087475,
+              "ttft_ms": 36087.29395199953,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4371
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 8,
+                "pgpgout": 712,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 253.2475160598248,
+              "decode_tokens_s": 26.435903261116504,
+              "ttft_ms": 32351.69312800099,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4329
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 868,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 8,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 8
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 8
+            },
+            "power_w": {
+              "min": 110.54,
+              "median": 134.515,
+              "max": 190.29,
+              "samples": 8
+            },
+            "temperature_c": {
+              "min": 47.0,
+              "median": 55.5,
+              "max": 58.0,
+              "samples": 8
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 57579978752,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 3,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 3
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 3
+                },
+                "power_w": {
+                  "min": 120.62,
+                  "median": 173.1,
+                  "max": 190.29,
+                  "samples": 3
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 57.0,
+                  "max": 58.0,
+                  "samples": 3
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 134.77,
+                  "median": 134.77,
+                  "max": 134.77,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 15566114816,
+                "median": 15567028224.0,
+                "max": 15578955776,
+                "samples": 8
+              },
+              "1": {
+                "min": 61361442816,
+                "median": 61382053888.0,
+                "max": 61382144000,
+                "samples": 8
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 228.00650174790138,
+              "decode_tokens_s": 22.129631230442072,
+              "ttft_ms": 35932.129335000354,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4374
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 660,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 255.7091308636426,
+              "decode_tokens_s": 25.70952256613172,
+              "ttft_ms": 32041.36036499949,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4339
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 940,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 8,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 8
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 8
+            },
+            "power_w": {
+              "min": 49.07,
+              "median": 129.67000000000002,
+              "max": 156.8,
+              "samples": 8
+            },
+            "temperature_c": {
+              "min": 48.0,
+              "median": 55.0,
+              "max": 57.0,
+              "samples": 8
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 57621032960,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 3,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 3
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 3
+                },
+                "power_w": {
+                  "min": 127.9,
+                  "median": 131.44,
+                  "max": 156.8,
+                  "samples": 3
+                },
+                "temperature_c": {
+                  "min": 55.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 3
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 49.07,
+                  "median": 49.07,
+                  "max": 49.07,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 55.0,
+                  "median": 55.0,
+                  "max": 55.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 15560433664,
+                "median": 15574069248.0,
+                "max": 15574085632,
+                "samples": 8
+              },
+              "1": {
+                "min": 61374177280,
+                "median": 61375553536.0,
+                "max": 61376086016,
+                "samples": 8
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 230.29154707454956,
+              "decode_tokens_s": 21.938093442566757,
+              "ttft_ms": 35575.86535300106,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4362
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 8,
+                "pgpgout": 1160,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 253.0245889740335,
+              "decode_tokens_s": 25.609219318954825,
+              "ttft_ms": 32381.010425000568,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4354
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 744,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 8,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 8
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 8
+            },
+            "power_w": {
+              "min": 48.91,
+              "median": 126.03,
+              "max": 170.85,
+              "samples": 8
+            },
+            "temperature_c": {
+              "min": 48.0,
+              "median": 54.0,
+              "max": 58.0,
+              "samples": 8
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 57518657536,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 3,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 3
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 3
+                },
+                "power_w": {
+                  "min": 104.83,
+                  "median": 147.75,
+                  "max": 170.85,
+                  "samples": 3
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 57.0,
+                  "max": 58.0,
+                  "samples": 3
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 48.91,
+                  "median": 48.91,
+                  "max": 48.91,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 54.0,
+                  "median": 54.0,
+                  "max": 54.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 15541915648,
+                "median": 15559507968.0,
+                "max": 15563100160,
+                "samples": 8
+              },
+              "1": {
+                "min": 60339331072,
+                "median": 61384675328.0,
+                "max": 61392375808,
+                "samples": 8
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 228.64670845870015,
+              "decode_tokens_s": 21.58952907839698,
+              "ttft_ms": 35831.929975000094,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4369
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 940,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 254.30568835135907,
+              "decode_tokens_s": 26.347749120026347,
+              "ttft_ms": 32217.248042999927,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4343
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 776,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 8,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 8
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 8
+            },
+            "power_w": {
+              "min": 48.99,
+              "median": 146.94,
+              "max": 172.95,
+              "samples": 8
+            },
+            "temperature_c": {
+              "min": 47.0,
+              "median": 54.5,
+              "max": 57.0,
+              "samples": 8
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 57543651328,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 3,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 3
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 3
+                },
+                "power_w": {
+                  "min": 145.23,
+                  "median": 148.65,
+                  "max": 156.93,
+                  "samples": 3
+                },
+                "temperature_c": {
+                  "min": 55.0,
+                  "median": 57.0,
+                  "max": 57.0,
+                  "samples": 3
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 48.99,
+                  "median": 48.99,
+                  "max": 48.99,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 55.0,
+                  "median": 55.0,
+                  "max": 55.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 15551119360,
+                "median": 15554056192.0,
+                "max": 15557808128,
+                "samples": 8
+              },
+              "1": {
+                "min": 61383397376,
+                "median": 61395355648.0,
+                "max": 61395419136,
+                "samples": 8
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 230.65790436932292,
+              "decode_tokens_s": 22.28722663323583,
+              "ttft_ms": 35518.6543460004,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4363
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 940,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 253.04178340092852,
+              "decode_tokens_s": 27.14567471846966,
+              "ttft_ms": 32377.654156000062,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4321
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 904,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 7,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1380.0,
+              "median": 1380.0,
+              "max": 1380.0,
+              "samples": 7
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 7
+            },
+            "power_w": {
+              "min": 54.39,
+              "median": 135.01,
+              "max": 178.68,
+              "samples": 7
+            },
+            "temperature_c": {
+              "min": 51.0,
+              "median": 55.0,
+              "max": 58.0,
+              "samples": 7
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 0,
+            "min_host_memavailable_bytes": 57453682688,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 3,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 3
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 3
+                },
+                "power_w": {
+                  "min": 130.98,
+                  "median": 170.31,
+                  "max": 178.68,
+                  "samples": 3
+                },
+                "temperature_c": {
+                  "min": 55.0,
+                  "median": 57.0,
+                  "max": 58.0,
+                  "samples": 3
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              },
+              "decode_after_first_token": {
+                "samples": 1,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 1
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 1
+                },
+                "power_w": {
+                  "min": 54.39,
+                  "median": 54.39,
+                  "max": 54.39,
+                  "samples": 1
+                },
+                "temperature_c": {
+                  "min": 56.0,
+                  "median": 56.0,
+                  "max": 56.0,
+                  "samples": 1
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 15555166208,
+                "median": 15562964992,
+                "max": 15564537856,
+                "samples": 7
+              },
+              "1": {
+                "min": 61381455872,
+                "median": 61385355264,
+                "max": 61392252928,
+                "samples": 7
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-8192",
+              "request": 0,
+              "output_tokens": 128,
+              "prefill_tokens_s": 227.54101821272528,
+              "decode_tokens_s": 21.425821462647093,
+              "ttft_ms": 36149.68793799926,
+              "active_samples": 3,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4397
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 936,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-8192",
+              "request": 1,
+              "output_tokens": 128,
+              "prefill_tokens_s": 262.90790520937634,
+              "decode_tokens_s": 25.40791615387669,
+              "ttft_ms": 31162.90778399889,
+              "active_samples": 4,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 181,
+                "cancelled_write_bytes": 0,
+                "syscr": 10,
+                "rchar": 38870,
+                "read_bytes": 0,
+                "wchar": 4339
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 0,
+                "pgpgout": 572,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        }
+      ],
+      "warm_summary": [
+        {
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "base": "current",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 253.0245889740335,
+            "median": 255.7091308636426,
+            "max": 262.90790520937634,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 25.40791615387669,
+            "median": 25.609219318954825,
+            "max": 25.70952256613172,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 31162.90778399889,
+            "median": 32041.36036499949,
+            "max": 32381.010425000568,
+            "samples": 3
+          }
+        },
+        {
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "base": "historical",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 253.04178340092852,
+            "median": 253.2475160598248,
+            "max": 254.30568835135907,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 26.347749120026347,
+            "median": 26.435903261116504,
+            "max": 27.14567471846966,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 32217.248042999927,
+            "median": 32351.69312800099,
+            "max": 32377.654156000062,
+            "samples": 3
+          }
+        }
+      ],
+      "interpretation": "Request 0 is excluded from warm summaries. Process order and output trajectories matter. Clock/power/NUMA distributions are observations, not proof of matched conditions or causal speedup.",
+      "length": 8192,
+      "prefill": "512",
+      "artifacts": [
+        {
+          "unit": 18,
+          "artifact_id": 12168168563,
+          "zip_sha256": "f4b1dcbb9861bba4e2ec7440998b2ae4a9c931c4b63e79244e8b107f3dd58973"
+        }
+      ],
+      "actual_process_order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "paired": [
+        {
+          "pair": 0,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -0.9626620666629448,
+          "decode_ms_change_percent": 2.825337161031838,
+          "ttft_ms_change_percent": -0.9592473623363462,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 1,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": 0.5063141817639893,
+          "decode_ms_change_percent": 2.88384347790287,
+          "ttft_ms_change_percent": 0.5083065499016826,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 2,
+          "case": "mixed-8192",
+          "output_tokens": 128,
+          "prefill_ms_change_percent": -3.752691194504243,
+          "decode_ms_change_percent": 6.839437575551921,
+          "ttft_ms_change_percent": -3.751804766794886,
+          "generated_ids_equal": false
+        }
+      ],
+      "paired_median_percent": {
+        "prefill_ms_change_percent": -0.9626620666629448,
+        "decode_ms_change_percent": 2.88384347790287,
+        "ttft_ms_change_percent": -0.9592473623363462
+      }
+    },
+    {
+      "schema": 1,
+      "phase": "long",
+      "complete_arms": [
+        {
+          "index": 0,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 75,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1282.0,
+              "median": 1357.0,
+              "max": 1380.0,
+              "samples": 75
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 75
+            },
+            "power_w": {
+              "min": 89.18,
+              "median": 193.08,
+              "max": 270.48,
+              "samples": 75
+            },
+            "temperature_c": {
+              "min": 57.0,
+              "median": 70.0,
+              "max": 72.0,
+              "samples": 75
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 15,
+            "min_host_memavailable_bytes": 48724987904,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 34,
+                "sm_clock_mhz": {
+                  "min": 1282.0,
+                  "median": 1357.0,
+                  "max": 1380.0,
+                  "samples": 34
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 34
+                },
+                "power_w": {
+                  "min": 89.18,
+                  "median": 193.22500000000002,
+                  "max": 269.2,
+                  "samples": 34
+                },
+                "temperature_c": {
+                  "min": 63.0,
+                  "median": 70.0,
+                  "max": 72.0,
+                  "samples": 34
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 5
+              },
+              "decode_after_first_token": {
+                "samples": 4,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 4
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 4
+                },
+                "power_w": {
+                  "min": 127.61,
+                  "median": 135.53,
+                  "max": 137.31,
+                  "samples": 4
+                },
+                "temperature_c": {
+                  "min": 60.0,
+                  "median": 61.5,
+                  "max": 64.0,
+                  "samples": 4
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 23668060160,
+                "median": 23681540096,
+                "max": 23682215936,
+                "samples": 75
+              },
+              "1": {
+                "min": 61891870720,
+                "median": 61892755456,
+                "max": 61898362880,
+                "samples": 75
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-131072",
+              "request": 0,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 356.9975296267748,
+              "decode_tokens_s": 20.070875278326593,
+              "ttft_ms": 367188.95248899935,
+              "active_samples": 37,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28961
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 4,
+                "pgpgout": 7432,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-131072",
+              "request": 1,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 356.96495903285677,
+              "decode_tokens_s": 20.174755942588632,
+              "ttft_ms": 367226.55115399905,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 29010
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 8,
+                "pgpgout": 7764,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 75,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1290.0,
+              "median": 1357.0,
+              "max": 1380.0,
+              "samples": 75
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 75
+            },
+            "power_w": {
+              "min": 54.8,
+              "median": 193.1,
+              "max": 276.22,
+              "samples": 75
+            },
+            "temperature_c": {
+              "min": 57.0,
+              "median": 70.0,
+              "max": 72.0,
+              "samples": 75
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 18,
+            "min_host_memavailable_bytes": 48680878080,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 33,
+                "sm_clock_mhz": {
+                  "min": 1290.0,
+                  "median": 1342.0,
+                  "max": 1380.0,
+                  "samples": 33
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 33
+                },
+                "power_w": {
+                  "min": 162.46,
+                  "median": 195.06,
+                  "max": 276.22,
+                  "samples": 33
+                },
+                "temperature_c": {
+                  "min": 66.0,
+                  "median": 71.0,
+                  "max": 72.0,
+                  "samples": 33
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 9
+              },
+              "decode_after_first_token": {
+                "samples": 4,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 4
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 4
+                },
+                "power_w": {
+                  "min": 123.09,
+                  "median": 129.865,
+                  "max": 137.03,
+                  "samples": 4
+                },
+                "temperature_c": {
+                  "min": 60.0,
+                  "median": 61.5,
+                  "max": 64.0,
+                  "samples": 4
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 23672197120,
+                "median": 23678570496,
+                "max": 23680360448,
+                "samples": 75
+              },
+              "1": {
+                "min": 61892722688,
+                "median": 61892837376,
+                "max": 61894107136,
+                "samples": 75
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-131072",
+              "request": 0,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.05675527615705,
+              "decode_tokens_s": 19.951912772731347,
+              "ttft_ms": 367131.7206170006,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 29011
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 4,
+                "pgpgout": 8112,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-131072",
+              "request": 1,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.009198151109,
+              "decode_tokens_s": 20.27144734966663,
+              "ttft_ms": 367374.3991310003,
+              "active_samples": 37,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28948
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 144,
+                "pgpgout": 8356,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 76,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1282.0,
+              "median": 1357.0,
+              "max": 1380.0,
+              "samples": 76
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 76
+            },
+            "power_w": {
+              "min": 49.19,
+              "median": 192.765,
+              "max": 278.45,
+              "samples": 76
+            },
+            "temperature_c": {
+              "min": 56.0,
+              "median": 70.0,
+              "max": 72.0,
+              "samples": 76
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 9,
+            "min_host_memavailable_bytes": 48687849472,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 33,
+                "sm_clock_mhz": {
+                  "min": 1290.0,
+                  "median": 1335.0,
+                  "max": 1380.0,
+                  "samples": 33
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 33
+                },
+                "power_w": {
+                  "min": 170.3,
+                  "median": 191.6,
+                  "max": 278.45,
+                  "samples": 33
+                },
+                "temperature_c": {
+                  "min": 67.0,
+                  "median": 70.0,
+                  "max": 72.0,
+                  "samples": 33
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 6
+              },
+              "decode_after_first_token": {
+                "samples": 5,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 5
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 5
+                },
+                "power_w": {
+                  "min": 49.19,
+                  "median": 130.38,
+                  "max": 139.23,
+                  "samples": 5
+                },
+                "temperature_c": {
+                  "min": 57.0,
+                  "median": 61.0,
+                  "max": 65.0,
+                  "samples": 5
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 58832019456,
+                "median": 59878348800.0,
+                "max": 59880480768,
+                "samples": 76
+              },
+              "1": {
+                "min": 25153343488,
+                "median": 25697341440.0,
+                "max": 25700311040,
+                "samples": 76
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-131072",
+              "request": 0,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.03749749053344,
+              "decode_tokens_s": 20.522317017690476,
+              "ttft_ms": 367148.41386400076,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28845
+              },
+              "global_vm_delta": {
+                "pgmajfault": 6,
+                "pgpgin": 412,
+                "pgpgout": 7248,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-131072",
+              "request": 1,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.1399377555486,
+              "decode_tokens_s": 20.100581425021296,
+              "ttft_ms": 367053.8774929992,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28981
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 16,
+                "pgpgout": 8020,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 75,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1275.0,
+              "median": 1335.0,
+              "max": 1380.0,
+              "samples": 75
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 75
+            },
+            "power_w": {
+              "min": 54.01,
+              "median": 189.15,
+              "max": 268.96,
+              "samples": 75
+            },
+            "temperature_c": {
+              "min": 57.0,
+              "median": 70.0,
+              "max": 72.0,
+              "samples": 75
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 16,
+            "min_host_memavailable_bytes": 48254955520,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 33,
+                "sm_clock_mhz": {
+                  "min": 1282.0,
+                  "median": 1327.0,
+                  "max": 1380.0,
+                  "samples": 33
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 33
+                },
+                "power_w": {
+                  "min": 173.48,
+                  "median": 193.74,
+                  "max": 262.0,
+                  "samples": 33
+                },
+                "temperature_c": {
+                  "min": 67.0,
+                  "median": 71.0,
+                  "max": 72.0,
+                  "samples": 33
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 9
+              },
+              "decode_after_first_token": {
+                "samples": 4,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 4
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 4
+                },
+                "power_w": {
+                  "min": 123.27,
+                  "median": 130.66500000000002,
+                  "max": 144.13,
+                  "samples": 4
+                },
+                "temperature_c": {
+                  "min": 61.0,
+                  "median": 62.5,
+                  "max": 64.0,
+                  "samples": 4
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 60011573248,
+                "median": 60013535232,
+                "max": 60013752320,
+                "samples": 75
+              },
+              "1": {
+                "min": 25557065728,
+                "median": 25561698304,
+                "max": 25561939968,
+                "samples": 75
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-131072",
+              "request": 0,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 356.7919970056824,
+              "decode_tokens_s": 19.82694024229915,
+              "ttft_ms": 367403.2245990002,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 29037
+              },
+              "global_vm_delta": {
+                "pgmajfault": 160,
+                "pgpgin": 296057,
+                "pgpgout": 354332,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-131072",
+              "request": 1,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 356.77412734303823,
+              "decode_tokens_s": 20.722117217570087,
+              "ttft_ms": 367862.827035,
+              "active_samples": 37,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28780
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 144,
+                "pgpgout": 8684,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "base": "historical",
+          "telemetry": {
+            "active_samples": 75,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1282.0,
+              "median": 1335.0,
+              "max": 1380.0,
+              "samples": 75
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 75
+            },
+            "power_w": {
+              "min": 54.99,
+              "median": 191.46,
+              "max": 266.61,
+              "samples": 75
+            },
+            "temperature_c": {
+              "min": 57.0,
+              "median": 70.0,
+              "max": 72.0,
+              "samples": 75
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 18,
+            "min_host_memavailable_bytes": 48664346624,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 33,
+                "sm_clock_mhz": {
+                  "min": 1290.0,
+                  "median": 1327.0,
+                  "max": 1380.0,
+                  "samples": 33
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 33
+                },
+                "power_w": {
+                  "min": 170.68,
+                  "median": 193.68,
+                  "max": 253.23,
+                  "samples": 33
+                },
+                "temperature_c": {
+                  "min": 66.0,
+                  "median": 71.0,
+                  "max": 72.0,
+                  "samples": 33
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 9
+              },
+              "decode_after_first_token": {
+                "samples": 4,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 4
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 4
+                },
+                "power_w": {
+                  "min": 126.07,
+                  "median": 128.16,
+                  "max": 130.47,
+                  "samples": 4
+                },
+                "temperature_c": {
+                  "min": 61.0,
+                  "median": 62.5,
+                  "max": 64.0,
+                  "samples": 4
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 60005060608,
+                "median": 60005986304,
+                "max": 60009422848,
+                "samples": 75
+              },
+              "1": {
+                "min": 25560485888,
+                "median": 25566859264,
+                "max": 25570054144,
+                "samples": 75
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-131072",
+              "request": 0,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.0612296045472,
+              "decode_tokens_s": 19.896785425604676,
+              "ttft_ms": 367123.70307599846,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28942
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 12,
+                "pgpgout": 7932,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-131072",
+              "request": 1,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.037692003235,
+              "decode_tokens_s": 20.687077647248962,
+              "ttft_ms": 367157.2191609994,
+              "active_samples": 37,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28828
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 32,
+                "pgpgout": 8376,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "base": "current",
+          "telemetry": {
+            "active_samples": 75,
+            "sample_interval_s": 10,
+            "sm_clock_mhz": {
+              "min": 1282.0,
+              "median": 1357.0,
+              "max": 1380.0,
+              "samples": 75
+            },
+            "memory_clock_mhz": {
+              "min": 877.0,
+              "median": 877.0,
+              "max": 877.0,
+              "samples": 75
+            },
+            "power_w": {
+              "min": 117.27,
+              "median": 198.9,
+              "max": 282.3,
+              "samples": 75
+            },
+            "temperature_c": {
+              "min": 56.0,
+              "median": 70.0,
+              "max": 72.0,
+              "samples": 75
+            },
+            "thermal_reason_samples": 0,
+            "power_cap_samples": 12,
+            "min_host_memavailable_bytes": 48693637120,
+            "interpretation": "Samples restricted to measured request wall windows, excluding startup. Ten-second sampling can miss short phases. No unsampled clock/thermal guarantee.",
+            "warm_wall_phases": {
+              "prefill_to_first_token": {
+                "samples": 33,
+                "sm_clock_mhz": {
+                  "min": 1282.0,
+                  "median": 1327.0,
+                  "max": 1380.0,
+                  "samples": 33
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 33
+                },
+                "power_w": {
+                  "min": 127.62,
+                  "median": 216.23,
+                  "max": 282.3,
+                  "samples": 33
+                },
+                "temperature_c": {
+                  "min": 66.0,
+                  "median": 71.0,
+                  "max": 72.0,
+                  "samples": 33
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 5
+              },
+              "decode_after_first_token": {
+                "samples": 4,
+                "sm_clock_mhz": {
+                  "min": 1380.0,
+                  "median": 1380.0,
+                  "max": 1380.0,
+                  "samples": 4
+                },
+                "memory_clock_mhz": {
+                  "min": 877.0,
+                  "median": 877.0,
+                  "max": 877.0,
+                  "samples": 4
+                },
+                "power_w": {
+                  "min": 130.24,
+                  "median": 139.145,
+                  "max": 145.42,
+                  "samples": 4
+                },
+                "temperature_c": {
+                  "min": 61.0,
+                  "median": 62.5,
+                  "max": 64.0,
+                  "samples": 4
+                },
+                "thermal_reason_samples": 0,
+                "power_cap_samples": 0
+              }
+            },
+            "phase_boundary_scope": "Host first-token receipt, not CUDA event timing; excludes first request warmup.",
+            "numa_mapped_bytes_by_node": {
+              "0": {
+                "min": 59885522944,
+                "median": 59885801472,
+                "max": 59887095808,
+                "samples": 75
+              },
+              "1": {
+                "min": 25685819392,
+                "median": 25691774976,
+                "max": 25693741056,
+                "samples": 75
+              }
+            }
+          },
+          "cases": [
+            {
+              "case": "mixed-131072",
+              "request": 0,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 357.04236037165396,
+              "decode_tokens_s": 19.948064901340842,
+              "ttft_ms": 367144.77824299864,
+              "active_samples": 38,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 28956
+              },
+              "global_vm_delta": {
+                "pgmajfault": 0,
+                "pgpgin": 16,
+                "pgpgout": 7760,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            },
+            {
+              "case": "mixed-131072",
+              "request": 1,
+              "output_tokens": 1024,
+              "prefill_tokens_s": 356.9582512008723,
+              "decode_tokens_s": 21.04683331483514,
+              "ttft_ms": 367240.6577469992,
+              "active_samples": 37,
+              "process_io_delta": {
+                "write_bytes": 4096,
+                "syscw": 1289,
+                "cancelled_write_bytes": 0,
+                "syscr": 149,
+                "rchar": 610262,
+                "read_bytes": 0,
+                "wchar": 29024
+              },
+              "global_vm_delta": {
+                "pgmajfault": 2,
+                "pgpgin": 100,
+                "pgpgout": 8124,
+                "pswpin": 0,
+                "pswpout": 0
+              }
+            }
+          ]
+        }
+      ],
+      "warm_summary": [
+        {
+          "case": "mixed-131072",
+          "output_tokens": 1024,
+          "base": "current",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 356.9582512008723,
+            "median": 357.009198151109,
+            "max": 357.1399377555486,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 20.100581425021296,
+            "median": 20.27144734966663,
+            "max": 21.04683331483514,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 367053.8774929992,
+            "median": 367240.6577469992,
+            "max": 367374.3991310003,
+            "samples": 3
+          }
+        },
+        {
+          "case": "mixed-131072",
+          "output_tokens": 1024,
+          "base": "historical",
+          "warm_repeats": 3,
+          "prefill_tokens_s": {
+            "min": 356.77412734303823,
+            "median": 356.96495903285677,
+            "max": 357.037692003235,
+            "samples": 3
+          },
+          "decode_tokens_s": {
+            "min": 20.174755942588632,
+            "median": 20.687077647248962,
+            "max": 20.722117217570087,
+            "samples": 3
+          },
+          "ttft_ms": {
+            "min": 367157.2191609994,
+            "median": 367226.55115399905,
+            "max": 367862.827035,
+            "samples": 3
+          }
+        }
+      ],
+      "interpretation": "Request 0 is excluded from warm summaries. Process order and output trajectories matter. Clock/power/NUMA distributions are observations, not proof of matched conditions or causal speedup.",
+      "length": 131072,
+      "prefill": "auto",
+      "artifacts": [
+        {
+          "unit": 17,
+          "artifact_id": 12167781851,
+          "zip_sha256": "a588138eb3b4638c45e61f790e9d685e6819b27ea5b62d5e22a34311f0f2f892"
+        },
+        {
+          "unit": 15,
+          "artifact_id": 12166831010,
+          "zip_sha256": "16ecffe88979810ea6253b8ed853e853bf1cc1d7d3412370dd50e9ad1fb5c1a9"
+        },
+        {
+          "unit": 16,
+          "artifact_id": 12166344525,
+          "zip_sha256": "f1d6854a8aa02d03e8ba954b6db23e5d913de0d843c97ddbcf34df071129c293"
+        },
+        {
+          "unit": 14,
+          "artifact_id": 12166286843,
+          "zip_sha256": "1fa780a69afd472ce98480f084d12c7837a256df7e67b3db19ac2177b65a2ed1"
+        },
+        {
+          "unit": 13,
+          "artifact_id": 12165114786,
+          "zip_sha256": "5a19fcd449f020ef3d5c2485ea04d46a2492553ddc71a2885701597ae7e45abb"
+        },
+        {
+          "unit": 12,
+          "artifact_id": 12164882077,
+          "zip_sha256": "7ff4a8a66ef9819ba6e72ada9d0e0ee6cb78873414ccf209014b69c6e84b57b3"
+        }
+      ],
+      "actual_process_order": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "paired": [
+        {
+          "pair": 0,
+          "case": "mixed-131072",
+          "output_tokens": 1024,
+          "prefill_ms_change_percent": -0.012391590603633151,
+          "decode_ms_change_percent": -0.47698324352545285,
+          "ttft_ms_change_percent": 0.04026069916149844,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 1,
+          "case": "mixed-131072",
+          "output_tokens": 1024,
+          "prefill_ms_change_percent": -0.10242775277649052,
+          "decode_ms_change_percent": 3.092128428559282,
+          "ttft_ms_change_percent": -0.21990521535459884,
+          "generated_ids_equal": false
+        },
+        {
+          "pair": 2,
+          "case": "mixed-131072",
+          "output_tokens": 1024,
+          "prefill_ms_change_percent": 0.022254928159082255,
+          "decode_ms_change_percent": -1.7093101950524714,
+          "ttft_ms_change_percent": 0.02272557412610343,
+          "generated_ids_equal": false
+        }
+      ],
+      "paired_median_percent": {
+        "prefill_ms_change_percent": -0.012391590603633151,
+        "decode_ms_change_percent": -0.47698324352545285,
+        "ttft_ms_change_percent": 0.02272557412610343
+      }
+    }
+  ],
+  "traces": [
+    {
+      "unit": 22,
+      "artifact_id": 12170472212,
+      "zip_sha256": "47c3f7ab285ea785b477ab7c98b867e0e89ba156f2af49183bc5fc73e4034ef5",
+      "timeline": {
+        "scope": "one warmed 131072-token prefill + 16 generated tokens; tracing perturbs timings",
+        "timing_kind": "CUPTI activity timestamps; no SM/HBM/L2 hardware-counter claim",
+        "phase_boundary": "end of first argmax (final prompt forward); cross-checked against DONE decode time",
+        "decode_phase_alignment_error_ms": 0.00919099999998707,
+        "done": "DONE 16 131072 369070.4 870.0 length 0 0 0 2848 3870",
+        "qsa_kernel_launches": 0,
+        "mxfp4_down_token_path_launches": 32,
+        "mxfp4_mmq_launches": 102,
+        "f32_indexer_symbols": [
+          "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+          "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)"
+        ],
+        "f32_attention_symbols": [
+          "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+          "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)"
+        ],
+        "phases": {
+          "prefill": {
+            "begin_trace_ns": 25308663,
+            "end_trace_ns": 369095708663,
+            "wall_ms": 369070.4,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 365960.333161,
+              "unattributed_main_stream_gap_ms": 3110.066839,
+              "contributors": [
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 182261.213691,
+                  "phase_wall_percent": 49.3838610983162
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 78019.635557,
+                  "phase_wall_percent": 21.13949955265987
+                },
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 59922.119508,
+                  "phase_wall_percent": 16.235959185022693
+                },
+                {
+                  "name": "dense/shared/projection GEMM (roles combined)",
+                  "wall_lane_ms": 26577.498441,
+                  "phase_wall_percent": 7.201200215731199
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 19109.484349,
+                  "phase_wall_percent": 5.177734207078108
+                },
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 38.741556,
+                  "phase_wall_percent": 0.010497063974786383
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 16.775357,
+                  "phase_wall_percent": 0.0045453000294794705
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 10.452032,
+                  "phase_wall_percent": 0.002831988693755988
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 4.41267,
+                  "phase_wall_percent": 0.0011956174215000716
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 182261.213691,
+                  "phase_wall_percent": 49.3838610983162
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 78019.635557,
+                  "phase_wall_percent": 21.13949955265987
+                },
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 59922.119508,
+                  "phase_wall_percent": 16.235959185022693
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 365960.333161,
+            "compute_active_union_ms": 365960.333161,
+            "compute_or_explicit_copy_active_union_ms": 367427.160514,
+            "no_traced_kernel_or_explicit_copy_ms": 1643.239486,
+            "categories": [
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 182261.213691,
+                "kernel_time_percent": 49.803543492462694
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 78019.635557,
+                "kernel_time_percent": 21.31915087165367
+              },
+              {
+                "name": "quantized routed-expert MMQ",
+                "kernel_ms": 59922.119508,
+                "kernel_time_percent": 16.373938396661686
+              },
+              {
+                "name": "dense/shared/projection GEMM (roles combined)",
+                "kernel_ms": 26577.498441,
+                "kernel_time_percent": 7.2623986898895785
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 19109.484349,
+                "kernel_time_percent": 5.2217365155236655
+              },
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 38.741556,
+                "kernel_time_percent": 0.010586271923344244
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 16.775357,
+                "kernel_time_percent": 0.004583927677380236
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 10.452032,
+                "kernel_time_percent": 0.002856055985554519
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 4.41267,
+                "kernel_time_percent": 0.001205778222433385
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+                "calls": 1344,
+                "kernel_ms": 181001.044512,
+                "registers_per_thread": [
+                  69
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 2752,
+                "kernel_ms": 78009.380649,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 2687,
+                "kernel_ms": 37888.136693,
+                "registers_per_thread": [
+                  231
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)18, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 2745,
+                "kernel_ms": 18448.507475,
+                "registers_per_thread": [
+                  167
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void cutlass::Kernel2<cutlass_70_tensorop_s884gemm_f16_128x128_tn_align8>(T1::Params)",
+                "calls": 23104,
+                "kernel_ms": 10871.510675,
+                "registers_per_thread": [
+                  236
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_128x256_ldg8_tn",
+                "calls": 26944,
+                "kernel_ms": 6758.141326,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_256x128_ldg8_tn",
+                "calls": 64512,
+                "kernel_ms": 5060.442198,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_batch_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 2752,
+                "kernel_ms": 2748.017337,
+                "registers_per_thread": [
+                  28
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::to_f16_kernel(const float *, unsigned short *, long)",
+                "calls": 5376,
+                "kernel_ms": 2230.901113,
+                "registers_per_thread": [
+                  16
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::moe_combine_add_kernel(const float *, int, int, int, const int *, const float *, int, int, float *)",
+                "calls": 1486,
+                "kernel_ms": 2189.145418,
+                "registers_per_thread": [
+                  38
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::hc_update_kernel(const float *, float *, const float *, const float *, float *, int)",
+                "calls": 340,
+                "kernel_ms": 2042.134879,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void quantize_mmq_q8_1<(mmq_q8_1_ds_layout)0, (bool)0>(const float *, const int *, void *, long, long, long, long, long, int, int, int)",
+                "calls": 8890,
+                "kernel_ms": 1541.987073,
+                "registers_per_thread": [
+                  21
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::<unnamed>::dequant_k_f16_kernel<(int)13>(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 44672,
+                "kernel_ms": 1495.339638,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::<unnamed>::dequant_q8_0_f16_kernel(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 55808,
+                "kernel_ms": 1398.447958,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_64x64_ldg8_tn",
+                "calls": 8000,
+                "kernel_ms": 1381.53843,
+                "registers_per_thread": [
+                  106
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          },
+          "decode": {
+            "begin_trace_ns": 369095708663,
+            "end_trace_ns": 369965699472,
+            "wall_ms": 869.990809,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 851.030684,
+              "unattributed_main_stream_gap_ms": 18.960125,
+              "contributors": [
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 198.418387,
+                  "phase_wall_percent": 22.806952090455933
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 156.101523,
+                  "phase_wall_percent": 17.942893348428466
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 151.912311,
+                  "phase_wall_percent": 17.46136964074525
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 126.503136,
+                  "phase_wall_percent": 14.540743958595085
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 88.695908,
+                  "phase_wall_percent": 10.195039658171837
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 70.319918,
+                  "phase_wall_percent": 8.082834585439857
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 59.079501,
+                  "phase_wall_percent": 6.79081898208881
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 198.418387,
+                  "phase_wall_percent": 22.806952090455933
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 156.101523,
+                  "phase_wall_percent": 17.942893348428466
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 151.912311,
+                  "phase_wall_percent": 17.46136964074525
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 851.030684,
+            "compute_active_union_ms": 851.030684,
+            "compute_or_explicit_copy_active_union_ms": 851.030684,
+            "no_traced_kernel_or_explicit_copy_ms": 18.960125,
+            "categories": [
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 198.418387,
+                "kernel_time_percent": 23.31506850815264
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 156.101523,
+                "kernel_time_percent": 18.342643330589947
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 151.912311,
+                "kernel_time_percent": 17.850391749212182
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 126.503136,
+                "kernel_time_percent": 14.864697404964543
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 88.695908,
+                "kernel_time_percent": 10.42217509515791
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 70.319918,
+                "kernel_time_percent": 8.262912174856435
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 59.079501,
+                "kernel_time_percent": 6.942111737066345
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_cpu_wait_kernel(strata::kernels::glmf::MoeDev, int, float *, int)",
+                "calls": 645,
+                "kernel_ms": 198.418387,
+                "registers_per_thread": [
+                  20
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 645,
+                "kernel_ms": 151.912311,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)8>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 2250,
+                "kernel_ms": 117.756892,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)",
+                "calls": 315,
+                "kernel_ms": 109.105826,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_fetch_kernel(strata::kernels::glmf::MoeDev, int, unsigned long)",
+                "calls": 645,
+                "kernel_ms": 88.695908,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_gate_up_kernel<(int)17>(strata::kernels::glmf::MoeDev, int, int, int, float, const block_q8_1 *, block_q8_1 *, const unsigned char *, int, const block_q8_1 *, int, float *)",
+                "calls": 630,
+                "kernel_ms": 42.794966,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    512,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_down_kernel<(int)18>(strata::kernels::glmf::MoeDev, int, int, int, unsigned long, const block_q8_1 *, const float *, float *)",
+                "calls": 615,
+                "kernel_ms": 24.854394,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::hc3_kernel(strata::kernels::glmf::HcArgs)",
+                "calls": 1290,
+                "kernel_ms": 20.975865,
+                "registers_per_thread": [
+                  61
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_route_kernel(strata::kernels::glmf::<unnamed>::RouteArgs)",
+                "calls": 645,
+                "kernel_ms": 19.440217,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    320,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_select_kernel(const float *, int, int, int *)",
+                "calls": 315,
+                "kernel_ms": 17.39731,
+                "registers_per_thread": [
+                  30
+                ],
+                "block_shapes": [
+                  [
+                    1024,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)13>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 13.132319,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::mv_kernel(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 960,
+                "kernel_ms": 8.53731,
+                "registers_per_thread": [
+                  63
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)12>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 15,
+                "kernel_ms": 6.441535,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_ts<(int)13, (int)4>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 5.521083,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 645,
+                "kernel_ms": 5.26307,
+                "registers_per_thread": [
+                  26
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          }
+        },
+        "main_compute_stream_id": 13
+      },
+      "trace_identity": {
+        "raw_report_runner_path": "/actions-runner/abyss-p0-v9/traces/39194497860-131072/request.nsys-rep",
+        "bytes": 26876770,
+        "sha256": "0b2e2ae0fad9792d5b9ef724c669e15de1db16938144a5a95a928481aac75523",
+        "sqlite_runner_path": "/actions-runner/abyss-p0-v9/traces/39194497860-131072/request.sqlite",
+        "sqlite_sha256": "fe04f620b5343e20c8d51a28ae9e4a895e01e9e0fc00a45b9859b89d80ccfa44",
+        "retention": "raw trace and SQLite retained only on runner; summary/identities uploaded"
+      }
+    },
+    {
+      "unit": 21,
+      "artifact_id": 12169781891,
+      "zip_sha256": "225c8ee447dc05c7d3cdbfec6fbbcc366add41384837b4452d39bb8196aa5086",
+      "timeline": {
+        "scope": "one warmed 32768-token prefill + 16 generated tokens; tracing perturbs timings",
+        "timing_kind": "CUPTI activity timestamps; no SM/HBM/L2 hardware-counter claim",
+        "phase_boundary": "end of first argmax (final prompt forward); cross-checked against DONE decode time",
+        "decode_phase_alignment_error_ms": 0.0039050000000315777,
+        "done": "DONE 16 32768 52631.4 731.2 length 0 0 0 2861 3870",
+        "qsa_kernel_launches": 0,
+        "mxfp4_down_token_path_launches": 32,
+        "mxfp4_mmq_launches": 25,
+        "f32_indexer_symbols": [
+          "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+          "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)"
+        ],
+        "f32_attention_symbols": [
+          "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+          "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)"
+        ],
+        "phases": {
+          "prefill": {
+            "begin_trace_ns": 12576712,
+            "end_trace_ns": 52643976712,
+            "wall_ms": 52631.4,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 51942.974025,
+              "unattributed_main_stream_gap_ms": 688.425975,
+              "contributors": [
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 14850.772665,
+                  "phase_wall_percent": 28.2165639998176
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 13776.260627,
+                  "phase_wall_percent": 26.174984186246235
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 11837.501734,
+                  "phase_wall_percent": 22.4913297651212
+                },
+                {
+                  "name": "dense/shared/projection GEMM (roles combined)",
+                  "wall_lane_ms": 6638.772285,
+                  "phase_wall_percent": 12.613710228114776
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 4767.601568,
+                  "phase_wall_percent": 9.058473778010844
+                },
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 41.089967,
+                  "phase_wall_percent": 0.07807120274208933
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 16.060743,
+                  "phase_wall_percent": 0.03051551545275254
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 10.43162,
+                  "phase_wall_percent": 0.01982014538849432
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 4.482816,
+                  "phase_wall_percent": 0.00851737935908982
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 14850.772665,
+                  "phase_wall_percent": 28.2165639998176
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 13776.260627,
+                  "phase_wall_percent": 26.174984186246235
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 11837.501734,
+                  "phase_wall_percent": 22.4913297651212
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 51942.974025,
+            "compute_active_union_ms": 51942.974025,
+            "compute_or_explicit_copy_active_union_ms": 52200.302823,
+            "no_traced_kernel_or_explicit_copy_ms": 431.097177,
+            "categories": [
+              {
+                "name": "quantized routed-expert MMQ",
+                "kernel_ms": 14850.772665,
+                "kernel_time_percent": 28.590532105174354
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 13776.260627,
+                "kernel_time_percent": 26.521894222632547
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 11837.501734,
+                "kernel_time_percent": 22.78941850403607
+              },
+              {
+                "name": "dense/shared/projection GEMM (roles combined)",
+                "kernel_ms": 6638.772285,
+                "kernel_time_percent": 12.780885980469233
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 4767.601568,
+                "kernel_time_percent": 9.178530219901093
+              },
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 41.089967,
+                "kernel_time_percent": 0.07910591908007332
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 16.060743,
+                "kernel_time_percent": 0.03091995270095627
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 10.43162,
+                "kernel_time_percent": 0.020082831597165177
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 4.482816,
+                "kernel_time_percent": 0.008630264408507749
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 688,
+                "kernel_ms": 13769.164752,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+                "calls": 336,
+                "kernel_ms": 11673.122343,
+                "registers_per_thread": [
+                  69
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 568,
+                "kernel_ms": 9189.835789,
+                "registers_per_thread": [
+                  231
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)18, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 582,
+                "kernel_ms": 4454.904266,
+                "registers_per_thread": [
+                  167
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void cutlass::Kernel2<cutlass_70_tensorop_s884gemm_f16_128x128_tn_align8>(T1::Params)",
+                "calls": 5776,
+                "kernel_ms": 2715.673993,
+                "registers_per_thread": [
+                  236
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_128x256_ldg8_tn",
+                "calls": 6736,
+                "kernel_ms": 1689.914648,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_256x128_ldg8_tn",
+                "calls": 16128,
+                "kernel_ms": 1261.581002,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_batch_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 688,
+                "kernel_ms": 661.005156,
+                "registers_per_thread": [
+                  28
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::to_f16_kernel(const float *, unsigned short *, long)",
+                "calls": 1344,
+                "kernel_ms": 555.439122,
+                "registers_per_thread": [
+                  16
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::moe_combine_add_kernel(const float *, int, int, int, const int *, const float *, int, int, float *)",
+                "calls": 372,
+                "kernel_ms": 550.044876,
+                "registers_per_thread": [
+                  38
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::hc_update_kernel(const float *, float *, const float *, const float *, float *, int)",
+                "calls": 85,
+                "kernel_ms": 510.707705,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)112, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 136,
+                "kernel_ms": 447.003075,
+                "registers_per_thread": [
+                  219
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void quantize_mmq_q8_1<(mmq_q8_1_ds_layout)0, (bool)0>(const float *, const int *, void *, long, long, long, long, long, int, int, int)",
+                "calls": 2216,
+                "kernel_ms": 389.469903,
+                "registers_per_thread": [
+                  21
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::<unnamed>::dequant_k_f16_kernel<(int)13>(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 11168,
+                "kernel_ms": 373.935438,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::<unnamed>::dequant_q8_0_f16_kernel(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 13952,
+                "kernel_ms": 351.269109,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          },
+          "decode": {
+            "begin_trace_ns": 52643976712,
+            "end_trace_ns": 53375172807,
+            "wall_ms": 731.196095,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 712.637465,
+              "unattributed_main_stream_gap_ms": 18.55863,
+              "contributors": [
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 199.423927,
+                  "phase_wall_percent": 27.273658648300085
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 155.345532,
+                  "phase_wall_percent": 21.245399566856275
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 104.093865,
+                  "phase_wall_percent": 14.236107893874898
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 86.428768,
+                  "phase_wall_percent": 11.820190040812513
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 71.029376,
+                  "phase_wall_percent": 9.714135029673537
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 56.527953,
+                  "phase_wall_percent": 7.730888250982796
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 39.788044,
+                  "phase_wall_percent": 5.441501161189872
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 199.423927,
+                  "phase_wall_percent": 27.273658648300085
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 155.345532,
+                  "phase_wall_percent": 21.245399566856275
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 104.093865,
+                  "phase_wall_percent": 14.236107893874898
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 712.637465,
+            "compute_active_union_ms": 712.637465,
+            "compute_or_explicit_copy_active_union_ms": 712.637465,
+            "no_traced_kernel_or_explicit_copy_ms": 18.55863,
+            "categories": [
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 199.423927,
+                "kernel_time_percent": 27.983924055971432
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 155.345532,
+                "kernel_time_percent": 21.798675992988947
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 104.093865,
+                "kernel_time_percent": 14.60684711545442
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 86.428768,
+                "kernel_time_percent": 12.128013505436456
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 71.029376,
+                "kernel_time_percent": 9.967112239882027
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 56.527953,
+                "kernel_time_percent": 7.932217400329914
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 39.788044,
+                "kernel_time_percent": 5.583209689936804
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_cpu_wait_kernel(strata::kernels::glmf::MoeDev, int, float *, int)",
+                "calls": 645,
+                "kernel_ms": 199.423927,
+                "registers_per_thread": [
+                  20
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)8>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 2250,
+                "kernel_ms": 117.644397,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 645,
+                "kernel_ms": 104.093865,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_fetch_kernel(strata::kernels::glmf::MoeDev, int, unsigned long)",
+                "calls": 645,
+                "kernel_ms": 86.428768,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_gate_up_kernel<(int)17>(strata::kernels::glmf::MoeDev, int, int, int, float, const block_q8_1 *, block_q8_1 *, const unsigned char *, int, const block_q8_1 *, int, float *)",
+                "calls": 630,
+                "kernel_ms": 42.670864,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    512,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)",
+                "calls": 315,
+                "kernel_ms": 30.195497,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_down_kernel<(int)18>(strata::kernels::glmf::MoeDev, int, int, int, unsigned long, const block_q8_1 *, const float *, float *)",
+                "calls": 615,
+                "kernel_ms": 25.768111,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::hc3_kernel(strata::kernels::glmf::HcArgs)",
+                "calls": 1290,
+                "kernel_ms": 20.999238,
+                "registers_per_thread": [
+                  61
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_route_kernel(strata::kernels::glmf::<unnamed>::RouteArgs)",
+                "calls": 645,
+                "kernel_ms": 18.792773,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    320,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)13>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 13.044581,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_select_kernel(const float *, int, int, int *)",
+                "calls": 315,
+                "kernel_ms": 9.592547,
+                "registers_per_thread": [
+                  30
+                ],
+                "block_shapes": [
+                  [
+                    1024,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::mv_kernel(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 960,
+                "kernel_ms": 8.224164,
+                "registers_per_thread": [
+                  63
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)12>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 15,
+                "kernel_ms": 6.445091,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_ts<(int)13, (int)4>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 5.245059,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 645,
+                "kernel_ms": 4.475939,
+                "registers_per_thread": [
+                  26
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          }
+        },
+        "main_compute_stream_id": 13
+      },
+      "trace_identity": {
+        "raw_report_runner_path": "/actions-runner/abyss-p0-v9/traces/39194497860-32768/request.nsys-rep",
+        "bytes": 8333529,
+        "sha256": "31c42ec91c070ea7b09bcd5c037417626a08c9dbe550b49ed4f259b8a2950930",
+        "sqlite_runner_path": "/actions-runner/abyss-p0-v9/traces/39194497860-32768/request.sqlite",
+        "sqlite_sha256": "0db2390ca992da2fcdd99ed40efc27ad078c8c87b638505e0fa26f6b78604f57",
+        "retention": "raw trace and SQLite retained only on runner; summary/identities uploaded"
+      }
+    }
+  ],
+  "disposition": "Digest-verified completed checkpoints; request zero excluded from warm summaries. Each context starts a fresh process; separate from interrupted carry-over campaign. Generated trajectories and sampled clocks/power/NUMA can differ. Timing changes are observations, not causal base or chunk speedups. Timeline kernel residence is a main-stream wall-lane proxy, not a complete causal DAG."
+}

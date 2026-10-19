@@ -1,6 +1,6 @@
 # P0 dispatch ledger
 
-Pending extension: with the same diagnostic switch, `glm_prefill.cu` copies the
+Validated extension (run 39221345537): with the same diagnostic switch, `glm_prefill.cu` copies the
 actual `M.row_tok` IDs after scatter and synchronizes that stream. Each normal
 input quantizer call records `mmq_input_distinct:N`, where N is its exact
 distinct source-token count and `nt` is its routed row count. Identical shapes
@@ -9,15 +9,17 @@ aggregate as a histogram; chronological call identity is not retained.
 invocation, so repeated requests cannot share a union. The summarizer reconciles
 call counts, quantized rows and layer invocations before reporting exact totals.
 Old captures continue to report their proven lower bound with `exact: null`.
-No logical-byte field is repurposed. Local tests pass; physical validation is
-pending. Copies and synchronization can change planning/overlap, so exclude all
+No logical-byte field is repurposed. Local tests and physical validation passed.
+Exact counts are in `p0-exact-input-reuse-2026-10-19.json` and the full
+per-call histogram is retained in artifact 12172151257. Copies and synchronization
+can change planning/overlap, so exclude all
 timings and avoid generalizing route populations to the clean production run.
 
 Status: CUDA compilation and physical collection passed in run 39194149121.
 See [accounting/dispatch results](P0_ACCOUNTING_RESULTS.md) and
 `p0-dispatch-2026-10-19.json`. No dropped calls or unresolved decode joins.
-Detailed per-token cache/route and exact per-call input-duplication counts remain
-open; source presence or a successful capture does not close every P0 gate.
+Detailed per-token cache/route remains open; source presence or a successful
+capture does not close every P0 gate. Exact input duplication is now measured.
 
 Enable only in a separate single-GPU diagnostic process with
 `ABYSS_V100_DISPATCH=1 ABYSS_V100_PROFILE=1`. Production defaults leave the ledger
