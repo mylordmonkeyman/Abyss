@@ -36,7 +36,7 @@ it only after the completion ledger is committed and the user is notified.
 | Extended short matrix | Complete: 108 requests, three interleaved pairs and excluded first repetition; active-window telemetry reviewed, no causal speedup claimed |
 | Filled context | 32K/64K/128K three pairs each complete with 1024 outputs; summaries and exact artifact digests preserved |
 | Chunk settings | 512/1024/4096 completed three pairs each, plus existing auto; 128 unsupported on the upstream 256-token chunk grid |
-| Runtime dispatch | Captured CPU/AVX2, MMQ and GLU/fallback decisions and exact per-call input duplication; detailed per-token route/cache remains open |
+| Runtime dispatch | Captured CPU/AVX2, MMQ and GLU/fallback decisions, exact input duplication and conserved per-token prompt/decode routes |
 | Unique memory worksheet | Conserved per-SHA host/GPU budget and alias-deduped backing pages; symbol-backed allocation components and source-derived borrowed-arena layout reconciled |
 | Long-context critical path | 32K/128K rootless timelines reviewed in P0_LONG_RESULTS.md; top three main-stream contributors and unassigned/overlap limits preserved |
 | Sustained telemetry | Active-window clocks/power/thermal, faults/I/O, NUMA placement, pressure and preserved safety floor |
@@ -120,6 +120,29 @@ The trusted `[v100:p0-routes]` commit marker runs this collection after device
 checks in `v100.yml` under the same GPU lock. The separate ledger workflow is
 now manual-only, avoiding competing push-triggered GPU workflows. Model data,
 arithmetic, safety floors and runner privileges remain unchanged.
+
+That extension passed in run `39229629027`. Artifact `12175408931` ZIP SHA256
+was verified; offline replay of the compressed engine log matches the uploaded
+route ledger after JSON normalization. `p0-route-summary-2026-10-19.json`
+records compact per-layer totals and the full ledger's canonical SHA256.
+All 2,920 records / 5,564,210 payload bytes survived, with zero drops. The 168
+actual batched-prompt decisions conserve 4,430,160 selected routes; the 2,752
+decode decisions conserve 16,512 routes: resident 10,380, RAM fetch 1,023,
+CPU 5,105, disk miss 4, skip 0. Promotions (1,027) overlap fetch/miss rather
+than adding executions. Actual batched decisions cover 42 layers; decode
+covers all 43, consistent with the tail layer's separate token-path work.
+No coverage is invented from the nominal layer count. Every emitted prompt
+token/layer/type decision and issued decode sequence reconciles. Diagnostic
+planning is perturbed by synchronization and is not the clean production mix.
+
+The remaining current-base feature check uses immutable v1.3.31 at genuine
+32K with `STRATA_GLM_STREAM_FETCH=0/1`, rootless kernel activity and explicit
+ordinary/streamed fetch dispatch assertions. The completed matrix workflow is
+manual-only so this check cannot rerun its 23 units accidentally. Raw reports
+remain on the runner; each summary upload is capped at 64 MiB. Historical
+flags remain absent/N/A; this is a targeted feature disposition, not another
+base performance comparison. THP's active-path N/A is explained in
+`P0_FEATURE_DISPOSITIONS.md`. Base/P3 final decisions remain open until review.
 
 ## Interrupted long-context campaign
 

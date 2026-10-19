@@ -1,12 +1,6 @@
 name: V100 P0 checkpointed remaining matrix and timelines
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/deepseek-v100-perf]
-    paths:
-      - '.github/workflows/v100-p0-remaining.yml'
-      - 'tools/bench/v100_p0_remaining.py'
-      - 'tools/profiling/p0_long_trace.py'
 permissions:
   contents: read
 concurrency:

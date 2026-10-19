@@ -1,0 +1,70 @@
+name: V100 P0 current-base fetch disposition
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-p0-features.yml'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  fetch:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        stream: [0, 1]
+    env:
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p0-features-${{ github.run_id }}-${{ matrix.stream }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+      - name: Select the V100 and refuse overlapping GPU processes
+        shell: bash
+        run: |
+          set -euo pipefail
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+      - name: Trace immutable current base with the explicit fetch control
+        shell: bash
+        run: |
+          set -euo pipefail
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_long_trace.py \
+            --base current --tokens 32768 --stream-fetch '${{ matrix.stream }}'
+      - name: Bound checkpoint upload
+        if: always()
+        shell: bash
+        run: |
+          /actions-runner/abyss-v100-python/bin/python - <<'PY'
+          import os,pathlib
+          out=pathlib.Path(os.environ['EVIDENCE'])
+          if out.exists():
+              files=list(out.rglob('*'))
+              assert not any(p.is_symlink() for p in files)
+              size=sum(p.stat().st_size for p in files if p.is_file())
+              if size>64*1024**2:raise SystemExit('Evidence exceeds 64 MiB; retained on runner')
+              with open(os.environ['GITHUB_ENV'],'a') as f:f.write('P0_FEATURE_UPLOAD=true\n')
+          PY
+      - name: Upload bounded feature evidence
+        if: always() && env.P0_FEATURE_UPLOAD == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-fetch-${{ github.run_id }}-${{ matrix.stream }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30

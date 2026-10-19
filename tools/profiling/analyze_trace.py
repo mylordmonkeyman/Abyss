@@ -52,6 +52,7 @@ def analyze(database, done, prompt_tokens=2048):
             'qsa_kernel_launches':sum('qsa_' in k['name'] for k in kernels),
             'mxfp4_down_token_path_launches':sum('moe_down_kernel<(int)39>' in k['name'] for k in kernels),
             'mxfp4_mmq_launches':sum('mul_mat_q<(ggml_type)39,' in k['name'] for k in kernels),
+            'fetch_kernel_launches':dict(collections.Counter(k['name'] for k in kernels if 'moe_fetch' in k['name'])),
             'f32_indexer_symbols':sorted({k['name'] for k in kernels if 'idx_score' in k['name']}),
             'f32_attention_symbols':sorted({k['name'] for k in kernels if 'attend_' in k['name']}),
             'phases':{}}

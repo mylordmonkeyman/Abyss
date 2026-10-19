@@ -1,6 +1,6 @@
 # P0 dispatch ledger
 
-Pending per-token extension: `route-ledger.json` preserves seven decimal digits
+Validated per-token extension (run 39229629027): `route-ledger.json` preserves seven decimal digits
 per prompt token (lane order recorded in the file), with exact chunk anchor,
 layer and format. Decode records preserve actual expert IDs and raw masks;
 resident is the complement of disjoint miss/fetch/CPU/skip masks. Promotions
@@ -8,7 +8,10 @@ are a subset of miss/fetch and are not counted again as an execution lane.
 The collector checks top-k conservation, complete prompt decision coverage by
 layer/position/token count/type, every decode issue join, bounded record count
 and payload bytes. Copies/synchronization still perturb diagnostic planning.
-This extension awaits CUDA compilation and physical evidence.
+CUDA compilation and physical collection passed. ZIP-verified artifact
+12175408931 contains every token record. Offline replay matches the uploaded
+ledger. See `p0-route-summary-2026-10-19.json` for compact per-layer totals and
+the full ledger's canonical digest; no dropped records or unjoined issues.
 
 Validated extension (run 39221345537): with the same diagnostic switch, `glm_prefill.cu` copies the
 actual `M.row_tok` IDs after scatter and synchronizes that stream. Each normal
@@ -28,8 +31,8 @@ timings and avoid generalizing route populations to the clean production run.
 Status: CUDA compilation and physical collection passed in run 39194149121.
 See [accounting/dispatch results](P0_ACCOUNTING_RESULTS.md) and
 `p0-dispatch-2026-10-19.json`. No dropped calls or unresolved decode joins.
-Detailed per-token cache/route remains open; source presence or a successful
-capture does not close every P0 gate. Exact input duplication is now measured.
+Per-token route/cache and exact input duplication are now measured. Their
+scope remains diagnostic; source presence alone was not used as runtime proof.
 
 Enable only in a separate single-GPU diagnostic process with
 `ABYSS_V100_DISPATCH=1 ABYSS_V100_PROFILE=1`. Production defaults leave the ledger

@@ -22,16 +22,21 @@ import p0
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--tokens',type=int,choices=[32768,131072],required=True)
+    ap.add_argument('--base',choices=['historical','current'],default='historical')
+    ap.add_argument('--stream-fetch',type=int,choices=[0,1])
     args=ap.parse_args();out=Path(os.environ['EVIDENCE']).absolute();out.mkdir(parents=True,exist_ok=False)
     if campaign.memory_available()<16*1024**3:raise RuntimeError('initial memory safety margin below 16 GiB')
-    binary=campaign.BINARIES['historical']
-    if p0.sha256(binary)!=campaign.EXPECTED['historical']:raise ValueError('immutable historical binary changed')
+    if args.stream_fetch is not None and args.base!='current':
+        raise ValueError('stream-fetch control is absent in the historical pin')
+    binary=campaign.BINARIES[args.base]
+    if p0.sha256(binary)!=campaign.EXPECTED[args.base]:raise ValueError('immutable baseline binary changed')
     identity=campaign.model_identity();p0.write_json(out/'model-identity.json',identity)
     ids=fixture('mixed-'+str(args.tokens));tokens=','.join(map(str,ids))
     nsys=nsys_trace.install(out)
-    cache=Path('/actions-runner/abyss-p0-v9/traces')/(os.environ['GITHUB_RUN_ID']+'-'+str(args.tokens))
+    suffix=args.base+'-fetch'+str(args.stream_fetch)
+    cache=Path('/actions-runner/abyss-p0-v9/traces')/(os.environ['GITHUB_RUN_ID']+'-'+str(args.tokens)+'-'+suffix)
     cache.mkdir(parents=True,exist_ok=False)
-    session='abyssp0'+os.environ['GITHUB_RUN_ID']+'c'+str(args.tokens)
+    session='abyssp0'+os.environ['GITHUB_RUN_ID']+'c'+str(args.tokens)+suffix
     commands=[]
     def cli(args,timeout=180):
         result=p0.command([str(nsys),*args],timeout=timeout);commands.append(result)
@@ -39,9 +44,10 @@ def main():
         if result['returncode']:raise RuntimeError('profiler command failed; inspect preserved command record')
         return result
     env=fixed_env();env.update(STRATA_DS4_IDX='1',STRATA_DS4_ATTN='1')
+    if args.stream_fetch is not None:env['STRATA_GLM_STREAM_FETCH']=str(args.stream_fetch)
     argv=[str(binary),'--glm-pack',str(PACK),'--serve','--max-context','135168',
           '--max-new','16','--prefill','auto','--temperature','0','--eos-ids','2147483647']
-    p0.write_json(out/'invocation.json',dict(argv=argv,binary_sha256=campaign.EXPECTED['historical'],
+    p0.write_json(out/'invocation.json',dict(argv=argv,base=args.base,binary_sha256=campaign.EXPECTED[args.base],
         fixture_tokens=args.tokens,fixture_sha256=p0.sha256(campaign.CAMPAIGN/'fixtures'/('mixed-'+str(args.tokens)+'.tokens')),
         environment={k:v for k,v in env.items() if k.startswith('STRATA_')},
         cache_scope='first request excluded warmup, no prefix reuse; OS file cache uncontrolled',
@@ -113,6 +119,16 @@ def main():
     p0.write_json(out/'trace-identity.json',dict(raw_report_runner_path=str(report),bytes=report.stat().st_size,
         sha256=p0.sha256(report),sqlite_runner_path=str(database),sqlite_sha256=p0.sha256(database),
         retention='raw trace and SQLite retained only on runner; summary/identities uploaded'))
+    if args.stream_fetch is not None:
+        launches=result['fetch_kernel_launches']
+        streamed=sum(v for k,v in launches.items() if 'moe_fetch_stream_kernel' in k)
+        ordinary=sum(v for k,v in launches.items() if 'moe_fetch_kernel' in k)
+        p0.write_json(out/'fetch-dispatch.json',dict(base=args.base,control=args.stream_fetch,
+            streamed_launches=streamed,ordinary_launches=ordinary,
+            scope='Actual CUPTI kernel activity, not symbol presence or a speedup claim'))
+        if (args.stream_fetch==1 and (not streamed or ordinary)) or \
+           (args.stream_fetch==0 and (not ordinary or streamed)):
+            raise ValueError('observed fetch kernels disagree with explicit current-base control')
     print(json.dumps(dict(tokens=args.tokens,top_three={phase:v['critical_path_proxy']['top_three'] for phase,v in result['phases'].items()})),flush=True)
 
 
