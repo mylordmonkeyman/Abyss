@@ -2403,6 +2403,24 @@ bool Glm5Model::prefill_half(int64_t p0, int T, std::string& err, const int32_t*
                     (size_t) T * K * sizeof(int), cudaMemcpyDeviceToHost, s),
                     "P0 input gather IDs", err) ||
                 !glmfast::cuda_ok(cudaStreamSynchronize(s), "P0 input gather IDs sync", err)) return false;
+            std::vector<int8_t> lanes((size_t) T*K,-1);
+            const auto tag=[&](int first,int last,int8_t lane) {
+                if(first<0 || last<first || last>rows)
+                    throw std::runtime_error("P0 route range out of bounds");
+                std::fill(lanes.begin()+first,lanes.begin()+last,lane);
+            };
+            tag(0,rows_mmq,0);tag(rows_mmq,rows_res,1);
+            tag(rows_res,rows_res+rows_pre,2);
+            for(const auto& group:groups)
+                for(int j=0;j<group.n;++j) {
+                    const auto& st=staged[(size_t)group.first+j];
+                    tag(group.r0+S->h_bounds[group.b_off+j],group.r0+S->h_bounds[group.b_off+j+1],
+                        st.dev ? 4 : st.ram ? 3 : 5);
+                }
+            tag(cpu_r0,rows,6);
+            if(!v100dispatch::prefill_routes(input_rows,lanes,K,Ly.gu_type,Ly.d_type)) {
+                err="P0 per-token route conservation failed";return false;
+            }
         }
         if (cpu_nrows > 0) {
             if (!cpu_bufs(cpu_nrows)) {

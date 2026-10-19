@@ -1,5 +1,15 @@
 # P0 dispatch ledger
 
+Pending per-token extension: `route-ledger.json` preserves seven decimal digits
+per prompt token (lane order recorded in the file), with exact chunk anchor,
+layer and format. Decode records preserve actual expert IDs and raw masks;
+resident is the complement of disjoint miss/fetch/CPU/skip masks. Promotions
+are a subset of miss/fetch and are not counted again as an execution lane.
+The collector checks top-k conservation, complete prompt decision coverage by
+layer/position/token count/type, every decode issue join, bounded record count
+and payload bytes. Copies/synchronization still perturb diagnostic planning.
+This extension awaits CUDA compilation and physical evidence.
+
 Validated extension (run 39221345537): with the same diagnostic switch, `glm_prefill.cu` copies the
 actual `M.row_tok` IDs after scatter and synchronizes that stream. Each normal
 input quantizer call records `mmq_input_distinct:N`, where N is its exact

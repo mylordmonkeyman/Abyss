@@ -265,6 +265,23 @@ jobs:
           timeout 900s compute-sanitizer --tool synccheck --error-exitcode 1 \
             build-v100-diagnostics/test_dsv4_mla_latent_parity 2>&1 | tee "$EVIDENCE/latent-gathers-synccheck.log"
 
+      - name: Collect bounded P0 per-token route evidence after device checks
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[v100:p0-routes]')
+        env:
+          EVIDENCE: results/ci-v100-p0-routes-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_accounting.py --phase dispatch
+
+      - name: Upload bounded P0 per-token route evidence
+        if: always() && env.P0_ACCOUNTING_DISPATCH_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-routes-${{ github.run_id }}
+          path: results/ci-v100-p0-routes-${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 30
+
       - name: Record model availability without copying model data
         if: always()
         run: |
@@ -273,7 +290,7 @@ jobs:
           root = pathlib.Path('/models')
           report = {'models_directory_present': root.is_dir(),
                     'gguf_files_at_depth_2': len(list(root.glob('*.gguf'))) + len(list(root.glob('*/*.gguf'))) if root.is_dir() else 0,
-                    'full_model_P0': 'not executed by this model-free workflow'}
+                    'full_model_P0': 'Separate bounded route artifact when the trusted p0-routes commit marker is present; otherwise model-free'}
           (pathlib.Path(os.environ['EVIDENCE']) / 'model_availability.json').write_text(json.dumps(report, indent=2) + '\n')
           PY
 

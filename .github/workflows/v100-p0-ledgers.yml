@@ -7,11 +7,6 @@ on:
         type: choice
         options: [dispatch, all]
         default: dispatch
-  push:
-    branches: [feature/deepseek-v100-perf]
-    paths:
-      - '.github/workflows/v100-p0-ledgers.yml'
-      - 'tools/profiling/p0_accounting.py'
 permissions:
   contents: read
 concurrency:

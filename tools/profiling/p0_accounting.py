@@ -14,6 +14,7 @@ sys.path[:0]=[str(ROOT/'tools/bench'),str(ROOT/'tools/v100'),str(ROOT/'tools'),s
 import v100_p0_campaign as campaign
 from allocation_ledger import reconstruct
 from dispatch_ledger import parse as parse_dispatch
+from route_ledger import parse as parse_routes
 from memory_worksheet import worksheet,kb_fields
 from model_baseline import fixed_env
 from summarize_p0_dispatch import summarize as summarize_dispatch
@@ -104,6 +105,8 @@ def main():
             summary['source_run']=os.environ.get('GITHUB_RUN_ID')
             summary['binary_sha256']=binary_hash
             p0.write_json(out/'dispatch-summary.json',summary)
+            routes=parse_routes((directory/'engine.log').read_text(errors='replace'),dispatch)
+            p0.write_json(out/'route-ledger.json',routes)
         report['arms'].append(dict(base=base,binary_sha256=binary_hash,requests=rows,
             allocation_events=ledger['event_count'],allocation_peak=ledger['peak']))
         p0.write_json(out/'accounting.json',report)

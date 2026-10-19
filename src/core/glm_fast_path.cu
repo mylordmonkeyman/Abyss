@@ -2721,6 +2721,10 @@ void Glm5Model::fast_service() {
             ++F->clock;
             int ids[8];
             for (int i = 0; i < K; ++i) ids[i] = rq->ids[i];
+            {
+                v100dispatch::Scope route_scope({2,il,1,-1,next});
+                v100dispatch::decode_route(K,ids,miss,fetch,cpu,promo,skip);
+            }
             // STRATA_GLM_ROUTE_LOG=<prefix>: "layer e0 .. e7 tier-mask" per route into <prefix>.<device> (cache studies)
             static const char* rlog = getenv("STRATA_GLM_ROUTE_LOG");
             if (rlog != nullptr) {

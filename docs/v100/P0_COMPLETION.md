@@ -107,6 +107,20 @@ the compact evidence. Diagnostic synchronization changes planning opportunities;
 do not pool this population with the earlier capture or claim a timing gain.
 Detailed per-token route/cache evidence remains open.
 
+The next diagnostic extension emits seven conserved prompt-lane counts per
+token (main MMQ, main light, prestaged RAM, staged RAM H2D, staged VRAM D2D,
+staged disk H2D, CPU). It reuses the already-copied actual gather IDs. Decode
+records preserve expert IDs and miss/fetch/CPU/promotion/skip masks, joined to
+actual issued positions. Records are capped at 4,096 and 16 MiB; dropped or
+truncated records and incomplete layer/position/type coverage fail collection.
+Host tests cover emitter/parser round trips, top-k conservation, joins, overlap
+and capture limits. 48 local tests pass. CUDA compilation and actual capture
+are pending; do not treat source instrumentation as runtime proof.
+The trusted `[v100:p0-routes]` commit marker runs this collection after device
+checks in `v100.yml` under the same GPU lock. The separate ledger workflow is
+now manual-only, avoiding competing push-triggered GPU workflows. Model data,
+arithmetic, safety floors and runner privileges remain unchanged.
+
 ## Interrupted long-context campaign
 
 The campaign ended unsuccessfully during the second long arm. Read-only
