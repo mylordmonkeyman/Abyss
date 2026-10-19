@@ -51,7 +51,16 @@ A verified frozen mixed-fixture prefix places a full 2048-token chunk at
 cuBLAS dispatch records at that shape. Logit dumps stay temporary; identities,
 KL, dispatch records and sustained telemetry are bounded artifacts. These
 profiled quality arms are excluded from ordinary throughput comparisons.
-No physical result or P1 exit is claimed at this checkpoint.
+[Integration run 39328349428](https://github.com/mylordmonkeyman/Abyss/actions/runs/39328349428),
+source `c157de24442a7c4ea71c2af8464b6d214c7548b4`, has passed the SM70 engine
+build, shared scorer parity/nondefault-stream graph replay, both sanitizers
+and the 48-shape matrix. Hosted CI also passed. The four real-model quality
+arms are still running; no model-quality result or P1 exit is claimed yet.
+`summarize_p1_integrated.py` will digest-check the bounded artifact and require
+actual target-shape dispatch and all four comparisons. `p1_model_ab.py` is
+prepared for three same-binary process pairs with 8K/128K fixtures and verified
+checkpoint reuse; it refuses a binary differing from the committed quality
+evidence. Whole-model dispatch is gated on that quality evidence.
 
 ## Initial checkpoint — 19 October 2026
 
