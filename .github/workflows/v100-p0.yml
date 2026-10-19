@@ -1,0 +1,91 @@
+name: V100 P0 completion campaign
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-p0.yml'
+      - 'tools/bench/v100_p0_campaign.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+
+jobs:
+  campaign:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 360
+    defaults:
+      run:
+        shell: bash
+    env:
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p0-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out harness and preserve immutable binaries and checkpoints
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+      - name: Select V100 and verify existing runtime
+        run: |
+          set -euo pipefail
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          /actions-runner/abyss-v100-python/bin/python -c 'import numpy,regex,jinja2'
+          mkdir -p "$EVIDENCE"
+      - name: Same-base repeatability and CPU-lane isolation
+        run: |
+          EVIDENCE="$EVIDENCE/quality" /actions-runner/abyss-v100-python/bin/python tools/bench/v100_p0_campaign.py --phase quality
+      - name: Upload quality checkpoint without distribution dumps
+        if: always() && env.P0_QUALITY_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-quality-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/quality/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Paired 600 4K 8K prompts with 128 512 1024 outputs
+        run: |
+          EVIDENCE="$EVIDENCE/extended" /actions-runner/abyss-v100-python/bin/python tools/bench/v100_p0_campaign.py --phase extended
+      - name: Upload extended matrix checkpoint
+        if: always() && env.P0_EXTENDED_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-extended-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/extended/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Paired genuine 32K 64K 128K histories with 1024 outputs
+        run: |
+          EVIDENCE="$EVIDENCE/long" /actions-runner/abyss-v100-python/bin/python tools/bench/v100_p0_campaign.py --phase long
+      - name: Upload filled-context checkpoint
+        if: always() && env.P0_LONG_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-long-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/long/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Paired supported 512 1024 4096 prefill chunk settings
+        run: |
+          EVIDENCE="$EVIDENCE/chunks" /actions-runner/abyss-v100-python/bin/python tools/bench/v100_p0_campaign.py --phase chunks
+      - name: Upload chunk and cumulative checkpoint
+        if: always() && env.P0_CHUNKS_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-chunks-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/chunks/
+          if-no-files-found: warn
+          retention-days: 30
