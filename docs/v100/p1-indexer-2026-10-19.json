@@ -1774,6 +1774,20 @@
     "performance_claim_admitted": false,
     "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
   },
+  "relative_l2_above_nominal_component_target": [
+    {
+      "warps": 4,
+      "visible": 513,
+      "mode": 3,
+      "relative_l2": 0.0430834314
+    },
+    {
+      "warps": 8,
+      "visible": 513,
+      "mode": 3,
+      "relative_l2": 0.0430834314
+    }
+  ],
   "memcheck_synccheck": "zero errors for all three executables",
   "scope": "Isolated synthetic scorer and unchanged selector on selected-base branch; event timings include launch overhead, exclude model query preparation, routing and attention. No model KL, end-to-end performance, batched key reuse or production dispatch acceptance.",
   "production_candidate_enabled": false

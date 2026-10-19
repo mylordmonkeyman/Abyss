@@ -1,0 +1,1794 @@
+{
+  "schema": 1,
+  "run": 39257756365,
+  "artifact_zip_sha256": "d471f100267428f6ddc1e471e488d22f5195ced073a2bf7551786a070d610113",
+  "source_sha": "aa1713995de6c68602590395a13f10caa4c13455",
+  "component_cases": [
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 1,
+      "mode": 0,
+      "relative_l2": 7.15852576e-07,
+      "p99_abs": 4.22786394e-06,
+      "max_abs": 4.22786394e-06,
+      "f32_max_abs": 2.79735247e-06,
+      "top512_overlap": 1,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 1,
+      "mode": 0,
+      "relative_l2": 7.15852576e-07,
+      "p99_abs": 4.22786394e-06,
+      "max_abs": 4.22786394e-06,
+      "f32_max_abs": 2.79735247e-06,
+      "top512_overlap": 1,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 7,
+      "mode": 0,
+      "relative_l2": 4.3419815e-07,
+      "p99_abs": 7.00764599e-06,
+      "max_abs": 7.00764599e-06,
+      "f32_max_abs": 1.28560009e-06,
+      "top512_overlap": 7,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 7,
+      "mode": 0,
+      "relative_l2": 4.3419815e-07,
+      "p99_abs": 7.00764599e-06,
+      "max_abs": 7.00764599e-06,
+      "f32_max_abs": 1.28560009e-06,
+      "top512_overlap": 7,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 31,
+      "mode": 0,
+      "relative_l2": 3.37519901e-07,
+      "p99_abs": 7.92436495e-06,
+      "max_abs": 7.92436495e-06,
+      "f32_max_abs": 2.65363258e-06,
+      "top512_overlap": 31,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 31,
+      "mode": 0,
+      "relative_l2": 3.37519901e-07,
+      "p99_abs": 7.92436495e-06,
+      "max_abs": 7.92436495e-06,
+      "f32_max_abs": 2.65363258e-06,
+      "top512_overlap": 31,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 129,
+      "mode": 0,
+      "relative_l2": 3.02330527e-07,
+      "p99_abs": 8.43103714e-06,
+      "max_abs": 1.01337771e-05,
+      "f32_max_abs": 4.92040328e-06,
+      "top512_overlap": 129,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 129,
+      "mode": 0,
+      "relative_l2": 3.02330527e-07,
+      "p99_abs": 8.43103714e-06,
+      "max_abs": 1.01337771e-05,
+      "f32_max_abs": 4.92040328e-06,
+      "top512_overlap": 129,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 512,
+      "mode": 0,
+      "relative_l2": 2.44351713e-07,
+      "p99_abs": 9.75024508e-06,
+      "max_abs": 1.44814228e-05,
+      "f32_max_abs": 8.20350289e-06,
+      "top512_overlap": 512,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 512,
+      "mode": 0,
+      "relative_l2": 2.44351713e-07,
+      "p99_abs": 9.75024508e-06,
+      "max_abs": 1.44814228e-05,
+      "f32_max_abs": 8.20350289e-06,
+      "top512_overlap": 512,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 513,
+      "mode": 0,
+      "relative_l2": 3.51658154e-07,
+      "p99_abs": 1.05959372e-05,
+      "max_abs": 1.39637478e-05,
+      "f32_max_abs": 8.24334066e-06,
+      "top512_overlap": 512,
+      "margin512_513": 3.42320645,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 513,
+      "mode": 0,
+      "relative_l2": 3.51658154e-07,
+      "p99_abs": 1.05959372e-05,
+      "max_abs": 1.39637478e-05,
+      "f32_max_abs": 8.24334066e-06,
+      "top512_overlap": 512,
+      "margin512_513": 3.42320645,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 1024,
+      "mode": 0,
+      "relative_l2": 3.41134676e-07,
+      "p99_abs": 1.02197731e-05,
+      "max_abs": 1.65458619e-05,
+      "f32_max_abs": 1.02751929e-05,
+      "top512_overlap": 512,
+      "margin512_513": 0.0277117339,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 1024,
+      "mode": 0,
+      "relative_l2": 3.41134676e-07,
+      "p99_abs": 1.02197731e-05,
+      "max_abs": 1.65458619e-05,
+      "f32_max_abs": 1.02751929e-05,
+      "top512_overlap": 512,
+      "margin512_513": 0.0277117339,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 8192,
+      "mode": 0,
+      "relative_l2": 3.10956562e-07,
+      "p99_abs": 9.68814732e-06,
+      "max_abs": 1.85157673e-05,
+      "f32_max_abs": 9.51432554e-06,
+      "top512_overlap": 512,
+      "margin512_513": 0.0115514037,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 8192,
+      "mode": 0,
+      "relative_l2": 3.10956562e-07,
+      "p99_abs": 9.68814732e-06,
+      "max_abs": 1.85157673e-05,
+      "f32_max_abs": 9.51432554e-06,
+      "top512_overlap": 512,
+      "margin512_513": 0.0115514037,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 31250,
+      "mode": 0,
+      "relative_l2": 2.74289352e-07,
+      "p99_abs": 9.62984279e-06,
+      "max_abs": 1.87341995e-05,
+      "f32_max_abs": 1.59174118e-05,
+      "top512_overlap": 512,
+      "margin512_513": 0.00271727829,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 31250,
+      "mode": 0,
+      "relative_l2": 2.74289352e-07,
+      "p99_abs": 9.62984279e-06,
+      "max_abs": 1.87341995e-05,
+      "f32_max_abs": 1.59174118e-05,
+      "top512_overlap": 512,
+      "margin512_513": 0.00271727829,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 513,
+      "mode": 1,
+      "relative_l2": 0,
+      "p99_abs": 0,
+      "max_abs": 0,
+      "f32_max_abs": 0,
+      "top512_overlap": 512,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 513,
+      "mode": 1,
+      "relative_l2": 0,
+      "p99_abs": 0,
+      "max_abs": 0,
+      "f32_max_abs": 0,
+      "top512_overlap": 512,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 513,
+      "mode": 2,
+      "relative_l2": 3.12112241e-07,
+      "p99_abs": 0.0674337659,
+      "max_abs": 0.0715415454,
+      "f32_max_abs": 0.040418508,
+      "top512_overlap": 512,
+      "margin512_513": 23013.2135,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 513,
+      "mode": 2,
+      "relative_l2": 3.12112241e-07,
+      "p99_abs": 0.0674337659,
+      "max_abs": 0.0715415454,
+      "f32_max_abs": 0.040418508,
+      "top512_overlap": 512,
+      "margin512_513": 23013.2135,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 513,
+      "mode": 3,
+      "relative_l2": 0.0430834314,
+      "p99_abs": 1.21358677e-06,
+      "max_abs": 1.49986356e-06,
+      "f32_max_abs": 5.35923714e-12,
+      "top512_overlap": 512,
+      "margin512_513": 2.01950866e-06,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 513,
+      "mode": 3,
+      "relative_l2": 0.0430834314,
+      "p99_abs": 1.21358677e-06,
+      "max_abs": 1.49986356e-06,
+      "f32_max_abs": 5.35923714e-12,
+      "top512_overlap": 512,
+      "margin512_513": 2.01950866e-06,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 4,
+      "visible": 513,
+      "mode": 4,
+      "relative_l2": 2.81660116e-07,
+      "p99_abs": 8.94918588e-06,
+      "max_abs": 1.71546639e-05,
+      "f32_max_abs": 4.53180795e-06,
+      "top512_overlap": 512,
+      "margin512_513": 0,
+      "registers": 54,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    },
+    {
+      "case": "volta_indexer",
+      "warps": 8,
+      "visible": 513,
+      "mode": 4,
+      "relative_l2": 2.81660116e-07,
+      "p99_abs": 8.94918588e-06,
+      "max_abs": 1.71546639e-05,
+      "f32_max_abs": 4.53180795e-06,
+      "top512_overlap": 512,
+      "margin512_513": 0,
+      "registers": 56,
+      "shared_bytes": 33536,
+      "local_bytes": 0,
+      "active_blocks_per_sm": 2,
+      "pass": true
+    }
+  ],
+  "timings": [
+    {
+      "warps": 4,
+      "visible": 1,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1,
+          "pair": 0,
+          "f32_us": 11.3152,
+          "volta_us": 26.675201,
+          "select_us": 7.6288
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1,
+          "pair": 1,
+          "f32_us": 11.264,
+          "volta_us": 26.7264,
+          "select_us": 7.68
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1,
+          "pair": 2,
+          "f32_us": 11.3152,
+          "volta_us": 26.675201,
+          "select_us": 7.68
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1,
+          "pair": 3,
+          "f32_us": 11.3152,
+          "volta_us": 26.7264,
+          "select_us": 7.68
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1,
+          "pair": 4,
+          "f32_us": 11.8272,
+          "volta_us": 26.7264,
+          "select_us": 7.6288
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1,
+          "pair": 5,
+          "f32_us": 11.3152,
+          "volta_us": 26.675201,
+          "select_us": 7.6288
+        }
+      ],
+      "score_elapsed_change_percent": [
+        135.7466151725113,
+        137.2727272727273,
+        135.7466151725113,
+        136.19909502262445,
+        125.97402597402598,
+        135.7466151725113
+      ],
+      "median_score_elapsed_change_percent": 135.7466151725113
+    },
+    {
+      "warps": 4,
+      "visible": 7,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 7,
+          "pair": 0,
+          "f32_us": 12.4432,
+          "volta_us": 28.825598,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 7,
+          "pair": 1,
+          "f32_us": 12.3904,
+          "volta_us": 28.825598,
+          "select_us": 8.0896
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 7,
+          "pair": 2,
+          "f32_us": 12.3904,
+          "volta_us": 28.825598,
+          "select_us": 8.0896
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 7,
+          "pair": 3,
+          "f32_us": 12.3904,
+          "volta_us": 28.774399,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 7,
+          "pair": 4,
+          "f32_us": 12.4416,
+          "volta_us": 29.0816,
+          "select_us": 8.191999
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 7,
+          "pair": 5,
+          "f32_us": 12.3904,
+          "volta_us": 28.825598,
+          "select_us": 8.0896
+        }
+      ],
+      "score_elapsed_change_percent": [
+        131.65743538639578,
+        132.64461195764463,
+        132.64461195764463,
+        132.23139688791323,
+        133.74485596707822,
+        132.64461195764463
+      ],
+      "median_score_elapsed_change_percent": 132.64461195764463
+    },
+    {
+      "warps": 4,
+      "visible": 31,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31,
+          "pair": 0,
+          "f32_us": 12.7488,
+          "volta_us": 48.588799,
+          "select_us": 8.3456
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31,
+          "pair": 1,
+          "f32_us": 12.7488,
+          "volta_us": 48.537601,
+          "select_us": 8.3968
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31,
+          "pair": 2,
+          "f32_us": 12.697599,
+          "volta_us": 48.537601,
+          "select_us": 8.3456
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31,
+          "pair": 3,
+          "f32_us": 12.7488,
+          "volta_us": 48.537601,
+          "select_us": 8.3456
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31,
+          "pair": 4,
+          "f32_us": 12.7488,
+          "volta_us": 48.537601,
+          "select_us": 8.3456
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31,
+          "pair": 5,
+          "f32_us": 12.8,
+          "volta_us": 48.588799,
+          "select_us": 8.3456
+        }
+      ],
+      "score_elapsed_change_percent": [
+        281.1244901480924,
+        280.7228994101406,
+        282.2581024963854,
+        280.7228994101406,
+        280.7228994101406,
+        279.5999921875
+      ],
+      "median_score_elapsed_change_percent": 280.7228994101406
+    },
+    {
+      "warps": 4,
+      "visible": 129,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 129,
+          "pair": 0,
+          "f32_us": 12.8,
+          "volta_us": 115.251198,
+          "select_us": 8.856
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 129,
+          "pair": 1,
+          "f32_us": 12.8,
+          "volta_us": 115.558395,
+          "select_us": 8.9088
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 129,
+          "pair": 2,
+          "f32_us": 12.8,
+          "volta_us": 115.660805,
+          "select_us": 8.857599
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 129,
+          "pair": 3,
+          "f32_us": 12.8,
+          "volta_us": 115.507202,
+          "select_us": 8.8064
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 129,
+          "pair": 4,
+          "f32_us": 12.8,
+          "volta_us": 115.455994,
+          "select_us": 8.857599
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 129,
+          "pair": 5,
+          "f32_us": 12.8,
+          "volta_us": 115.455994,
+          "select_us": 8.8064
+        }
+      ],
+      "score_elapsed_change_percent": [
+        800.399984375,
+        802.7999609374999,
+        803.6000390624998,
+        802.400015625,
+        801.9999531249999,
+        801.9999531249999
+      ],
+      "median_score_elapsed_change_percent": 802.199984375
+    },
+    {
+      "warps": 4,
+      "visible": 512,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 512,
+          "pair": 0,
+          "f32_us": 13.721601,
+          "volta_us": 115.865601,
+          "select_us": 18.688
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 512,
+          "pair": 1,
+          "f32_us": 13.772801,
+          "volta_us": 115.814407,
+          "select_us": 18.739201
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 512,
+          "pair": 2,
+          "f32_us": 13.823999,
+          "volta_us": 116.019203,
+          "select_us": 18.688
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 512,
+          "pair": 3,
+          "f32_us": 13.721601,
+          "volta_us": 115.814407,
+          "select_us": 18.688
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 512,
+          "pair": 4,
+          "f32_us": 13.823999,
+          "volta_us": 115.865601,
+          "select_us": 18.7376
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 512,
+          "pair": 5,
+          "f32_us": 13.721601,
+          "volta_us": 115.865601,
+          "select_us": 18.688
+        }
+      ],
+      "score_elapsed_change_percent": [
+        744.4029308241801,
+        740.8921830788088,
+        739.2593416709593,
+        744.0298402496911,
+        738.148216011879,
+        744.4029308241801
+      ],
+      "median_score_elapsed_change_percent": 742.46101166425
+    },
+    {
+      "warps": 4,
+      "visible": 513,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 513,
+          "pair": 0,
+          "f32_us": 13.568001,
+          "volta_us": 114.073593,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 513,
+          "pair": 1,
+          "f32_us": 13.568001,
+          "volta_us": 114.124802,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 513,
+          "pair": 2,
+          "f32_us": 13.5168,
+          "volta_us": 114.124802,
+          "select_us": 18.484798
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 513,
+          "pair": 3,
+          "f32_us": 13.568001,
+          "volta_us": 113.971207,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 513,
+          "pair": 4,
+          "f32_us": 13.5168,
+          "volta_us": 114.176003,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 513,
+          "pair": 5,
+          "f32_us": 13.5168,
+          "volta_us": 114.0224,
+          "select_us": 18.4832
+        }
+      ],
+      "score_elapsed_change_percent": [
+        740.7546034231573,
+        741.1320282184531,
+        744.3181966145833,
+        739.9999896816045,
+        744.696991891572,
+        743.560606060606
+      ],
+      "median_score_elapsed_change_percent": 742.3463171395296
+    },
+    {
+      "warps": 4,
+      "visible": 1024,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1024,
+          "pair": 0,
+          "f32_us": 17.715199,
+          "volta_us": 113.5616,
+          "select_us": 18.8416
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1024,
+          "pair": 1,
+          "f32_us": 17.766399,
+          "volta_us": 113.510391,
+          "select_us": 18.8416
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1024,
+          "pair": 2,
+          "f32_us": 17.766399,
+          "volta_us": 113.459206,
+          "select_us": 18.790401
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1024,
+          "pair": 3,
+          "f32_us": 17.715199,
+          "volta_us": 113.612793,
+          "select_us": 18.790401
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1024,
+          "pair": 4,
+          "f32_us": 17.715199,
+          "volta_us": 113.663986,
+          "select_us": 18.790401
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 1024,
+          "pair": 5,
+          "f32_us": 17.766399,
+          "volta_us": 113.408005,
+          "select_us": 18.790401
+        }
+      ],
+      "score_elapsed_change_percent": [
+        541.0404986136482,
+        538.904884439441,
+        538.6167844142192,
+        541.3294764569114,
+        541.6184543001747,
+        538.3285943313555
+      ],
+      "median_score_elapsed_change_percent": 539.9726915265446
+    },
+    {
+      "warps": 4,
+      "visible": 8192,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 8192,
+          "pair": 0,
+          "f32_us": 94.564804,
+          "volta_us": 112.793602,
+          "select_us": 24.9856
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 8192,
+          "pair": 1,
+          "f32_us": 94.311996,
+          "volta_us": 112.639999,
+          "select_us": 24.934401
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 8192,
+          "pair": 2,
+          "f32_us": 94.310402,
+          "volta_us": 112.6912,
+          "select_us": 24.9856
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 8192,
+          "pair": 3,
+          "f32_us": 94.361595,
+          "volta_us": 112.6912,
+          "select_us": 24.8832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 8192,
+          "pair": 4,
+          "f32_us": 94.310402,
+          "volta_us": 112.588791,
+          "select_us": 24.8832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 8192,
+          "pair": 5,
+          "f32_us": 94.412796,
+          "volta_us": 112.793602,
+          "select_us": 24.9856
+        }
+      ],
+      "score_elapsed_change_percent": [
+        19.276514336137176,
+        19.43337409591035,
+        19.489682590898095,
+        19.424857114803974,
+        19.381095417237226,
+        19.468553817641432
+      ],
+      "median_score_elapsed_change_percent": 19.42911560535716
+    },
+    {
+      "warps": 4,
+      "visible": 31250,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31250,
+          "pair": 0,
+          "f32_us": 331.161591,
+          "volta_us": 432.537598,
+          "select_us": 45.260799
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31250,
+          "pair": 1,
+          "f32_us": 330.956787,
+          "volta_us": 432.691223,
+          "select_us": 45.465599
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31250,
+          "pair": 2,
+          "f32_us": 330.854401,
+          "volta_us": 432.639984,
+          "select_us": 45.312
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31250,
+          "pair": 3,
+          "f32_us": 330.854401,
+          "volta_us": 432.79361,
+          "select_us": 45.363197
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31250,
+          "pair": 4,
+          "f32_us": 331.110413,
+          "volta_us": 432.486389,
+          "select_us": 45.465599
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 4,
+          "visible": 31250,
+          "pair": 5,
+          "f32_us": 330.752014,
+          "volta_us": 432.588806,
+          "select_us": 45.414402
+        }
+      ],
+      "score_elapsed_change_percent": [
+        30.61224784368186,
+        30.73949228302122,
+        30.764463973383883,
+        30.81089708702409,
+        30.616970055846583,
+        30.789469962229777
+      ],
+      "median_score_elapsed_change_percent": 30.751978128202552
+    },
+    {
+      "warps": 8,
+      "visible": 1,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1,
+          "pair": 0,
+          "f32_us": 11.3152,
+          "volta_us": 27.852802,
+          "select_us": 7.6288
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1,
+          "pair": 1,
+          "f32_us": 11.3152,
+          "volta_us": 27.904001,
+          "select_us": 7.6288
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1,
+          "pair": 2,
+          "f32_us": 11.264,
+          "volta_us": 27.852802,
+          "select_us": 7.68
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1,
+          "pair": 3,
+          "f32_us": 11.3152,
+          "volta_us": 27.852802,
+          "select_us": 7.6288
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1,
+          "pair": 4,
+          "f32_us": 11.3152,
+          "volta_us": 27.9552,
+          "select_us": 7.6288
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1,
+          "pair": 5,
+          "f32_us": 11.3152,
+          "volta_us": 27.852802,
+          "select_us": 7.6304
+        }
+      ],
+      "score_elapsed_change_percent": [
+        146.1538638291855,
+        146.60634367929865,
+        147.27274502840913,
+        146.1538638291855,
+        147.05882352941177,
+        146.1538638291855
+      ],
+      "median_score_elapsed_change_percent": 146.38010375424207
+    },
+    {
+      "warps": 8,
+      "visible": 7,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 7,
+          "pair": 0,
+          "f32_us": 12.3904,
+          "volta_us": 29.5424,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 7,
+          "pair": 1,
+          "f32_us": 12.3904,
+          "volta_us": 30.054401,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 7,
+          "pair": 2,
+          "f32_us": 12.3904,
+          "volta_us": 29.5424,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 7,
+          "pair": 3,
+          "f32_us": 12.4416,
+          "volta_us": 29.798401,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 7,
+          "pair": 4,
+          "f32_us": 12.3904,
+          "volta_us": 29.5424,
+          "select_us": 8.1408
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 7,
+          "pair": 5,
+          "f32_us": 12.3904,
+          "volta_us": 29.593597,
+          "select_us": 8.1408
+        }
+      ],
+      "score_elapsed_change_percent": [
+        138.4297520661157,
+        142.56199154183884,
+        138.4297520661157,
+        139.5061808770576,
+        138.4297520661157,
+        138.8429509943182
+      ],
+      "median_score_elapsed_change_percent": 138.63635153021693
+    },
+    {
+      "warps": 8,
+      "visible": 31,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31,
+          "pair": 0,
+          "f32_us": 12.7488,
+          "volta_us": 51.711998,
+          "select_us": 8.3968
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31,
+          "pair": 1,
+          "f32_us": 12.7488,
+          "volta_us": 51.662395,
+          "select_us": 8.3472
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31,
+          "pair": 2,
+          "f32_us": 12.7488,
+          "volta_us": 51.8144,
+          "select_us": 8.3968
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31,
+          "pair": 3,
+          "f32_us": 12.8,
+          "volta_us": 51.711998,
+          "select_us": 8.3936
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31,
+          "pair": 4,
+          "f32_us": 12.7488,
+          "volta_us": 51.711998,
+          "select_us": 8.3456
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31,
+          "pair": 5,
+          "f32_us": 12.697599,
+          "volta_us": 51.711998,
+          "select_us": 8.3456
+        }
+      ],
+      "score_elapsed_change_percent": [
+        305.6224742720884,
+        305.2333945155622,
+        306.42570281124495,
+        303.99998437499994,
+        305.6224742720884,
+        307.25808083874756
+      ],
+      "median_score_elapsed_change_percent": 305.6224742720884
+    },
+    {
+      "warps": 8,
+      "visible": 129,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 129,
+          "pair": 0,
+          "f32_us": 12.8,
+          "volta_us": 121.190407,
+          "select_us": 8.9088
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 129,
+          "pair": 1,
+          "f32_us": 12.7984,
+          "volta_us": 121.395187,
+          "select_us": 8.8064
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 129,
+          "pair": 2,
+          "f32_us": 12.8,
+          "volta_us": 121.343994,
+          "select_us": 8.857599
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 129,
+          "pair": 3,
+          "f32_us": 12.8032,
+          "volta_us": 121.343994,
+          "select_us": 8.8064
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 129,
+          "pair": 4,
+          "f32_us": 12.750401,
+          "volta_us": 121.2416,
+          "select_us": 8.8064
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 129,
+          "pair": 5,
+          "f32_us": 12.8,
+          "volta_us": 121.343994,
+          "select_us": 8.857599
+        }
+      ],
+      "score_elapsed_change_percent": [
+        846.8000546874998,
+        848.5184632454058,
+        847.9999531249999,
+        847.763012371907,
+        850.8846035509,
+        847.9999531249999
+      ],
+      "median_score_elapsed_change_percent": 847.9999531249999
+    },
+    {
+      "warps": 8,
+      "visible": 512,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 512,
+          "pair": 0,
+          "f32_us": 13.772801,
+          "volta_us": 226.918411,
+          "select_us": 18.739201
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 512,
+          "pair": 1,
+          "f32_us": 13.568001,
+          "volta_us": 225.791992,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 512,
+          "pair": 2,
+          "f32_us": 13.568001,
+          "volta_us": 222.975998,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 512,
+          "pair": 3,
+          "f32_us": 13.5168,
+          "volta_us": 222.617599,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 512,
+          "pair": 4,
+          "f32_us": 13.568001,
+          "volta_us": 222.310394,
+          "select_us": 18.432001
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 512,
+          "pair": 5,
+          "f32_us": 13.568001,
+          "volta_us": 222.873581,
+          "select_us": 18.4832
+        }
+      ],
+      "score_elapsed_change_percent": [
+        1547.5836033643411,
+        1564.150761781341,
+        1543.3960905515853,
+        1546.9696895714965,
+        1538.4904010546577,
+        1542.641248331276
+      ],
+      "median_score_elapsed_change_percent": 1545.182890061541
+    },
+    {
+      "warps": 8,
+      "visible": 513,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 513,
+          "pair": 0,
+          "f32_us": 13.568001,
+          "volta_us": 223.027191,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 513,
+          "pair": 1,
+          "f32_us": 13.568001,
+          "volta_us": 222.771194,
+          "select_us": 18.534399
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 513,
+          "pair": 2,
+          "f32_us": 13.5168,
+          "volta_us": 222.616013,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 513,
+          "pair": 3,
+          "f32_us": 13.568001,
+          "volta_us": 222.668793,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 513,
+          "pair": 4,
+          "f32_us": 13.5168,
+          "volta_us": 222.873581,
+          "select_us": 18.4832
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 513,
+          "pair": 5,
+          "f32_us": 13.52,
+          "volta_us": 222.668793,
+          "select_us": 18.4832
+        }
+      ],
+      "score_elapsed_change_percent": [
+        1543.7733974223615,
+        1541.8866272194407,
+        1546.957956025095,
+        1541.1319029236508,
+        1548.863495797822,
+        1546.958528106509
+      ],
+      "median_score_elapsed_change_percent": 1545.3656767237283
+    },
+    {
+      "warps": 8,
+      "visible": 1024,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1024,
+          "pair": 0,
+          "f32_us": 17.715199,
+          "volta_us": 222.412796,
+          "select_us": 18.8416
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1024,
+          "pair": 1,
+          "f32_us": 17.766399,
+          "volta_us": 222.310394,
+          "select_us": 18.8416
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1024,
+          "pair": 2,
+          "f32_us": 17.715199,
+          "volta_us": 222.463989,
+          "select_us": 18.790401
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1024,
+          "pair": 3,
+          "f32_us": 17.715199,
+          "volta_us": 222.310394,
+          "select_us": 18.8416
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1024,
+          "pair": 4,
+          "f32_us": 17.715199,
+          "volta_us": 222.515213,
+          "select_us": 18.790401
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 1024,
+          "pair": 5,
+          "f32_us": 17.715199,
+          "volta_us": 222.515213,
+          "select_us": 18.739201
+        }
+      ],
+      "score_elapsed_change_percent": [
+        1155.4913777711445,
+        1151.2968666300922,
+        1155.7803556144079,
+        1154.9133317666938,
+        1156.0695084486492,
+        1156.0695084486492
+      ],
+      "median_score_elapsed_change_percent": 1155.6358666927763
+    },
+    {
+      "warps": 8,
+      "visible": 8192,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 8192,
+          "pair": 0,
+          "f32_us": 94.310402,
+          "volta_us": 221.132812,
+          "select_us": 24.9856
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 8192,
+          "pair": 1,
+          "f32_us": 94.412796,
+          "volta_us": 220.774384,
+          "select_us": 24.9856
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 8192,
+          "pair": 2,
+          "f32_us": 94.463997,
+          "volta_us": 220.928009,
+          "select_us": 25.0368
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 8192,
+          "pair": 3,
+          "f32_us": 94.310402,
+          "volta_us": 220.878418,
+          "select_us": 25.0368
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 8192,
+          "pair": 4,
+          "f32_us": 94.361595,
+          "volta_us": 220.979202,
+          "select_us": 25.0368
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 8192,
+          "pair": 5,
+          "f32_us": 94.822403,
+          "volta_us": 220.774384,
+          "select_us": 24.934401
+        }
+      ],
+      "score_elapsed_change_percent": [
+        134.47340623147807,
+        133.83947235287894,
+        133.8753557082705,
+        134.20366504216577,
+        134.18341116425597,
+        132.82934941018107
+      ],
+      "median_score_elapsed_change_percent": 134.02938343626323
+    },
+    {
+      "warps": 8,
+      "visible": 31250,
+      "pairs": [
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31250,
+          "pair": 0,
+          "f32_us": 331.161591,
+          "volta_us": 447.743988,
+          "select_us": 45.260799
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31250,
+          "pair": 1,
+          "f32_us": 331.007996,
+          "volta_us": 447.539215,
+          "select_us": 45.312
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31250,
+          "pair": 2,
+          "f32_us": 330.905609,
+          "volta_us": 447.948792,
+          "select_us": 45.363197
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31250,
+          "pair": 3,
+          "f32_us": 330.752014,
+          "volta_us": 448.102386,
+          "select_us": 45.364799
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31250,
+          "pair": 4,
+          "f32_us": 330.854401,
+          "volta_us": 447.897552,
+          "select_us": 45.312
+        },
+        {
+          "case": "isolated_timing",
+          "warps": 8,
+          "visible": 31250,
+          "pair": 5,
+          "f32_us": 331.059204,
+          "volta_us": 447.897552,
+          "select_us": 45.414402
+        }
+      ],
+      "score_elapsed_change_percent": [
+        35.204081683494515,
+        35.20495589478148,
+        35.37056484285826,
+        35.479866193649265,
+        35.37602965118183,
+        35.292282041492484
+      ],
+      "median_score_elapsed_change_percent": 35.33142344217537
+    }
+  ],
+  "sampled_telemetry": [
+    {
+      "gpu_uuid": "GPU-8bbdb0ea-0a01-5e00-9309-081498b35342",
+      "temperature": "40 C",
+      "memory_temperature": "39 C",
+      "power_draw": "43.85 W",
+      "power_limit": "250.00 W",
+      "sm_clock": "1357 MHz",
+      "memory_clock": "877 MHz",
+      "pstate": "P0",
+      "reasons": {
+        "clocks_event_reason_gpu_idle": "Not Active",
+        "clocks_event_reason_applications_clocks_setting": "Not Active",
+        "clocks_event_reason_sw_power_cap": "Not Active",
+        "clocks_event_reason_hw_slowdown": "Not Active",
+        "clocks_event_reason_hw_thermal_slowdown": "Not Active",
+        "clocks_event_reason_hw_power_brake_slowdown": "Not Active",
+        "clocks_event_reason_sync_boost": "Not Active",
+        "clocks_event_reason_sw_thermal_slowdown": "Not Active",
+        "clocks_event_reason_display_clocks_setting": "Not Active"
+      },
+      "thermal_flag": false,
+      "thermal_reasons_known": true,
+      "power_cap_active": false
+    },
+    {
+      "gpu_uuid": "GPU-8bbdb0ea-0a01-5e00-9309-081498b35342",
+      "temperature": "40 C",
+      "memory_temperature": "39 C",
+      "power_draw": "43.75 W",
+      "power_limit": "250.00 W",
+      "sm_clock": "1380 MHz",
+      "memory_clock": "877 MHz",
+      "pstate": "P0",
+      "reasons": {
+        "clocks_event_reason_gpu_idle": "Not Active",
+        "clocks_event_reason_applications_clocks_setting": "Not Active",
+        "clocks_event_reason_sw_power_cap": "Not Active",
+        "clocks_event_reason_hw_slowdown": "Not Active",
+        "clocks_event_reason_hw_thermal_slowdown": "Not Active",
+        "clocks_event_reason_hw_power_brake_slowdown": "Not Active",
+        "clocks_event_reason_sync_boost": "Not Active",
+        "clocks_event_reason_sw_thermal_slowdown": "Not Active",
+        "clocks_event_reason_display_clocks_setting": "Not Active"
+      },
+      "thermal_flag": false,
+      "thermal_reasons_known": true,
+      "power_cap_active": false
+    },
+    {
+      "gpu_uuid": "GPU-8bbdb0ea-0a01-5e00-9309-081498b35342",
+      "temperature": "41 C",
+      "memory_temperature": "40 C",
+      "power_draw": "100.04 W",
+      "power_limit": "250.00 W",
+      "sm_clock": "1380 MHz",
+      "memory_clock": "877 MHz",
+      "pstate": "P0",
+      "reasons": {
+        "clocks_event_reason_gpu_idle": "Not Active",
+        "clocks_event_reason_applications_clocks_setting": "Not Active",
+        "clocks_event_reason_sw_power_cap": "Not Active",
+        "clocks_event_reason_hw_slowdown": "Not Active",
+        "clocks_event_reason_hw_thermal_slowdown": "Not Active",
+        "clocks_event_reason_hw_power_brake_slowdown": "Not Active",
+        "clocks_event_reason_sync_boost": "Not Active",
+        "clocks_event_reason_sw_thermal_slowdown": "Not Active",
+        "clocks_event_reason_display_clocks_setting": "Not Active"
+      },
+      "thermal_flag": false,
+      "thermal_reasons_known": true,
+      "power_cap_active": false
+    }
+  ],
+  "thermal": {
+    "samples": 3,
+    "valid_samples": 3,
+    "thermal_flag": false,
+    "reason_coverage_complete": true,
+    "regime": "no_thermal_reason_observed",
+    "performance_claim_admitted": false,
+    "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+  },
+  "relative_l2_above_nominal_component_target": [
+    {
+      "warps": 4,
+      "visible": 513,
+      "mode": 3,
+      "relative_l2": 0.0430834314
+    },
+    {
+      "warps": 8,
+      "visible": 513,
+      "mode": 3,
+      "relative_l2": 0.0430834314
+    }
+  ],
+  "memcheck_synccheck": "zero errors for all three executables",
+  "scope": "Isolated synthetic scorer and unchanged selector on selected-base branch; event timings include launch overhead, exclude model query preparation, routing and attention. No model KL, end-to-end performance, batched key reuse or production dispatch acceptance.",
+  "production_candidate_enabled": false
+}

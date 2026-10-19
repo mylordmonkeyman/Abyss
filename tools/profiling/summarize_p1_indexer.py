@@ -58,6 +58,8 @@ def summarize(archive, digest, run):
         return dict(schema=1,run=run,artifact_zip_sha256=digest,
             source_sha=read('source-sha.txt').strip(),component_cases=cases,timings=groups,
             sampled_telemetry=samples,thermal=p0.thermal_assessment(samples),
+            relative_l2_above_nominal_component_target=[dict(warps=r['warps'],visible=r['visible'],
+                mode=r['mode'],relative_l2=r['relative_l2']) for r in cases if r['relative_l2']>1e-5],
             memcheck_synccheck='zero errors for all three executables',
             scope='Isolated synthetic scorer and unchanged selector on selected-base branch; '
                   'event timings include launch overhead, exclude model query preparation, routing and attention. '
@@ -106,7 +108,8 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('archive',type=Path);ap.add_argument('--sha256',required=True)
     ap.add_argument('--run',required=True,type=int);ap.add_argument('--output',required=True,type=Path)
-    a=ap.parse_args();result=summarize(a.archive,a.sha256,a.run)
+    ap.add_argument('--base-audit',action='store_true',help='Summarize the separate model dispatch artifact')
+    a=ap.parse_args();result=(base_audit if a.base_audit else summarize)(a.archive,a.sha256,a.run)
     a.output.write_text(json.dumps(result,indent=2)+'\n')
 
 
