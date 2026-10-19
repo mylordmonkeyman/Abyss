@@ -25,7 +25,7 @@ def main():
     # position 2048 reachable in batched prefill. Not a semantic-quality corpus.
     ids=original[:600]*4
     tokens=out/'capture.tokens';tokens.write_text(','.join(map(str,ids))+'\n')
-    env=fixed_env();env.update(STRATA_DS4_IDX='1',STRATA_DS4_ATTN='1')
+    env=fixed_env();env.update(STRATA_DS4_IDX='1',STRATA_DS4_ATTN='1',STRATA_GLM_PREFILL_SUB='256')
     argv=[str(ENGINE),'--glm-pack',str(PACK),'--tokens-file',str(tokens),
           '--max-context','4096','--max-new','1','--temperature','0','--prefill','auto',
           '--eos-ids','2147483647']
