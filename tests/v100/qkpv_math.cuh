@@ -125,6 +125,40 @@ __global__ void pv_mma(const float* p,const uint16_t* keys,float* out,int n,floa
     }
 #endif
 }
+// Shorter PV chains over 64-key groups, retaining global FP32 probabilities
+// and combining independent hi/lo sums with compensated FP32 addition.
+__global__ void pv_mma_chunked(const float* p,const uint16_t* keys,float* out,int n,float pscale) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__>=700 && __CUDA_ARCH__<750
+    const int lane=threadIdx.x,qp=(lane>>2)&3,j=(lane&3)+4*(lane>>4);
+    const int head=blockIdx.x*8,dim=blockIdx.y*32+qp*8;
+    float total[8]={},correction[8]={};
+    for(int begin=0;begin<n;begin+=64) {
+      float hi[8]={},lo[8]={};
+      for(int k0=begin;k0<min(begin+64,n);k0+=4) {
+        uint32_t ah[2]={},al[2]={},b[2]={};
+#pragma unroll
+        for(int k=0;k<4;++k) {
+            uint16_t a0,a1;split(k0+k<n?p[(head+j)*n+k0+k]*pscale:0.0f,a0,a1);
+            const uint16_t v=k0+k<n?keys[(k0+k)*D+dim+j]:0;
+            ah[k/2]|=uint32_t(a0)<<(16*(k%2));al[k/2]|=uint32_t(a1)<<(16*(k%2));
+            b[k/2]|=uint32_t(v)<<(16*(k%2));
+        }
+        strata::kernels::volta::mma884(hi,ah[0],ah[1],b[0],b[1]);
+        strata::kernels::volta::mma884(lo,al[0],al[1],b[0],b[1]);
+      }
+#pragma unroll
+      for(int i=0;i<8;++i) {
+          const float y=(hi[i]+lo[i])-correction[i],next=total[i]+y;
+          correction[i]=(next-total[i])-y;total[i]=next;
+      }
+    }
+#pragma unroll
+    for(int i=0;i<8;++i) {
+        const int r=(lane&1)+4*(lane>>4)+2*((i>>1)&1),c=(lane&2)+4*(i>>2)+(i&1);
+        out[(head+r)*D+dim+c]=total[i]/pscale;
+    }
+#endif
+}
 __global__ void qk_scalar(const float* q,const uint16_t* keys,float* out,int n) {
     const int i=blockIdx.x*blockDim.x+threadIdx.x;if(i>=H*n)return;
     float v=0;for(int k=0;k<D;++k) v=fmaf(q[(i/n)*D+k],__half2float(__ushort_as_half(keys[(i%n)*D+k])),v);

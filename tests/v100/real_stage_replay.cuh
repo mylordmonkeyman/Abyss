@@ -65,7 +65,7 @@ void real_stage_case(const std::filesystem::path& root,int expected_ratio) {
     auto launch=[&](cudaStream_t stream) {
         qk_mma_chunked<<<dim3(H/8,(n+31)/32),32,0,stream>>>(dq.p,gathered.p,scores.p,n);
         softmax_sink<<<1,H,0,stream>>>(scores.p,dsink.p,prob.p,den.p,n);
-        pv_mma<<<dim3(H/8,D/32),32,0,stream>>>(prob.p,gathered.p,pv.p,n,1024);
+        pv_mma_chunked<<<dim3(H/8,D/32),32,0,stream>>>(prob.p,gathered.p,pv.p,n,1024);
         inverse_rope<<<H,D,0,stream>>>(pv.p,output.p,rope,p);
     };
     qk_mma<<<dim3(H/8,(n+31)/32),32>>>(dq.p,gathered.p,original.p,n);

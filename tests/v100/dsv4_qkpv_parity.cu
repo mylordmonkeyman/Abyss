@@ -58,6 +58,14 @@ void run(int n,int mode,float pscale) {
     const auto scalar_pv=dpvscalar.get();compare(scalar_pv,out);
     const std::vector<double> scalar_pv_reference(scalar_pv.begin(),scalar_pv.begin()+H*D);
     const Error em=compare(dout.get(),scalar_pv_reference);
+    pv_mma_chunked<<<dim3(H/8,D/32),32>>>(dp.p,dk.p,dout.p,n,pscale);
+    ck(cudaGetLastError());ck(cudaDeviceSynchronize());
+    const auto cpv=compare(dout.get(),out),cscalar=compare(dout.get(),scalar_pv_reference);
+    need(cpv.rel<(pscale==1?1e-4:1e-5) || cpv.max_abs<1e-10,"chunked PV FP64 screen");
+    need(cscalar.rel<(pscale==1?1e-4:1e-5) || cscalar.max_abs<1e-10,"chunked PV scalar screen");
+    std::printf("{\"diagnostic\":\"chunked_pv\",\"keys\":%d,\"mode\":%d,\"probability_scale\":%.0f,"
+                "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"versus_scalar_relative_l2\":%.9g,\"pass\":true}\n",
+                n,mode,pscale,cpv.rel,cpv.max_abs,cscalar.rel);
     if(n) { const Error scalar=compare(dscalar.get(),score);need(scalar.rel<1e-5,"scalar QK reference error"); }
     need(eq.rel<1e-5 && ep.rel<1e-5 && ed.rel<1e-5,"QK/sink-softmax component screen");
     need(eo.rel<(pscale==1?1e-4:1e-5) || eo.max_abs<1e-10,"PV component screen");
@@ -79,6 +87,9 @@ int main() {
             run(n,0,1);run(n,0,1024);
         }
         for(int mode:{1,2,3,4})run(129,mode,1024);
+        cudaFuncAttributes cpv{};ck(cudaFuncGetAttributes(&cpv,pv_mma_chunked));
+        need(cpv.localSizeBytes==0,"chunked PV local-memory spill/storage");
+        std::printf("{\"diagnostic\":\"chunked_pv_resources\",\"registers\":%d,\"local_bytes\":%zu,\"pass\":true}\n",cpv.numRegs,cpv.localSizeBytes);
         cudaFuncAttributes chunked{};ck(cudaFuncGetAttributes(&chunked,qk_mma_chunked));
         need(chunked.localSizeBytes==0,"chunked QK local-memory spill/storage");
         std::printf("{\"diagnostic\":\"chunked_qk_resources\",\"registers\":%d,\"local_bytes\":%zu,\"pass\":true}\n",chunked.numRegs,chunked.localSizeBytes);
