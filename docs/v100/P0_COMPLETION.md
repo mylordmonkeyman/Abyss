@@ -67,8 +67,11 @@ IQ3_XXS T=1 uses IQ256 rows1, multi-row IQ2_XS/IQ3_XXS uses IQ256, and MXFP4
 down uses GGML dots. No IQ512 calls were observed. At least 3,615,488 repeated
 input quantizations are proven by a distinct-row upper bound; exact per-call
 counts and detailed per-token prefill route/cache attribution are still open.
-Compiled GGML getters/callsite symbols are queued in read-only run
-`39199082932`. 39 local tooling tests pass; profile timings are excluded.
+Read-only run `39199082932` passed: both exact binaries' compiled
+`ggml_cpu_has_avx2` returns 1 and `ggml_cpu_has_avx512` returns 0, verified by
+getter disassembly. Actual allocation callers are symbolicated and application
+component bytes reconcile to the API total. 40 local tooling tests pass;
+profile timings are excluded.
 
 ## Interrupted long-context campaign
 

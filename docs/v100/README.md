@@ -2,7 +2,9 @@
 
 Branch: `feature/deepseek-v100-perf`, based on upstream
 `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
-The [revision-6 specification](IMPLEMENTATION_SPEC.md) defines the remaining gates.
+The [revision-9 specification](IMPLEMENTATION_SPEC.md) defines the remaining gates.
+The current [P0 completion ledger](P0_COMPLETION.md) supersedes this first-increment
+overview; see [physical accounting and actual dispatch results](P0_ACCOUNTING_RESULTS.md).
 
 ## Implemented in this first increment
 

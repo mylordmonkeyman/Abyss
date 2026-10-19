@@ -36,5 +36,13 @@ class MemoryReconciliation(unittest.TestCase):
         self.assertEqual(reconcile.live_at(events,25)['device'][4096]['bytes'],100)
         self.assertEqual(reconcile.live_at(events,30)['device'],{})
 
+    def test_application_components_conserve_without_readding_borrowed_workspace(self):
+        mallocs=[dict(seq=1,bytes=2*1024**3,caller=42),dict(seq=2,bytes=4096,caller=43)]
+        symbols=dict(allocation_callers=[dict(runtime_caller=42,addr2line=dict(stdout='strata::core::Glm5Model::fast_setup(err)\n??:?'))])
+        r=reconcile.attribute_device(mallocs,symbols)
+        self.assertEqual(r['sum_bytes'],2*1024**3+4096)
+        self.assertEqual(r['bytes']['expert_pool_including_borrowable_prompt_tail'],2*1024**3)
+        self.assertEqual(r['bytes']['other_or_unresolved_application_allocations'],4096)
+
 
 if __name__=='__main__':unittest.main()

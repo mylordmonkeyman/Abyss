@@ -64,11 +64,31 @@ binaries and independently reconstructed from the source and model geometry:
 | Compressor recurrence rings | 12,206,080 |
 | Attention activations/selection | 228,352 |
 
-Dense and expert-pool allocation requests are captured exactly; a read-only
-symbol-attribution job is queued to corroborate their callsite labels. The
+Read-only symbol run 39199082932 passed (artifact 12162959473; ZIP digest verified).
+It corroborates dense/expert/attention allocations against their exact immutable
+ELF callers, and identifies cached MMQ workspace and the attention snapshot.
+Source line numbers are unavailable in the release binaries. The
 prefill workspace/staging borrows the expert-pool tail; adding its rounded log
 totals again would double-count GPU capacity. Fine attribution inside that
 borrowed arena remains a source/accounting follow-up, not new allocated memory.
+
+| Application device component | Historical bytes | Current bytes |
+| --- | ---: | ---: |
+| Dense arena | 6,620,498,688 | 6,620,498,688 |
+| Expert pool including borrowable prompt tail | 24,909,026,560 | 24,909,026,560 |
+| Attention raw/CSA/HCA/indexer arena | 948,249,856 | 948,249,856 |
+| Fast activations/routing/expert scratch | 88,061,548 | 88,065,644 |
+| Cached MMQ workspace | 9,830,400 | 9,830,400 |
+| Attention state snapshot | 18,018,304 | 18,018,304 |
+| Model-load auxiliary buffers | 1,468,072 | 1,468,072 |
+| Prefill auxiliary device buffers | 131,072 | 131,072 |
+| Other/unresolved application requests | 45,120 | 45,120 |
+
+These measured API component bytes sum exactly to each application's live
+device total. The host expert RAM tier is 74,304,782,336 requested bytes in each
+base. Remaining host pin groups cover embedding/routing/reader, prompt landing
+and CPU exchange buffers; the complete disjoint requested-range partition is in
+the JSON. They remain subsets of the host physical budget, not extra terms.
 
 NUMA placement is materially asymmetric. The selected historical checkpoint
 reports 23,586,148,352 mapped resident bytes on node0 and 61,985,579,008 on node1;
@@ -91,8 +111,10 @@ comparison a separate 0/1 switch experiment.
 `p0-dispatch-2026-10-19.json` preserves per-layer/type/token-group totals plus
 compact global totals. The original bounded artifact retains the complete
 23,285-key ledger. No calls were dropped and every decode service request joins
-to its issued layer/position. The CPU is Broadwell with AVX2 and no AVX512 flags;
-compiled GGML getter disassembly is queued as separate read-only evidence.
+to its issued layer/position. The CPU is Broadwell with AVX2 and no AVX512 flags.
+Read-only getter disassembly confirms that **both exact upstream binaries**
+compile `ggml_cpu_has_avx2` to return 1 and `ggml_cpu_has_avx512` to return 0.
+This is independent of the working fork's actual IQ256/no-IQ512 row counters.
 
 | Path | Observed branch |
 | --- | --- |
@@ -140,4 +162,4 @@ differ, and no causal speedup is claimed. Warm decode sample clocks are
 clock/power behavior varies; ten-second samples cannot guarantee unsampled state.
 Final base selection, critical-path top three, exact P3 ranking and unresolved
 runtime/arena details still prevent declaring P0 complete. Production arithmetic
-is unchanged. Validation: 39 local V100 tooling tests pass.
+is unchanged. Validation: 40 local V100 tooling tests pass.

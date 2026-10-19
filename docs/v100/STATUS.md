@@ -3,6 +3,12 @@
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
 Production arithmetic and dispatch remain unchanged. No performance improvement is claimed.
 
+Current P0 evidence (19 October): [completion ledger](P0_COMPLETION.md) and
+[accounting/dispatch results](P0_ACCOUNTING_RESULTS.md). The 108-request short
+matrix and three 32K pairs are complete. Both immutable bases have conserved
+memory budgets and compiled AVX2/no-AVX512 getter evidence; long/chunk/timeline
+work remains active. The sections below preserve earlier dated checkpoints.
+
 ## Active specification
 
 The implementation now follows **v9** (`IMPLEMENTATION_SPEC.md`).

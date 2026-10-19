@@ -136,7 +136,52 @@ def gpu_memory(sample, pid):
                 'do not substitute a sole process without a verified namespace mapping.', resolution_bytes=1024**2)
 
 
-def reconcile(root, geometry, inventory):
+def attribute_device(mallocs, symbols):
+    callers={r['runtime_caller']:r for r in symbols['allocation_callers']}
+    groups=defaultdict(int);events=[]
+    for e in mallocs:
+        r=callers.get(e['caller']);command=r.get('addr2line') if r else None
+        name=command.get('stdout','').splitlines()[0] if command and command.get('stdout') else 'unknown'
+        if '::dsv4_alloc(' in name: group='attention_raw_csa_hca_indexer_arena'
+        elif '::dsv4_snap_copy(' in name: group='attention_state_snapshot'
+        elif 'CachingPool::alloc(' in name: group='ggml_mmq_cached_workspace'
+        elif '::fast_setup(' in name and e['bytes']>1024**3: group='expert_pool_including_borrowable_prompt_tail'
+        elif '::fast_setup(' in name: group='fast_activation_routing_and_expert_scratch'
+        elif '::load_pack(' in name and e['bytes']>1024**3: group='dense_weight_arena'
+        elif '::load_pack(' in name: group='model_load_auxiliary_buffers'
+        elif '::prefill_setup(' in name: group='prefill_auxiliary_device_buffers'
+        else: group='other_or_unresolved_application_allocations'
+        groups[group]+=e['bytes']
+        events.append(dict(seq=e['seq'],bytes=e['bytes'],group=group,caller_symbol=name))
+    return dict(bytes=dict(groups),sum_bytes=sum(groups.values()),events=events,
+        interpretation='Actual allocation return addresses symbolicated against the exact immutable ELF. '
+        'Function/size-based source attribution within this capture; source line numbers unavailable. '
+        'The expert pool includes its borrowable prefill workspace/staging tail, counted once. '
+        'This classifies application API bytes only, not the NVML driver/context residual.')
+
+
+def attribute_host(allocations, symbols):
+    callers={r['runtime_caller']:r for r in symbols['allocation_callers']}
+    groups=defaultdict(list)
+    for e in allocations:
+        r=callers.get(e['caller']);command=r.get('addr2line') if r else None
+        name=command.get('stdout','').splitlines()[0] if command and command.get('stdout') else 'unknown'
+        if '::fast_setup(' in name and e['bytes']>1024**3: group='pinned_expert_ram_tier'
+        elif '::fast_setup(' in name: group='fast_routing_embedding_staging_and_reader_buffers'
+        elif '::prefill_setup(' in name: group='prefill_embedding_and_disk_landing_buffers'
+        elif '::prefill_half(' in name: group='prefill_cpu_exchange_buffers'
+        elif '::fast_cpu_setup(' in name: group='cpu_expert_exchange'
+        else: group='other_or_unresolved_host_pin_calls'
+        groups[group].append((e['ptr'],e['bytes']))
+    total=union_bytes([(e['ptr'],e['bytes']) for e in allocations])
+    parts={k:union_bytes(v) for k,v in groups.items()}
+    return dict(requested_bytes=parts,unique_union_bytes=total,groups_disjoint=sum(parts.values())==total,
+        interpretation='Captured host-pin API requested ranges grouped by symbol/source allocation role. '
+        'These groups are inside the deduplicated backing/PSS physical budget, not added to it. '
+        'If groups overlap they are not an additive component partition; page-rounding remains separate.')
+
+
+def reconcile(root, geometry, inventory, symbols=None):
     components = dsv4_components(geometry, 135168)
     tensors = list(csv.DictReader(inventory.open()))
     roles = defaultdict(int)
@@ -199,14 +244,25 @@ def reconcile(root, geometry, inventory):
                 'and a minimum sufficient cache size are not measured.',
             numa_scope='Node placement counts and node meminfo; QPI bytes/latency not measured.',
             units='All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000')
+        if symbols:
+            attribution=attribute_device(mallocs,symbols['bases'][base])
+            if attribution['sum_bytes']!=requested:raise ValueError('device attribution did not conserve API total')
+            result['bases'][base]['device_application_components']=attribution
+            result['bases'][base]['host_pin_components']=attribute_host(
+                [e for kind in ('host_allocated','host_registered') for e in live[kind].values()],symbols['bases'][base])
+            result['bases'][base]['compiled_cpu_getter_disassembly']=symbols['bases'][base]['compiled_cpu_getters']
+    if symbols:
+        result['symbol_artifact_id']=12162959473
+        result['symbol_artifact_zip_sha256']='0ff5133baf49ac92989fe57f3a649f399064dd3ce0e881e4d498c63fad258441'
     return result
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('root', type=Path);ap.add_argument('geometry',type=Path);ap.add_argument('inventory',type=Path)
-    ap.add_argument('--output', type=Path, required=True);args=ap.parse_args()
-    args.output.write_text(json.dumps(reconcile(args.root,json.loads(args.geometry.read_text()),args.inventory),indent=2)+'\n')
+    ap.add_argument('--output', type=Path, required=True);ap.add_argument('--symbols',type=Path);args=ap.parse_args()
+    symbols=json.loads(args.symbols.read_text()) if args.symbols else None
+    args.output.write_text(json.dumps(reconcile(args.root,json.loads(args.geometry.read_text()),args.inventory,symbols),indent=2)+'\n')
 
 
 if __name__ == '__main__': main()

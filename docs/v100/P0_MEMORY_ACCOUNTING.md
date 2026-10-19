@@ -1,7 +1,9 @@
 # P0 memory accounting collection
 
-Status: collector implemented and host-tested; **physical V100 collection pending**.
-These tools do not close the P0 unique-memory gate on their own.
+Status: physical collection passed for both immutable upstream binaries in run
+39194149121. See [accounting results](P0_ACCOUNTING_RESULTS.md) and the conserved
+per-SHA budget in `p0-memory-accounting-2026-10-19.json`. Fine attribution inside
+the borrowed prefill arena remains open; these tools alone do not close all P0.
 
 `tools/v100/cuda_alloc_observer.cpp` observes synchronous CUDA runtime allocation,
 registration, free and host/device alias calls without changing the engine binary.

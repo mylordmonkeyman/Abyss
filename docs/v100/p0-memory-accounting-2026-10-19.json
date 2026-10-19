@@ -648,7 +648,186 @@
       "cgroup_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
       "page_cache_scope": "Whole-host observed file-cache working footprint; per-file resident pages and a minimum sufficient cache size are not measured.",
       "numa_scope": "Node placement counts and node meminfo; QPI bytes/latency not measured.",
-      "units": "All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000"
+      "units": "All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000",
+      "device_application_components": {
+        "bytes": {
+          "dense_weight_arena": 6620498688,
+          "model_load_auxiliary_buffers": 1468072,
+          "attention_raw_csa_hca_indexer_arena": 948249856,
+          "fast_activation_routing_and_expert_scratch": 88061548,
+          "prefill_auxiliary_device_buffers": 131072,
+          "expert_pool_including_borrowable_prompt_tail": 24909026560,
+          "other_or_unresolved_application_allocations": 45120,
+          "ggml_mmq_cached_workspace": 9830400,
+          "attention_state_snapshot": 18018304
+        },
+        "sum_bytes": 32595329620,
+        "events": [
+          {
+            "seq": 1,
+            "bytes": 6620498688,
+            "group": "dense_weight_arena",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 2,
+            "bytes": 131072,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 3,
+            "bytes": 1336992,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 4,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 5,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 6,
+            "bytes": 948249856,
+            "group": "attention_raw_csa_hca_indexer_arena",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_alloc(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 7,
+            "bytes": 833068,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 10,
+            "bytes": 64,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 21,
+            "bytes": 87031808,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 27,
+            "bytes": 131072,
+            "group": "prefill_auxiliary_device_buffers",
+            "caller_symbol": "strata::core::Glm5Model::prefill_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 28,
+            "bytes": 17541568000,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 29,
+            "bytes": 7367458560,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 37,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 38,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 43,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 44,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 78,
+            "bytes": 64,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 80,
+            "bytes": 45056,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 84,
+            "bytes": 4587520,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 85,
+            "bytes": 5242880,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 86,
+            "bytes": 18018304,
+            "group": "attention_state_snapshot",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_snap_copy(bool)"
+          }
+        ],
+        "interpretation": "Actual allocation return addresses symbolicated against the exact immutable ELF. Function/size-based source attribution within this capture; source line numbers unavailable. The expert pool includes its borrowable prefill workspace/staging tail, counted once. This classifies application API bytes only, not the NVML driver/context residual."
+      },
+      "host_pin_components": {
+        "requested_bytes": {
+          "fast_routing_embedding_staging_and_reader_buffers": 713604772,
+          "prefill_embedding_and_disk_landing_buffers": 1582278144,
+          "pinned_expert_ram_tier": 74304782336,
+          "other_or_unresolved_host_pin_calls": 65600,
+          "prefill_cpu_exchange_buffers": 546064580
+        },
+        "unique_union_bytes": 77146795432,
+        "groups_disjoint": true,
+        "interpretation": "Captured host-pin API requested ranges grouped by symbol/source allocation role. These groups are inside the deduplicated backing/PSS physical budget, not added to it. If groups overlap they are not an additive component partition; page-rounding remains separate."
+      },
+      "compiled_cpu_getter_disassembly": {
+        "ggml_cpu_has_avx2": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx2",
+            "/actions-runner/abyss-base-builds/47001f31/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/47001f31/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000315970 <ggml_cpu_has_avx2>:\n  315970:\tf3 0f 1e fa          \tendbr64\n  315974:\tb8 01 00 00 00       \tmov    $0x1,%eax\n  315979:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        },
+        "ggml_cpu_has_avx512": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx512",
+            "/actions-runner/abyss-base-builds/47001f31/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/47001f31/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000315980 <ggml_cpu_has_avx512>:\n  315980:\tf3 0f 1e fa          \tendbr64\n  315984:\t31 c0                \txor    %eax,%eax\n  315986:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        }
+      }
     },
     "current": {
       "sample_utc": "2026-10-19T03:45:48.806491+00:00",
@@ -1255,7 +1434,188 @@
       "cgroup_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
       "page_cache_scope": "Whole-host observed file-cache working footprint; per-file resident pages and a minimum sufficient cache size are not measured.",
       "numa_scope": "Node placement counts and node meminfo; QPI bytes/latency not measured.",
-      "units": "All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000"
+      "units": "All numeric memory values bytes; GiB=bytes/1073741824, GB=bytes/1000000000",
+      "device_application_components": {
+        "bytes": {
+          "dense_weight_arena": 6620498688,
+          "model_load_auxiliary_buffers": 1468072,
+          "attention_raw_csa_hca_indexer_arena": 948249856,
+          "fast_activation_routing_and_expert_scratch": 88065644,
+          "prefill_auxiliary_device_buffers": 131072,
+          "expert_pool_including_borrowable_prompt_tail": 24909026560,
+          "other_or_unresolved_application_allocations": 45120,
+          "ggml_mmq_cached_workspace": 9830400,
+          "attention_state_snapshot": 18018304
+        },
+        "sum_bytes": 32595333716,
+        "events": [
+          {
+            "seq": 1,
+            "bytes": 6620498688,
+            "group": "dense_weight_arena",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 2,
+            "bytes": 131072,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 3,
+            "bytes": 1336992,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 4,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 5,
+            "bytes": 4,
+            "group": "model_load_auxiliary_buffers",
+            "caller_symbol": "strata::core::Glm5Model::load_pack(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int, int, int)"
+          },
+          {
+            "seq": 6,
+            "bytes": 948249856,
+            "group": "attention_raw_csa_hca_indexer_arena",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_alloc(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 7,
+            "bytes": 837164,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 10,
+            "bytes": 64,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 21,
+            "bytes": 87031808,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 27,
+            "bytes": 131072,
+            "group": "prefill_auxiliary_device_buffers",
+            "caller_symbol": "strata::core::Glm5Model::prefill_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 28,
+            "bytes": 17541568000,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 29,
+            "bytes": 7367458560,
+            "group": "expert_pool_including_borrowable_prompt_tail",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 37,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 38,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 43,
+            "bytes": 32768,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 44,
+            "bytes": 65536,
+            "group": "fast_activation_routing_and_expert_scratch",
+            "caller_symbol": "strata::core::Glm5Model::fast_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 78,
+            "bytes": 64,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 80,
+            "bytes": 45056,
+            "group": "other_or_unresolved_application_allocations",
+            "caller_symbol": "strata::core::Glm5Model::fast_cpu_lane_setup(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+          },
+          {
+            "seq": 84,
+            "bytes": 4587520,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 85,
+            "bytes": 5242880,
+            "group": "ggml_mmq_cached_workspace",
+            "caller_symbol": "(anonymous namespace)::CachingPool::alloc(unsigned long, unsigned long*)"
+          },
+          {
+            "seq": 86,
+            "bytes": 18018304,
+            "group": "attention_state_snapshot",
+            "caller_symbol": "strata::core::Glm5Model::dsv4_snap_copy(bool)"
+          }
+        ],
+        "interpretation": "Actual allocation return addresses symbolicated against the exact immutable ELF. Function/size-based source attribution within this capture; source line numbers unavailable. The expert pool includes its borrowable prefill workspace/staging tail, counted once. This classifies application API bytes only, not the NVML driver/context residual."
+      },
+      "host_pin_components": {
+        "requested_bytes": {
+          "fast_routing_embedding_staging_and_reader_buffers": 713883460,
+          "prefill_embedding_and_disk_landing_buffers": 1582278144,
+          "pinned_expert_ram_tier": 74304782336,
+          "other_or_unresolved_host_pin_calls": 81984,
+          "prefill_cpu_exchange_buffers": 546064580
+        },
+        "unique_union_bytes": 77147090504,
+        "groups_disjoint": true,
+        "interpretation": "Captured host-pin API requested ranges grouped by symbol/source allocation role. These groups are inside the deduplicated backing/PSS physical budget, not added to it. If groups overlap they are not an additive component partition; page-rounding remains separate."
+      },
+      "compiled_cpu_getter_disassembly": {
+        "ggml_cpu_has_avx2": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx2",
+            "/actions-runner/abyss-base-builds/7c893ac1/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/7c893ac1/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000332230 <ggml_cpu_has_avx2>:\n  332230:\tf3 0f 1e fa          \tendbr64\n  332234:\tb8 01 00 00 00       \tmov    $0x1,%eax\n  332239:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        },
+        "ggml_cpu_has_avx512": {
+          "argv": [
+            "objdump",
+            "-d",
+            "--disassemble=ggml_cpu_has_avx512",
+            "/actions-runner/abyss-base-builds/7c893ac1/strata"
+          ],
+          "returncode": 0,
+          "stdout": "\n/actions-runner/abyss-base-builds/7c893ac1/strata:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000332240 <ggml_cpu_has_avx512>:\n  332240:\tf3 0f 1e fa          \tendbr64\n  332244:\t31 c0                \txor    %eax,%eax\n  332246:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+          "stderr": ""
+        }
+      }
     }
-  }
+  },
+  "symbol_artifact_id": 12162959473,
+  "symbol_artifact_zip_sha256": "0ff5133baf49ac92989fe57f3a649f399064dd3ce0e881e4d498c63fad258441"
 }

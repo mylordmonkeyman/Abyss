@@ -1,7 +1,10 @@
 # P0 dispatch ledger
 
-Status: instrumentation and host tests implemented. **CUDA compilation and physical
-model collection remain pending** behind the active unprofiled P0 campaign.
+Status: CUDA compilation and physical collection passed in run 39194149121.
+See [accounting/dispatch results](P0_ACCOUNTING_RESULTS.md) and
+`p0-dispatch-2026-10-19.json`. No dropped calls or unresolved decode joins.
+Detailed per-token cache/route and exact per-call input-duplication counts remain
+open; source presence or a successful capture does not close every P0 gate.
 
 Enable only in a separate single-GPU diagnostic process with
 `ABYSS_V100_DISPATCH=1 ABYSS_V100_PROFILE=1`. Production defaults leave the ledger
