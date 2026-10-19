@@ -95,8 +95,8 @@ attention and MMQ are 49.45%, 21.19%, 16.26%. This is a main-stream wall-lane
 proxy, not a complete causal DAG. Decode populations/gaps vary; do not pool
 them or assign gaps to CPU/disk. Minimum observed MemAvailable is 47.06 GB
 (decimal) across both captures, no sampled thermal reason; power caps occur.
-Raw profiler reports remain on the runner. Full branch quality comparison,
-batched scorer candidates and P1 acceptance remain open.
+Raw profiler reports remain on the runner. Batched candidates and P1 acceptance
+remain open; the bounded port-quality result follows.
 
 `v100-p1-quality.yml` adds a separately serialized ported-F32 check. It reuses
 the frozen teacher fixture and digest-verified immutable v1.3.31 distributions,
@@ -106,7 +106,14 @@ Its 16/8 GiB preflight/own-child safety stops, process telemetry, 64 MiB artifac
 cap and temporary raw distributions preserve the existing runner constraints.
 This is a port/repeatability screen, not optimized scorer model qualification.
 
-## Batched cuBLAS prototype (P1e), awaiting physical validation
+Run `39258176612` passes the bounded F32 port/repeatability screen:
+`p1-base-quality-2026-10-19.json`, artifact `12190232042`, ZIP SHA256
+`b38ffef13845d1446708156985fae36b9353b90e6d623563ac4481d6c67424a4`.
+Working repeat mean KL is 1.0291e-7; immutable-v1.3.31 versus working comparisons
+are 1.5664e-7 and 1.9662e-7, max position 2.5819e-6, all top-1 32/32. These
+32 teacher-forced positions are a port screen, not the P1 candidate corpus gate.
+
+## Batched cuBLAS prototype (P1e)
 
 `test_dsv4_cublas_indexer` implements a separate, test-only scorer using **FP32
 SGEMM**, not an asserted tensor-core path. Queries retain their original FP32
@@ -137,6 +144,29 @@ included. The timed matrix covers T=1/2/3/8/16/32/256 against approximately
 contexts. Six interleaved pairs per shape include telemetry and own-child
 16/8 GiB memory guards. The separate key-reuse **MMA** batched candidate,
 real-model candidate quality and dispatch acceptance are still pending.
+
+### First physical batched result
+
+Run `39260845000` passes 11 parity cases, memcheck/synccheck, and all 36 timed
+shapes (216 timing pairs). `p1-cublas-2026-10-19.json` is reproduced by
+`summarize_p1_batched.py`; artifact `12191830882`, ZIP SHA256
+`04c37c10d3ffd3452deb3fafaa01ebd3c8c815fb18c995f1f6148f39bf1b1028`.
+Maximum relative L2 versus F32 is 3.1553e-7 and sampled FP64 max absolute
+error 1.0859e-5. Every timed selected membership matches F32, including tiny
+query stress in the parity population. No sampled thermal reason in 17 samples.
+
+Several **small batched** shapes win against upstream's **batched** F32 scorer.
+These T=1 observations must not be compared to the faster upstream **decode**
+warp scorer. Large prefill does not win: T=256/~31K visible rows is +4.00%;
+T=4096 at 120K starting context is +3.91%; shorter contexts lose more. A losing
+full stage cannot be admitted based on presumed GEMM speed.
+
+The next bounded experiment assigns eight scores per epilogue warp instead of
+one, reducing its CTA count eightfold while retaining each score's head reduction
+order. Key/GEMM tiles, workspace and selector launches remain fixed. The extra
+tie/tiny cases now use 513 visible rows to exercise the 512/513 cutoff directly.
+This scheduling change must pass the complete parity/sanitizer/timing matrix
+before its result is used. F32 production remains unchanged.
 
 Production code does not call this scorer. No new runtime control/default is
 introduced. Finite FP32 queries outside the unscaled FP16 range are unsupported

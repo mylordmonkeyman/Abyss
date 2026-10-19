@@ -23,6 +23,7 @@ template<class T> struct Buffer {
     std::vector<T> get()const{std::vector<T>x(n);ck(cudaMemcpy(x.data(),p,n*sizeof(T),cudaMemcpyDeviceToHost));return x;}
 };
 constexpr int TT=32, KK=512, HEADS=64, DIM=128;
+constexpr int ROWS_PER_WARP=8;
 __global__ void unpack(const uint16_t* keys,float* out,int rows){
     const int i=blockIdx.x*blockDim.x+threadIdx.x;
     if(i<rows*DIM)out[i]=__half2float(__ushort_as_half(keys[i]));
@@ -30,15 +31,19 @@ __global__ void unpack(const uint16_t* keys,float* out,int rows){
 // One warp per (token,key); contiguous head reads from the FP32 GEMM result.
 __global__ void epilogue(const float* dots,const float* weights,float* scores,
                          int p0,int t0,int tokens,int j0,int rows,int ld){
-    const int lane=threadIdx.x&31, item=(blockIdx.x*blockDim.x+threadIdx.x)/32;
-    if(item>=tokens*rows)return;
-    const int t=item/rows,j=item%rows;
-    if(j0+j>=(p0+t0+t+1)/4)return; // Uniform across this warp, no future score read/write.
-    float sum=0;
-    for(int h=lane;h<HEADS;h+=32)
-        sum+=fmaxf(dots[(size_t)j*tokens*HEADS+t*HEADS+h],0.0f)*weights[(t0+t)*HEADS+h];
-    for(int d=16;d;d/=2)sum+=__shfl_xor_sync(0xffffffffu,sum,d);
-    if(!lane)scores[(size_t)(t0+t)*ld+j0+j]=sum;
+    const int lane=threadIdx.x&31, warp=threadIdx.x/32;
+    // Amortize scheduling over eight scores per warp rather than eight scores/CTA.
+    for(int step=0;step<ROWS_PER_WARP;++step){
+        const int item=blockIdx.x*8*ROWS_PER_WARP+warp+step*8;
+        if(item>=tokens*rows)break;
+        const int t=item/rows,j=item%rows;
+        if(j0+j>=(p0+t0+t+1)/4)continue; // Uniform warp; later iterations can see a new token.
+        float sum=0;
+        for(int h=lane;h<HEADS;h+=32)
+            sum+=fmaxf(dots[(size_t)j*tokens*HEADS+t*HEADS+h],0.0f)*weights[(t0+t)*HEADS+h];
+        for(int d=16;d;d/=2)sum+=__shfl_xor_sync(0xffffffffu,sum,d);
+        if(!lane)scores[(size_t)(t0+t)*ld+j0+j]=sum;
+    }
 }
 struct Scorer {
     // Scratch is capped independently of the common caller-owned score/selection buffers.
@@ -62,7 +67,7 @@ struct Scorer {
                 // Query columns are contiguous 128-D FP32 vectors. C is [keys][tokens*heads].
                 blas(cublasSgemm(handle,CUBLAS_OP_T,CUBLAS_OP_N,tokens*HEADS,rows,DIM,
                     &one,q+(size_t)t0*HEADS*DIM,DIM,key.p,DIM,&zero,dot.p,tokens*HEADS));
-                epilogue<<<(tokens*rows+7)/8,256>>>(dot.p,w,score,p0,t0,tokens,j0,rows,ld);ck(cudaGetLastError());
+                epilogue<<<(tokens*rows+8*ROWS_PER_WARP-1)/(8*ROWS_PER_WARP),256>>>(dot.p,w,score,p0,t0,tokens,j0,rows,ld);ck(cudaGetLastError());
             }
         }
         // Reuse upstream selection literally. Separate launches are a prototype penalty;
@@ -146,14 +151,14 @@ int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"cuBLAS candidate requires actual SM70");
         Scorer scorer;int version=0;blas(cublasGetVersion(scorer.handle,&version));
-        std::printf("{\"cublas_version\":%d,\"math\":\"FP32 SGEMM; no tensor-core claim\",\"selection\":\"T unchanged upstream single-token launches, included in timing\"}\n",version);
+        std::printf("{\"cublas_version\":%d,\"math\":\"FP32 SGEMM; no tensor-core claim\",\"epilogue_scores_per_warp\":%d,\"boundary_p0\":2052,\"selection\":\"T unchanged upstream single-token launches, included in timing\"}\n",version,ROWS_PER_WARP);
         bool bench=argc>1;
         if(bench){
             for(int T:{1,2,3,8,16,32,256})for(int p0:{2048,8192,32768,125000})run_case(scorer,T,p0,0,true);
             for(int T:{1024,4096})for(int p0:{2048,8192,32768,120000})run_case(scorer,T,p0,0,true);
         }else{
             for(int T:{1,3,8,33})for(int p0:{2040,8192})run_case(scorer,T,p0,0,false);
-            for(int mode:{1,2,3})run_case(scorer,3,2048,mode,false);
+            for(int mode:{1,2,3})run_case(scorer,3,2052,mode,false);
         }
         std::puts("{\"suite\":\"isolated_cublas_indexer\",\"pass\":true}");return 0;
     }catch(const std::exception& e){std::fprintf(stderr,"cuBLAS indexer FAILED: %s\n",e.what());return 1;}

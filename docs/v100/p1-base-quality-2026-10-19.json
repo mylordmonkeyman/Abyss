@@ -1,0 +1,454 @@
+{
+  "schema": 1,
+  "source_sha": "cf415bc9e55ca6d78abe390c194e4a734958d2d6",
+  "source_run": "39258176612",
+  "fixture_sha256": "127154d1e5e65d250102556846790a6133646ffd7857f9a26bc6dec7b9147d40",
+  "dumps": {
+    "reference-0": {
+      "sha256": "e640c895c04ccdca0dba8cce9d76827fcbc9eb4c4488a0fa5bdfbe239782d140",
+      "bytes": 16547840,
+      "reused_frozen_reference": true,
+      "binary_sha256": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89"
+    },
+    "working-0": {
+      "sha256": "bc2264a131aba610fd7b1c81f67505375b9805e5c38b8989f3f4baafa2133cf8",
+      "bytes": 16547840,
+      "reused_frozen_reference": false,
+      "binary_sha256": "8e8f8278fd3e3729ae02d16d4af18625ccf1f31d211e15c5554b08f051e0dee3"
+    },
+    "working-1": {
+      "sha256": "84d6861498f680c64e0fb8db9b8d83609af97c4277566488b385865ebc85d2c6",
+      "bytes": 16547840,
+      "reused_frozen_reference": false,
+      "binary_sha256": "8e8f8278fd3e3729ae02d16d4af18625ccf1f31d211e15c5554b08f051e0dee3"
+    },
+    "reference-1": {
+      "sha256": "f965640fa03e7e3389fb8935ff0f77d67a5fa520aad6a35434c638d5e385fd3e",
+      "bytes": 16547840,
+      "reused_frozen_reference": true,
+      "binary_sha256": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89"
+    }
+  },
+  "comparisons": [
+    {
+      "reference": "working-0",
+      "candidate": "working-1",
+      "mean_kl": 1.0291139262028356e-07,
+      "p99_kl": 7.855222600710714e-07,
+      "max_kl": 9.957549633716553e-07,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 2041,
+          "kl": 4.3201663501219664e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2042,
+          "kl": 8.085916388178585e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2043,
+          "kl": 6.464922345754857e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2044,
+          "kl": 2.118744653545398e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2045,
+          "kl": 3.07143794257421e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2046,
+          "kl": 7.893841052226231e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2047,
+          "kl": 1.1524383116596329e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2048,
+          "kl": 7.106281471537942e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2049,
+          "kl": 2.2329713796463704e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2050,
+          "kl": 3.1758495272460776e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2051,
+          "kl": 2.5831216672346657e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2052,
+          "kl": 6.936097006830088e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2053,
+          "kl": 7.454795451786875e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2054,
+          "kl": 1.7913342919936836e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2055,
+          "kl": 2.1443801461980428e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2056,
+          "kl": 3.0856158317384356e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2057,
+          "kl": 8.070886868442379e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2058,
+          "kl": 6.4849204895520464e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2059,
+          "kl": 3.6854825041418775e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2060,
+          "kl": 7.479926220264083e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2061,
+          "kl": 3.4814620707948856e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2062,
+          "kl": 7.121529318728942e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2063,
+          "kl": 8.249989209418932e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2064,
+          "kl": 9.379778167719023e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2065,
+          "kl": 1.0214117978862365e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2066,
+          "kl": 2.761303306788751e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2067,
+          "kl": 3.4959016210089094e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2068,
+          "kl": 1.3000864938365588e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2069,
+          "kl": 5.60037518584649e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2070,
+          "kl": 9.957549633716553e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2071,
+          "kl": 1.6070632746863143e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2072,
+          "kl": 7.146202780492148e-09
+        }
+      ]
+    },
+    {
+      "reference": "reference-0",
+      "candidate": "working-0",
+      "mean_kl": 1.5663834071863182e-07,
+      "p99_kl": 8.847940981002364e-07,
+      "max_kl": 9.227707672081373e-07,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 2041,
+          "kl": 9.668088388663163e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2042,
+          "kl": 1.2438374565472736e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2043,
+          "kl": 6.7988203150005374e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2044,
+          "kl": 2.0484657133607226e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2045,
+          "kl": 1.3433488367547917e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2046,
+          "kl": 9.227707672081373e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2047,
+          "kl": 8.002653829891015e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2048,
+          "kl": 6.54121344936599e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2049,
+          "kl": 1.1015019524044732e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2050,
+          "kl": 4.4235827870373477e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2051,
+          "kl": 4.004587060797224e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2052,
+          "kl": 9.663040708137828e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2053,
+          "kl": 3.293598125240077e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2054,
+          "kl": 1.4492887011589408e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2055,
+          "kl": 7.946352615023567e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2056,
+          "kl": 1.43329995390336e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2057,
+          "kl": 5.117593138607847e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2058,
+          "kl": 2.0276837151157837e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2059,
+          "kl": 1.5484923155023455e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2060,
+          "kl": 2.899927604252896e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2061,
+          "kl": 2.030826801212985e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2062,
+          "kl": 3.7609297721494745e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2063,
+          "kl": 1.170312921088623e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2064,
+          "kl": 1.189605313552797e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2065,
+          "kl": 1.6277620901351188e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2066,
+          "kl": 9.96306637516289e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2067,
+          "kl": 3.3661032577105843e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2068,
+          "kl": 1.722230604797451e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2069,
+          "kl": 1.3465099025235112e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2070,
+          "kl": 7.807260694109109e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2071,
+          "kl": 3.350555249582811e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2072,
+          "kl": 5.168535313721791e-09
+        }
+      ]
+    },
+    {
+      "reference": "reference-1",
+      "candidate": "working-1",
+      "mean_kl": 1.9661860476521106e-07,
+      "p99_kl": 2.124997647626204e-06,
+      "max_kl": 2.5818598973212736e-06,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 2041,
+          "kl": 1.3186914484264018e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2042,
+          "kl": 3.780950404568972e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2043,
+          "kl": 3.2743434458765315e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2044,
+          "kl": 1.381511810843502e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2045,
+          "kl": 2.8082486523960155e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2046,
+          "kl": 1.1081107047565259e-06
+        },
+        {
+          "predicted_token_index_zero_based": 2047,
+          "kl": 3.76672205532955e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2048,
+          "kl": 9.486221480055943e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2049,
+          "kl": 1.1693008087166377e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2050,
+          "kl": 2.0685309202434412e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2051,
+          "kl": 4.040850352604925e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2052,
+          "kl": 5.941476345974477e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2053,
+          "kl": 7.057220650951009e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2054,
+          "kl": 7.408816229624629e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2055,
+          "kl": 1.2099544514217674e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2056,
+          "kl": 7.463439067344914e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2057,
+          "kl": 2.6285875722288174e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2058,
+          "kl": 1.4001793642134133e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2059,
+          "kl": 1.2741980645488207e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2060,
+          "kl": 9.43063984204571e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2061,
+          "kl": 3.9661163686158444e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2062,
+          "kl": 5.26079136120659e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2063,
+          "kl": 1.8839882195353956e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2064,
+          "kl": 7.724871765918069e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2065,
+          "kl": 7.248323382857251e-09
+        },
+        {
+          "predicted_token_index_zero_based": 2066,
+          "kl": 2.1191878899451455e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2067,
+          "kl": 4.083306941330448e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2068,
+          "kl": 2.799637799057121e-07
+        },
+        {
+          "predicted_token_index_zero_based": 2069,
+          "kl": 7.469148132657854e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2070,
+          "kl": 2.5818598973212736e-06
+        },
+        {
+          "predicted_token_index_zero_based": 2071,
+          "kl": 1.8841842131145923e-08
+        },
+        {
+          "predicted_token_index_zero_based": 2072,
+          "kl": 9.52169572388493e-09
+        }
+      ]
+    }
+  ],
+  "scope": "Same-pack selected-base F32 port/repeatability screen, 32 positions across 2048; frozen references are not interleaved timing arms. No candidate scorer runs, no model-performance or P1 arithmetic acceptance claim.",
+  "artifact_id": 12190232042,
+  "artifact_zip_sha256": "b38ffef13845d1446708156985fae36b9353b90e6d623563ac4481d6c67424a4"
+}
