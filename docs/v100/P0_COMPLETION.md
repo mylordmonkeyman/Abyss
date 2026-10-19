@@ -79,7 +79,16 @@ changes were within ±0.96%; decode changes ranged -3.96% to +3.05% by stratum
 (negative favors current). All compared generated trajectories differed. These
 observations do not establish a causal base performance improvement/regression.
 
-## Running campaign
+## Recovery execution checkpoint
+
+`P0_RECOVERY.md` defines the separate accounting and replacement long-context
+collection. Allocation/dispatch run `39194149121` is executing after a passing
+CUDA rebuild; remaining long/chunk/timeline units queue under the same GPU lock.
+New long units use consistent fresh processes per context and immediately upload
+individual checkpoints. Do not merge their timing strata with the original
+carry-over-residency long arm. 34 local V100 tooling tests pass.
+
+## Original campaign (preserved, interrupted)
 
 Active run: https://github.com/mylordmonkeyman/Abyss/actions/runs/39184856034
 (commit `61e5abb`). Its quality phase passed; the extended short/output matrix

@@ -1,0 +1,56 @@
+name: V100 P0 checkpointed remaining matrix and timelines
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-perf]
+    paths:
+      - '.github/workflows/v100-p0-remaining.yml'
+      - 'tools/bench/v100_p0_remaining.py'
+      - 'tools/profiling/p0_long_trace.py'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  unit:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-perf'
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        unit: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 50
+    defaults:
+      run:
+        shell: bash
+    env:
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p0-remaining-${{ github.run_id }}-${{ github.run_attempt }}-u${{ matrix.unit }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+      - name: Select the V100 and refuse an overlapping GPU process
+        run: |
+          set -euo pipefail
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+      - name: Execute one bounded P0 completion unit using immutable baseline binaries
+        run: /actions-runner/abyss-v100-python/bin/python tools/bench/v100_p0_remaining.py --unit '${{ matrix.unit }}'
+      - name: Upload the unit checkpoint
+        if: always() && env.P0_REMAINING_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p0-remaining-${{ github.run_id }}-u${{ matrix.unit }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30
