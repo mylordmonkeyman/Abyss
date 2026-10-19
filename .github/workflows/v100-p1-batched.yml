@@ -58,9 +58,20 @@ jobs:
           mkdir -p "$EVIDENCE"
           git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
           export PATH="$(dirname "$NVCC"):$PATH"
+          # Preserve each working binary by digest before reusing its build tree.
+          python3 - <<'PYCODE'
+          import hashlib,pathlib,shutil
+          source=pathlib.Path('build-v100-diagnostics/strata')
+          if source.is_file():
+              digest=hashlib.sha256(source.read_bytes()).hexdigest()
+              directory=pathlib.Path('/actions-runner/abyss-p1-v9/binaries')/digest
+              directory.mkdir(parents=True,exist_ok=True);target=directory/'strata'
+              if not target.exists():shutil.copyfile(source,target);target.chmod(0o555)
+              assert hashlib.sha256(target.read_bytes()).hexdigest()==digest
+          PYCODE
           cmake --preset v100-diagnostics -DCMAKE_CUDA_COMPILER="$NVCC" \
             -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
-            -DSTRATA_V100_TESTS=ON -DSTRATA_V100_CAPTURE_STAGES=OFF 2>&1 | tee "$EVIDENCE/configure.log"
+            -DSTRATA_V100_TESTS=ON -DSTRATA_V100_CAPTURE_STAGES=OFF -DSTRATA_V100_CAPTURE_INDEXER=OFF 2>&1 | tee "$EVIDENCE/configure.log"
           cmake --build build-v100-diagnostics --target test_dsv4_cublas_indexer strata --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
           sha256sum build-v100-diagnostics/test_dsv4_cublas_indexer > "$EVIDENCE/binary-sha256.txt"
       - name: Validate FP32 scratch, visibility, score error and unchanged selection

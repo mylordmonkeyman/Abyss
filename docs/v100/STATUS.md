@@ -1,13 +1,14 @@
 # V100 implementation status — 19 October 2026
 
 P1 continues on `feature/deepseek-v100-p1`, based on selected v1.3.31 `7c893ac`.
-See [P1 progress](P1_PROGRESS.md) for passing ported-base audits and physical
-scorer experiments. Both one-token MMA layouts lose; retain F32. The wider
-batched FP32 cuBLAS prototype reduces synthetic indexer stage elapsed by 9.20%
-at 96K and 11.82% at 120K on the model's actual 2048-token mixer geometry;
-shorter contexts lose or show noise. Explicit runtime integration and the bounded 100K-context model-KL/repeatability
-screen now pass (mean KL <=2.93e-7, all top-1 32/32); whole-model performance
-and remaining P1 acceptance gates are open. Automatic dispatch/defaults are unchanged; the P0 branch and evidence below are frozen.
+See [P1 progress](P1_PROGRESS.md). Explicit cuBLAS integration passes component,
+graph/sanitizer and bounded 100K-context model-KL/repeatability (mean KL <=2.93e-7).
+Three whole-model pairs reduce 128K prefill latency by 1.50–1.58% (median 1.53%);
+8K fallback is near noise. Decode variations are not attributable speedups.
+Batched MMA key reuse wins long synthetic shapes but tiny-query relative error
+remains unqualified, so it stays isolated. Direct real-model score/selection/
+attention diagnostics and boundary/platform acceptance remain open. Automatic
+dispatch/default arithmetic is unchanged; the P0 branch/evidence below are frozen.
 
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
 Production arithmetic and dispatch remain unchanged. No performance improvement is claimed.

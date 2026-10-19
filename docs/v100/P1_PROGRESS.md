@@ -12,13 +12,14 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Open**: explicit integration, graph/sanitizer and bounded 100K-context model-KL screen pass; direct attention/boundary and whole-model performance acceptance pending. Default arithmetic unchanged |
+| Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct attention/boundary/platform acceptance pending; auto unchanged |
 
-Next: run the gated same-binary whole-model A/B at 8K and 128K, three
-process pairs with two requests per fixture. Actual long-context dispatch and
-32-position model-KL/repeatability now pass. The batched MMA correctness/key-reuse
-experiment and full boundary, direct downstream-attention and sm80/HIP acceptance
-remain P1 work. No automatic dispatch or default arithmetic is changed.
+Next: complete same-input real-model score/selection/attention diagnostics,
+remaining boundary and sm80/HIP acceptance. Three whole-model pairs now show
+128K prefill latency reductions of 1.50–1.58%; short fallback is near noise.
+Batched MMA key reuse wins at long synthetic shapes but tiny-query relative
+precision remains unqualified, so it stays isolated. No automatic dispatch or
+default arithmetic is changed.
 
 ## Experimental integration checkpoint — bounded model validation passed
 
@@ -383,3 +384,88 @@ Sanitizers, PTX/SASS and actual registers/shared/local bytes/occupancy are gates
 source register reuse is not a measured DRAM-traffic claim. This test is queued
 in the same `abyss-v100` concurrency group behind whole-model A/B, with no
 container or privilege changes. Physical results remain pending.
+
+## Whole-model A/B result — 19 October 2026
+
+[Run 39333942954](https://github.com/mylordmonkeyman/Abyss/actions/runs/39333942954)
+completed six process arms / 24 requests on the same verified binary
+`69080a4fd395c987d24048386a8eb9b1f0a4741201ee9a8c03441c47ae4cc584`.
+`p1-model-ab-2026-10-19.json` is independently recomputed by
+`summarize_p1_model_ab.py` from artifact `12229354268`, ZIP SHA256
+`399fab74971d32f45579aeaecac61b26e3c8b0d09edb86b1be887d9f8024efd9`.
+
+| Prompt | Three paired prefill latency changes | Median paired change |
+| --- | --- | --- |
+| 8,192 / 128 outputs | +0.470%, -0.186%, -0.544% | -0.186% (near noise) |
+| 131,072 / 16 outputs | -1.535%, -1.496%, -1.585% | **-1.535%** |
+
+Median raw 128K prefill rates are 357.14 F32 and 362.74 candidate tokens/s;
+these ratios of population medians are not the paired statistic. The explicit
+candidate executes 462 cuBLAS calls per candidate process (two long requests,
+11 long mixer chunks and 21 C4 layers), with zero short-context candidate
+calls. F32 arms have zero candidate calls. No profiler is enabled. Every arm
+has 77–78 telemetry samples, no sampled thermal reason, and observed power
+limiting. Minimum host MemAvailable is 47,791,554,560 bytes. OS cache and expert
+residency carry over within processes; clocks/cache are not perfectly matched.
+This is consistent observed improvement across three pairs, not a universal
+or clock-normalized performance guarantee.
+
+Do **not** claim decode improvement from these numbers. Decode is unchanged;
+primary decode variations are +8.31/-14.90/-6.38% at 128K, with only 16 output
+tokens. Five of six primary case-pairs have different greedy output IDs,
+including all three 8K pairs where the candidate never runs. Teacher-forced
+KL/repeatability, not greedy string identity, is the numerical screen. These
+trajectory/tier differences confound decode attribution. Keep `auto` unchanged
+until the remaining P1 gates are reviewed.
+
+## Batched MMA physical result — 19 October 2026
+
+[Run 39334367431](https://github.com/mylordmonkeyman/Abyss/actions/runs/39334367431)
+passes all 38 diagnostic cases, two graph replays each, memcheck/synccheck,
+30 timed numerical shapes / 180 pairs and emitted SM70 MMA884/HMMA checks.
+Artifact `12230530011`, ZIP SHA256
+`59ad7e5d66b8da0a3590961a2b19a38bf63eab782046c6fa15ae770e2070341c`,
+is summarized by `summarize_p1_mma_batched.py` into
+`p1-mma-batched-2026-10-19.json`. Normal-case relative L2 <=4.20e-7.
+
+| Variant | Registers | Static shared | Local bytes | Active CTAs/SM |
+| --- | --- | --- | --- | --- |
+| One query | 71 | 4,192 B | 0 | 7 |
+| Eight queries, K reused | 196 | 33,536 B | 0 | 2 |
+
+The one-query batched grid loses every timed shape. At actual T=2048, the
+eight-query variant's full isolated indexer latency changes are -1.41% at
+64K, -10.40% at 96K and -13.85% at 120K, all six pairs faster at each.
+At 120K, T=256/1024/4096 change -13.54/-13.68/-14.01%. Shorter shapes lose.
+Separate cuBLAS/MMA campaigns are **not** a paired head-to-head comparison.
+The matrix includes the extra single-token selector-launch penalty and is
+not score-only timing or model throughput. Sixty-five telemetry samples show
+no sampled thermal reason; this is not hardware-counter evidence.
+
+Tiny-query stress still gives 3.0464% relative L2, maximum absolute error
+1.3414e-6, membership 4607/4608 across nine tokens in **both** variants.
+These pass their stated absolute diagnostic bound, **not** nominal relative
+qualification. There is no scaling/clamping change or MMA runtime integration.
+The key-reuse experiment is complete as a measured isolated candidate; normal
+component wins do not qualify this arithmetic for model use.
+
+## Next diagnostic implementation — physical validation pending
+
+`STRATA_V100_CAPTURE_INDEXER` is an internal compile-only option, default OFF.
+At p0=98,304/T=2,048 in every C4 layer, it samples token offsets
+0/255/256/1023/2047, retains candidate IDs, executes original F32 score/select
+and attention on the same live inputs, then bitwise restores **all** candidate
+IDs before normal attention/model continuation. It adds no GPU allocation.
+Raw paired scores, selected IDs and attention rows total under a 56 MiB hard
+capture cap; the complete artifact is refused above 64 MiB. No input/weight
+repacking, global cache operations or privilege changes are added.
+
+`p1_live_capture.py` checks exact layer/row populations, selector ties/order,
+range/duplicate/future IDs, score-error-conditioned disagreements, rank-512/513
+margins, attention differences and a two-arm 32-position model-KL screen.
+Identical selection must reproduce identical attention. Attention above the
+1e-4 investigation screen stops admission for review alongside margins/KL.
+The diagnostic uses its own build directory and is excluded from timing claims.
+Default-off integration is revalidated separately; working binaries are frozen
+by digest on the existing runner before build-tree reuse. Counter/QPI and model
+publisher-authenticity limitations remain unchanged.

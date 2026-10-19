@@ -20,6 +20,7 @@
 #include "strata/core/v100_dispatch.hpp"
 #include "strata/kernels/dsv4_fast.hpp"
 #include "v100_stage_capture.hpp"
+#include "v100_indexer_capture.hpp"
 #include "strata/kernels/v100_indexer_policy.hpp"
 #ifndef STRATA_USE_HIP
 #include "../kernels/cuda/dsv4_cublas_idx.cuh"
@@ -1510,6 +1511,21 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
             experimental_idx?(size_t)(ds::p1::eligible(64,128,512,tn,p0)?(256*64*512+512*128)*sizeof(float):0):0);
     }
     S->mark("ds4_index", s);
+#ifdef STRATA_V100_CAPTURE_INDEXER
+    v100diag::IndexerCapture idx_capture(experimental_idx,il,p0,tn,HD,B.score_ld,s);
+    if(idx_capture.enabled){
+        idx_capture.selected(B.score,B.sel,true);
+        // Original F32 scorer/selector on exactly the same live iq, keys and
+        // weights; no allocation. B.score is dead after selection. Restore all
+        // candidate IDs before the real attention/model continuation below.
+        ds::indexer_batch(B.iq,Ly.idx_cache,B.iw,g.idx_heads,4,p0,tn,g.idx_top_k,B.score,B.score_ld,B.sel,s);
+        idx_capture.selected(B.score,B.sel,false);
+        ds::attend_batch(B.q,B.keys,n_hist,g.n_swa,Ly.comp_cache,B.sel,g.idx_top_k,r,Ly.sinks,g.n_head,D,g.n_rot,
+                         rope,p0,tn,B.o,s);
+        idx_capture.attention(B.o,false);
+        idx_capture.restore(B.sel);
+    }
+#endif
 #ifdef STRATA_V100_CAPTURE_STAGES
     if(capture.enabled) {
         capture.copy("q.f32",B.q+(size_t)capture.t*HD,HD);
@@ -1522,6 +1538,9 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     ds::attend_batch(B.q, B.keys, n_hist, g.n_swa, Ly.comp_cache, B.sel, g.idx_top_k, r, Ly.sinks, g.n_head, D, g.n_rot,
                      rope, p0, tn, B.o, s);
     S->mark("ds4_attn", s);
+#ifdef STRATA_V100_CAPTURE_INDEXER
+    idx_capture.attention(B.o,true);
+#endif
 #ifdef STRATA_V100_CAPTURE_STAGES
     if(capture.enabled)capture.copy("attention.f32",B.o+(size_t)capture.t*HD,HD);
 #endif
