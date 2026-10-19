@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
+import tempfile
 
 import p0
 from model_baseline import ENGINE, PACK, fixed_env
@@ -39,9 +41,44 @@ def main():
                 environment={k:v for k,v in env.items() if k.startswith(('STRATA_','ABYSS_V100_'))})
     p0.write_json(out/'capture_manifest.json',report)
     p0.write_json(out/'toolchain_manifest.json',p0.manifest(os.environ.get('ABYSS_GPU','0')))
-    with (out/'capture-engine.log').open('w') as log:
-        subprocess.run(argv,env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=1200)
     root=out/'v100-stage-capture'
+    # Freeze one immutable activation campaign, even if its candidate replay
+    # fails. Arithmetic debugging must not repeatedly load the complete model.
+    cache=Path('/actions-runner/abyss-v100-stage-captures/frozen-2048-v1')
+    model_loaded=False
+    if not cache.exists():
+        prior=p0.ROOT/'results/ci-v100-stages-39179744335-1/v100-stage-capture'
+        if all((prior/f'ratio-{r}/complete').is_file() for r in (0,4,128)):
+            source=prior
+            origin=json.loads((prior.parent/'capture_manifest.json').read_text())
+            source_commit=(prior.parent/'build-sha.txt').read_text().strip()
+        else:
+            with (out/'capture-engine.log').open('w') as log:
+                subprocess.run(argv,env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=1200)
+            model_loaded=True
+            source=root;origin=report;source_commit=(out/'build-sha.txt').read_text().strip()
+        inventory={str(p.relative_to(source)):dict(bytes=p.stat().st_size,sha256=p0.sha256(p))
+                   for p in source.rglob('*') if p.is_file()}
+        if sum(x['bytes'] for x in inventory.values())>32*1024*1024:
+            raise ValueError('source activation campaign exceeds hard cap')
+        cache.parent.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='freeze-',dir=cache.parent) as temporary:
+            stage=Path(temporary)/'ready';stage.mkdir()
+            shutil.copytree(source,stage/'tensors')
+            p0.write_json(stage/'identity.json',dict(source_commit=source_commit,
+                          engine_sha256=origin['engine_sha256'],tokens_sha256=origin['tokens_sha256'],
+                          pack=origin['pack'],files=inventory))
+            stage.rename(cache)
+    identity=json.loads((cache/'identity.json').read_text())
+    if identity['tokens_sha256']!=report['tokens_sha256'] or identity['pack']!=pack:
+        raise ValueError('frozen campaign fixture or pack mismatch')
+    for name,expected in identity['files'].items():
+        path=cache/'tensors'/name
+        if path.stat().st_size!=expected['bytes'] or p0.sha256(path)!=expected['sha256']:
+            raise ValueError('frozen activation bytes changed: '+name)
+    if not root.exists():shutil.copytree(cache/'tensors',root)
+    report.update(frozen_campaign=identity,model_reload_for_replay=model_loaded)
+    p0.write_json(out/'capture_manifest.json',report)
     snapshots={}
     for ratio in (0,4,128):
         directory=root/f'ratio-{ratio}'

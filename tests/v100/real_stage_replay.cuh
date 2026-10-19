@@ -92,18 +92,18 @@ void real_stage_case(const std::filesystem::path& root,int expected_ratio) {
         std::copy(z.begin(),z.end(),latent.begin()+h*D);rotate_host(z,rope,p,false);
         std::copy(z.begin(),z.end(),rotated.begin()+h*D);
     }
-    auto stage=[&](const char* name,const Error& e) {
+    auto stage=[&](const char* name,const Error& e,double limit=1e-5) {
         std::printf("{\"real_stage\":\"%s\",\"layer\":%d,\"ratio\":%d,\"position\":%d,"
-                    "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"p99_abs\":%.9g,\"pass\":true}\n",
-                    name,layer,ratio,p,e.rel,e.max_abs,e.p99_abs);
+                    "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"p99_abs\":%.9g,\"pass\":%s}\n",
+                    name,layer,ratio,p,e.rel,e.max_abs,e.p99_abs,e.rel<limit?"true":"false");
     };
     const auto eq=compare(scores.get(),qk),ep=compare(prob.get(),pr),ed=compare(den.get(),dn),
                ev=compare(pv.get(),latent),eo=compare(output.get(),rotated),ef=compare(output.get(),f32);
-    need(eq.rel<1e-5 && ep.rel<1e-5 && ed.rel<1e-5,"real QK/softmax screen");
-    need(ev.rel<1e-5 && eo.rel<1e-5 && ef.rel<1e-5,"real PV/inverse RoPE screen");
-    stage("query_prep",eqprep);stage("raw_kv_with_storage",ekv);stage("raw_kv_rounded_reference",ekvr);
+    stage("query_prep",eqprep);stage("raw_kv_with_storage",ekv,5e-4);stage("raw_kv_rounded_reference",ekvr,2e-4);
     stage("qk",eq);stage("probability",ep);stage("sink_denominator",ed);
     stage("pv",ev);stage("inverse_rope",eo);stage("versus_captured_fp32",ef);
+    need(eq.rel<1e-5 && ep.rel<1e-5 && ed.rel<1e-5,"real QK/softmax screen");
+    need(ev.rel<1e-5 && eo.rel<1e-5 && ef.rel<1e-5,"real PV/inverse RoPE screen");
 }
 void real_stages(const std::filesystem::path& root) {
     for(int ratio:{0,4,128})real_stage_case(root,ratio);
