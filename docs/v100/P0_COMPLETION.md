@@ -41,7 +41,18 @@ it only after the completion ledger is committed and the user is notified.
 | Sustained telemetry | Active-window clocks/power/thermal, faults/I/O, NUMA placement, pressure and preserved safety floor |
 | Final decisions | Base, indexer/attention hotspots, repeated quantization, CPU type path, static balance and ≤3 P3 admissions with evidence |
 
+## Accounting instrumentation checkpoint
+
+The opt-in CUDA allocation observer and disjoint host worksheet are implemented;
+27 local V100 tooling tests pass. See `P0_MEMORY_ACCOUNTING.md` for coverage,
+collection instructions and remaining physical-accounting gaps. Real cudart
+interposition must be verified on the runner after the unprofiled campaign.
+Do not mark the unique-memory gate complete from host tests or virtual ranges.
+
 ## Running campaign
+
+Active run: https://github.com/mylordmonkeyman/Abyss/actions/runs/39184856034
+(commit `61e5abb`). At this checkpoint its quality phase is still running.
 
 `v100-p0.yml` invokes `tools/bench/v100_p0_campaign.py` on the existing cached
 immutable binaries; there is no engine rebuild, model repack or container change.
