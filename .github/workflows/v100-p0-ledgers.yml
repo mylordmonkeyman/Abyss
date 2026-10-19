@@ -1,6 +1,12 @@
 name: V100 P0 allocation and dispatch ledgers
 on:
   workflow_dispatch:
+    inputs:
+      phase:
+        description: Collect dispatch only, or repeat both immutable memory arms too
+        type: choice
+        options: [dispatch, all]
+        default: dispatch
   push:
     branches: [feature/deepseek-v100-perf]
     paths:
@@ -60,6 +66,7 @@ jobs:
           git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
           sha256sum build-v100-diagnostics/strata > "$EVIDENCE/binary-sha256.txt"
       - name: Collect both immutable upstream memory ledgers at genuine 32K and 128K
+        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'all'
         env:
           EVIDENCE: ${{ env.EVIDENCE }}/memory
         run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_accounting.py --phase memory

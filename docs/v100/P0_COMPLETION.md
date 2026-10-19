@@ -88,8 +88,12 @@ invalid IDs/ranges, independent invocation unions and incomplete captures.
 extension are pending; the existing 3,615,488 lower bound remains the measured
 result. The added copy/synchronization can perturb planning and overlap, so
 these diagnostic timings and route populations are not production measurements.
-After the remaining matrix and CUDA smoke finish, collect only the working-fork
-dispatch phase of `p0_accounting.py`; do not repeat immutable memory arms.
+CUDA build/device run `39203344685` passed this extension. All remaining matrix
+and timeline units in run `39194497860` passed. A dispatch-only ledger collection
+is next: the workflow now defaults to that phase and requires the exact-count
+summary to reconcile before accepting the capture. Immutable memory arms are
+repeated only by an explicit manual `phase=all` selection. The long/chunk/trace
+artifacts still need review; workflow success alone does not close P0.
 
 ## Interrupted long-context campaign
 
