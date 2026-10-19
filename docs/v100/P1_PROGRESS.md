@@ -11,7 +11,7 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | --- | --- |
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
-| Batched FP32 cuBLAS scorer | Three bounded variants measured. The 256-token query tile wins approximately 12–13% in three tested long-context bulk shapes; shorter contexts still lose |
+| Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
 | Production integration / P1 exit | **Open**: runtime dispatch absent; no candidate model-KL, downstream attention or whole-model performance acceptance yet. Production arithmetic/defaults unchanged |
 
 Next: integrate only an explicit experimental batched scorer with bounded,
@@ -231,6 +231,44 @@ The actual 128K trace startup uses **2,048-token mixer sub-batches**, so the
 next component matrix explicitly adds T=2048 and 64K/96K starting contexts.
 This probes the measured engine geometry and the untested gap between losing
 32K and winning 120K contexts; no threshold is inferred by interpolation.
+
+### Actual mixer geometry and crossover checkpoint
+
+Run `39262911919` passes all 11 parity fixtures, both sanitizers and the expanded
+48-shape matrix (288 timing pairs), plus hosted CI. Evidence:
+`p1-cublas-real-shapes-2026-10-19.json`, artifact `12190314513`, ZIP SHA256
+`b47990cfbbd90dcf3d43ca04d576033d5a66d7d1fb33a55e6d25bfc308204b3e`.
+All selected memberships match F32; maximum relative L2 3.1553e-7 and sampled
+FP64 maximum absolute error 1.2722e-5. Thirty-nine telemetry samples contain no
+thermal reason; power limiting is observed. Host peak RSS is about 2.52 GB in
+this model-free process, not a model memory budget.
+
+| Actual T=2048, starting context | Median indexer stage elapsed change | Decision |
+| --- | --- | --- |
+| 32,768 | +26.74% | Retain F32 |
+| 65,536 | +0.10% | Retain F32; no reliable win |
+| 98,304 | **-9.20%** | All six pairs faster; shortlist model investigation |
+| 120,000 | **-11.82%** | All six pairs faster; shortlist model investigation |
+
+The other tested bulk sizes (256/1024/4096) also win around 9–10% at 96K and
+12–13% at ~120K. Results at 64K are mixed/noise for most bulk sizes. This is a
+**component integration shortlist**, not an automatic threshold or model
+performance admission. Keep default dispatch F32 while implementing and testing
+the guarded model path. No further unchanged microbenchmark campaign is needed
+before that next implementation step.
+
+### Integration feasibility to verify
+
+`prefill_ds4_mixer` prepares queries, scores/selects, then writes attention into
+`B.o`, followed by grouped output projection into `B.oa`, all on stream `s`.
+For the fixed model, `B.o` has `T*64*512` FP32 elements: enough for the bounded
+dot tile `min(T,256)*64*512`. `B.oa` has `T*8192` FP32 elements: enough for
+65,536 converted key values when T>=8. Investigate borrowing those still-dead
+outputs and reusing `S->blas`/`S->ws` instead of adding persistent per-stream
+allocations. Prove liveness, stream ordering, capacities and graph behavior in
+the integrated path; this source observation is **not** a measured zero-memory
+overhead claim. Keep score/selection buffers distinct. Attribute vendor SGEMM
+to indexer phases using event/range evidence, not by relabeling every model GEMM.
 
 Production code does not call this scorer. No new runtime control/default is
 introduced. Finite FP32 queries outside the unscaled FP16 range are unsupported
