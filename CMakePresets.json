@@ -13,7 +13,8 @@
         "STRATA_ENABLE_CUDA": "ON",
         "STRATA_NATIVE_EXPERTS": "ON",
         "STRATA_PORTABLE": "ON",
-        "STRATA_BUILD_TESTS": "OFF"
+        "STRATA_BUILD_TESTS": "OFF",
+        "STRATA_V100_CAPTURE_STAGES": "OFF"
       }
     },
     {
