@@ -84,6 +84,14 @@ and queues rootless working-branch 32K/128K critical-path revalidation, with
 raw profiler data retained on the runner. Full branch quality comparison,
 batched scorer candidates and P1 acceptance remain open.
 
+`v100-p1-quality.yml` adds a separately serialized ported-F32 check. It reuses
+the frozen teacher fixture and digest-verified immutable v1.3.31 distributions,
+then runs the working branch twice. Missing cached reference distributions are
+regenerated from the immutable binary; changed cached bytes fail explicitly.
+Its 16/8 GiB preflight/own-child safety stops, process telemetry, 64 MiB artifact
+cap and temporary raw distributions preserve the existing runner constraints.
+This is a port/repeatability screen, not optimized scorer model qualification.
+
 Production code does not call this scorer. No new runtime control/default is
 introduced. Finite FP32 queries outside the unscaled FP16 range are unsupported
 by this candidate; microtests explicitly reject that input domain rather than
