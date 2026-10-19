@@ -1,0 +1,7537 @@
+{
+  "schema": 1,
+  "source_run": 39194149121,
+  "artifact_id": 12162360960,
+  "artifact_zip_sha256": "37bb947a3d96b5dff59328796bb713d5ff02292896e3c78d28ea442a268df926",
+  "capture": {
+    "keys": 23285,
+    "dropped_calls": 0,
+    "semantics": "host_calls_not_device_execution_or_physical_traffic"
+  },
+  "unresolved_decode_service": [],
+  "by_layer_type_token_group": [
+    {
+      "phase": 0,
+      "layer": -1,
+      "type": -1,
+      "token_group": "not_applicable",
+      "path": "mmq_built",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3192,
+      "rows": 1867776,
+      "logical_weight_bytes": 2211446784
+    },
+    {
+      "phase": 0,
+      "layer": 0,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3192,
+      "rows": 1867776,
+      "logical_weight_bytes": 1464336384
+    },
+    {
+      "phase": 0,
+      "layer": 0,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 1,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 1,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 2,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 2,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 3,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 3,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 4,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 4,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 5,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 5,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 6,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 6,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 7,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 7,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 8,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 8,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 9,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 9,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 10,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 10,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 11,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 11,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 12,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 12,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 13,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 13,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 14,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 14,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 15,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 15,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 16,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 16,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 17,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 17,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 18,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 18,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 19,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 19,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 20,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 20,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 21,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 21,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 22,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 22,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 23,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 23,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 24,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 24,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 25,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 25,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 26,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 26,
+      "type": 39,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 27,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 27,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 28,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 28,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 29,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 29,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 30,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 30,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 31,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 31,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 32,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 32,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 33,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 33,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 34,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 34,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 35,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 35,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 36,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 36,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 37,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 37,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 38,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 38,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 39,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 39,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 40,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 40,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 41,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 41,
+      "type": 18,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 42,
+      "type": 17,
+      "token_group": "not_applicable",
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "layer": 42,
+      "type": 39,
+      "token_group": "not_applicable",
+      "path": "mmq_down_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 6464,
+      "rows": 413696,
+      "logical_weight_bytes": 489816064
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 5248,
+      "rows": 335872,
+      "logical_weight_bytes": 397672448
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 8000,
+      "rows": 512000,
+      "logical_weight_bytes": 606208000
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 84,
+      "rows": 101329,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 84,
+      "rows": 2502656,
+      "logical_weight_bytes": 2963144704
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 6464,
+      "rows": 413696,
+      "logical_weight_bytes": 324337664
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 5248,
+      "rows": 335872,
+      "logical_weight_bytes": 263323648
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 8000,
+      "rows": 512000,
+      "logical_weight_bytes": 401408000
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 84,
+      "rows": 101329,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 84,
+      "rows": 2502656,
+      "logical_weight_bytes": 1962082304
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 5632,
+      "rows": 360448,
+      "logical_weight_bytes": 426770432
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 4800,
+      "rows": 307200,
+      "logical_weight_bytes": 363724800
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 8192,
+      "rows": 524288,
+      "logical_weight_bytes": 620756992
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 85,
+      "rows": 102857,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 85,
+      "rows": 2519040,
+      "logical_weight_bytes": 2982543360
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 5632,
+      "rows": 360448,
+      "logical_weight_bytes": 282591232
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 4800,
+      "rows": 307200,
+      "logical_weight_bytes": 240844800
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 8192,
+      "rows": 524288,
+      "logical_weight_bytes": 411041792
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 85,
+      "rows": 102857,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 1,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 85,
+      "rows": 2519040,
+      "logical_weight_bytes": 1974927360
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4928,
+      "rows": 315392,
+      "logical_weight_bytes": 373424128
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 4928,
+      "rows": 315392,
+      "logical_weight_bytes": 373424128
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 9024,
+      "rows": 577536,
+      "logical_weight_bytes": 683802624
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 84,
+      "rows": 102791,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 84,
+      "rows": 2506752,
+      "logical_weight_bytes": 2967994368
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4928,
+      "rows": 315392,
+      "logical_weight_bytes": 247267328
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 4928,
+      "rows": 315392,
+      "logical_weight_bytes": 247267328
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 9024,
+      "rows": 577536,
+      "logical_weight_bytes": 452788224
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 84,
+      "rows": 102791,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 2,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 84,
+      "rows": 2506752,
+      "logical_weight_bytes": 1965293568
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4864,
+      "rows": 311296,
+      "logical_weight_bytes": 368574464
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 5376,
+      "rows": 344064,
+      "logical_weight_bytes": 407371776
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 261881856
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 77,
+      "rows": 103789,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 77,
+      "rows": 2371584,
+      "logical_weight_bytes": 2807955456
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4864,
+      "rows": 311296,
+      "logical_weight_bytes": 244056064
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 5376,
+      "rows": 344064,
+      "logical_weight_bytes": 269746176
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 173408256
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 77,
+      "rows": 103789,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 3,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 77,
+      "rows": 2371584,
+      "logical_weight_bytes": 1859321856
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4160,
+      "rows": 266240,
+      "logical_weight_bytes": 315228160
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 5056,
+      "rows": 323584,
+      "logical_weight_bytes": 383123456
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 2560,
+      "rows": 163840,
+      "logical_weight_bytes": 193986560
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 63,
+      "rows": 104361,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 63,
+      "rows": 2154496,
+      "logical_weight_bytes": 2550923264
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4160,
+      "rows": 266240,
+      "logical_weight_bytes": 208732160
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 5056,
+      "rows": 323584,
+      "logical_weight_bytes": 253689856
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 2560,
+      "rows": 163840,
+      "logical_weight_bytes": 128450560
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 63,
+      "rows": 104361,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 4,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 63,
+      "rows": 2154496,
+      "logical_weight_bytes": 1689124864
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4032,
+      "rows": 258048,
+      "logical_weight_bytes": 305528832
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 5312,
+      "rows": 339968,
+      "logical_weight_bytes": 402522112
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 266731520
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 65,
+      "rows": 103975,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 65,
+      "rows": 2174976,
+      "logical_weight_bytes": 2575171584
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4032,
+      "rows": 258048,
+      "logical_weight_bytes": 202309632
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 5312,
+      "rows": 339968,
+      "logical_weight_bytes": 266534912
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 176619520
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 65,
+      "rows": 103975,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 5,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 65,
+      "rows": 2174976,
+      "logical_weight_bytes": 1705181184
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3136,
+      "rows": 200704,
+      "logical_weight_bytes": 237633536
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6720,
+      "rows": 430080,
+      "logical_weight_bytes": 509214720
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 276430848
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 61,
+      "rows": 104005,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 61,
+      "rows": 2134016,
+      "logical_weight_bytes": 2526674944
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3136,
+      "rows": 200704,
+      "logical_weight_bytes": 157351936
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6720,
+      "rows": 430080,
+      "logical_weight_bytes": 337182720
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 183042048
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 61,
+      "rows": 104005,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 6,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 61,
+      "rows": 2134016,
+      "logical_weight_bytes": 1673068544
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7680,
+      "rows": 491520,
+      "logical_weight_bytes": 581959680
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3328,
+      "rows": 212992,
+      "logical_weight_bytes": 252182528
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 66,
+      "rows": 103884,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 66,
+      "rows": 2199552,
+      "logical_weight_bytes": 2604269568
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7680,
+      "rows": 491520,
+      "logical_weight_bytes": 385351680
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3328,
+      "rows": 212992,
+      "logical_weight_bytes": 166985728
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 66,
+      "rows": 103884,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 7,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 66,
+      "rows": 2199552,
+      "logical_weight_bytes": 1724448768
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4672,
+      "rows": 299008,
+      "logical_weight_bytes": 354025472
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6848,
+      "rows": 438272,
+      "logical_weight_bytes": 518914048
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 2,
+      "rows": 16,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "mmq_run",
+      "calls": 2,
+      "rows": 32768,
+      "logical_weight_bytes": 38797312
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 261881856
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 61,
+      "rows": 103899,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 61,
+      "rows": 2138112,
+      "logical_weight_bytes": 2531524608
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4672,
+      "rows": 299008,
+      "logical_weight_bytes": 234422272
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6848,
+      "rows": 438272,
+      "logical_weight_bytes": 343605248
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "mmq_quantize:q8_1",
+      "calls": 2,
+      "rows": 16,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "mmq_run",
+      "calls": 2,
+      "rows": 32768,
+      "logical_weight_bytes": 25690112
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 173408256
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 61,
+      "rows": 103899,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 61,
+      "rows": 2138112,
+      "logical_weight_bytes": 1676279808
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 9280,
+      "rows": 593920,
+      "logical_weight_bytes": 703201280
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 276430848
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 69,
+      "rows": 103624,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 69,
+      "rows": 2252800,
+      "logical_weight_bytes": 2667315200
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 9280,
+      "rows": 593920,
+      "logical_weight_bytes": 465633280
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 183042048
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 69,
+      "rows": 103624,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 9,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 69,
+      "rows": 2252800,
+      "logical_weight_bytes": 1766195200
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2816,
+      "rows": 180224,
+      "logical_weight_bytes": 213385216
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8640,
+      "rows": 552960,
+      "logical_weight_bytes": 654704640
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4608,
+      "rows": 294912,
+      "logical_weight_bytes": 349175808
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 66,
+      "rows": 103374,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 66,
+      "rows": 2183168,
+      "logical_weight_bytes": 2584870912
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2816,
+      "rows": 180224,
+      "logical_weight_bytes": 141295616
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8640,
+      "rows": 552960,
+      "logical_weight_bytes": 433520640
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4608,
+      "rows": 294912,
+      "logical_weight_bytes": 231211008
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 66,
+      "rows": 103374,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 10,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 66,
+      "rows": 2183168,
+      "logical_weight_bytes": 1711603712
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3072,
+      "rows": 196608,
+      "logical_weight_bytes": 232783872
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7360,
+      "rows": 471040,
+      "logical_weight_bytes": 557711360
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 5120,
+      "rows": 327680,
+      "logical_weight_bytes": 387973120
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 67,
+      "rows": 103270,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 67,
+      "rows": 2211840,
+      "logical_weight_bytes": 2618818560
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3072,
+      "rows": 196608,
+      "logical_weight_bytes": 154140672
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7360,
+      "rows": 471040,
+      "logical_weight_bytes": 369295360
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 5120,
+      "rows": 327680,
+      "logical_weight_bytes": 256901120
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 67,
+      "rows": 103270,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 11,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 67,
+      "rows": 2211840,
+      "logical_weight_bytes": 1734082560
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4288,
+      "rows": 274432,
+      "logical_weight_bytes": 324927488
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 5888,
+      "rows": 376832,
+      "logical_weight_bytes": 446169088
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 261881856
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 61,
+      "rows": 104040,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 61,
+      "rows": 2097152,
+      "logical_weight_bytes": 2483027968
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4288,
+      "rows": 274432,
+      "logical_weight_bytes": 215154688
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 5888,
+      "rows": 376832,
+      "logical_weight_bytes": 295436288
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 173408256
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 61,
+      "rows": 104040,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 12,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 61,
+      "rows": 2097152,
+      "logical_weight_bytes": 1644167168
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 266731520
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 9152,
+      "rows": 585728,
+      "logical_weight_bytes": 693501952
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 2752,
+      "rows": 176128,
+      "logical_weight_bytes": 208535552
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 67,
+      "rows": 103574,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 67,
+      "rows": 2211840,
+      "logical_weight_bytes": 2618818560
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 176619520
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 9152,
+      "rows": 585728,
+      "logical_weight_bytes": 459210752
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 2752,
+      "rows": 176128,
+      "logical_weight_bytes": 138084352
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 67,
+      "rows": 103574,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 13,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 67,
+      "rows": 2211840,
+      "logical_weight_bytes": 1734082560
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 276430848
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6144,
+      "rows": 393216,
+      "logical_weight_bytes": 465567744
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 261881856
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 58,
+      "rows": 103897,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 58,
+      "rows": 2084864,
+      "logical_weight_bytes": 2468478976
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 183042048
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6144,
+      "rows": 393216,
+      "logical_weight_bytes": 308281344
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3456,
+      "rows": 221184,
+      "logical_weight_bytes": 173408256
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 58,
+      "rows": 103897,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 14,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 58,
+      "rows": 2084864,
+      "logical_weight_bytes": 1634533376
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3200,
+      "rows": 204800,
+      "logical_weight_bytes": 242483200
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6528,
+      "rows": 417792,
+      "logical_weight_bytes": 494665728
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 5184,
+      "rows": 331776,
+      "logical_weight_bytes": 392822784
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 65,
+      "rows": 103553,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 65,
+      "rows": 2187264,
+      "logical_weight_bytes": 2589720576
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3200,
+      "rows": 204800,
+      "logical_weight_bytes": 160563200
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6528,
+      "rows": 417792,
+      "logical_weight_bytes": 327548928
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 5184,
+      "rows": 331776,
+      "logical_weight_bytes": 260112384
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 65,
+      "rows": 103553,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 15,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 65,
+      "rows": 2187264,
+      "logical_weight_bytes": 1714814976
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2560,
+      "rows": 163840,
+      "logical_weight_bytes": 193986560
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8768,
+      "rows": 561152,
+      "logical_weight_bytes": 664403968
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 1,
+      "rows": 8,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "mmq_run",
+      "calls": 1,
+      "rows": 16384,
+      "logical_weight_bytes": 19398656
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 67,
+      "rows": 103987,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 67,
+      "rows": 2220032,
+      "logical_weight_bytes": 2628517888
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2560,
+      "rows": 163840,
+      "logical_weight_bytes": 128450560
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8768,
+      "rows": 561152,
+      "logical_weight_bytes": 439943168
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "mmq_quantize:q8_1",
+      "calls": 1,
+      "rows": 8,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "mmq_run",
+      "calls": 1,
+      "rows": 16384,
+      "logical_weight_bytes": 12845056
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 67,
+      "rows": 103987,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 67,
+      "rows": 2220032,
+      "logical_weight_bytes": 1740505088
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3200,
+      "rows": 204800,
+      "logical_weight_bytes": 242483200
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8896,
+      "rows": 569344,
+      "logical_weight_bytes": 674103296
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3968,
+      "rows": 253952,
+      "logical_weight_bytes": 300679168
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 74,
+      "rows": 103826,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2338816,
+      "logical_weight_bytes": 2769158144
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3200,
+      "rows": 204800,
+      "logical_weight_bytes": 160563200
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8896,
+      "rows": 569344,
+      "logical_weight_bytes": 446365696
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3968,
+      "rows": 253952,
+      "logical_weight_bytes": 199098368
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 74,
+      "rows": 103826,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 17,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2338816,
+      "logical_weight_bytes": 1833631744
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3392,
+      "rows": 217088,
+      "logical_weight_bytes": 257032192
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7488,
+      "rows": 479232,
+      "logical_weight_bytes": 567410688
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 276430848
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 72,
+      "rows": 103983,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 72,
+      "rows": 2297856,
+      "logical_weight_bytes": 2720661504
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3392,
+      "rows": 217088,
+      "logical_weight_bytes": 170196992
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7488,
+      "rows": 479232,
+      "logical_weight_bytes": 375717888
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3648,
+      "rows": 233472,
+      "logical_weight_bytes": 183042048
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 72,
+      "rows": 103983,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 18,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 72,
+      "rows": 2297856,
+      "logical_weight_bytes": 1801519104
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4032,
+      "rows": 258048,
+      "logical_weight_bytes": 305528832
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7232,
+      "rows": 462848,
+      "logical_weight_bytes": 548012032
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 266731520
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 74,
+      "rows": 103676,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2330624,
+      "logical_weight_bytes": 2759458816
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4032,
+      "rows": 258048,
+      "logical_weight_bytes": 202309632
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7232,
+      "rows": 462848,
+      "logical_weight_bytes": 362872832
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 176619520
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 74,
+      "rows": 103676,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 19,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2330624,
+      "logical_weight_bytes": 1827209216
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3136,
+      "rows": 200704,
+      "logical_weight_bytes": 237633536
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7488,
+      "rows": 479232,
+      "logical_weight_bytes": 567410688
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 2880,
+      "rows": 184320,
+      "logical_weight_bytes": 218234880
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 70,
+      "rows": 104216,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 70,
+      "rows": 2269184,
+      "logical_weight_bytes": 2686713856
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3136,
+      "rows": 200704,
+      "logical_weight_bytes": 157351936
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7488,
+      "rows": 479232,
+      "logical_weight_bytes": 375717888
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 2880,
+      "rows": 184320,
+      "logical_weight_bytes": 144506880
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 70,
+      "rows": 104216,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 20,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 70,
+      "rows": 2269184,
+      "logical_weight_bytes": 1779040256
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2240,
+      "rows": 143360,
+      "logical_weight_bytes": 169738240
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8576,
+      "rows": 548864,
+      "logical_weight_bytes": 649854976
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 295829504
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 75,
+      "rows": 103869,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 75,
+      "rows": 2347008,
+      "logical_weight_bytes": 2778857472
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2240,
+      "rows": 143360,
+      "logical_weight_bytes": 112394240
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8576,
+      "rows": 548864,
+      "logical_weight_bytes": 430309376
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 195887104
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 75,
+      "rows": 103869,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 21,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 75,
+      "rows": 2347008,
+      "logical_weight_bytes": 1840054272
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3200,
+      "rows": 204800,
+      "logical_weight_bytes": 242483200
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6784,
+      "rows": 434176,
+      "logical_weight_bytes": 514064384
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 344326144
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 73,
+      "rows": 103826,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 73,
+      "rows": 2322432,
+      "logical_weight_bytes": 2749759488
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3200,
+      "rows": 204800,
+      "logical_weight_bytes": 160563200
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6784,
+      "rows": 434176,
+      "logical_weight_bytes": 340393984
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 227999744
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 73,
+      "rows": 103826,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 22,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 73,
+      "rows": 2322432,
+      "logical_weight_bytes": 1820786688
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3584,
+      "rows": 229376,
+      "logical_weight_bytes": 271581184
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8832,
+      "rows": 565248,
+      "logical_weight_bytes": 669253632
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4096,
+      "rows": 262144,
+      "logical_weight_bytes": 310378496
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 83,
+      "rows": 103504,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 83,
+      "rows": 2482176,
+      "logical_weight_bytes": 2938896384
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3584,
+      "rows": 229376,
+      "logical_weight_bytes": 179830784
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8832,
+      "rows": 565248,
+      "logical_weight_bytes": 443154432
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4096,
+      "rows": 262144,
+      "logical_weight_bytes": 205520896
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 83,
+      "rows": 103504,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 23,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 83,
+      "rows": 2482176,
+      "logical_weight_bytes": 1946025984
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2752,
+      "rows": 176128,
+      "logical_weight_bytes": 208535552
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6592,
+      "rows": 421888,
+      "logical_weight_bytes": 499515392
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4352,
+      "rows": 278528,
+      "logical_weight_bytes": 329777152
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 71,
+      "rows": 103937,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 71,
+      "rows": 2273280,
+      "logical_weight_bytes": 2691563520
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2752,
+      "rows": 176128,
+      "logical_weight_bytes": 138084352
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6592,
+      "rows": 421888,
+      "logical_weight_bytes": 330760192
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4352,
+      "rows": 278528,
+      "logical_weight_bytes": 218365952
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 71,
+      "rows": 103937,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 24,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 71,
+      "rows": 2273280,
+      "logical_weight_bytes": 1782251520
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2432,
+      "rows": 155648,
+      "logical_weight_bytes": 184287232
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6144,
+      "rows": 393216,
+      "logical_weight_bytes": 465567744
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 5632,
+      "rows": 360448,
+      "logical_weight_bytes": 426770432
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 79,
+      "rows": 103429,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 79,
+      "rows": 2420736,
+      "logical_weight_bytes": 2866151424
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2432,
+      "rows": 155648,
+      "logical_weight_bytes": 122028032
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6144,
+      "rows": 393216,
+      "logical_weight_bytes": 308281344
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 5632,
+      "rows": 360448,
+      "logical_weight_bytes": 282591232
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 79,
+      "rows": 103429,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 25,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 79,
+      "rows": 2420736,
+      "logical_weight_bytes": 1897857024
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_gu:iq256_rows1",
+      "calls": 3264,
+      "rows": 208896,
+      "logical_weight_bytes": 327548928
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7232,
+      "rows": 462848,
+      "logical_weight_bytes": 725745664
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 391774208
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 74,
+      "rows": 103319,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2248704,
+      "logical_weight_bytes": 3525967872
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 39,
+      "token_group": "T1",
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 3264,
+      "rows": 208896,
+      "logical_weight_bytes": 227278848
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 39,
+      "token_group": "T2_8",
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 7232,
+      "rows": 462848,
+      "logical_weight_bytes": 503578624
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 39,
+      "token_group": "T9_plus",
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 271843328
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 39,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 74,
+      "rows": 103319,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 26,
+      "type": 39,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2248704,
+      "logical_weight_bytes": 2446589952
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2304,
+      "rows": 147456,
+      "logical_weight_bytes": 174587904
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 9728,
+      "rows": 622592,
+      "logical_weight_bytes": 737148928
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 5184,
+      "rows": 331776,
+      "logical_weight_bytes": 392822784
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 80,
+      "rows": 103432,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 80,
+      "rows": 2428928,
+      "logical_weight_bytes": 2875850752
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2304,
+      "rows": 147456,
+      "logical_weight_bytes": 115605504
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 9728,
+      "rows": 622592,
+      "logical_weight_bytes": 488112128
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 5184,
+      "rows": 331776,
+      "logical_weight_bytes": 260112384
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 80,
+      "rows": 103432,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 27,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 80,
+      "rows": 2428928,
+      "logical_weight_bytes": 1904279552
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2624,
+      "rows": 167936,
+      "logical_weight_bytes": 198836224
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8384,
+      "rows": 536576,
+      "logical_weight_bytes": 635305984
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 344326144
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 78,
+      "rows": 103339,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 78,
+      "rows": 2396160,
+      "logical_weight_bytes": 2837053440
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2624,
+      "rows": 167936,
+      "logical_weight_bytes": 131661824
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8384,
+      "rows": 536576,
+      "logical_weight_bytes": 420675584
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 227999744
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 78,
+      "rows": 103339,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 28,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 78,
+      "rows": 2396160,
+      "logical_weight_bytes": 1878589440
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4992,
+      "rows": 319488,
+      "logical_weight_bytes": 378273792
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7104,
+      "rows": 454656,
+      "logical_weight_bytes": 538312704
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3968,
+      "rows": 253952,
+      "logical_weight_bytes": 300679168
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 76,
+      "rows": 103777,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2375680,
+      "logical_weight_bytes": 2812805120
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4992,
+      "rows": 319488,
+      "logical_weight_bytes": 250478592
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7104,
+      "rows": 454656,
+      "logical_weight_bytes": 356450304
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3968,
+      "rows": 253952,
+      "logical_weight_bytes": 199098368
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 76,
+      "rows": 103777,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 29,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2375680,
+      "logical_weight_bytes": 1862533120
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8000,
+      "rows": 512000,
+      "logical_weight_bytes": 606208000
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4160,
+      "rows": 266240,
+      "logical_weight_bytes": 315228160
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 75,
+      "rows": 103612,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 75,
+      "rows": 2363392,
+      "logical_weight_bytes": 2798256128
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8000,
+      "rows": 512000,
+      "logical_weight_bytes": 401408000
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4160,
+      "rows": 266240,
+      "logical_weight_bytes": 208732160
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 75,
+      "rows": 103612,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 30,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 75,
+      "rows": 2363392,
+      "logical_weight_bytes": 1852899328
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4352,
+      "rows": 278528,
+      "logical_weight_bytes": 329777152
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7424,
+      "rows": 475136,
+      "logical_weight_bytes": 562561024
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4928,
+      "rows": 315392,
+      "logical_weight_bytes": 373424128
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 78,
+      "rows": 103573,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 78,
+      "rows": 2396160,
+      "logical_weight_bytes": 2837053440
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4352,
+      "rows": 278528,
+      "logical_weight_bytes": 218365952
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7424,
+      "rows": 475136,
+      "logical_weight_bytes": 372506624
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4928,
+      "rows": 315392,
+      "logical_weight_bytes": 247267328
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 78,
+      "rows": 103573,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 31,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 78,
+      "rows": 2396160,
+      "logical_weight_bytes": 1878589440
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3072,
+      "rows": 196608,
+      "logical_weight_bytes": 232783872
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8704,
+      "rows": 557056,
+      "logical_weight_bytes": 659554304
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4288,
+      "rows": 274432,
+      "logical_weight_bytes": 324927488
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 75,
+      "rows": 103669,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 75,
+      "rows": 2355200,
+      "logical_weight_bytes": 2788556800
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3072,
+      "rows": 196608,
+      "logical_weight_bytes": 154140672
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8704,
+      "rows": 557056,
+      "logical_weight_bytes": 436731904
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4288,
+      "rows": 274432,
+      "logical_weight_bytes": 215154688
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 75,
+      "rows": 103669,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 32,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 75,
+      "rows": 2355200,
+      "logical_weight_bytes": 1846476800
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 344326144
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7936,
+      "rows": 507904,
+      "logical_weight_bytes": 601358336
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3776,
+      "rows": 241664,
+      "logical_weight_bytes": 286130176
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 77,
+      "rows": 103907,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 77,
+      "rows": 2383872,
+      "logical_weight_bytes": 2822504448
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 227999744
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7936,
+      "rows": 507904,
+      "logical_weight_bytes": 398196736
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3776,
+      "rows": 241664,
+      "logical_weight_bytes": 189464576
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 77,
+      "rows": 103907,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 33,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 77,
+      "rows": 2383872,
+      "logical_weight_bytes": 1868955648
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 2176,
+      "rows": 139264,
+      "logical_weight_bytes": 164888576
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8128,
+      "rows": 520192,
+      "logical_weight_bytes": 615907328
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 5568,
+      "rows": 356352,
+      "logical_weight_bytes": 421920768
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 76,
+      "rows": 103519,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2351104,
+      "logical_weight_bytes": 2783707136
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 2176,
+      "rows": 139264,
+      "logical_weight_bytes": 109182976
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8128,
+      "rows": 520192,
+      "logical_weight_bytes": 407830528
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 5568,
+      "rows": 356352,
+      "logical_weight_bytes": 279379968
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 76,
+      "rows": 103519,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 34,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2351104,
+      "logical_weight_bytes": 1843265536
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7744,
+      "rows": 495616,
+      "logical_weight_bytes": 586809344
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4608,
+      "rows": 294912,
+      "logical_weight_bytes": 349175808
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 76,
+      "rows": 103405,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2383872,
+      "logical_weight_bytes": 2822504448
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7744,
+      "rows": 495616,
+      "logical_weight_bytes": 388562944
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4608,
+      "rows": 294912,
+      "logical_weight_bytes": 231211008
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 76,
+      "rows": 103405,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 35,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2383872,
+      "logical_weight_bytes": 1868955648
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3584,
+      "rows": 229376,
+      "logical_weight_bytes": 271581184
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8128,
+      "rows": 520192,
+      "logical_weight_bytes": 615907328
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4160,
+      "rows": 266240,
+      "logical_weight_bytes": 315228160
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 76,
+      "rows": 103823,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2367488,
+      "logical_weight_bytes": 2803105792
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3584,
+      "rows": 229376,
+      "logical_weight_bytes": 179830784
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8128,
+      "rows": 520192,
+      "logical_weight_bytes": 407830528
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4160,
+      "rows": 266240,
+      "logical_weight_bytes": 208732160
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 76,
+      "rows": 103823,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 36,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 76,
+      "rows": 2367488,
+      "logical_weight_bytes": 1856110592
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8832,
+      "rows": 565248,
+      "logical_weight_bytes": 669253632
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3136,
+      "rows": 200704,
+      "logical_weight_bytes": 237633536
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 74,
+      "rows": 104027,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2338816,
+      "logical_weight_bytes": 2769158144
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8832,
+      "rows": 565248,
+      "logical_weight_bytes": 443154432
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3136,
+      "rows": 200704,
+      "logical_weight_bytes": 157351936
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 74,
+      "rows": 104027,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 37,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2338816,
+      "logical_weight_bytes": 1833631744
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 266731520
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 8384,
+      "rows": 536576,
+      "logical_weight_bytes": 635305984
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 1,
+      "rows": 2,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "mmq_run",
+      "calls": 1,
+      "rows": 4096,
+      "logical_weight_bytes": 4849664
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4480,
+      "rows": 286720,
+      "logical_weight_bytes": 339476480
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 73,
+      "rows": 103830,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 73,
+      "rows": 2326528,
+      "logical_weight_bytes": 2754609152
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3520,
+      "rows": 225280,
+      "logical_weight_bytes": 176619520
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 8384,
+      "rows": 536576,
+      "logical_weight_bytes": 420675584
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "mmq_quantize:q8_1",
+      "calls": 1,
+      "rows": 2,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "mmq_run",
+      "calls": 1,
+      "rows": 4096,
+      "logical_weight_bytes": 3211264
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4480,
+      "rows": 286720,
+      "logical_weight_bytes": 224788480
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 73,
+      "rows": 103830,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 73,
+      "rows": 2326528,
+      "logical_weight_bytes": 1823997952
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 290979840
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 7296,
+      "rows": 466944,
+      "logical_weight_bytes": 552861696
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 344326144
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 74,
+      "rows": 103877,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2326528,
+      "logical_weight_bytes": 2754609152
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3840,
+      "rows": 245760,
+      "logical_weight_bytes": 192675840
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 7296,
+      "rows": 466944,
+      "logical_weight_bytes": 366084096
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 4544,
+      "rows": 290816,
+      "logical_weight_bytes": 227999744
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 74,
+      "rows": 103877,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 39,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2326528,
+      "logical_weight_bytes": 1823997952
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 295829504
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 5440,
+      "rows": 348160,
+      "logical_weight_bytes": 412221440
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 2944,
+      "rows": 188416,
+      "logical_weight_bytes": 223084544
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 60,
+      "rows": 104213,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 60,
+      "rows": 2113536,
+      "logical_weight_bytes": 2502426624
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 195887104
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 5440,
+      "rows": 348160,
+      "logical_weight_bytes": 272957440
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 2944,
+      "rows": 188416,
+      "logical_weight_bytes": 147718144
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 60,
+      "rows": 104213,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 40,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 60,
+      "rows": 2113536,
+      "logical_weight_bytes": 1657012224
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 4096,
+      "rows": 262144,
+      "logical_weight_bytes": 310378496
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T2_8",
+      "path": "cpu_gu:iq256",
+      "calls": 6208,
+      "rows": 397312,
+      "logical_weight_bytes": 470417408
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "cpu_gu:iq256",
+      "calls": 3584,
+      "rows": 229376,
+      "logical_weight_bytes": 271581184
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 69,
+      "rows": 104025,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 69,
+      "rows": 2252800,
+      "logical_weight_bytes": 2667315200
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 4096,
+      "rows": 262144,
+      "logical_weight_bytes": 205520896
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 18,
+      "token_group": "T2_8",
+      "path": "cpu_down:iq256",
+      "calls": 6208,
+      "rows": 397312,
+      "logical_weight_bytes": 311492608
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "cpu_down:iq256",
+      "calls": 3584,
+      "rows": 229376,
+      "logical_weight_bytes": 179830784
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_quantize:q8_1",
+      "calls": 69,
+      "rows": 104025,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "layer": 41,
+      "type": 18,
+      "token_group": "T9_plus",
+      "path": "mmq_run",
+      "calls": 69,
+      "rows": 2252800,
+      "logical_weight_bytes": 1766195200
+    },
+    {
+      "phase": 2,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1834,
+      "rows": 700416,
+      "logical_weight_bytes": 829292544
+    },
+    {
+      "phase": 2,
+      "layer": 0,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 0,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1834,
+      "rows": 700416,
+      "logical_weight_bytes": 549126144
+    },
+    {
+      "phase": 2,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1764,
+      "rows": 770048,
+      "logical_weight_bytes": 911736832
+    },
+    {
+      "phase": 2,
+      "layer": 1,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 1,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1764,
+      "rows": 770048,
+      "logical_weight_bytes": 603717632
+    },
+    {
+      "phase": 2,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1844,
+      "rows": 778240,
+      "logical_weight_bytes": 921436160
+    },
+    {
+      "phase": 2,
+      "layer": 2,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 2,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1844,
+      "rows": 778240,
+      "logical_weight_bytes": 610140160
+    },
+    {
+      "phase": 2,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1736,
+      "rows": 516096,
+      "logical_weight_bytes": 611057664
+    },
+    {
+      "phase": 2,
+      "layer": 3,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 3,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1736,
+      "rows": 516096,
+      "logical_weight_bytes": 404619264
+    },
+    {
+      "phase": 2,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1752,
+      "rows": 495616,
+      "logical_weight_bytes": 586809344
+    },
+    {
+      "phase": 2,
+      "layer": 4,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 4,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1752,
+      "rows": 495616,
+      "logical_weight_bytes": 388562944
+    },
+    {
+      "phase": 2,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1718,
+      "rows": 438272,
+      "logical_weight_bytes": 518914048
+    },
+    {
+      "phase": 2,
+      "layer": 5,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 5,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1718,
+      "rows": 438272,
+      "logical_weight_bytes": 343605248
+    },
+    {
+      "phase": 2,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1602,
+      "rows": 409600,
+      "logical_weight_bytes": 484966400
+    },
+    {
+      "phase": 2,
+      "layer": 6,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 6,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1602,
+      "rows": 409600,
+      "logical_weight_bytes": 321126400
+    },
+    {
+      "phase": 2,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1598,
+      "rows": 393216,
+      "logical_weight_bytes": 465567744
+    },
+    {
+      "phase": 2,
+      "layer": 7,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 7,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1598,
+      "rows": 393216,
+      "logical_weight_bytes": 308281344
+    },
+    {
+      "phase": 2,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1750,
+      "rows": 462848,
+      "logical_weight_bytes": 548012032
+    },
+    {
+      "phase": 2,
+      "layer": 8,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 8,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1750,
+      "rows": 462848,
+      "logical_weight_bytes": 362872832
+    },
+    {
+      "phase": 2,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1616,
+      "rows": 462848,
+      "logical_weight_bytes": 548012032
+    },
+    {
+      "phase": 2,
+      "layer": 9,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 9,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1616,
+      "rows": 462848,
+      "logical_weight_bytes": 362872832
+    },
+    {
+      "phase": 2,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1642,
+      "rows": 438272,
+      "logical_weight_bytes": 518914048
+    },
+    {
+      "phase": 2,
+      "layer": 10,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 10,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1642,
+      "rows": 438272,
+      "logical_weight_bytes": 343605248
+    },
+    {
+      "phase": 2,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1494,
+      "rows": 397312,
+      "logical_weight_bytes": 470417408
+    },
+    {
+      "phase": 2,
+      "layer": 11,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 11,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1494,
+      "rows": 397312,
+      "logical_weight_bytes": 311492608
+    },
+    {
+      "phase": 2,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1658,
+      "rows": 438272,
+      "logical_weight_bytes": 518914048
+    },
+    {
+      "phase": 2,
+      "layer": 12,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 12,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1658,
+      "rows": 438272,
+      "logical_weight_bytes": 343605248
+    },
+    {
+      "phase": 2,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1670,
+      "rows": 475136,
+      "logical_weight_bytes": 562561024
+    },
+    {
+      "phase": 2,
+      "layer": 13,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 13,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1670,
+      "rows": 475136,
+      "logical_weight_bytes": 372506624
+    },
+    {
+      "phase": 2,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1458,
+      "rows": 364544,
+      "logical_weight_bytes": 431620096
+    },
+    {
+      "phase": 2,
+      "layer": 14,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 14,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1458,
+      "rows": 364544,
+      "logical_weight_bytes": 285802496
+    },
+    {
+      "phase": 2,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1462,
+      "rows": 401408,
+      "logical_weight_bytes": 475267072
+    },
+    {
+      "phase": 2,
+      "layer": 15,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 15,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1462,
+      "rows": 401408,
+      "logical_weight_bytes": 314703872
+    },
+    {
+      "phase": 2,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1666,
+      "rows": 434176,
+      "logical_weight_bytes": 514064384
+    },
+    {
+      "phase": 2,
+      "layer": 16,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 16,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1666,
+      "rows": 434176,
+      "logical_weight_bytes": 340393984
+    },
+    {
+      "phase": 2,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1720,
+      "rows": 503808,
+      "logical_weight_bytes": 596508672
+    },
+    {
+      "phase": 2,
+      "layer": 17,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 17,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1720,
+      "rows": 503808,
+      "logical_weight_bytes": 394985472
+    },
+    {
+      "phase": 2,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1672,
+      "rows": 499712,
+      "logical_weight_bytes": 591659008
+    },
+    {
+      "phase": 2,
+      "layer": 18,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 18,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1672,
+      "rows": 499712,
+      "logical_weight_bytes": 391774208
+    },
+    {
+      "phase": 2,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1678,
+      "rows": 516096,
+      "logical_weight_bytes": 611057664
+    },
+    {
+      "phase": 2,
+      "layer": 19,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 19,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1678,
+      "rows": 516096,
+      "logical_weight_bytes": 404619264
+    },
+    {
+      "phase": 2,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1596,
+      "rows": 507904,
+      "logical_weight_bytes": 601358336
+    },
+    {
+      "phase": 2,
+      "layer": 20,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 20,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1596,
+      "rows": 507904,
+      "logical_weight_bytes": 398196736
+    },
+    {
+      "phase": 2,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1702,
+      "rows": 507904,
+      "logical_weight_bytes": 601358336
+    },
+    {
+      "phase": 2,
+      "layer": 21,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 21,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1702,
+      "rows": 507904,
+      "logical_weight_bytes": 398196736
+    },
+    {
+      "phase": 2,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1752,
+      "rows": 495616,
+      "logical_weight_bytes": 586809344
+    },
+    {
+      "phase": 2,
+      "layer": 22,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 22,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1752,
+      "rows": 495616,
+      "logical_weight_bytes": 388562944
+    },
+    {
+      "phase": 2,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1668,
+      "rows": 471040,
+      "logical_weight_bytes": 557711360
+    },
+    {
+      "phase": 2,
+      "layer": 23,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 23,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1668,
+      "rows": 471040,
+      "logical_weight_bytes": 369295360
+    },
+    {
+      "phase": 2,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1690,
+      "rows": 462848,
+      "logical_weight_bytes": 548012032
+    },
+    {
+      "phase": 2,
+      "layer": 24,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 24,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1690,
+      "rows": 462848,
+      "logical_weight_bytes": 362872832
+    },
+    {
+      "phase": 2,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1642,
+      "rows": 491520,
+      "logical_weight_bytes": 581959680
+    },
+    {
+      "phase": 2,
+      "layer": 25,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 25,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1642,
+      "rows": 491520,
+      "logical_weight_bytes": 385351680
+    },
+    {
+      "phase": 2,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_gu:iq256_rows1",
+      "calls": 1600,
+      "rows": 389120,
+      "logical_weight_bytes": 610140160
+    },
+    {
+      "phase": 2,
+      "layer": 26,
+      "type": 18,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 26,
+      "type": 39,
+      "token_group": "T1",
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 1600,
+      "rows": 389120,
+      "logical_weight_bytes": 423362560
+    },
+    {
+      "phase": 2,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1750,
+      "rows": 479232,
+      "logical_weight_bytes": 567410688
+    },
+    {
+      "phase": 2,
+      "layer": 27,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 27,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1750,
+      "rows": 479232,
+      "logical_weight_bytes": 375717888
+    },
+    {
+      "phase": 2,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1660,
+      "rows": 434176,
+      "logical_weight_bytes": 514064384
+    },
+    {
+      "phase": 2,
+      "layer": 28,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 28,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1660,
+      "rows": 434176,
+      "logical_weight_bytes": 340393984
+    },
+    {
+      "phase": 2,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1698,
+      "rows": 528384,
+      "logical_weight_bytes": 625606656
+    },
+    {
+      "phase": 2,
+      "layer": 29,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 29,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1698,
+      "rows": 528384,
+      "logical_weight_bytes": 414253056
+    },
+    {
+      "phase": 2,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1612,
+      "rows": 483328,
+      "logical_weight_bytes": 572260352
+    },
+    {
+      "phase": 2,
+      "layer": 30,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 30,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1612,
+      "rows": 483328,
+      "logical_weight_bytes": 378929152
+    },
+    {
+      "phase": 2,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1720,
+      "rows": 512000,
+      "logical_weight_bytes": 606208000
+    },
+    {
+      "phase": 2,
+      "layer": 31,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 31,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1720,
+      "rows": 512000,
+      "logical_weight_bytes": 401408000
+    },
+    {
+      "phase": 2,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1722,
+      "rows": 487424,
+      "logical_weight_bytes": 577110016
+    },
+    {
+      "phase": 2,
+      "layer": 32,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 32,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1722,
+      "rows": 487424,
+      "logical_weight_bytes": 382140416
+    },
+    {
+      "phase": 2,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1618,
+      "rows": 475136,
+      "logical_weight_bytes": 562561024
+    },
+    {
+      "phase": 2,
+      "layer": 33,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 33,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1618,
+      "rows": 475136,
+      "logical_weight_bytes": 372506624
+    },
+    {
+      "phase": 2,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1808,
+      "rows": 516096,
+      "logical_weight_bytes": 611057664
+    },
+    {
+      "phase": 2,
+      "layer": 34,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 34,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1808,
+      "rows": 516096,
+      "logical_weight_bytes": 404619264
+    },
+    {
+      "phase": 2,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1732,
+      "rows": 548864,
+      "logical_weight_bytes": 649854976
+    },
+    {
+      "phase": 2,
+      "layer": 35,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 35,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1732,
+      "rows": 548864,
+      "logical_weight_bytes": 430309376
+    },
+    {
+      "phase": 2,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1586,
+      "rows": 479232,
+      "logical_weight_bytes": 567410688
+    },
+    {
+      "phase": 2,
+      "layer": 36,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 36,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1586,
+      "rows": 479232,
+      "logical_weight_bytes": 375717888
+    },
+    {
+      "phase": 2,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1580,
+      "rows": 417792,
+      "logical_weight_bytes": 494665728
+    },
+    {
+      "phase": 2,
+      "layer": 37,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 37,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1580,
+      "rows": 417792,
+      "logical_weight_bytes": 327548928
+    },
+    {
+      "phase": 2,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1476,
+      "rows": 421888,
+      "logical_weight_bytes": 499515392
+    },
+    {
+      "phase": 2,
+      "layer": 38,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 38,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1476,
+      "rows": 421888,
+      "logical_weight_bytes": 330760192
+    },
+    {
+      "phase": 2,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1822,
+      "rows": 577536,
+      "logical_weight_bytes": 683802624
+    },
+    {
+      "phase": 2,
+      "layer": 39,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 39,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1822,
+      "rows": 577536,
+      "logical_weight_bytes": 452788224
+    },
+    {
+      "phase": 2,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1638,
+      "rows": 471040,
+      "logical_weight_bytes": 557711360
+    },
+    {
+      "phase": 2,
+      "layer": 40,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 40,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1638,
+      "rows": 471040,
+      "logical_weight_bytes": 369295360
+    },
+    {
+      "phase": 2,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1722,
+      "rows": 446464,
+      "logical_weight_bytes": 528613376
+    },
+    {
+      "phase": 2,
+      "layer": 41,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 41,
+      "type": 18,
+      "token_group": "T1",
+      "path": "cpu_down:iq256_rows1",
+      "calls": 1722,
+      "rows": 446464,
+      "logical_weight_bytes": 350027776
+    },
+    {
+      "phase": 2,
+      "layer": 42,
+      "type": 17,
+      "token_group": "T1",
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 1738,
+      "rows": 532480,
+      "logical_weight_bytes": 630456320
+    },
+    {
+      "phase": 2,
+      "layer": 42,
+      "type": 17,
+      "token_group": "T1",
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "layer": 42,
+      "type": 39,
+      "token_group": "T1",
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 1738,
+      "rows": 532480,
+      "logical_weight_bytes": 579338240
+    }
+  ],
+  "totals": [
+    {
+      "phase": 0,
+      "type": -1,
+      "nt": 0,
+      "path": "mmq_built",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "type": 17,
+      "nt": 0,
+      "path": "mmq_gu_supported",
+      "calls": 42,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "type": 17,
+      "nt": 1,
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 3192,
+      "rows": 1867776,
+      "logical_weight_bytes": 2211446784
+    },
+    {
+      "phase": 0,
+      "type": 18,
+      "nt": 0,
+      "path": "mmq_down_supported",
+      "calls": 41,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "type": 18,
+      "nt": 0,
+      "path": "mmq_gu_supported",
+      "calls": 1,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 0,
+      "type": 18,
+      "nt": 1,
+      "path": "cpu_down:iq256_rows1",
+      "calls": 3192,
+      "rows": 1867776,
+      "logical_weight_bytes": 1464336384
+    },
+    {
+      "phase": 0,
+      "type": 39,
+      "nt": 0,
+      "path": "mmq_down_supported",
+      "calls": 2,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 1,
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 151168,
+      "rows": 9674752,
+      "logical_weight_bytes": 11454906368
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 2,
+      "path": "cpu_gu:iq256",
+      "calls": 81344,
+      "rows": 5206016,
+      "logical_weight_bytes": 6163922944
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 2,
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 1,
+      "rows": 2,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 2,
+      "path": "mmq_run",
+      "calls": 1,
+      "rows": 4096,
+      "logical_weight_bytes": 4849664
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 3,
+      "path": "cpu_gu:iq256",
+      "calls": 56960,
+      "rows": 3645440,
+      "logical_weight_bytes": 4316200960
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 4,
+      "path": "cpu_gu:iq256",
+      "calls": 45312,
+      "rows": 2899968,
+      "logical_weight_bytes": 3433562112
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 5,
+      "path": "cpu_gu:iq256",
+      "calls": 35712,
+      "rows": 2285568,
+      "logical_weight_bytes": 2706112512
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 6,
+      "path": "cpu_gu:iq256",
+      "calls": 31168,
+      "rows": 1994752,
+      "logical_weight_bytes": 2361786368
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 7,
+      "path": "cpu_gu:iq256",
+      "calls": 25088,
+      "rows": 1605632,
+      "logical_weight_bytes": 1901068288
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 8,
+      "path": "cpu_gu:iq256",
+      "calls": 23616,
+      "rows": 1511424,
+      "logical_weight_bytes": 1789526016
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 8,
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 3,
+      "rows": 24,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": 8,
+      "path": "mmq_run",
+      "calls": 3,
+      "rows": 49152,
+      "logical_weight_bytes": 58195968
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": "9+",
+      "path": "cpu_gu:iq256",
+      "calls": 177664,
+      "rows": 11370496,
+      "logical_weight_bytes": 13462667264
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": "9+",
+      "path": "mmq_glu_not_selected",
+      "calls": 164,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": "9+",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 2954,
+      "rows": 4250503,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 17,
+      "nt": "9+",
+      "path": "mmq_run",
+      "calls": 2954,
+      "rows": 94392320,
+      "logical_weight_bytes": 111760506880
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 1,
+      "path": "cpu_down:iq256_rows1",
+      "calls": 151168,
+      "rows": 9674752,
+      "logical_weight_bytes": 7585005568
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 1,
+      "path": "cpu_gu:iq256_rows1",
+      "calls": 3264,
+      "rows": 208896,
+      "logical_weight_bytes": 327548928
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 2,
+      "path": "cpu_down:iq256",
+      "calls": 81344,
+      "rows": 5206016,
+      "logical_weight_bytes": 4081516544
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 2,
+      "path": "cpu_gu:iq256",
+      "calls": 1984,
+      "rows": 126976,
+      "logical_weight_bytes": 199098368
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 2,
+      "path": "mmq_quantize:q8_1",
+      "calls": 1,
+      "rows": 2,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 2,
+      "path": "mmq_run",
+      "calls": 1,
+      "rows": 4096,
+      "logical_weight_bytes": 3211264
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 3,
+      "path": "cpu_down:iq256",
+      "calls": 56960,
+      "rows": 3645440,
+      "logical_weight_bytes": 2858024960
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 3,
+      "path": "cpu_gu:iq256",
+      "calls": 1664,
+      "rows": 106496,
+      "logical_weight_bytes": 166985728
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 4,
+      "path": "cpu_down:iq256",
+      "calls": 45312,
+      "rows": 2899968,
+      "logical_weight_bytes": 2273574912
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 4,
+      "path": "cpu_gu:iq256",
+      "calls": 1152,
+      "rows": 73728,
+      "logical_weight_bytes": 115605504
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 5,
+      "path": "cpu_down:iq256",
+      "calls": 35712,
+      "rows": 2285568,
+      "logical_weight_bytes": 1791885312
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 5,
+      "path": "cpu_gu:iq256",
+      "calls": 896,
+      "rows": 57344,
+      "logical_weight_bytes": 89915392
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 6,
+      "path": "cpu_down:iq256",
+      "calls": 31168,
+      "rows": 1994752,
+      "logical_weight_bytes": 1563885568
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 6,
+      "path": "cpu_gu:iq256",
+      "calls": 832,
+      "rows": 53248,
+      "logical_weight_bytes": 83492864
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 7,
+      "path": "cpu_down:iq256",
+      "calls": 25088,
+      "rows": 1605632,
+      "logical_weight_bytes": 1258815488
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 7,
+      "path": "cpu_gu:iq256",
+      "calls": 256,
+      "rows": 16384,
+      "logical_weight_bytes": 25690112
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 8,
+      "path": "cpu_down:iq256",
+      "calls": 23616,
+      "rows": 1511424,
+      "logical_weight_bytes": 1184956416
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 8,
+      "path": "cpu_gu:iq256",
+      "calls": 448,
+      "rows": 28672,
+      "logical_weight_bytes": 44957696
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 8,
+      "path": "mmq_quantize:q8_1",
+      "calls": 3,
+      "rows": 24,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": 8,
+      "path": "mmq_run",
+      "calls": 3,
+      "rows": 49152,
+      "logical_weight_bytes": 38535168
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": "9+",
+      "path": "cpu_down:iq256",
+      "calls": 177664,
+      "rows": 11370496,
+      "logical_weight_bytes": 8914468864
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": "9+",
+      "path": "cpu_gu:iq256",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 391774208
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": "9+",
+      "path": "mmq_glu_not_selected",
+      "calls": 4,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": "9+",
+      "path": "mmq_quantize:q8_1",
+      "calls": 2954,
+      "rows": 4250503,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": "9+",
+      "path": "mmq_quantize:q8_1_gather",
+      "calls": 74,
+      "rows": 103319,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 18,
+      "nt": "9+",
+      "path": "mmq_run",
+      "calls": 3028,
+      "rows": 96641024,
+      "logical_weight_bytes": 77529546752
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 1,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 3264,
+      "rows": 208896,
+      "logical_weight_bytes": 227278848
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 2,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 1984,
+      "rows": 126976,
+      "logical_weight_bytes": 138149888
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 3,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 1664,
+      "rows": 106496,
+      "logical_weight_bytes": 115867648
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 4,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 1152,
+      "rows": 73728,
+      "logical_weight_bytes": 80216064
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 5,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 896,
+      "rows": 57344,
+      "logical_weight_bytes": 62390272
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 6,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 832,
+      "rows": 53248,
+      "logical_weight_bytes": 57933824
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 7,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 256,
+      "rows": 16384,
+      "logical_weight_bytes": 17825792
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": 8,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 448,
+      "rows": 28672,
+      "logical_weight_bytes": 31195136
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": "9+",
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 3904,
+      "rows": 249856,
+      "logical_weight_bytes": 271843328
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": "9+",
+      "path": "mmq_quantize:q8_1",
+      "calls": 74,
+      "rows": 103319,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 1,
+      "type": 39,
+      "nt": "9+",
+      "path": "mmq_run",
+      "calls": 74,
+      "rows": 2248704,
+      "logical_weight_bytes": 2446589952
+    },
+    {
+      "phase": 2,
+      "type": 17,
+      "nt": 1,
+      "path": "cpu_gu:ggml_vec_dot",
+      "calls": 70266,
+      "rows": 20643840,
+      "logical_weight_bytes": 24442306560
+    },
+    {
+      "phase": 2,
+      "type": 17,
+      "nt": 1,
+      "path": "request_issue",
+      "calls": 2688,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "type": 18,
+      "nt": 1,
+      "path": "cpu_down:iq256_rows1",
+      "calls": 68528,
+      "rows": 20111360,
+      "logical_weight_bytes": 15767306240
+    },
+    {
+      "phase": 2,
+      "type": 18,
+      "nt": 1,
+      "path": "cpu_gu:iq256_rows1",
+      "calls": 1600,
+      "rows": 389120,
+      "logical_weight_bytes": 610140160
+    },
+    {
+      "phase": 2,
+      "type": 18,
+      "nt": 1,
+      "path": "request_issue",
+      "calls": 64,
+      "rows": 0,
+      "logical_weight_bytes": 0
+    },
+    {
+      "phase": 2,
+      "type": 39,
+      "nt": 1,
+      "path": "cpu_down:ggml_vec_dot",
+      "calls": 3338,
+      "rows": 921600,
+      "logical_weight_bytes": 1002700800
+    }
+  ],
+  "input_quantization": {
+    "actual_routed_input_rows": 4353848,
+    "distinct_layer_chunk_input_rows_upper_bound": 738360,
+    "repeated_input_rows_lower_bound": 3615488,
+    "method": "Each full-prompt layer/chunk invocation has at most chunk_tokens distinct input rows. Account for repeated requests via the GLU-decision call count. Routed MMQ input rows above this bound prove repeated quantization. Exact per-call/per-token distinct counts were not captured."
+  },
+  "scope": "Working-fork host dispatch capture, 600/8192 prompts, two requests each, 16 outputs. Phase 0 setup/calibration; phase 1 prefill; phase 2 decode. T2-8 here are expert prefill batches, not an enabled speculative verifier. No timings/DRAM bandwidth inferred from counters."
+}

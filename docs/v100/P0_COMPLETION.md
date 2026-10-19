@@ -15,7 +15,7 @@ it only after the completion ledger is committed and the user is notified.
 - Same-pack base logit screen passes; initial three-pair 600/4K/8K comparison and
   fixed-history replay are preserved in `v9-bases-2026-10-18.json` and
   `v9-replay-2026-10-18.json`. Small mixed timing differences do not prove causal
-  improvements. Greedy/likelihood repeatability still needs quantification.
+  improvements. The bounded repeatability screen is now quantified below.
 - Actual formats: IQ2_XS/IQ3_XXS gate/up, IQ3_XXS down except MXFP4 layers 26/42.
   Named IQ2_XXS/Q2_K experiments are N/A for this pack. Ordinary SM70 MMQ executes;
   fused GLU's Turing guard is not a global MMQ eligibility test.
@@ -34,31 +34,41 @@ it only after the completion ledger is committed and the user is notified.
 | Exact source/build/model identity | Full shard hashes now measured and match local SHA256SUMS; preserve upstream binaries and selected SM70 image evidence |
 | Baseline repeatability | Completed 32-row screen: both same-base pairs and cross-base top-1 32/32; GPU-only historical pair byte-identical; bounded corpus scope retained |
 | Extended short matrix | Complete: 108 requests, three interleaved pairs and excluded first repetition; active-window telemetry reviewed, no causal speedup claimed |
-| Filled context | Genuine 32K/64K/128K histories, fixed 1024 decode, three pairs where safe |
+| Filled context | 32K three pairs complete with 1024 outputs; 64K/128K units progressing, original historical 128K also preserved |
 | Chunk settings | 512/1024/4096 plus auto; 128 unsupported on the upstream 256-token chunk grid, not silently relabeled |
-| Runtime dispatch | Exact per-layer/type CPU row/ISA, MMQ/quantize/GLU/fallback calls, T=1 versus 2–8 and prefill |
-| Unique memory worksheet | Exact pinned/registered allocations and aliases; GPU component bytes; reconcile physical host views without adding overlaps |
+| Runtime dispatch | Captured actual CPU/AVX2, MMQ and GLU/fallback decisions; per-token route/cache and exact per-call input-duplication detail remain open |
+| Unique memory worksheet | Conserved per-SHA host/GPU budget and alias-deduped backing pages captured; borrowed-arena subcomponents/callsite labels need final reconciliation |
 | Long-context critical path | Rootless CUDA timeline/events at filled context; report top three wall-path contributors and overlap limits |
 | Sustained telemetry | Active-window clocks/power/thermal, faults/I/O, NUMA placement, pressure and preserved safety floor |
 | Final decisions | Base, indexer/attention hotspots, repeated quantization, CPU type path, static balance and ≤3 P3 admissions with evidence |
 
 ## Accounting instrumentation checkpoint
 
-The opt-in CUDA allocation observer and disjoint host worksheet are implemented;
-27 local V100 tooling tests pass. See `P0_MEMORY_ACCOUNTING.md` for coverage,
-collection instructions and remaining physical-accounting gaps. Real cudart
-interposition must be verified on the runner after the unprofiled campaign.
-Do not mark the unique-memory gate complete from host tests or virtual ranges.
+The physical collection passed in run `39194149121`. See
+`P0_ACCOUNTING_RESULTS.md`, `p0-memory-accounting-2026-10-19.json` and the
+collector instructions in `P0_MEMORY_ACCOUNTING.md`. Each immutable base has
+165 contiguous allocation events, no failures, clean exit markers and complete
+release of observed allocations. Live host-pin ranges resolve to 41 shared
+backing objects with no unresolved private ranges. Their page footprint is
+about 71.85 GiB, inside PSS/Shmem rather than additive to RSS. Each disjoint
+host budget conserves 135,068,450,816 bytes. The source-derived 948,249,856-byte
+raw/CSA/HCA/indexer arena matches the actual allocation in both bases. Fine
+borrowed-arena/callsite attribution remains open; no PFN/QPI claim is made.
 
 ## Dispatch instrumentation checkpoint
 
 `ABYSS_V100_DISPATCH=1` adds bounded host counters at the actual CPU row and
 MMQ branches, with worker scopes and decode request/position joins. See
 `P0_DISPATCH_LEDGER.md`. The CUDA build and device checks passed in run `39185866653`; physical
-capture remains pending. 32 local tooling tests now pass (including accounting,
-active-window summary and main-stream budget tests). Prefill counters identify chunks and expert
-batch sizes, not individual gathered row tokens. No dispatch gate is closed
-from source presence or host-only tests.
+capture now passed in run `39194149121`: 23,285 keys, no dropped calls, no
+unresolved decode service positions. See `p0-dispatch-2026-10-19.json`.
+Ordinary MMQ ran 6,064 products; fused GLU ran zero. IQ2_XS T=1 uses GGML dots,
+IQ3_XXS T=1 uses IQ256 rows1, multi-row IQ2_XS/IQ3_XXS uses IQ256, and MXFP4
+down uses GGML dots. No IQ512 calls were observed. At least 3,615,488 repeated
+input quantizations are proven by a distinct-row upper bound; exact per-call
+counts and detailed per-token prefill route/cache attribution are still open.
+Compiled GGML getters/callsite symbols are queued in read-only run
+`39199082932`. 39 local tooling tests pass; profile timings are excluded.
 
 ## Interrupted long-context campaign
 
@@ -68,9 +78,10 @@ Historical v1.3.28 completed all genuine 32K/64K/128K histories with 1024 output
 two requests each. Current v1.3.31 completed both 32K requests before interruption.
 No engine survived inspection. Pre-interruption telemetry had >44 GiB minimum
 MemAvailable, no cgroup OOM events, and the last sample at 03:01:24Z; GitHub
-marked failure at 03:10:58Z without finalized job logs. Cause is not yet proven;
-this is not an engine OOM diagnosis. Preserve completed data, inspect host uptime
-and use smaller checkpointed units before resuming missing long/chunk work.
+marked failure at 03:10:58Z without finalized job logs. Subsequent `/proc/stat`
+confirms a new host boot at 03:02:59Z (previous boot: Oct18 04:59:52Z). The runner
+disappeared during a host reboot; what triggered that reboot remains unknown.
+This is not an engine OOM diagnosis. Completed/partial data remains preserved.
 
 Extended results: `p0-extended-2026-10-19.json`. Active-request samples showed
 SM clock medians 1380 MHz on all six arms, no sampled thermal reason, occasional
@@ -82,11 +93,18 @@ observations do not establish a causal base performance improvement/regression.
 ## Recovery execution checkpoint
 
 `P0_RECOVERY.md` defines the separate accounting and replacement long-context
-collection. Allocation/dispatch run `39194149121` is executing after a passing
-CUDA rebuild; remaining long/chunk/timeline units queue under the same GPU lock.
+collection. Allocation/dispatch run `39194149121` completed successfully after
+a passing CUDA rebuild. Remaining run `39194497860` is active under the same GPU lock.
 New long units use consistent fresh processes per context and immediately upload
 individual checkpoints. Do not merge their timing strata with the original
-carry-over-residency long arm. 34 local V100 tooling tests pass.
+carry-over-residency long arm. All six 32K units passed in the intended
+A/B, B/A, A/B order, verified by actual request start times. Results are in
+`p0-32k-2026-10-19.json`; artifact ZIP digests were verified. Paired median
+prefill time change is +0.00019%, decode time -5.8683% (negative favors current).
+All three generated trajectories differ, so this is not a causal speedup claim.
+Warm decode sample clocks were 1380/877 MHz in all arms, without sampled
+thermal/power-cap reasons; prefill clock/power behavior varied. The 64K units
+are next; inspect fresh job state before reporting later completion counts.
 
 ## Original campaign (preserved, interrupted)
 
