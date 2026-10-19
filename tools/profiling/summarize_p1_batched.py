@@ -27,6 +27,11 @@ def summarize(archive,digest,run):
             raise ValueError('component shape population mismatch')
         shapes={(T,p) for T in (1,2,3,8,16,32,256) for p in (2048,8192,32768,125000)}
         shapes|={(T,p) for T in (1024,4096) for p in (2048,8192,32768,120000)}
+        revision=parity[0].get('matrix_revision',1)
+        if revision not in (1,2):raise ValueError('unknown timed matrix revision')
+        if revision==2:
+            shapes|={(T,p) for T in (256,1024,4096) for p in (65536,98304)}
+            shapes|={(2048,p) for p in (2048,8192,32768,65536,98304,120000)}
         numerical=[r for r in bench if r.get('case')=='cublas_indexer']
         if len(numerical)!=len(shapes) or {(r['T'],r['p0']) for r in numerical}!=shapes:
             raise ValueError('timed numerical population mismatch')

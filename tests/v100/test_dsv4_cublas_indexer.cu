@@ -151,11 +151,12 @@ int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"cuBLAS candidate requires actual SM70");
         Scorer scorer;int version=0;blas(cublasGetVersion(scorer.handle,&version));
-        std::printf("{\"cublas_version\":%d,\"math\":\"FP32 SGEMM; no tensor-core claim\",\"query_tile\":%d,\"key_tile\":%d,\"epilogue_scores_per_warp\":%d,\"boundary_p0\":2052,\"selection\":\"T unchanged upstream single-token launches, included in timing\"}\n",version,TT,KK,ROWS_PER_WARP);
+        std::printf("{\"cublas_version\":%d,\"math\":\"FP32 SGEMM; no tensor-core claim\",\"query_tile\":%d,\"key_tile\":%d,\"epilogue_scores_per_warp\":%d,\"matrix_revision\":2,\"boundary_p0\":2052,\"selection\":\"T unchanged upstream single-token launches, included in timing\"}\n",version,TT,KK,ROWS_PER_WARP);
         bool bench=argc>1;
         if(bench){
             for(int T:{1,2,3,8,16,32,256})for(int p0:{2048,8192,32768,125000})run_case(scorer,T,p0,0,true);
-            for(int T:{1024,4096})for(int p0:{2048,8192,32768,120000})run_case(scorer,T,p0,0,true);
+            for(int p0:{65536,98304})run_case(scorer,256,p0,0,true);
+            for(int T:{1024,2048,4096})for(int p0:{2048,8192,32768,65536,98304,120000})run_case(scorer,T,p0,0,true);
         }else{
             for(int T:{1,3,8,33})for(int p0:{2040,8192})run_case(scorer,T,p0,0,false);
             for(int mode:{1,2,3})run_case(scorer,3,2052,mode,false);

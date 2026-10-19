@@ -1,9 +1,12 @@
 # V100 implementation status — 19 October 2026
 
-P1 now continues on `feature/deepseek-v100-p1`, based on selected v1.3.31
-`7c893ac`. See [P1 progress](P1_PROGRESS.md) for physical scorer evidence and
-selected-base revalidation. The first isolated scorer loses to F32; production
-arithmetic/defaults remain unchanged. The P0 branch and evidence below are frozen.
+P1 continues on `feature/deepseek-v100-p1`, based on selected v1.3.31 `7c893ac`.
+See [P1 progress](P1_PROGRESS.md) for passing ported-base audits and physical
+scorer experiments. Both one-token MMA layouts lose; retain F32. The wider
+batched FP32 cuBLAS prototype wins about 12–13% in three synthetic long-context
+bulk shapes, while shorter contexts lose. Candidate model-quality, runtime
+integration and whole-model performance gates remain open. Production arithmetic/
+defaults are unchanged; the P0 branch and evidence below are frozen.
 
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
 Production arithmetic and dispatch remain unchanged. No performance improvement is claimed.

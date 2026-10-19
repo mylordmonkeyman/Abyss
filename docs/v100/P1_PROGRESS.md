@@ -5,6 +5,24 @@ Working branch: `feature/deepseek-v100-p1`, based on selected upstream v1.3.31
 merged without rewriting `feature/deepseek-v100-perf` or its frozen references.
 The automatic merge was clean; this is not evidence that runtime parity passes.
 
+## Current checkpoint
+
+| Gate | Measured state |
+| --- | --- |
+| Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
+| One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
+| Batched FP32 cuBLAS scorer | Three bounded variants measured. The 256-token query tile wins approximately 12–13% in three tested long-context bulk shapes; shorter contexts still lose |
+| Production integration / P1 exit | **Open**: runtime dispatch absent; no candidate model-KL, downstream attention or whole-model performance acceptance yet. Production arithmetic/defaults unchanged |
+
+Next: integrate only an explicit experimental batched scorer with bounded,
+owned stream/workspace lifetime; retain F32 for shorter/unsupported shapes and
+the legacy unconditional F32 override. Establish same-branch teacher-forced
+quality at **filled long contexts where this scorer actually executes** and
+record actual dispatch before paired real-model performance. The 2K port
+screen cannot qualify a scorer restricted to approximately 30K compressed rows.
+The prescribed batched MMA correctness/key-reuse experiment and full boundary,
+quality, sm80/HIP and graph/capture checks remain P1 work.
+
 ## Initial checkpoint — 19 October 2026
 
 - P0 measured indexer residence at 22.49% of 32K and 49.38% of 128K historical
@@ -182,6 +200,37 @@ scratch is **48.25 MiB**, below a hard 64 MiB caller-owned cap; common buffers
 and opaque library costs remain separate. This is a bounded experiment, not a
 production memory reservation or a performance claim. Re-run the full matrix
 before deciding whether any bulk shape merits model integration.
+
+### Wider query tile: long-context integration shortlist
+
+Run `39262110290` passes parity, both sanitizers and all 36 timed shapes.
+`p1-cublas-wide-2026-10-19.json` is reproduced by `summarize_p1_batched.py`;
+artifact `12191212424`, ZIP SHA256
+`3f06d8591d6257a37f860bab22bab2b538ddc133be74c305bc6e135f01543847`.
+Maximum relative L2 remains 3.1553e-7; every parity/timed selected membership
+matches F32. Sixteen telemetry samples contain no thermal reason; they do not
+establish sustained whole-model behavior. Hosted CI also passes.
+
+| Tokens T | Starting context | Median isolated stage elapsed change vs batched F32 | Repeats |
+| --- | --- | --- | --- |
+| 256 | 125,000 | **-13.02%** | All six pairs faster |
+| 1,024 | 120,000 | **-12.37%** | All six pairs faster |
+| 4,096 | 120,000 | **-12.12%** | All six pairs faster |
+| 256 | 32,768 | +24.03% | Retain F32 |
+| 1,024 | 32,768 | +27.04% | Retain F32 |
+| 4,096 | 32,768 | +25.89% | Retain F32 |
+
+Negative elapsed changes favor the candidate. These are synthetic, fixed-input
+**full isolated indexer stages**, including the prototype's T selector launches.
+They are not model throughput, an auto-dispatch threshold or evidence that all
+intermediate geometries win. Only the explicitly measured long-context regimes
+merit the next model-level investigation. Keep the losing shorter shapes on
+F32. SGEMM uses FP32 math; no tensor-core dispatch is claimed for this candidate.
+
+The actual 128K trace startup uses **2,048-token mixer sub-batches**, so the
+next component matrix explicitly adds T=2048 and 64K/96K starting contexts.
+This probes the measured engine geometry and the untested gap between losing
+32K and winning 120K contexts; no threshold is inferred by interpolation.
 
 Production code does not call this scorer. No new runtime control/default is
 introduced. Finite FP32 queries outside the unscaled FP16 range are unsupported
