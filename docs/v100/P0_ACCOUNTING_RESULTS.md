@@ -1,5 +1,10 @@
 # P0 accounting and actual dispatch results
 
+Final P0 gate dispositions are in `P0_COMPLETION.md`. This document preserves
+the earlier accounting population; later exact-input and per-token captures
+are separate populations in `p0-exact-input-reuse-2026-10-19.json` and
+`p0-route-summary-2026-10-19.json`. Do not pool their diagnostic counts.
+
 Run [39194149121](https://github.com/mylordmonkeyman/Abyss/actions/runs/39194149121)
 completed successfully. Memory used both checksum-verified immutable upstream
 binaries at genuine 32K and 128K histories. Actual host dispatch used the working
@@ -133,7 +138,7 @@ v1.3.31 source adds RAM_THP (default on) and STREAM_FETCH (default on). The
 captured allocation path used `cudaHostAlloc`, not registered anonymous memory,
 and realized zero anonymous huge pages in either base. A THP benefit is therefore
 not demonstrated. Current's stream-fetch branch is present/default-on in source;
-its exact kernel execution still needs current-base timeline corroboration. The
+its exact kernel execution is now corroborated in `p0-fetch-2026-10-19.json`. The
 historical pin lacks these two named switches. Do not label the default base
 comparison a separate 0/1 switch experiment.
 
@@ -173,8 +178,9 @@ not priority: the earlier 2K timing measured only 0.638% in these quantizers.
 T=2–8 observations here are actual expert prefill batches. Speculation was off;
 they are not speculative-verifier throughput evidence. The host ledger does not
 measure physical DRAM/PCIe traffic or per-format exposed CPU time. Aggregate
-cache/fetch/wait outcomes remain in engine logs; detailed per-token route/cache
-attribution and the long-context main-stream budget remain open P0 evidence.
+cache/fetch/wait outcomes remain in engine logs. The later per-token route/cache
+attribution and long-context main-stream budgets are now recorded in the
+completion ledger, with their diagnostic/causal limits preserved.
 
 ## Interruption and continuing work
 
@@ -184,7 +190,7 @@ surviving 03:01:24Z sample. A host reboot, rather than a diagnosed engine OOM,
 therefore explains the runner's disappearance. What triggered the reboot is
 unknown. No earlier data or partial arm was deleted.
 
-Remaining matrix/timeline run 39194497860 is progressing with per-unit uploads.
+Remaining matrix/timeline run 39194497860 subsequently completed all units.
 Its full 32K three-pair comparison is preserved in `p0-32k-2026-10-19.json`.
 Actual chronological order matches the planned A/B, B/A, A/B sequence. Median
 paired prefill change is +0.00019%, decode time -5.8683%; all output trajectories

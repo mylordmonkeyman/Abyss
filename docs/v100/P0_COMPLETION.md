@@ -1,13 +1,49 @@
-# P0 completion checkpoint
+# P0 completion ledger — revision 9
 
 User instruction: continue autonomously through completion of P0, with commits and
 runner use authorized. Follow revision 9, sections 1–2. P1/P2 implementation is
 paused; their remaining optimization gates do not redefine P0.
 
-Status: **in progress**, not P0-complete. Hourly continuation is enabled; disable
-it only after the completion ledger is committed and the user is notified.
+Status: **P0 complete, 19 October 2026**, within the measured baseline scope and
+explicit unavailable/N/A dispositions below. P1/P2/P3/P4 acceptance is separate.
+This final ledger supersedes the dated implementation checkpoints retained below.
 
-## Fixed decisions and preserved evidence
+## Final gates and dispositions
+
+| P0 gate | Disposition / committed evidence |
+| --- | --- |
+| Both pinned bases build and run the model | Pass: isolated immutable SM70 binaries, native READY/GEN/DONE/QUIT health, short and filled-context responses; `v9-bases-2026-10-18.json`, `p0-remaining-2026-10-19.json` |
+| Source/build/model identity | Pass: exact upstream/ggml and binary pins, frozen pack/fixture identities; full shard SHA256 against host manifest. Publisher authenticity is not established; earlier unverified runs retain that label |
+| Same-pack F32 quality/repeatability | Pass bounded screen: `p0-quality-2026-10-19.json`; all six comparisons top-1 32/32, GPU-only pair byte-identical. Not P4 release quality or optimized arithmetic qualification |
+| Short/output benchmark matrix | Pass: 108 requests, three interleaved process pairs, first request excluded; `p0-extended-2026-10-19.json`. Flagged/confounded comparisons retained without causal speed claims |
+| Filled 32K/64K/128K, 1024 outputs | Pass: three pairs at each genuine context; `p0-32k-2026-10-19.json`, `p0-64k-2026-10-19.json`, `p0-remaining-2026-10-19.json` |
+| Chunk settings | Pass 512/1024/4096 and auto observations. 128 is N/A on the pinned upstream's 256-token grid; no silent relabeling |
+| Runtime format/CPU/MMQ/GLU/fallback | Pass: actual IQ2_XS/IQ3_XXS/MXFP4 and AVX2 branches; `p0-dispatch-2026-10-19.json`. Named IQ2_XXS/Q2_K absent: N/A. Ordinary MMQ yes, fused GLU no |
+| Exact repeated quantization and per-token routes | Pass: `p0-exact-input-reuse-2026-10-19.json`, `p0-route-summary-2026-10-19.json`; complete bounded captures, no drops/joins missing; full token records in digest-verified artifacts |
+| Unique memory and NUMA worksheet | Pass measured budget: `p0-memory-accounting-2026-10-19.json`, `p0-prefill-layout-2026-10-19.json`; disjoint host/GPU totals, pin/PSS overlap and borrowed union handled explicitly. PFN and QPI traffic are unmeasured |
+| Sustained telemetry / safety | Pass observed intervals: 1024-output requests, per-phase clock/power/thermal samples, faults/I/O/NUMA/pressure. No sampled thermal reason; active-window MemAvailable >44.94 GiB in replacement long campaign; 16/8 GiB safety controls retained. No unsampled-state guarantee |
+| Long-context top three | Pass timeline alternative: `P0_LONG_RESULTS.md`, historical 32K/128K and current 32K traces in `p0-fetch-2026-10-19.json`. Main-stream kernel residence/gaps, not a complete causal DAG |
+| Current THP / streaming fetch | Closed: active registered-THP tier absent, experiment N/A for measured path; streaming fetch 0/1 actual kernel dispatch passes. `P0_FEATURE_DISPOSITIONS.md` |
+| Base and P3 decisions | Closed: `P0_DECISIONS.md` selects v1.3.31 for next implementation branch; P3.3 rank 1, P3.1 rank 2 bounded investigations, P3.2 N/A. No P3/default/arithmetic promotion |
+
+Hardware occupancy/HBM/L2 counters remain unavailable (`ERR_NVGPUCTRPERM`),
+using v9's timeline/event alternative. QPI/physical DRAM traffic and a minimum
+required file-cache working set remain unmeasured; they are not inferred from
+NUMA placement, logical bytes or RSS. Current CPU calibration records 28
+threads and 0.346 ms/expert; the source-derived 8,060,928-byte layer-0 weight
+payload gives about 23.30 GB/s effective weight-payload rate, **not a physical
+DRAM counter** (details in `P0_DECISIONS.md`). Speculative verifier performance
+is N/A for these deliberately non-speculative baselines; observed T=2–8 CPU
+work is prefill. OS file cache remains uncontrolled, with no global cache drop.
+
+No additional P0 GPU campaign is needed. Freeze this evidence; any future
+port/rebase or changed model/base requires the prescribed P0b revalidation.
+The branch itself remains the historical isolation branch; selecting the next
+base does not claim it was rebased. Stop this P0 continuation after committing
+the ledger and notifying the user. 48 local tooling tests and the physical
+CUDA/device/route checks passed.
+
+## Earlier implementation checkpoints (superseded)
 
 - Working base: historical v1.3.28 `47001f31`; v1.3.31 `7c893ac` remains the
   comparison. v9 expressly permits retaining the historical base for isolation.
@@ -27,7 +63,7 @@ it only after the completion ledger is committed and the user is notified.
   identity against that host manifest, not an independent publisher signature.
   Earlier runs retain their original limited-integrity description.
 
-## Remaining gates
+## Earlier gate worksheet (superseded)
 
 | Gate | Status / next evidence |
 | --- | --- |

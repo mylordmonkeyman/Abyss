@@ -2,8 +2,10 @@
 
 Status: physical collection passed for both immutable upstream binaries in run
 39194149121. See [accounting results](P0_ACCOUNTING_RESULTS.md) and the conserved
-per-SHA budget in `p0-memory-accounting-2026-10-19.json`. Fine attribution inside
-the borrowed prefill arena remains open; these tools alone do not close all P0.
+per-SHA budget in `p0-memory-accounting-2026-10-19.json`. Fine source-derived
+attribution inside the borrowed prefill arena is now reconciled in
+`p0-prefill-layout-2026-10-19.json`; union views overlap and add no GPU capacity.
+See `P0_COMPLETION.md` for final gate dispositions.
 
 `tools/v100/cuda_alloc_observer.cpp` observes synchronous CUDA runtime allocation,
 registration, free and host/device alias calls without changing the engine binary.

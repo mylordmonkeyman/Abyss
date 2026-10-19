@@ -2,8 +2,8 @@
 
 The pins remain historical `47001f31` and current `7c893ac1`; no mutable
 upstream binary or model pack is substituted. Both complete the benchmark
-matrix and bounded same-pack F32 screen. Selection is pending the last feature
-review; there is no causal base speedup/regression claim from generated outputs.
+matrix and bounded same-pack F32 screen. Final selection is recorded in
+`P0_DECISIONS.md`; there is no causal base speedup/regression claim.
 
 ## RAM THP
 
@@ -42,7 +42,21 @@ ordinary-only fetch kernels at 0 and streamed-only fetch kernels at 1, using
 actual CUPTI activity names. Source/build/model hashes and raw report paths
 are retained; uploads are bounded. Inspect failures before retrying. No speed
 claim or setting promotion follows merely from a passing dispatch assertion.
-Results are pending.
+Run `39236730013` passed both arms. Artifact 12179412869 (control 0) has ZIP
+SHA256 `86482f668b47acb454b8da960f22a16ec9ca3e35d1dd2b630c49219463689d03`;
+artifact 12179602638 (control 1) has ZIP SHA256
+`0a6c91fdcfbe089583969b938ac28ef8e6bcd417dc8300a62cbb3665ce2ab4de`.
+Both downloaded archives match. Actual CUPTI activity reports **688 ordinary,
+zero streamed** launches at 0 and **688 streamed, zero ordinary** at 1. The
+immutable binary SHA256 matches the existing current-base manifest in both.
+`p0-fetch-2026-10-19.json` preserves dispatch, source/model/fixture controls,
+native request records, CPU calibration, route summaries, timelines and raw
+trace identities. Profiled output IDs are identical, but cache/CPU/fetch
+populations differ: final native VRAM-hit summaries are 69.82% / 56.95% at
+0 / 1. Consequently 761.3 / 878.5 ms decode times are not a matched-residency
+speed comparison. This closes execution eligibility; no upstream default is
+overridden. Current 32K prefill again has MMQ/attention/indexer as its top three
+main-stream contributors, consistent with the historical 32K profile.
 
 GPU hardware counters and QPI traffic remain unavailable/unmeasured. The
 timeline alternative is retained, without any security or privilege change.

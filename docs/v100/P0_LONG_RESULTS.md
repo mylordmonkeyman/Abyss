@@ -94,7 +94,7 @@ does not justify ranking it above the measured indexer/attention work.
   admission must distinguish these statements rather than infer a scheduling
   win or cross-socket bottleneck.
 
-P0 is still open for detailed per-token route/cache evidence,
-current-base THP/fetch dispositions, and the final base/P3
-decision ledger. Hardware counters remain unavailable under the existing
+The subsequent per-token route/cache capture, current-base THP/fetch
+dispositions and final base/P3 decisions are now closed in `P0_COMPLETION.md`,
+`P0_FEATURE_DISPOSITIONS.md` and `P0_DECISIONS.md`. Hardware counters remain unavailable under the existing
 permissions; QPI traffic remains unmeasured. No production arithmetic changed.

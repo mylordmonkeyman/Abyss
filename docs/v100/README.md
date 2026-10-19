@@ -5,6 +5,8 @@ Branch: `feature/deepseek-v100-perf`, based on upstream
 The [revision-9 specification](IMPLEMENTATION_SPEC.md) defines the remaining gates.
 The current [P0 completion ledger](P0_COMPLETION.md) supersedes this first-increment
 overview; see [physical accounting and actual dispatch results](P0_ACCOUNTING_RESULTS.md).
+P0 completed on 19 October 2026. [Final decisions](P0_DECISIONS.md) select the
+next base and rank two bounded P3 investigations; no arithmetic/default is promoted.
 
 ## Implemented in this first increment
 
@@ -105,9 +107,9 @@ as version-compatible; it does not install/substitute/redistribute a profiler or
 counter replay during wall-time measurement. NUMA topology and affinity are snapshots;
 QPI counters, actual page placement and CPU-vs-GPU critical paths remain unmeasured.
 
-## Next work and gates
+## Earlier next-work plan (superseded by revision 9 completion ledger)
 
-P0 remains **partial** until the real V100 builds and completes the shipped-model prompt,
+At this first-increment checkpoint P0 was partial until the real V100 completed the shipped-model prompt,
 decode, MXFP4 affected-layer and boundary/parity suites. Capture the quick 2K/8K/32K
 matrix with at least five warm repeats and matched interleaved A/B conditions, plus the
 independent cold-start suite. Add the runtime matrix census, GPU/pinned/workspace memory

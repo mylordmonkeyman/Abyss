@@ -1,0 +1,1627 @@
+{
+  "schema": 1,
+  "source_run": 39236730013,
+  "base_source_sha": "7c893ac17e61ec45c934b3278356807fc4626c3c",
+  "arms": [
+    {
+      "control": 0,
+      "artifact_id": 12179412869,
+      "artifact_zip_sha256": "86482f668b47acb454b8da960f22a16ec9ca3e35d1dd2b630c49219463689d03",
+      "dispatch": {
+        "base": "current",
+        "control": 0,
+        "streamed_launches": 0,
+        "ordinary_launches": 688,
+        "scope": "Actual CUPTI kernel activity, not symbol presence or a speedup claim"
+      },
+      "invocation": {
+        "argv": [
+          "/actions-runner/abyss-base-builds/7c893ac1/strata",
+          "--glm-pack",
+          "/actions-runner/abyss-models/deepseek-v4-flash-0731-ud-q2-k-xl/pack-dsv4",
+          "--serve",
+          "--max-context",
+          "135168",
+          "--max-new",
+          "16",
+          "--prefill",
+          "auto",
+          "--temperature",
+          "0",
+          "--eos-ids",
+          "2147483647"
+        ],
+        "base": "current",
+        "binary_sha256": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89",
+        "fixture_tokens": 32768,
+        "fixture_sha256": "6e4f7094be57397d954c29b30b864c8bc320e447b27539f0694da6e0cfa75751",
+        "environment": {
+          "STRATA_DS4_SPEC": "0",
+          "STRATA_GLM_RAM_GB": "72",
+          "STRATA_GLM_CPU_LANE": "28",
+          "STRATA_GLM_PCIE_SHARE": "0.21",
+          "STRATA_GLM_USAGE": "0",
+          "STRATA_GLM_NO_REUSE": "1",
+          "STRATA_GLM_SLOTS": "0",
+          "STRATA_DS4_IDX": "1",
+          "STRATA_DS4_ATTN": "1",
+          "STRATA_GLM_STREAM_FETCH": "0"
+        },
+        "cache_scope": "first request excluded warmup, no prefix reuse; OS file cache uncontrolled",
+        "timing_scope": "profile diagnostic only, excluded from ordinary throughput comparison",
+        "security": "rootless CUDA activity; CPU sampling/context switches and hardware counters disabled"
+      },
+      "capture": {
+        "begin_monotonic_s": 26380.073565672,
+        "end_monotonic_s": 26433.781071654,
+        "done": "DONE 16 32768 52862.1 761.2 length 0 0 0 2702 3870",
+        "request": {
+          "prompt_tokens": 32768,
+          "output_tokens": 16,
+          "prefill_ms": 52862.1,
+          "decode_ms": 761.2,
+          "done": "DONE 16 32768 52862.1 761.2 length 0 0 0 2702 3870",
+          "prefill_tokens_s": 619.8770007245266,
+          "decode_tokens_s": 21.019442984760904,
+          "output_ids_sha256": "e1d88786657d94033059bd1af0ac3a7687f2461eeb8262715425b24253a1911c",
+          "output_ids": [
+            671,
+            4496,
+            3051,
+            344,
+            260,
+            14534,
+            14,
+            46866,
+            20071,
+            294,
+            223,
+            1059,
+            14,
+            1320,
+            10087,
+            16
+          ]
+        }
+      },
+      "trace_identity": {
+        "raw_report_runner_path": "/actions-runner/abyss-p0-v9/traces/39236730013-32768-current-fetch0/request.nsys-rep",
+        "bytes": 8573097,
+        "sha256": "70aec9f01672590cebcbb251bee9968570a23f4e48c53a1e748b49350af113fc",
+        "sqlite_runner_path": "/actions-runner/abyss-p0-v9/traces/39236730013-32768-current-fetch0/request.sqlite",
+        "sqlite_sha256": "ec7a965a9e05674d1f6713715fe8a990010d370865a33cf06b52ec98e99b5f4b",
+        "retention": "raw trace and SQLite retained only on runner; summary/identities uploaded"
+      },
+      "timeline": {
+        "scope": "one warmed 32768-token prefill + 16 generated tokens; tracing perturbs timings",
+        "timing_kind": "CUPTI activity timestamps; no SM/HBM/L2 hardware-counter claim",
+        "phase_boundary": "end of first argmax (final prompt forward); cross-checked against DONE decode time",
+        "decode_phase_alignment_error_ms": 0.0631829999999809,
+        "done": "DONE 16 32768 52862.1 761.2 length 0 0 0 2702 3870",
+        "qsa_kernel_launches": 0,
+        "mxfp4_down_token_path_launches": 32,
+        "mxfp4_mmq_launches": 25,
+        "fetch_kernel_launches": {
+          "strata::kernels::glmf::<unnamed>::moe_fetch_kernel(strata::kernels::glmf::MoeDev, int, unsigned long)": 688
+        },
+        "f32_indexer_symbols": [
+          "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+          "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)"
+        ],
+        "f32_attention_symbols": [
+          "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+          "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)"
+        ],
+        "phases": {
+          "prefill": {
+            "begin_trace_ns": 12231324,
+            "end_trace_ns": 52874331324,
+            "wall_ms": 52862.1,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 51935.837373,
+              "unattributed_main_stream_gap_ms": 926.262627,
+              "contributors": [
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 14836.659317,
+                  "phase_wall_percent": 28.066723261088757
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 13777.321337,
+                  "phase_wall_percent": 26.06275826537349
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 11840.496508,
+                  "phase_wall_percent": 22.398838691614596
+                },
+                {
+                  "name": "dense/shared/projection GEMM (roles combined)",
+                  "wall_lane_ms": 6632.553604,
+                  "phase_wall_percent": 12.546897690405793
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 4776.573427,
+                  "phase_wall_percent": 9.03591311544566
+                },
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 35.299696,
+                  "phase_wall_percent": 0.06677694605397819
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 21.928934,
+                  "phase_wall_percent": 0.041483281973285206
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 10.481638,
+                  "phase_wall_percent": 0.019828266376099322
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 4.522912,
+                  "phase_wall_percent": 0.008556058121035676
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 14836.659317,
+                  "phase_wall_percent": 28.066723261088757
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 13777.321337,
+                  "phase_wall_percent": 26.06275826537349
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 11840.496508,
+                  "phase_wall_percent": 22.398838691614596
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 51935.837373,
+            "compute_active_union_ms": 51935.837373,
+            "compute_or_explicit_copy_active_union_ms": 52268.766307,
+            "no_traced_kernel_or_explicit_copy_ms": 593.333693,
+            "categories": [
+              {
+                "name": "quantized routed-expert MMQ",
+                "kernel_ms": 14836.659317,
+                "kernel_time_percent": 28.567286227511886
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 13777.321337,
+                "kernel_time_percent": 26.527581018964078
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 11840.496508,
+                "kernel_time_percent": 22.798316359014837
+              },
+              {
+                "name": "dense/shared/projection GEMM (roles combined)",
+                "kernel_ms": 6632.553604,
+                "kernel_time_percent": 12.770668462251617
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 4776.573427,
+                "kernel_time_percent": 9.197066358427886
+              },
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 35.299696,
+                "kernel_time_percent": 0.06796789613014179
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 21.928934,
+                "kernel_time_percent": 0.04222312589764894
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 10.481638,
+                "kernel_time_percent": 0.020181898531300303
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 4.522912,
+                "kernel_time_percent": 0.008708653270605273
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 688,
+                "kernel_ms": 13770.076504,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+                "calls": 336,
+                "kernel_ms": 11676.112955,
+                "registers_per_thread": [
+                  69
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 580,
+                "kernel_ms": 9233.06223,
+                "registers_per_thread": [
+                  231
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)18, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 594,
+                "kernel_ms": 4476.721425,
+                "registers_per_thread": [
+                  167
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void cutlass::Kernel2<cutlass_70_tensorop_s884gemm_f16_128x128_tn_align8>(T1::Params)",
+                "calls": 5776,
+                "kernel_ms": 2716.965843,
+                "registers_per_thread": [
+                  236
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_128x256_ldg8_tn",
+                "calls": 6736,
+                "kernel_ms": 1688.999055,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_256x128_ldg8_tn",
+                "calls": 16128,
+                "kernel_ms": 1255.52234,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_batch_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 688,
+                "kernel_ms": 659.939815,
+                "registers_per_thread": [
+                  28
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::to_f16_kernel(const float *, unsigned short *, long)",
+                "calls": 1344,
+                "kernel_ms": 561.890645,
+                "registers_per_thread": [
+                  16
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::moe_combine_add_kernel(const float *, int, int, int, const int *, const float *, int, int, float *)",
+                "calls": 374,
+                "kernel_ms": 549.761398,
+                "registers_per_thread": [
+                  38
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::hc_update_kernel(const float *, float *, const float *, const float *, float *, int)",
+                "calls": 85,
+                "kernel_ms": 510.621012,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)112, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 123,
+                "kernel_ms": 393.409447,
+                "registers_per_thread": [
+                  219
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void quantize_mmq_q8_1<(mmq_q8_1_ds_layout)0, (bool)0>(const float *, const int *, void *, long, long, long, long, long, int, int, int)",
+                "calls": 2216,
+                "kernel_ms": 389.600434,
+                "registers_per_thread": [
+                  21
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::<unnamed>::dequant_k_f16_kernel<(int)13>(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 11168,
+                "kernel_ms": 373.818118,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::<unnamed>::dequant_q8_0_f16_kernel(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 13952,
+                "kernel_ms": 350.890328,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          },
+          "decode": {
+            "begin_trace_ns": 52874331324,
+            "end_trace_ns": 53635594507,
+            "wall_ms": 761.263183,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 743.606086,
+              "unattributed_main_stream_gap_ms": 17.657097,
+              "contributors": [
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 204.068133,
+                  "phase_wall_percent": 26.806515480730926
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 155.30162,
+                  "phase_wall_percent": 20.40051633496638
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 112.72971,
+                  "phase_wall_percent": 14.808244049811089
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 104.634241,
+                  "phase_wall_percent": 13.7448182621489
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 69.69106,
+                  "phase_wall_percent": 9.154660511146774
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 57.314332,
+                  "phase_wall_percent": 7.52884590768394
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 39.86699,
+                  "phase_wall_percent": 5.236952330059025
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 204.068133,
+                  "phase_wall_percent": 26.806515480730926
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 155.30162,
+                  "phase_wall_percent": 20.40051633496638
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 112.72971,
+                  "phase_wall_percent": 14.808244049811089
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 743.606086,
+            "compute_active_union_ms": 743.606086,
+            "compute_or_explicit_copy_active_union_ms": 743.606086,
+            "no_traced_kernel_or_explicit_copy_ms": 17.657097,
+            "categories": [
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 204.068133,
+                "kernel_time_percent": 27.44304233679981
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 155.30162,
+                "kernel_time_percent": 20.88493127260392
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 112.72971,
+                "kernel_time_percent": 15.159869199887103
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 104.634241,
+                "kernel_time_percent": 14.071192123083296
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 69.69106,
+                "kernel_time_percent": 9.372040023889745
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 57.314332,
+                "kernel_time_percent": 7.707620079914193
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 39.86699,
+                "kernel_time_percent": 5.361304963821934
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_cpu_wait_kernel(strata::kernels::glmf::MoeDev, int, float *, int)",
+                "calls": 645,
+                "kernel_ms": 204.068133,
+                "registers_per_thread": [
+                  20
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)8>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 2250,
+                "kernel_ms": 117.588231,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_fetch_kernel(strata::kernels::glmf::MoeDev, int, unsigned long)",
+                "calls": 645,
+                "kernel_ms": 112.72971,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 645,
+                "kernel_ms": 104.634241,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_gate_up_kernel<(int)17>(strata::kernels::glmf::MoeDev, int, int, int, float, const block_q8_1 *, block_q8_1 *, const unsigned char *, int, const block_q8_1 *, int, float *)",
+                "calls": 630,
+                "kernel_ms": 42.216621,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    512,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)",
+                "calls": 315,
+                "kernel_ms": 30.306476,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_down_kernel<(int)18>(strata::kernels::glmf::MoeDev, int, int, int, unsigned long, const block_q8_1 *, const float *, float *)",
+                "calls": 615,
+                "kernel_ms": 24.675239,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::hc3_kernel(strata::kernels::glmf::HcArgs)",
+                "calls": 1290,
+                "kernel_ms": 21.11719,
+                "registers_per_thread": [
+                  61
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_route_kernel(strata::kernels::glmf::<unnamed>::RouteArgs)",
+                "calls": 645,
+                "kernel_ms": 19.294795,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    320,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)13>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 12.965092,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_select_kernel(const float *, int, int, int *)",
+                "calls": 315,
+                "kernel_ms": 9.560514,
+                "registers_per_thread": [
+                  30
+                ],
+                "block_shapes": [
+                  [
+                    1024,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::mv_kernel(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 960,
+                "kernel_ms": 8.176133,
+                "registers_per_thread": [
+                  63
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)12>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 15,
+                "kernel_ms": 6.442817,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_ts<(int)13, (int)4>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 5.415299,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 645,
+                "kernel_ms": 4.498497,
+                "registers_per_thread": [
+                  26
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          }
+        },
+        "main_compute_stream_id": 13
+      },
+      "engine_cpu_calibration": [
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.346 ms on the CPU vs 0.865 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6"
+      ],
+      "engine_route_summaries": [
+        "glm stat: decode 59.44 ms/tok (16.82 tok/s) | vram hit 46.38% | ram fetches 28.44/tok | disk 0.00 reads/tok in 0.00 waits/tok, 0.00 ms/tok | promotions 28.44/tok | cpu lane 101.25/tok in 34.34 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 2647/3053 ram 8361/9107",
+        "glm stat: decode 47.58 ms/tok (21.02 tok/s) | vram hit 69.82% | ram fetches 9.12/tok | disk 0.00 reads/tok in 0.00 waits/tok, 0.00 ms/tok | promotions 9.12/tok | cpu lane 63.88/tok in 23.06 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 2324/3053 ram 8684/9107"
+      ]
+    },
+    {
+      "control": 1,
+      "artifact_id": 12179602638,
+      "artifact_zip_sha256": "0a6c91fdcfbe089583969b938ac28ef8e6bcd417dc8300a62cbb3665ce2ab4de",
+      "dispatch": {
+        "base": "current",
+        "control": 1,
+        "streamed_launches": 688,
+        "ordinary_launches": 0,
+        "scope": "Actual CUPTI kernel activity, not symbol presence or a speedup claim"
+      },
+      "invocation": {
+        "argv": [
+          "/actions-runner/abyss-base-builds/7c893ac1/strata",
+          "--glm-pack",
+          "/actions-runner/abyss-models/deepseek-v4-flash-0731-ud-q2-k-xl/pack-dsv4",
+          "--serve",
+          "--max-context",
+          "135168",
+          "--max-new",
+          "16",
+          "--prefill",
+          "auto",
+          "--temperature",
+          "0",
+          "--eos-ids",
+          "2147483647"
+        ],
+        "base": "current",
+        "binary_sha256": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89",
+        "fixture_tokens": 32768,
+        "fixture_sha256": "6e4f7094be57397d954c29b30b864c8bc320e447b27539f0694da6e0cfa75751",
+        "environment": {
+          "STRATA_DS4_SPEC": "0",
+          "STRATA_GLM_RAM_GB": "72",
+          "STRATA_GLM_CPU_LANE": "28",
+          "STRATA_GLM_PCIE_SHARE": "0.21",
+          "STRATA_GLM_USAGE": "0",
+          "STRATA_GLM_NO_REUSE": "1",
+          "STRATA_GLM_SLOTS": "0",
+          "STRATA_DS4_IDX": "1",
+          "STRATA_DS4_ATTN": "1",
+          "STRATA_GLM_STREAM_FETCH": "1"
+        },
+        "cache_scope": "first request excluded warmup, no prefix reuse; OS file cache uncontrolled",
+        "timing_scope": "profile diagnostic only, excluded from ordinary throughput comparison",
+        "security": "rootless CUDA activity; CPU sampling/context switches and hardware counters disabled"
+      },
+      "capture": {
+        "begin_monotonic_s": 26602.852475388,
+        "end_monotonic_s": 26656.497887929,
+        "done": "DONE 16 32768 52663.1 878.5 length 0 0 0 2204 3870",
+        "request": {
+          "prompt_tokens": 32768,
+          "output_tokens": 16,
+          "prefill_ms": 52663.1,
+          "decode_ms": 878.5,
+          "done": "DONE 16 32768 52663.1 878.5 length 0 0 0 2204 3870",
+          "prefill_tokens_s": 622.2193528295903,
+          "decode_tokens_s": 18.21286283437678,
+          "output_ids_sha256": "e1d88786657d94033059bd1af0ac3a7687f2461eeb8262715425b24253a1911c",
+          "output_ids": [
+            671,
+            4496,
+            3051,
+            344,
+            260,
+            14534,
+            14,
+            46866,
+            20071,
+            294,
+            223,
+            1059,
+            14,
+            1320,
+            10087,
+            16
+          ]
+        }
+      },
+      "trace_identity": {
+        "raw_report_runner_path": "/actions-runner/abyss-p0-v9/traces/39236730013-32768-current-fetch1/request.nsys-rep",
+        "bytes": 9637119,
+        "sha256": "360564786111f3ac6406bc4f3d6a32045279ca2ec097fbd014d2ba4565f28f84",
+        "sqlite_runner_path": "/actions-runner/abyss-p0-v9/traces/39236730013-32768-current-fetch1/request.sqlite",
+        "sqlite_sha256": "1d051711468a3bcfbc88308ffbcf75811b8a6acfb10f9a49ab00031bb1605e8c",
+        "retention": "raw trace and SQLite retained only on runner; summary/identities uploaded"
+      },
+      "timeline": {
+        "scope": "one warmed 32768-token prefill + 16 generated tokens; tracing perturbs timings",
+        "timing_kind": "CUPTI activity timestamps; no SM/HBM/L2 hardware-counter claim",
+        "phase_boundary": "end of first argmax (final prompt forward); cross-checked against DONE decode time",
+        "decode_phase_alignment_error_ms": 0.006297000000017761,
+        "done": "DONE 16 32768 52663.1 878.5 length 0 0 0 2204 3870",
+        "qsa_kernel_launches": 0,
+        "mxfp4_down_token_path_launches": 32,
+        "mxfp4_mmq_launches": 25,
+        "fetch_kernel_launches": {
+          "strata::kernels::glmf::<unnamed>::moe_fetch_stream_kernel(strata::kernels::glmf::MoeDev, int, unsigned long, unsigned long long, unsigned long long, int)": 688
+        },
+        "f32_indexer_symbols": [
+          "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+          "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)"
+        ],
+        "f32_attention_symbols": [
+          "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+          "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)"
+        ],
+        "phases": {
+          "prefill": {
+            "begin_trace_ns": 11917342,
+            "end_trace_ns": 52675017342,
+            "wall_ms": 52663.1,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 51985.634271,
+              "unattributed_main_stream_gap_ms": 677.465729,
+              "contributors": [
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 14857.68809,
+                  "phase_wall_percent": 28.212710778514747
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 13790.722945,
+                  "phase_wall_percent": 26.18669038662745
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 11849.984818,
+                  "phase_wall_percent": 22.501495008839207
+                },
+                {
+                  "name": "dense/shared/projection GEMM (roles combined)",
+                  "wall_lane_ms": 6641.382148,
+                  "phase_wall_percent": 12.611073309395003
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 4775.69851,
+                  "phase_wall_percent": 9.068396106571774
+                },
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 39.496147,
+                  "phase_wall_percent": 0.07499776313965566
+                },
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 15.701321,
+                  "phase_wall_percent": 0.02981465390377703
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 10.443364,
+                  "phase_wall_percent": 0.019830515104503912
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 4.516928,
+                  "phase_wall_percent": 0.008577026418877734
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "quantized routed-expert MMQ",
+                  "wall_lane_ms": 14857.68809,
+                  "phase_wall_percent": 28.212710778514747
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 13790.722945,
+                  "phase_wall_percent": 26.18669038662745
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 11849.984818,
+                  "phase_wall_percent": 22.501495008839207
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 51985.634271,
+            "compute_active_union_ms": 51985.634271,
+            "compute_or_explicit_copy_active_union_ms": 52239.014866,
+            "no_traced_kernel_or_explicit_copy_ms": 424.085134,
+            "categories": [
+              {
+                "name": "quantized routed-expert MMQ",
+                "kernel_ms": 14857.68809,
+                "kernel_time_percent": 28.580372824821545
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 13790.722945,
+                "kernel_time_percent": 26.52794976610126
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 11849.984818,
+                "kernel_time_percent": 22.79472970595354
+              },
+              {
+                "name": "dense/shared/projection GEMM (roles combined)",
+                "kernel_ms": 6641.382148,
+                "kernel_time_percent": 12.775418134515041
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 4775.69851,
+                "kernel_time_percent": 9.186573515876301
+              },
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 39.496147,
+                "kernel_time_percent": 0.07597511803762445
+              },
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 15.701321,
+                "kernel_time_percent": 0.03020319213217511
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 10.443364,
+                "kernel_time_percent": 0.020088942159595412
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 4.516928,
+                "kernel_time_percent": 0.008688800402921606
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_batch_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, int, const float *, int, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 688,
+                "kernel_ms": 13783.598782,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_batch_kernel(const float *, const unsigned short *, const float *, int, int, int, int, float *, int)",
+                "calls": 336,
+                "kernel_ms": 11685.388401,
+                "registers_per_thread": [
+                  69
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 581,
+                "kernel_ms": 9231.177094,
+                "registers_per_thread": [
+                  231
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)18, (int)128, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 597,
+                "kernel_ms": 4477.921384,
+                "registers_per_thread": [
+                  167
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void cutlass::Kernel2<cutlass_70_tensorop_s884gemm_f16_128x128_tn_align8>(T1::Params)",
+                "calls": 5776,
+                "kernel_ms": 2716.21737,
+                "registers_per_thread": [
+                  236
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_128x256_ldg8_tn",
+                "calls": 6736,
+                "kernel_ms": 1691.629731,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "volta_s884gemm_fp16_256x128_ldg8_tn",
+                "calls": 16128,
+                "kernel_ms": 1261.303732,
+                "registers_per_thread": [
+                  250
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_batch_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 688,
+                "kernel_ms": 660.64911,
+                "registers_per_thread": [
+                  28
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::to_f16_kernel(const float *, unsigned short *, long)",
+                "calls": 1344,
+                "kernel_ms": 558.211963,
+                "registers_per_thread": [
+                  16
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::moe_combine_add_kernel(const float *, int, int, int, const int *, const float *, int, int, float *)",
+                "calls": 373,
+                "kernel_ms": 550.613419,
+                "registers_per_thread": [
+                  38
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmb::<unnamed>::hc_update_kernel(const float *, float *, const float *, const float *, float *, int)",
+                "calls": 85,
+                "kernel_ms": 510.763928,
+                "registers_per_thread": [
+                  48
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void mul_mat_q<(ggml_type)17, (int)112, (bool)0, (bool)0>(const char *, const char *, const int *, const int *, const int *, float *, float *, const float *, float, uint3, int, int, int, int, int, uint3, uint3, int, int, int, uint3, uint3, int, int, int, uint3)",
+                "calls": 124,
+                "kernel_ms": 409.816789,
+                "registers_per_thread": [
+                  219
+                ],
+                "block_shapes": [
+                  [
+                    32,
+                    8,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void quantize_mmq_q8_1<(mmq_q8_1_ds_layout)0, (bool)0>(const float *, const int *, void *, long, long, long, long, long, int, int, int)",
+                "calls": 2218,
+                "kernel_ms": 389.82409,
+                "registers_per_thread": [
+                  21
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::<unnamed>::dequant_k_f16_kernel<(int)13>(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 11168,
+                "kernel_ms": 373.052636,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::<unnamed>::dequant_q8_0_f16_kernel(const unsigned char *, long, long, long, long, uint4 *)",
+                "calls": 13952,
+                "kernel_ms": 351.197752,
+                "registers_per_thread": [
+                  22
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          },
+          "decode": {
+            "begin_trace_ns": 52675017342,
+            "end_trace_ns": 53553523639,
+            "wall_ms": 878.506297,
+            "critical_path_proxy": {
+              "main_stream_id": 13,
+              "measured_main_stream_kernel_union_ms": 861.514479,
+              "unattributed_main_stream_gap_ms": 16.991818,
+              "contributors": [
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 263.459565,
+                  "phase_wall_percent": 29.989490786768943
+                },
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 173.445001,
+                  "phase_wall_percent": 19.743171061185915
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 155.578952,
+                  "phase_wall_percent": 17.709486264501983
+                },
+                {
+                  "name": "DeepSeek attention",
+                  "wall_lane_ms": 104.475398,
+                  "phase_wall_percent": 11.892390339918077
+                },
+                {
+                  "name": "token-path routed-expert arithmetic",
+                  "wall_lane_ms": 66.857728,
+                  "phase_wall_percent": 7.610386883772104
+                },
+                {
+                  "name": "other kernels",
+                  "wall_lane_ms": 57.845433,
+                  "phase_wall_percent": 6.584521157962741
+                },
+                {
+                  "name": "indexer scoring/selection",
+                  "wall_lane_ms": 39.852402,
+                  "phase_wall_percent": 4.536382053958118
+                }
+              ],
+              "top_three": [
+                {
+                  "name": "RAM-tier fetch kernel",
+                  "wall_lane_ms": 263.459565,
+                  "phase_wall_percent": 29.989490786768943
+                },
+                {
+                  "name": "CPU expert dependency wait on GPU",
+                  "wall_lane_ms": 173.445001,
+                  "phase_wall_percent": 19.743171061185915
+                },
+                {
+                  "name": "dense/shared/projection GEMV (roles combined)",
+                  "wall_lane_ms": 155.578952,
+                  "phase_wall_percent": 17.709486264501983
+                }
+              ],
+              "interpretation": "Serialized main compute-stream kernel residence and unassigned gaps. Not a complete causal CPU/CUDA dependency graph. Copy streams and CPU service may overlap. Wait kernel residence measures an exposed device dependency, not standalone CPU work. Unassigned gaps require API/CPU/I/O correlation before attributing a cause."
+            },
+            "kernel_sum_ms": 861.514479,
+            "compute_active_union_ms": 861.514479,
+            "compute_or_explicit_copy_active_union_ms": 861.514479,
+            "no_traced_kernel_or_explicit_copy_ms": 16.991818,
+            "categories": [
+              {
+                "name": "RAM-tier fetch kernel",
+                "kernel_ms": 263.459565,
+                "kernel_time_percent": 30.580979359256943
+              },
+              {
+                "name": "CPU expert dependency wait on GPU",
+                "kernel_ms": 173.445001,
+                "kernel_time_percent": 20.13256947246269
+              },
+              {
+                "name": "dense/shared/projection GEMV (roles combined)",
+                "kernel_ms": 155.578952,
+                "kernel_time_percent": 18.058773914117815
+              },
+              {
+                "name": "DeepSeek attention",
+                "kernel_ms": 104.475398,
+                "kernel_time_percent": 12.126946272716097
+              },
+              {
+                "name": "token-path routed-expert arithmetic",
+                "kernel_ms": 66.857728,
+                "kernel_time_percent": 7.760488027735167
+              },
+              {
+                "name": "other kernels",
+                "kernel_ms": 57.845433,
+                "kernel_time_percent": 6.7143889522488225
+              },
+              {
+                "name": "indexer scoring/selection",
+                "kernel_ms": 39.852402,
+                "kernel_time_percent": 4.625854001462464
+              }
+            ],
+            "top_kernel_symbols": [
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_fetch_stream_kernel(strata::kernels::glmf::MoeDev, int, unsigned long, unsigned long long, unsigned long long, int)",
+                "calls": 645,
+                "kernel_ms": 263.459565,
+                "registers_per_thread": [
+                  39
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_cpu_wait_kernel(strata::kernels::glmf::MoeDev, int, float *, int)",
+                "calls": 645,
+                "kernel_ms": 173.445001,
+                "registers_per_thread": [
+                  20
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)8>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 2250,
+                "kernel_ms": 117.611515,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::attend_kernel(const float *, const unsigned short *, int, int, const unsigned short *, const int *, int, const float *, int, strata::kernels::dsv4::Rope, int, float, float *)",
+                "calls": 645,
+                "kernel_ms": 104.475398,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_gate_up_kernel<(int)17>(strata::kernels::glmf::MoeDev, int, int, int, float, const block_q8_1 *, block_q8_1 *, const unsigned char *, int, const block_q8_1 *, int, float *)",
+                "calls": 630,
+                "kernel_ms": 40.508117,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    512,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_score_kernel(const float *, const unsigned short *, const float *, int, int, float *)",
+                "calls": 315,
+                "kernel_ms": 30.298575,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::moe_down_kernel<(int)18>(strata::kernels::glmf::MoeDev, int, int, int, unsigned long, const block_q8_1 *, const float *, float *)",
+                "calls": 615,
+                "kernel_ms": 23.929673,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::hc3_kernel(strata::kernels::glmf::HcArgs)",
+                "calls": 1290,
+                "kernel_ms": 20.960647,
+                "registers_per_thread": [
+                  61
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::moe_route_kernel(strata::kernels::glmf::<unnamed>::RouteArgs)",
+                "calls": 645,
+                "kernel_ms": 19.582699,
+                "registers_per_thread": [
+                  64
+                ],
+                "block_shapes": [
+                  [
+                    320,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)13>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 13.156387,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::idx_select_kernel(const float *, int, int, int *)",
+                "calls": 315,
+                "kernel_ms": 9.553827,
+                "registers_per_thread": [
+                  30
+                ],
+                "block_shapes": [
+                  [
+                    1024,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::glmf::<unnamed>::mv_kernel(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 960,
+                "kernel_ms": 8.13533,
+                "registers_per_thread": [
+                  63
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_t<(int)12>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 15,
+                "kernel_ms": 6.443906,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "void strata::kernels::glmf::<unnamed>::mv_kernel_ts<(int)13, (int)4>(strata::kernels::glmf::<unnamed>::MvBatch)",
+                "calls": 630,
+                "kernel_ms": 5.507043,
+                "registers_per_thread": [
+                  32
+                ],
+                "block_shapes": [
+                  [
+                    256,
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "strata::kernels::dsv4::<unnamed>::q_prep_kernel(float *, int, int, int, strata::kernels::dsv4::Rope, float *, int, strata::kernels::dsv4::Rope, int, float)",
+                "calls": 645,
+                "kernel_ms": 4.89133,
+                "registers_per_thread": [
+                  26
+                ],
+                "block_shapes": [
+                  [
+                    128,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "interpretation": "Kernel sums can overlap; idle intervals are not assigned to CPU, I/O or launch causes without correlation. GPU zero-copy reads are not explicit memcpy activities. Static launch resources are not achieved occupancy/spill counters."
+          }
+        },
+        "main_compute_stream_id": 13
+      },
+      "engine_cpu_calibration": [
+        "glm fast: CUDA0 CPU lane: 28 threads, an expert 0.346 ms on the CPU vs 0.891 ms over PCIe -> of 0..8 RAM-tier experts the CPU takes 0 1 2 2 3 4 5 6 6"
+      ],
+      "engine_route_summaries": [
+        "glm stat: decode 52.26 ms/tok (19.14 tok/s) | vram hit 50.90% | ram fetches 24.25/tok | disk 0.00 reads/tok in 0.00 waits/tok, 0.00 ms/tok | promotions 24.25/tok | cpu lane 94.50/tok in 22.50 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 2580/3053 ram 8428/9107",
+        "glm stat: decode 54.91 ms/tok (18.21 tok/s) | vram hit 56.95% | ram fetches 19.81/tok | disk 0.00 reads/tok in 0.00 waits/tok, 0.00 ms/tok | promotions 19.81/tok | cpu lane 84.31/tok in 28.84 ms/tok | tail skip 0.00/tok | prompt 1.6 ms/tok | vram 2487/3053 ram 8521/9107"
+      ]
+    }
+  ],
+  "generated_ids_equal": true,
+  "disposition": "Both current-base fetch controls execute their asserted kernel paths. Single profiled pair, 16 equal output IDs but different cache/CPU/fetch populations; no causal performance comparison. Rootless event/timeline alternative; hardware counters/QPI unmeasured."
+}

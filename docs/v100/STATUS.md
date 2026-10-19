@@ -1,13 +1,16 @@
-# V100 implementation status — 18 October 2026
+# V100 implementation status — 19 October 2026
 
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).
 Production arithmetic and dispatch remain unchanged. No performance improvement is claimed.
 
-Current P0 evidence (19 October): [completion ledger](P0_COMPLETION.md) and
-[accounting/dispatch results](P0_ACCOUNTING_RESULTS.md). The 108-request short
-matrix and three 32K pairs are complete. Both immutable bases have conserved
-memory budgets and compiled AVX2/no-AVX512 getter evidence; long/chunk/timeline
-work remains active. The sections below preserve earlier dated checkpoints.
+P0 is complete within the [completion ledger's](P0_COMPLETION.md) measured scope
+and explicit N/A/unavailable dispositions. Both bases complete the 108-request
+short matrix and three pairs at each 32K/64K/128K context. Memory, dispatch,
+per-token routes and current streaming-fetch controls are reconciled.
+[Final decisions](P0_DECISIONS.md) select v1.3.31 for the next implementation
+branch and rank two bounded P3 investigations. This isolation branch was not
+rebased. No optimized arithmetic/default is promoted. The sections below
+preserve earlier dated checkpoints and are superseded by the final ledger.
 
 ## Active specification
 
@@ -16,7 +19,7 @@ See [v9 adoption and paired-base campaign](V9_ADOPTION.md). It supersedes v8's
 task ordering; the [v8 applicability audit](V8_ADOPTION.md) retains actual-format corrections,
 newer-Abyss differences and the isolated quantize-once/scatter contract. The pinned
 base and measured baseline are preserved. P0 base-selection, dispatch, memory and
-quality gates remain open; unavailable counters are disclosed under v9's event/
+quality gates were subsequently closed for P0's bounded scope; unavailable counters use v9's event/
 timeline alternative. Adopting v9 does not make proposed flags functional.
 
 ### v9 initial paired-base result
