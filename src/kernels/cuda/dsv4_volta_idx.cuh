@@ -13,12 +13,16 @@ __global__ void __launch_bounds__(Warps * 32) idx_score_volta_kernel(
     const float* iq, const uint16_t* keys, const float* weights, int visible, float* score) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 700 && __CUDA_ARCH__ < 750
     static_assert(Warps == 4 || Warps == 8, "tested CTA sizes only");
-    __shared__ uint16_t qhi[64 * 128], qlo[64 * 128];
+    // Padding breaks the 128-half row stride's same-bank head reads. Each
+    // quad pair reads eight different heads at the same K coordinate.
+    constexpr int QStride = 130;
+    __shared__ uint16_t qhi[64 * QStride], qlo[64 * QStride];
     __shared__ float w[64];
     for (int i = threadIdx.x; i < 64 * 128; i += Warps * 32) {
         const __half hi = __float2half_rn(iq[i]);
-        qhi[i] = __half_as_ushort(hi);
-        qlo[i] = __half_as_ushort(__float2half_rn(iq[i] - __half2float(hi)));
+        const int dst = (i / 128) * QStride + i % 128;
+        qhi[dst] = __half_as_ushort(hi);
+        qlo[dst] = __half_as_ushort(__float2half_rn(iq[i] - __half2float(hi)));
     }
     for (int i = threadIdx.x; i < 64; i += Warps * 32) w[i] = weights[i];
     __syncthreads();
@@ -35,8 +39,8 @@ __global__ void __launch_bounds__(Warps * 32) idx_score_volta_kernel(
                 const int shift = 16 * (k & 1), pair = k >> 1;
                 const uint16_t key = row0 + j < visible ? keys[(size_t)(row0 + j) * 128 + k0 + k] : 0;
                 a[pair] |= uint32_t(key) << shift;
-                bh[pair] |= uint32_t(qhi[(head0 + j) * 128 + k0 + k]) << shift;
-                bl[pair] |= uint32_t(qlo[(head0 + j) * 128 + k0 + k]) << shift;
+                bh[pair] |= uint32_t(qhi[(head0 + j) * QStride + k0 + k]) << shift;
+                bl[pair] |= uint32_t(qlo[(head0 + j) * QStride + k0 + k]) << shift;
             }
             mma884(hi, a[0], a[1], bh[0], bh[1]);
             mma884(lo, a[0], a[1], bl[0], bl[1]);

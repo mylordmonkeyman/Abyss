@@ -105,6 +105,38 @@ jobs:
           name: abyss-p1-base-${{ github.run_id }}
           path: results/ci-v100-p1-base-${{ github.run_id }}-${{ github.run_attempt }}/
           retention-days: 30
+      - name: Revalidate ported-base 32K critical path with rootless CUDA activity
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[v100:p1-revalidate]')
+        env:
+          EVIDENCE: results/ci-v100-p1-trace-${{ github.run_id }}-32768
+        run: |
+          set -euo pipefail
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_long_trace.py --base working --tokens 32768
+      - name: Upload bounded 32K trace summary
+        if: always() && env.P0_REMAINING_CAP == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p1-base-trace-${{ github.run_id }}-32768
+          path: results/ci-v100-p1-trace-${{ github.run_id }}-32768/
+          retention-days: 30
+      - name: Revalidate ported-base 128K critical path with rootless CUDA activity
+        id: trace128
+        if: success() && github.event_name == 'push' && contains(github.event.head_commit.message, '[v100:p1-revalidate]')
+        env:
+          EVIDENCE: results/ci-v100-p1-trace-${{ github.run_id }}-131072
+        run: |
+          set -euo pipefail
+          echo 'P0_REMAINING_CAP=false' >> "$GITHUB_ENV"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p0_long_trace.py --base working --tokens 131072
+      - name: Upload bounded 128K trace summary
+        if: always() && steps.trace128.outcome != 'skipped' && env.P0_REMAINING_CAP == 'true' && github.event_name == 'push' && contains(github.event.head_commit.message, '[v100:p1-revalidate]')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abyss-p1-base-trace-${{ github.run_id }}-131072
+          path: results/ci-v100-p1-trace-${{ github.run_id }}-131072/
+          retention-days: 30
       - name: Enforce bounded artifact cap
         if: always()
         run: |

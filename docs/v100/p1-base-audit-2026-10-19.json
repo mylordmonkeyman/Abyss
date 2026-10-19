@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "run": 39256759600,
+  "artifact_zip_sha256": "fa1dab43ab8d6453461437c90a182c5659af4d67f409e9f8494be00a1c61cc8c",
+  "binary_sha256": "8e8f8278fd3e3729ae02d16d4af18625ccf1f31d211e15c5554b08f051e0dee3",
+  "dispatch_capture": {
+    "keys": 26338,
+    "dropped_calls": 0,
+    "semantics": "host_calls_not_device_execution_or_physical_traffic"
+  },
+  "unresolved_decode_service": [],
+  "dispatch_calls": {
+    "mmq_built": 1,
+    "mmq_gu_supported": 43,
+    "cpu_gu:ggml_vec_dot": 231842,
+    "mmq_down_supported": 43,
+    "cpu_down:iq256_rows1": 230132,
+    "cpu_gu:iq256": 494336,
+    "mmq_quantize:q8_1_gather": 2966,
+    "mmq_run": 5932,
+    "mmq_glu_not_selected": 168,
+    "cpu_gu:iq256_rows1": 5528,
+    "cpu_down:iq256": 483456,
+    "mmq_quantize:q8_1": 2966,
+    "cpu_down:ggml_vec_dot": 18118,
+    "request_issue": 2752
+  },
+  "input_quantization": {
+    "actual_routed_input_rows": 4348056,
+    "exact": {
+      "distinct_rows_summed_per_call": 3253198,
+      "distinct_rows_summed_per_layer_invocation": 738349,
+      "repeated_rows_within_calls": 1094858,
+      "repeated_rows_across_calls": 2514849,
+      "total_repeated_input_rows": 3609707,
+      "method": "Actual sorted GPU gather IDs copied to the host in a diagnostic run; each layer invocation has a separate union. Histogram preserves per-call (input rows, distinct rows) counts; no chronology inferred.",
+      "per_call_histogram_cells": 2919,
+      "per_call_histogram_canonical_sha256": "0f265293be26858502b253dd4405b6ac5e8ba3a3062dadefac1117c0271792e3"
+    },
+    "distinct_layer_chunk_input_rows_upper_bound": 738360,
+    "repeated_input_rows_lower_bound": 3609696,
+    "method": "Each full-prompt layer/chunk invocation has at most chunk_tokens distinct input rows. Account for repeated requests via the GLU-decision call count. Routed MMQ input rows above this bound prove repeated quantization. See exact when gather IDs were captured."
+  },
+  "route_capture": {
+    "records": 2920,
+    "payload_bytes": 5564344,
+    "dropped": 0
+  },
+  "route_ledger_json_sha256": "17ffbd95988be43f3411927b1d6e844b32caef57c6360d02ff73929c15e78d91",
+  "prefill_route_totals": {
+    "resident_mmq": 1204915,
+    "resident_light": 0,
+    "prestaged_ram": 2310217,
+    "staged_ram_h2d": 583376,
+    "staged_vram_d2d": 249548,
+    "staged_disk_h2d": 0,
+    "cpu": 82104
+  },
+  "decode_route_totals": {
+    "resident_mask": 9963,
+    "miss": 3,
+    "fetch": 1173,
+    "cpu": 5373,
+    "promo": 1176,
+    "skip": 0
+  },
+  "allocation_events": 177,
+  "allocation_peak": {
+    "device": 32808721236,
+    "host_unique_virtual": 75792438260,
+    "host_virtual_page_footprint": 75792445440
+  },
+  "allocation_capture_complete": true,
+  "memory": {
+    "peak_rss_bytes": 84260245504,
+    "peak_pss_bytes": 84253779968,
+    "peak_anonymous_bytes": 1202958336,
+    "peak_anon_huge_bytes": 0,
+    "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+    "minimum_host_memavailable_bytes": 49648242688,
+    "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+    "samples": 11
+  },
+  "thermal": {
+    "samples": 11,
+    "valid_samples": 11,
+    "thermal_flag": false,
+    "reason_coverage_complete": true,
+    "regime": "power_limited_observed",
+    "performance_claim_admitted": false,
+    "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+  },
+  "model_identity": {
+    "stat_signature": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": {
+        "bytes": 5257664,
+        "mtime_ns": 1792302371602863171,
+        "inode": 84432126,
+        "device": 64512
+      },
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": {
+        "bytes": 49437013568,
+        "mtime_ns": 1792302912325395405,
+        "inode": 84432127,
+        "device": 64512
+      },
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": {
+        "bytes": 47390237120,
+        "mtime_ns": 1792303455495151894,
+        "inode": 84432160,
+        "device": 64512
+      }
+    },
+    "sha256": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": "de65c5bb660817b95cc281bf54935f9d1bcc3b22535f2eae63b35a14c7c5724b",
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": "c8728a298862cd8736782e2e4056e5e3e03c415ba552a38173264494e41ef327",
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": "a4bae0788c025c1b2388754592c98fefa1372981748ac9875039bf6a30e6eeb4"
+    },
+    "computed_utc": "2026-10-19T01:24:35.819189+00:00",
+    "cache_policy": "reused only with unchanged read-only mount stat signature",
+    "local_SHA256SUMS_sha256": "60f0a8ab9daf73c7813c417e8b7f88b7ac0c53e2cbee793605bd725d735f394f",
+    "matches_local_SHA256SUMS": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": true,
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": true,
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": true
+    }
+  },
+  "scope": "Ported v1.3.31 branch, 600/8192 prompts, two requests each, 16 outputs. Diagnostic allocation/dispatch/route audit only; perturbation excluded from throughput. Context and reservations differ from immutable long-context memory budgets; no regression inferred. Long-context P0b and branch quality revalidation remain separate."
+}

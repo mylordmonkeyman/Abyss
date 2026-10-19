@@ -22,14 +22,19 @@ import p0
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--tokens',type=int,choices=[32768,131072],required=True)
-    ap.add_argument('--base',choices=['historical','current'],default='historical')
+    ap.add_argument('--base',choices=['historical','current','working'],default='historical')
     ap.add_argument('--stream-fetch',type=int,choices=[0,1])
     args=ap.parse_args();out=Path(os.environ['EVIDENCE']).absolute();out.mkdir(parents=True,exist_ok=False)
     if campaign.memory_available()<16*1024**3:raise RuntimeError('initial memory safety margin below 16 GiB')
-    if args.stream_fetch is not None and args.base!='current':
+    if args.stream_fetch is not None and args.base not in ('current','working'):
         raise ValueError('stream-fetch control is absent in the historical pin')
-    binary=campaign.BINARIES[args.base]
-    if p0.sha256(binary)!=campaign.EXPECTED[args.base]:raise ValueError('immutable baseline binary changed')
+    binary=ROOT/'build-v100-diagnostics/strata' if args.base=='working' else campaign.BINARIES[args.base]
+    binary_hash=p0.sha256(binary)
+    if args.base!='working' and binary_hash!=campaign.EXPECTED[args.base]:
+        raise ValueError('immutable baseline binary changed')
+    if args.base=='working':
+        ancestry=p0.command(['git','merge-base','--is-ancestor',campaign.BASES['current'],'HEAD'])
+        if ancestry['returncode']:raise ValueError('working P1 base must contain selected v1.3.31')
     identity=campaign.model_identity();p0.write_json(out/'model-identity.json',identity)
     ids=fixture('mixed-'+str(args.tokens));tokens=','.join(map(str,ids))
     nsys=nsys_trace.install(out)
@@ -47,7 +52,8 @@ def main():
     if args.stream_fetch is not None:env['STRATA_GLM_STREAM_FETCH']=str(args.stream_fetch)
     argv=[str(binary),'--glm-pack',str(PACK),'--serve','--max-context','135168',
           '--max-new','16','--prefill','auto','--temperature','0','--eos-ids','2147483647']
-    p0.write_json(out/'invocation.json',dict(argv=argv,base=args.base,binary_sha256=campaign.EXPECTED[args.base],
+    p0.write_json(out/'invocation.json',dict(argv=argv,base=args.base,binary_sha256=binary_hash,
+        working_source_sha=p0.command(['git','rev-parse','HEAD'])['stdout'].strip() if args.base=='working' else None,
         fixture_tokens=args.tokens,fixture_sha256=p0.sha256(campaign.CAMPAIGN/'fixtures'/('mixed-'+str(args.tokens)+'.tokens')),
         environment={k:v for k,v in env.items() if k.startswith('STRATA_')},
         cache_scope='first request excluded warmup, no prefix reuse; OS file cache uncontrolled',

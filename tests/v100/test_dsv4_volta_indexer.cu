@@ -1,9 +1,11 @@
 // Isolated P1 scorer -> unchanged upstream selection. No production dispatch.
+#ifndef STRATA_USE_HIP
 #include "dsv4_volta_idx.cuh"
 #include "strata/kernels/dsv4_fast.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <functional>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -126,3 +128,4 @@ int main(int argc,char**) {
         std::puts("{\"suite\":\"isolated_volta_indexer\",\"pass\":true}"); return 0;
     } catch(const std::exception& e) {std::fprintf(stderr,"Volta indexer FAILED: %s\n",e.what());return 1;}
 }
+#endif // CUDA-only SM70 diagnostic, never a HIP target.
