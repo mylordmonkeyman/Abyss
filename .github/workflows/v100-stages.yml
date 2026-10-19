@@ -63,6 +63,7 @@ jobs:
             2>&1 | tee "$EVIDENCE/build.log"
           cp build-v100-diagnostics/CMakeCache.txt "$EVIDENCE/capture-CMakeCache.txt"
           git rev-parse HEAD > "$EVIDENCE/build-sha.txt"
+          sha256sum build-v100-diagnostics/strata build-v100-diagnostics/test_dsv4_mla_latent_parity > "$EVIDENCE/capture-binaries-sha256.txt"
       - name: Capture actual model activations and replay all three ratios
         run: /actions-runner/abyss-v100-python/bin/python tools/v100/real_stage_capture.py
       - name: Restore normal engine cache without capture code
