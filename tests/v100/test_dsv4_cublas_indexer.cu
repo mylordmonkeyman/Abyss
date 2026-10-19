@@ -22,8 +22,8 @@ template<class T> struct Buffer {
     ~Buffer(){cudaFree(p);} Buffer(const Buffer&)=delete;Buffer& operator=(const Buffer&)=delete;
     std::vector<T> get()const{std::vector<T>x(n);ck(cudaMemcpy(x.data(),p,n*sizeof(T),cudaMemcpyDeviceToHost));return x;}
 };
-constexpr int TT=32, KK=512, HEADS=64, DIM=128;
-constexpr int ROWS_PER_WARP=8;
+constexpr int TT=256, KK=512, HEADS=64, DIM=128;
+constexpr int ROWS_PER_WARP=1;
 __global__ void unpack(const uint16_t* keys,float* out,int rows){
     const int i=blockIdx.x*blockDim.x+threadIdx.x;
     if(i<rows*DIM)out[i]=__half2float(__ushort_as_half(keys[i]));
@@ -32,7 +32,7 @@ __global__ void unpack(const uint16_t* keys,float* out,int rows){
 __global__ void epilogue(const float* dots,const float* weights,float* scores,
                          int p0,int t0,int tokens,int j0,int rows,int ld){
     const int lane=threadIdx.x&31, warp=threadIdx.x/32;
-    // Amortize scheduling over eight scores per warp rather than eight scores/CTA.
+    // One score per warp; the measured eight-score scheduling variant did not win.
     for(int step=0;step<ROWS_PER_WARP;++step){
         const int item=blockIdx.x*8*ROWS_PER_WARP+warp+step*8;
         if(item>=tokens*rows)break;
@@ -48,7 +48,7 @@ __global__ void epilogue(const float* dots,const float* weights,float* scores,
 struct Scorer {
     // Scratch is capped independently of the common caller-owned score/selection buffers.
     static constexpr size_t WS=16*1024*1024;
-    static_assert(WS+(size_t(KK)*DIM+size_t(TT)*HEADS*KK)*sizeof(float)<32*1024*1024,
+    static_assert(WS+(size_t(KK)*DIM+size_t(TT)*HEADS*KK)*sizeof(float)<64*1024*1024,
         "caller-owned cuBLAS scratch cap");
     Buffer<float> key{size_t(KK)*DIM},dot{size_t(TT)*HEADS*KK};Buffer<unsigned char> workspace{WS};
     cublasHandle_t handle{};
@@ -151,7 +151,7 @@ int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"cuBLAS candidate requires actual SM70");
         Scorer scorer;int version=0;blas(cublasGetVersion(scorer.handle,&version));
-        std::printf("{\"cublas_version\":%d,\"math\":\"FP32 SGEMM; no tensor-core claim\",\"epilogue_scores_per_warp\":%d,\"boundary_p0\":2052,\"selection\":\"T unchanged upstream single-token launches, included in timing\"}\n",version,ROWS_PER_WARP);
+        std::printf("{\"cublas_version\":%d,\"math\":\"FP32 SGEMM; no tensor-core claim\",\"query_tile\":%d,\"key_tile\":%d,\"epilogue_scores_per_warp\":%d,\"boundary_p0\":2052,\"selection\":\"T unchanged upstream single-token launches, included in timing\"}\n",version,TT,KK,ROWS_PER_WARP);
         bool bench=argc>1;
         if(bench){
             for(int T:{1,2,3,8,16,32,256})for(int p0:{2048,8192,32768,125000})run_case(scorer,T,p0,0,true);

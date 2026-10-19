@@ -122,7 +122,7 @@ across 32-token query tiles. The per-head dot matrix stays FP32. A warp epilogue
 applies ReLU independently to every head, then its weight, with token-specific
 visibility. No full `[T, keys, 64]` global intermediate is allocated.
 
-Explicit scratch is 20.25 MiB: 16 MiB cuBLAS workspace, 4 MiB dot tile and
+The initial 32-token prototype's explicit scratch is 20.25 MiB: 16 MiB cuBLAS workspace, 4 MiB dot tile and
 256 KiB converted keys, statically capped below 32 MiB. Common input/output
 arrays and opaque cuBLAS handle/module costs are separate; this is not a total
 device-memory accounting claim. Production integration requires reconciliation.
@@ -167,6 +167,21 @@ order. Key/GEMM tiles, workspace and selector launches remain fixed. The extra
 tie/tiny cases now use 513 visible rows to exercise the 512/513 cutoff directly.
 This scheduling change must pass the complete parity/sanitizer/timing matrix
 before its result is used. F32 production remains unchanged.
+
+The eight-score variant passes all checks in run `39261596608`, including the
+513-row cutoff fixtures, but still loses bulk prefill: +7.54% at T=256/~31K
+rows and +7.41% at T=4096/120K. Retain its separate evidence in
+`p1-cublas-loop8-2026-10-19.json`; artifact `12191851575`, ZIP SHA256
+`40cbed15126faa27567a32d3f6b2522a0008efeef402ae9bd5ff47d2b06eab31`.
+All memberships match F32, maximum relative L2 3.1553e-7, zero sanitizer errors.
+These separate campaigns do not establish a causal loop-1/loop-8 speed ratio.
+
+The next test restores one score/warp and increases the query tile from 32 to
+256 tokens, reducing repeated GEMM/epilogue calls for bulk shapes. Its explicit
+scratch is **48.25 MiB**, below a hard 64 MiB caller-owned cap; common buffers
+and opaque library costs remain separate. This is a bounded experiment, not a
+production memory reservation or a performance claim. Re-run the full matrix
+before deciding whether any bulk shape merits model integration.
 
 Production code does not call this scorer. No new runtime control/default is
 introduced. Finite FP32 queries outside the unscaled FP16 range are unsupported
