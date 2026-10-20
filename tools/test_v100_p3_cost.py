@@ -5,8 +5,25 @@ import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parent/'profiling'))
 from p3_cost_analyze import analyze_rows
+from summarize_p3_cost import distribution,population
 
 class CostJoin(unittest.TestCase):
+    def test_conditioned_summary_keeps_noop_and_misses_separate(self):
+        rows=[dict(request_index=0,cpu_experts=0,fetch_experts=0,miss=0,
+            cpu_completed_wall_ns=0,fetch_ns=3),
+            dict(request_index=0,cpu_experts=1,fetch_experts=1,miss=0,
+                cpu_completed_wall_ns=100,fetch_ns=50,cpu_wait_ns=20),
+            dict(request_index=0,cpu_experts=1,fetch_experts=1,miss=1,
+                cpu_completed_wall_ns=1000,fetch_ns=500,cpu_wait_ns=200)]
+        groups=population(rows)
+        self.assertEqual(len(groups),3)
+        self.assertEqual(groups[0]['costs']['cpu_completed_wall_ns'],dict(samples=0))
+        self.assertEqual(groups[1]['costs']['fetch_ns']['median_ns'],50)
+        self.assertTrue(groups[2]['disk_miss_mask_nonzero'])
+        self.assertNotIn('total_latency_ns',groups[1]['costs'])
+        self.assertEqual(distribution([1,3,2])['p95_ns'],3)
+        with self.assertRaisesRegex(ValueError,'invalid cost'):distribution([float('nan')])
+
     def fixture(self):
         events=[dict(label='P3_ROUTE device=0 layer=2 seq=1 cpu=1 fetch=2 miss=0 blob=8',start=300,end=None,globalTid=2),
             dict(label='P3_COST kind=cpu device=0 layer=2 seq=1 experts=1',start=500,end=600,globalTid=2),

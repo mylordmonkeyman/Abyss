@@ -22,6 +22,8 @@ from p3_cost_analyze import analyze
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--replay-run',help='analyze a completed numeric run-attempt cache without loading a model')
+    ap.add_argument('--context',type=int,choices=(8192,32768,131072),default=8192,
+        help='genuine frozen history length; no synthetic position offsets')
     args=ap.parse_args()
     out=Path(os.environ['EVIDENCE']).absolute();out.mkdir(parents=True,exist_ok=True)
     if args.replay_run:
@@ -35,7 +37,10 @@ def main():
     model=campaign.model_identity();identity=json.loads((campaign.CAMPAIGN/'identity.json').read_text())
     if model['sha256']!=identity['model_sha256'] or identity['pack']!=json.loads((PACK/'v100_pack_complete.json').read_text()):
         raise ValueError('frozen model/pack identity changed')
-    tokens=','.join(map(str,fixture('mixed-8192')))
+    fixture_name='mixed-'+str(args.context)
+    history=fixture(fixture_name)
+    if len(history)!=args.context:raise ValueError('frozen history length mismatch')
+    tokens=','.join(map(str,history))
     nsys=nsys_trace.install(out);run=os.environ['GITHUB_RUN_ID']+'-'+os.environ.get('GITHUB_RUN_ATTEMPT','1')
     cache=Path('/actions-runner/abyss-p3-v9/cost')/run;cache.mkdir(parents=True,exist_ok=False)
     session='abyssp3cost'+run;commands=[]
@@ -48,9 +53,9 @@ def main():
     argv=[str(binary),'--glm-pack',str(PACK),'--serve','--max-context','135168','--max-new','32',
           '--prefill','auto','--temperature','0','--eos-ids','2147483647']
     p0.write_json(out/'invocation.json',dict(argv=argv,binary_sha256=p0.sha256(binary),model_identity=model,
-        fixture_sha256=p0.sha256(campaign.CAMPAIGN/'fixtures/mixed-8192.tokens'),
+        context_tokens=args.context,fixture_sha256=p0.sha256(campaign.CAMPAIGN/('fixtures/'+fixture_name+'.tokens')),
         environment={k:v for k,v in env.items() if k.startswith('STRATA_')},
-        scope='One excluded 16-output warm-up, two 32-output uncached 8K requests in a rootless CUDA/NVTX trace. '
+        scope='One excluded 16-output warm-up, two 32-output uncached genuine-history requests in a rootless CUDA/NVTX trace. '
         'No cold-cache, competing-load, alternate-NUMA, estimator or clean throughput claim.'))
     with tempfile.TemporaryDirectory(prefix='abyss-p3-cost-',dir=os.environ.get('RUNNER_TEMP')) as tmp:
         tmp=Path(tmp);fifo=tmp/'input';wire=tmp/'wire';log=tmp/'engine';status=tmp/'status';pidfile=tmp/'pid'
@@ -115,7 +120,8 @@ def main():
     cli(['export','--type=sqlite','--output='+str(database),str(report)],timeout=300)
     if database.stat().st_size>4*1024**3:raise ValueError('oversized raw SQLite export')
     raw_identity=dict(source_sha=p0.command(['git','rev-parse','HEAD'])['stdout'].strip(),
-        binary_sha256=p0.sha256(binary),fixture_sha256=p0.sha256(campaign.CAMPAIGN/'fixtures/mixed-8192.tokens'),
+        binary_sha256=p0.sha256(binary),context_tokens=args.context,
+        fixture_sha256=p0.sha256(campaign.CAMPAIGN/('fixtures/'+fixture_name+'.tokens')),
         report_path=str(report),report_bytes=report.stat().st_size,report_sha256=p0.sha256(report),
         sqlite_path=str(database),sqlite_sha256=p0.sha256(database),raw_uploaded=False)
     p0.write_json(out/'raw-identity.json',raw_identity);p0.write_json(cache/'identity.json',raw_identity)

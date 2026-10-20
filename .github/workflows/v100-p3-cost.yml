@@ -59,7 +59,7 @@ jobs:
           cmake --build build-v100-p3-cost --target strata --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
           sha256sum build-v100-p3-cost/strata > "$EVIDENCE/binary-sha256.txt"
       - name: Observe two warmed requests and join completed work without GPU synchronization
-        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p3_cost_capture.py
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p3_cost_capture.py --context 32768
       - name: Enforce bounded observation artifact
         if: always()
         run: |
