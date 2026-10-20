@@ -49,9 +49,27 @@ score/probability matrix or new inference allocation is introduced.
 The new executable compares all output elements against current `attend_batch`
 and a first-query/head FP64 oracle, checks guards and nondefault-stream graph
 replay, then runs both sanitizers before timing six alternating pairs per
-raw/CSA/HCA shape at T=256/2048. Synthetic timing uses n_rot=0 to isolate latent
+raw/CSA/HCA shape at T=256/2048. Synthetic timing uses a valid 64-D identity RoPE to isolate latent
 attention; it does not test inverse RoPE/output projection or establish model
 speed. The earlier stage gates remain separate and production dispatch is unchanged.
+
+## First tile run: invalid comparator corrected
+
+[Run 39384906696](https://github.com/mylordmonkeyman/Abyss/actions/runs/39384906696)
+builds successfully, then fails the second numerical case before sanitizer or
+timing steps. The first 16-key/four-warp layout reports 127 registers, zero
+local bytes, 33888 shared bytes and two resource-limited CTAs/SM. This is not a
+performance or complete parity pass. Artifact 12247255442 has ZIP SHA256
+`759865770eb23c03a3f61df3ad6a3f4d525a1ba1ad6926b3781f6a2959081f30`.
+
+Source review found the harness passed n_rot=0 to `attend_batch_kernel`, whose
+inverse-RoPE epilogue divides/modulos by n_rot/2. That unsupported setting makes
+the comparison invalid. The harness now uses n_rot=64 and freq_scale=0,
+ext_factor=0, attn_factor=1, yielding a mathematically identity rotation through
+the valid upstream path. Candidate arithmetic and numerical thresholds are
+unchanged. Metrics are emitted before assertion, including the independent
+FP64 oracle, so another failure retains its numerical evidence. This corrects
+the test; it does not establish that the candidate will pass the corrected run.
 
 This is a prerequisite check, not a new fused kernel or P2 performance result.
 After it passes: establish bounded candidate schedules and byte/register/shared

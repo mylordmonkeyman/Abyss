@@ -1,5 +1,6 @@
 // Isolated P2 tile feasibility. Existing attend_batch is the FP32 comparator;
-// n_rot=0 isolates latent attention. Full inverse-RoPE/projection gates remain separate.
+// A valid 64-D identity RoPE isolates latent attention. Full model RoPE/projection
+// gates remain separate; n_rot=0 is invalid in the upstream comparator.
 #ifndef STRATA_USE_HIP
 #include "attention_tile.cuh"
 #include "strata/kernels/dsv4_fast.hpp"
@@ -41,7 +42,8 @@ template<int K,int W> void test(int ratio,int p0,int T,int mode,bool bench){
         attention_tile<K,W><<<dim3(T,H/8),W*32,shared,stream>>>(dq.p,dr.p,dc.p,sel.p,sink.p,hist,p0,ratio,T,out.p);
         ck(cudaGetLastError());
     };
-    auto baseline=[&]{ds::attend_batch(dq.p,dr.p,hist,128,dc.p,sel.p,512,ratio,sink.p,H,D,0,ds::Rope{},p0,T,old.p,nullptr);};
+    ds::Rope identity_rope{};identity_rope.freq_scale=0.f;
+    auto baseline=[&]{ds::attend_batch(dq.p,dr.p,hist,128,dc.p,sel.p,512,ratio,sink.p,H,D,64,identity_rope,p0,T,old.p,nullptr);};
     candidate(nullptr);baseline();ck(cudaDeviceSynchronize());
     if(!bench){
         cudaStream_t stream;cudaGraph_t graph;cudaGraphExec_t executable;
@@ -57,7 +59,6 @@ template<int K,int W> void test(int ratio,int p0,int T,int mode,bool bench){
         const double d=double(got[i])-ref[i];squared+=d*d;ref_squared+=double(ref[i])*ref[i];maximum=std::max(maximum,std::abs(d));}
     const double relative=std::sqrt(squared/std::max(ref_squared,1e-300));
     for(size_t i=count;i<got.size();++i)need(got[i]==sentinel && ref[i]==sentinel,"attention output guard");
-    need(relative<1e-5 && maximum<.001,"tile versus FP32 attention screen");
     // Independent FP64 first-query/head oracle checks the actual gather and
     // denominator-only sink, not merely candidate agreement with another kernel.
     const int nr=std::min(p0+1,128),visible=ratio?(p0+1)/ratio:0,nc=ratio==4?std::min(512,visible):visible;
@@ -70,16 +71,18 @@ template<int K,int W> void test(int ratio,int p0,int T,int mode,bool bench){
     for(int j=0;j<nr+nc;++j){const double weight=std::exp(logits[j]-m);den+=weight;
         for(int d=0;d<D;++d)expected[d]+=weight*key(j,d);}
     double error=0,norm=0;for(int d=0;d<D;++d){expected[d]/=den;const double e=got[d]-expected[d];error+=e*e;norm+=expected[d]*expected[d];}
-    const double oracle=std::sqrt(error/std::max(norm,1e-300));need(oracle<1e-5,"tile versus FP64 sink/gather oracle");
+    const double oracle=std::sqrt(error/std::max(norm,1e-300));
+    const bool passed=relative<1e-5 && maximum<.001 && oracle<1e-5;
     std::printf("{\"case\":\"attention_tile\",\"ratio\":%d,\"p0\":%d,\"T\":%d,\"mode\":%d,\"key_tile\":%d,\"warps\":%d,"
         "\"relative_l2\":%.9g,\"max_abs\":%.9g,\"oracle_relative_l2\":%.9g,\"shared_bytes\":%d,\"registers\":%d,"
-        "\"local_bytes\":%zu,\"active_ctas_per_sm\":%d,\"production_enabled\":false,\"pass\":true}\n",
-        ratio,p0,T,mode,K,W,relative,maximum,oracle,shared,attr.numRegs,attr.localSizeBytes,occupancy);
+        "\"local_bytes\":%zu,\"active_ctas_per_sm\":%d,\"production_enabled\":false,\"pass\":%s}\n",
+        ratio,p0,T,mode,K,W,relative,maximum,oracle,shared,attr.numRegs,attr.localSizeBytes,occupancy,passed?"true":"false");
+    need(passed,"tile versus valid-identity-RoPE FP32 / FP64 screen");
     if(bench)for(int pair=0;pair<6;++pair){
         float a,b;if(pair&1){b=elapsed([&]{candidate(nullptr);});a=elapsed(baseline);}
         else {a=elapsed(baseline);b=elapsed([&]{candidate(nullptr);});}
         std::printf("{\"timing\":\"attention_tile\",\"ratio\":%d,\"p0\":%d,\"T\":%d,\"key_tile\":%d,\"warps\":%d,\"pair\":%d,"
-            "\"f32_ms\":%.9g,\"candidate_ms\":%.9g,\"scope\":\"synthetic prefill latent attention, n_rot=0; no model speed claim\"}\n",ratio,p0,T,K,W,pair,a,b);
+            "\"f32_ms\":%.9g,\"candidate_ms\":%.9g,\"scope\":\"synthetic prefill latent attention, valid identity RoPE; no model speed claim\"}\n",ratio,p0,T,K,W,pair,a,b);
     }
 }
 template<int K,int W> void suite(bool bench){
