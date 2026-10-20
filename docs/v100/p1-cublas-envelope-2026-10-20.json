@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "artifact_zip_sha256": "609c432afb9c3108f1ee10a69ea2705b8e371feaca8a69a1bc3a3946f74146bb",
+  "samples": 105,
+  "populations": {
+    "4eps": {
+      "factor": 4.76837158203125e-07,
+      "flagged": 2,
+      "maximum_error_over_envelope": 0.7382542649252435,
+      "unflagged_membership_errors": 0,
+      "policies": {
+        "full-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 60160
+        },
+        "band-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 1026
+        },
+        "band-all": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 53762
+        }
+      }
+    },
+    "8eps": {
+      "factor": 9.5367431640625e-07,
+      "flagged": 3,
+      "maximum_error_over_envelope": 0.36912713246262174,
+      "unflagged_membership_errors": 0,
+      "policies": {
+        "full-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 89920
+        },
+        "band-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 1539
+        },
+        "band-all": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 53763
+        }
+      }
+    },
+    "16eps": {
+      "factor": 1.9073486328125e-06,
+      "flagged": 5,
+      "maximum_error_over_envelope": 0.18456356623131087,
+      "unflagged_membership_errors": 0,
+      "policies": {
+        "full-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 149632
+        },
+        "band-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 2565
+        },
+        "band-all": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 53765
+        }
+      }
+    },
+    "32eps": {
+      "factor": 3.814697265625e-06,
+      "flagged": 6,
+      "maximum_error_over_envelope": 0.09228178311565544,
+      "unflagged_membership_errors": 0,
+      "policies": {
+        "full-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 179840
+        },
+        "band-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 3078
+        },
+        "band-all": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 53766
+        }
+      }
+    },
+    "64eps": {
+      "factor": 7.62939453125e-06,
+      "flagged": 13,
+      "maximum_error_over_envelope": 0.04614089155782772,
+      "unflagged_membership_errors": 0,
+      "policies": {
+        "full-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 388992
+        },
+        "band-flagged": {
+          "ordered_errors": 3,
+          "membership_errors": 0,
+          "scored_rows": 6669
+        },
+        "band-all": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 53773
+        }
+      }
+    },
+    "1e-4": {
+      "factor": 0.0001,
+      "flagged": 79,
+      "maximum_error_over_envelope": 0.003520270657182901,
+      "unflagged_membership_errors": 0,
+      "policies": {
+        "full-flagged": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 2360128
+        },
+        "band-flagged": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 40601
+        },
+        "band-all": {
+          "ordered_errors": 0,
+          "membership_errors": 0,
+          "scored_rows": 53913
+        }
+      }
+    }
+  },
+  "scope": "Offline calibration on 105 late same-input cuBLAS/F32 score rows. Error envelopes are empirical max-absolute-score-relative guards, not certified bounds. Counterfactual replacement uses captured reference scores, not a tested GPU correction kernel or changed model trajectory. No model admission, KL subtraction or threshold relaxation; flags must be validated on additional inputs and in model tests."
+}

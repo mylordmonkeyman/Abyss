@@ -1,0 +1,461 @@
+{
+  "schema": 1,
+  "run": 39453135796,
+  "source_sha": "2e1de6f02cdaa689d537101e3b3b3ef2ce92d09e",
+  "artifact_zip_sha256": "9c9c4052881ec284b6821b4ef7a44f174b19e7eecf6c58109186e5f82bf04cab",
+  "comparisons": [
+    {
+      "reference": "f32-0",
+      "candidate": "f32-1",
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 131040,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131041,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131042,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131043,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131044,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131045,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131046,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131047,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131048,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131049,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131050,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131051,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131052,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131053,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131054,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131055,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131056,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131057,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131058,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131059,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131060,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131061,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131062,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131063,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131064,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131065,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131066,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131067,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131068,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131069,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131070,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131071,
+          "kl": 0.0
+        }
+      ]
+    },
+    {
+      "reference": "f32-0",
+      "candidate": "reference-order",
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 131040,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131041,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131042,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131043,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131044,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131045,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131046,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131047,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131048,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131049,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131050,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131051,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131052,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131053,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131054,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131055,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131056,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131057,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131058,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131059,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131060,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131061,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131062,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131063,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131064,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131065,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131066,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131067,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131068,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131069,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131070,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131071,
+          "kl": 0.0
+        }
+      ]
+    },
+    {
+      "reference": "f32-0",
+      "candidate": "reference-membership",
+      "mean_kl": 0.01026781025076496,
+      "max_kl": 0.13375485030124998,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 131040,
+          "kl": 9.153460976559961e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131041,
+          "kl": 8.533300299209923e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131042,
+          "kl": 4.1250776459222926e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131043,
+          "kl": 3.1219393832555964e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131044,
+          "kl": 2.0709164167587393e-05
+        },
+        {
+          "predicted_token_index_zero_based": 131045,
+          "kl": 4.5332328159496314e-05
+        },
+        {
+          "predicted_token_index_zero_based": 131046,
+          "kl": 8.837382994682534e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131047,
+          "kl": 6.419021748469314e-08
+        },
+        {
+          "predicted_token_index_zero_based": 131048,
+          "kl": 1.6399673943964275e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131049,
+          "kl": 1.9376944965079668e-08
+        },
+        {
+          "predicted_token_index_zero_based": 131050,
+          "kl": 6.322312314597623e-08
+        },
+        {
+          "predicted_token_index_zero_based": 131051,
+          "kl": 1.2007441599739043e-06
+        },
+        {
+          "predicted_token_index_zero_based": 131052,
+          "kl": 2.0641129008089343e-06
+        },
+        {
+          "predicted_token_index_zero_based": 131053,
+          "kl": 7.822153901400315e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131054,
+          "kl": 0.0002080503021224147
+        },
+        {
+          "predicted_token_index_zero_based": 131055,
+          "kl": 1.2716592857753225e-06
+        },
+        {
+          "predicted_token_index_zero_based": 131056,
+          "kl": 5.415126676063486e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131057,
+          "kl": 9.983986091061357e-07
+        },
+        {
+          "predicted_token_index_zero_based": 131058,
+          "kl": 1.7642843184385194e-06
+        },
+        {
+          "predicted_token_index_zero_based": 131059,
+          "kl": 0.00022421823154092284
+        },
+        {
+          "predicted_token_index_zero_based": 131060,
+          "kl": 0.002373919743136464
+        },
+        {
+          "predicted_token_index_zero_based": 131061,
+          "kl": 0.015210336863503609
+        },
+        {
+          "predicted_token_index_zero_based": 131062,
+          "kl": 0.005026681458898587
+        },
+        {
+          "predicted_token_index_zero_based": 131063,
+          "kl": 0.005120805871070837
+        },
+        {
+          "predicted_token_index_zero_based": 131064,
+          "kl": 0.013204526878407341
+        },
+        {
+          "predicted_token_index_zero_based": 131065,
+          "kl": 0.025439754474780942
+        },
+        {
+          "predicted_token_index_zero_based": 131066,
+          "kl": 0.017577605042926644
+        },
+        {
+          "predicted_token_index_zero_based": 131067,
+          "kl": 0.023693570410427262
+        },
+        {
+          "predicted_token_index_zero_based": 131068,
+          "kl": 0.07408830389289495
+        },
+        {
+          "predicted_token_index_zero_based": 131069,
+          "kl": 0.0076932954213339965
+        },
+        {
+          "predicted_token_index_zero_based": 131070,
+          "kl": 0.004875656809370868
+        },
+        {
+          "predicted_token_index_zero_based": 131071,
+          "kl": 0.13375485030124998
+        }
+      ]
+    }
+  ],
+  "dumps": {
+    "f32-0": {
+      "bytes": 16547840,
+      "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+      "path": "/actions-runner/abyss-p1-v9/cublas-selection-control/39453135796-1/f32-0.f32"
+    },
+    "reference-order": {
+      "bytes": 16547840,
+      "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+      "path": "/actions-runner/abyss-p1-v9/cublas-selection-control/39453135796-1/reference-order.f32"
+    },
+    "reference-membership": {
+      "bytes": 16547840,
+      "sha256": "ccfe0f875e4d5df8ce24bdbc57c8e78fee41977727d1541c5ded3612948b52bd",
+      "path": "/actions-runner/abyss-p1-v9/cublas-selection-control/39453135796-1/reference-membership.f32"
+    },
+    "f32-1": {
+      "bytes": 16547840,
+      "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+      "path": "/actions-runner/abyss-p1-v9/cublas-selection-control/39453135796-1/f32-1.f32"
+    }
+  },
+  "selection_totals": {
+    "reference-order": {
+      "rows": 473088,
+      "ordered_equal_rows": 461212,
+      "membership_equal_rows": 473045,
+      "overlap": 242221013
+    },
+    "reference-membership": {
+      "rows": 473088,
+      "ordered_equal_rows": 461431,
+      "membership_equal_rows": 473042,
+      "overlap": 242221010
+    }
+  },
+  "component_cases": 12,
+  "sanitizers": "memcheck and synccheck pass",
+  "disposition": "F32 membership and ordering restore bitwise logits/zero KL; membership alone fails the unchanged mean-KL limit. Ordering is material on this deterministic CPU0/full128K trajectory. Counters describe intervened trajectories, not the original standalone candidate. No timing claim or production admission; correction must preserve ordering as well as membership. Local manifest integrity is not publisher authenticity; counters unavailable/QPI unmeasured."
+}

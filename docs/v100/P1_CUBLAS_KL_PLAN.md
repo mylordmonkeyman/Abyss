@@ -4,24 +4,31 @@ User-authorized priority, 20 October 2026. Preserve the operational F32 referenc
 production defaults, model/pack/fixtures and mean KL limit **0.0005**. No baseline
 KL subtraction. Refined MMA's passing 128K control is recorded separately.
 
-1. **Causality intervention (implemented; physical validation next).** Keep the
+1. **Causality intervention (passed, run 39453135796).** Keep the
    original cuBLAS score calculation but substitute F32 selection at every
    eligible call. Compare F32 membership+order against F32 membership ordered
    by cuBLAS scores. Bracket with deterministic F32 repeats at the failed 128K
    geometry. Record membership/ordering counters and full-model KL. This is
    diagnostic work, excluded from speed claims. If reference-order substitution
    fails, inspect non-selection effects before claiming the cause is proved.
+   Result: reference-order substitution restores bitwise F32 logits / zero KL;
+   membership-only substitution fails mean KL 0.01026781025. Ordering is material,
+   so flagged-only membership repair is diagnostic, not a sufficient admission.
 2. **Adaptive full-token F32 fallback.** Keep SGEMM. On GPU, measure the 512/513
    margin against a calibrated conservative error envelope. Recompute flagged
    tokens using operational batch-F32 dimension/head accumulation and original
    selection. Record correction fraction and all costs; no CPU decision/sync.
    A measured empirical envelope must be labeled as such, not called a proof.
+   Implemented in the isolated component matrix; physical qualification pending.
 3. **Cutoff/top-k+delta rescore.** Reuse validated reference-matched arithmetic
    and GPU compaction/selection work from the MMA investigation where practical.
    Recompute candidates within the conservative cutoff envelope. Overflow must
    trigger full reference scoring, never truncate candidates. Validate exact
    selected scores, ordering/ties, ratio-4 visibility, graph capture, guards and
    both sanitizers before model tests. Count corrected tokens and scored rows.
+   Implemented flagged-only and all-token policies with an empirical 32eps guard;
+   all-token rescoring also repairs internal top-512 ordering. Counterfactual late
+   capture calibration is not a global bound or actual-model correction result.
 4. **Reference-order epilogue.** Separately test sequential 64-head weighted
    F32 accumulation against the current warp reduction. Preserve per-head ReLU,
    F32 SGEMM outputs and original FP16 keys. Measure whether selection differences

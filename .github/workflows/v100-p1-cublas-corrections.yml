@@ -1,0 +1,94 @@
+name: V100 P1 isolated cuBLAS correction candidates
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-p1]
+    paths:
+      - ".github/workflows/v100-p1-cublas-corrections.yml"
+      - "src/kernels/cuda/dsv4_cublas_corrected.cuh"
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  batched:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-p1'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      CONTROL_CHECKPOINT: /actions-runner/abyss-p1-v9/cublas-selection-control/39453135796-1/checkpoint.json
+      EVIDENCE: results/ci-v100-p1-cublas-corrections-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+      - name: Require causality control, select idle SM70 and build correction candidates
+        run: |
+          set -euo pipefail
+          /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_cublas_corrected_bench.py --control-checkpoint "$CONTROL_CHECKPOINT" --check-control-only
+          test "$(cat VERSION)" = '1.3.31'
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          mkdir -p "$EVIDENCE"
+          git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
+          export PATH="$(dirname "$NVCC"):$PATH"
+          cmake --preset v100-diagnostics -B build-v100-p1-cublas-corrections -DCMAKE_CUDA_COMPILER="$NVCC" \
+            -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" \
+            -DSTRATA_V100_TESTS=ON -DSTRATA_V100_CAPTURE_STAGES=OFF \
+            -DSTRATA_V100_CAPTURE_INDEXER=OFF -DSTRATA_V100_CAPTURE_COST=OFF 2>&1 | tee "$EVIDENCE/configure.log"
+          cmake --build build-v100-p1-cublas-corrections --target test_dsv4_cublas_corrected --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
+          sha256sum build-v100-p1-cublas-corrections/test_dsv4_cublas_corrected > "$EVIDENCE/binary-sha256.txt"
+      - name: Validate seven variants, GPU guards, exact correction and graph replay
+        run: |
+          set -euo pipefail
+          STRATA_DS4_IDX=1 timeout 600s build-v100-p1-cublas-corrections/test_dsv4_cublas_corrected 2>&1 | tee "$EVIDENCE/cublas-correction-parity.jsonl"
+          for tool in memcheck synccheck; do
+            STRATA_DS4_IDX=1 timeout 900s compute-sanitizer --tool "$tool" --error-exitcode 1 \
+              build-v100-p1-cublas-corrections/test_dsv4_cublas_corrected 2>&1 | tee "$EVIDENCE/cublas-correction-$tool.log"
+          done
+      - name: Interleave full isolated indexer stages with telemetry
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_cublas_corrected_bench.py --control-checkpoint "$CONTROL_CHECKPOINT"
+      - name: Record actual SM70 object image and SASS
+        run: |
+          set -euo pipefail
+          cuobjdump --list-elf build-v100-p1-cublas-corrections/test_dsv4_cublas_corrected > "$EVIDENCE/object-images.txt"
+          grep -q sm_70 "$EVIDENCE/object-images.txt"
+          cuobjdump --dump-sass --gpu-architecture sm_70 build-v100-p1-cublas-corrections/test_dsv4_cublas_corrected > "$EVIDENCE/cublas-correction-sm70.sass"
+      - name: Enforce bounded diagnostic artifact
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE']);files=list(root.rglob('*'))
+          assert not any(p.is_symlink() for p in files)
+          assert sum(p.stat().st_size for p in files if p.is_file())<=64*1024**2
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('P1_BATCH_CAP=true\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && env.P1_BATCH_CAP == 'true'
+        with:
+          name: abyss-p1-cublas-corrections-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30

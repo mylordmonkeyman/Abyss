@@ -27,6 +27,48 @@ This takes priority over P3 and standalone MMA performance campaigns.
 
 ### Refined MMA model result and cuBLAS intervention checkpoint
 
+**cuBLAS causality resolved; GPU correction components implemented, not yet
+physically qualified.** [Run 39453135796](https://github.com/mylordmonkeyman/Abyss/actions/runs/39453135796)
+passes the 12 intervention cases, graphs, memcheck/synccheck and four full-128K
+CPU0 model arms. F32 repeats and `reference-order` logits are bitwise identical,
+mean/max KL zero. `reference-membership` still fails: mean KL **0.01026781025**,
+worst **0.13375485030**, top-1 32/32. Membership correction alone is insufficient;
+operational ordering matters on this trajectory. Each intervention covers 231
+calls / 473088 rows. On the reference-order trajectory, original scores differ
+in ordered IDs on 11876 rows but membership on only 43. These are intervention
+trajectory counts, not a remeasurement of the earlier standalone six-swap late
+capture. Artifact `12280673820`, ZIP SHA256
+`9c9c4052881ec284b6821b4ef7a44f174b19e7eecf6c58109186e5f82bf04cab`,
+is checked by `summarize_p1_cublas_causality.py` into
+`p1-cublas-causality-2026-10-20.json`. Diagnostic synchronization is excluded from
+performance and no arithmetic/default is admitted.
+
+The saved 105 late cuBLAS rows calibrate an **empirical** 32-FP32-epsilon times
+maximum-absolute-score envelope. Observed error is at most 0.0923 of that guard;
+6/105 rows are flagged by a 512/513 margin <= twice the envelope. Full-token or
+band correction on flagged rows catches sampled membership changes but leaves
+three ordering differences. All-token cutoff rescoring restores all sampled
+ordered IDs while scoring 53766 rows, versus 179840 for flagged full scoring.
+This is a counterfactual calibration, not a certified bound or GPU/model test.
+See `p1-cublas-envelope-2026-10-20.json`; the tests explicitly show an error
+outside the empirical envelope can escape detection and cutoff rescoring.
+
+The new isolated GPU matrix implements seven separate comparators: original
+cuBLAS; batched selectors with original warp head sum; batched selectors with
+sequential 64-head F32 sum; margin-flagged full-token F32; margin-flagged cutoff
+F32; all-token cutoff F32; all-token cutoff with sequential head sum. Original
+SGEMM and source remain unchanged. Corrections preserve sequential dimension
+and head FMA order, per-head ReLU, causal masking and original tie selection.
+Detection/compaction/rescore/select remain on GPU. Overflow beyond 8192 candidates
+uses full reference scoring, never truncation. Exact corrected selected scores
+and IDs are asserted; unflagged ordering errors remain disclosed, not waived.
+The campaign requires the pinned successful causality checkpoint before build.
+It tests 140 cases including dense ties, tiny/zero queries, causal boundaries,
+overflow and graphs, then both sanitizers and 105 timing shapes / 630 paired F32
+comparisons including all correction costs. Physical results remain pending.
+Component scratch is allocated explicitly for measurement; future runtime reuse
+of dead buffers must receive separate unique-memory/lifetime accounting.
+
 [Refined model run 39445943674](https://github.com/mylordmonkeyman/Abyss/actions/runs/39445943674)
 passes its dedicated build, 26 exact-selection cases, graphs and both sanitizers,
 then all four full-128K CPU-lane-0 model arms. All four raw-logit SHA256 values
