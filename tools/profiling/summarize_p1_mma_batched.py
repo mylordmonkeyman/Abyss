@@ -28,10 +28,10 @@ def summarize(archive,digest,run):
         def read(name):return z.read(name).decode()
         parity=rows(read('mma-batch-parity.jsonl'));bench=rows(read('mma-batch-benchmark.jsonl'))
         revision=parity[0].get('matrix_revision')
-        if revision not in (1,2,3,4,5) or bench[0].get('matrix_revision')!=revision:raise ValueError('unsupported MMA matrix revision')
+        if revision not in (1,2,3,4,5,6) or bench[0].get('matrix_revision')!=revision:raise ValueError('unsupported MMA matrix revision')
         variants=[(False,False,1),(False,False,8)]+([(True,False,1),(True,False,8)] if revision>=2 else [])
         if revision==4:variants.append((True,True,8))
-        if revision==5:variants=[(True,True,8)]
+        if revision>=5:variants=[(True,True,8)]
         end={'suite':'isolated_mma_batch_indexer','pass':True}
         if parity[-1]!=end or bench[-1]!=end:raise ValueError('incomplete MMA suite')
         cases=[r for r in parity if r.get('case')=='mma_batch_indexer']
@@ -39,10 +39,10 @@ def summarize(archive,digest,run):
         expected|={(s,b,q,9,2052,m) for s,b,q in variants for m in (1,2,3,4)}
         if revision>=2:expected|={(s,b,q,9,2052,m) for s,b,q in variants if s for m in (5,6,7)}
         if revision>=3:expected|={(s,b,q,9,2052,m) for s,b,q in variants if s for m in (8,9)}
-        if revision==5:expected|={(True,True,8,3,40000,1),(True,True,8,9,2052,10)}
+        if revision>=5:expected|={(True,True,8,3,40000,1),(True,True,8,9,2052,10)}
         if len(cases)!=len(expected) or {(r.get('scaled',False),r.get('prepared',False),r['query_tile'],r['T'],r['p0'],r['mode']) for r in cases}!=expected:
             raise ValueError('MMA diagnostic population changed')
-        timed_variants=[(True,True,8)] if revision in (4,5) else [(True,False,8)] if revision==3 else variants
+        timed_variants=[(True,True,8)] if revision>=4 else [(True,False,8)] if revision==3 else variants
         shapes={(s,b,q,T,p) for s,b,q in timed_variants for T in (256,1024,4096) for p in (2048,8192,32768,120000)}
         shapes|={(s,b,q,2048,p) for s,b,q in timed_variants for p in (65536,98304,120000)}
         numerical=[r for r in bench if r.get('case')=='mma_batch_indexer']
@@ -50,7 +50,7 @@ def summarize(archive,digest,run):
             raise ValueError('MMA timed numerical population changed')
         for record in cases+numerical:check_numerical(record)
         refinement=[];refinement_resources=[]
-        if revision==5:
+        if revision>=5:
             for population,source in ((cases,parity),(numerical,bench)):
                 records=[r for r in source if r.get('case')=='refinement']
                 if len(records)!=len(population) or {(r['T'],r['p0'],r['mode']) for r in records}!={(r['T'],r['p0'],r['mode']) for r in population}:
@@ -60,6 +60,12 @@ def summarize(archive,digest,run):
                 refinement.extend(records)
             refinement_resources=[r for r in parity if r.get('case')=='refinement_resources']
             if len(refinement_resources)!=1:raise ValueError('missing rescore resources')
+        phases=[r for r in bench if r.get('case')=='refinement_phase_timing']
+        if revision>=6:
+            if len(phases)!=15 or {(r['T'],r['p0']) for r in phases}!={(s[3],s[4]) for s in shapes}:
+                raise ValueError('missing refinement phase timing population')
+            if any(not math.isfinite(r[k]) or r[k]<=0 for r in phases for k in ('prepared_score_ms','selection_pass_ms','rescore_ms')):
+                raise ValueError('invalid refinement phase timing')
         for tool in ('memcheck','synccheck'):
             if 'ERROR SUMMARY: 0 errors' not in read('mma-batch-'+tool+'.log'):raise ValueError('MMA sanitizer failure/missing')
         if 'mma.sync.aligned.m8n8k4.row.col.f32.f16.f16.f32' not in read('mma-batch-sm70.ptx') or 'HMMA' not in read('mma-batch-sm70.sass'):
@@ -77,12 +83,12 @@ def summarize(archive,digest,run):
             groups.append(dict(scaled=scaled,prepared=prepared,query_tile=q,T=T,p0=p,pairs=pairs,elapsed_change_percent=delta,
                 median_elapsed_change_percent=statistics.median(delta),all_six_candidate_faster=all(x<0 for x in delta)))
         return dict(schema=2,matrix_revision=revision,run=run,artifact_zip_sha256=digest,source_sha=read('source-sha.txt').strip(),
-            resources=resources,refinement_resources=refinement_resources,refinement=refinement,
+            resources=resources,refinement_resources=refinement_resources,refinement=refinement,phase_timings=phases,
             component_cases=cases,timed_numerical_cases=numerical,timings=groups,
             tiny_query_nominal_failures=[r for r in cases if not r['nominal_relative_pass']],
             thermal=json.loads(read('thermal.json')),memory=json.loads(read('memory_summary.json')),
             scope='Isolated MMA884 with hi/lo chains; revisions 2/3 add per-head scaling; revision 4 prepares common per-token scaled fragments once; revision 5 adds empirical cutoff-band F32 rescore and a second unchanged selection. The band is not a certified global error bound. '
-            'Stage times include T single-token selectors versus one batched baseline selection. '
+            'Stage times include all selector launches: T single-token calls per pass before revision 6; two batched passes in revision 6. '
             'Absolute tiny-query diagnostic bounds do not qualify relative precision. No runtime/model promotion, '
             'whole-model speedup or hardware-counter/DRAM/QPI traffic claim.')
 if __name__=='__main__':

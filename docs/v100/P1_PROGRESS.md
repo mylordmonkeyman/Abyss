@@ -177,6 +177,27 @@ replay and sanitizers. It includes list overflow and dense near-ties. The
 15-shape / 90-pair stage timing includes preparation, both selects, compaction
 and rescoring. Measure this cost before considering another model campaign.
 
+[First cutoff-rescore run 39444221059](https://github.com/mylordmonkeyman/Abyss/actions/runs/39444221059)
+passes all 26 cases, exact selected-score/ordered-ID checks, graphs, both
+sanitizers and emitted SM70 instructions. Artifact `12274579804`, ZIP SHA256
+`b1e0bbf727f5a5fe4b9fbc150ffe1c837f7e2afc90f54d094033efaa80a1e325`,
+reproduces `p1-mma-refined-2026-10-20.json`. The rescore kernel has 100 registers,
+36156 shared bytes, zero local bytes and two active CTAs/SM. It loses all timed
+shapes: actual T=2048 is +36.20% at 96K and +28.86% at 120K. No model campaign
+is admitted for this schedule.
+
+The next isolated schedule replaces both sets of T individual selector
+launches with two batched launches of the **same upstream `select_top_pools`
+helper and literal batch-wrapper body**. Refinement, ordering, causal visibility
+and the empirical band are unchanged. Default prepared-MMA callers keep their
+existing selection behavior; only the isolated refinement entry point uses the
+new launch schedule. The existing failed-model workflow becomes manually
+dispatchable so this helper change cannot repeat the unchanged failed model
+campaign automatically. Revalidate every component gate and full-stage timing,
+and record separate preparation/scoring, selection-pass and rescore CUDA-event
+times to identify any remaining cost. These phase probes are diagnostic, not
+whole-model throughput or a substitute for interleaved totals.
+
 `p1_mma_clean_ab.py` prepares the next step **conditional on a passing model
 screen**, with no new GPU dispatch at this checkpoint. It refuses failed quality,
 nonidentical CPU-lane-0 repeats, changed runtime sources/model/pack/fixtures or

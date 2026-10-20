@@ -169,14 +169,21 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
         scorer.scaled?"true":"false",scorer.prepared?"true":"false",scorer.tile,T,p0,visible,mode,rel,errors[quantile],max_abs,max_cpu,oracle_rel,margin,count,overlap,selected,scorer.prepared?(prepared.n+shifts.n)*sizeof(uint32_t):size_t(0),rel<1e-5?"true":"false");
     if(bench){for(int pair=0;pair<6;++pair){float f32,candidate;const int repeats=T>=256?1:3;
         if(pair&1){candidate=timing(newrun,repeats);f32=timing(oldrun,repeats);}else{f32=timing(oldrun,repeats);candidate=timing(newrun,repeats);}
-        std::printf("{\"case\":\"mma_batch_stage_timing\",\"scaled\":%s,\"prepared\":%s,\"query_tile\":%d,\"T\":%d,\"p0\":%d,\"pair\":%d,\"f32_ms\":%.9g,\"candidate_ms\":%.9g,\"repeats\":%d}\n",scorer.scaled?"true":"false",scorer.prepared?"true":"false",scorer.tile,T,p0,pair,f32,candidate,repeats);}}
+        std::printf("{\"case\":\"mma_batch_stage_timing\",\"scaled\":%s,\"prepared\":%s,\"query_tile\":%d,\"T\":%d,\"p0\":%d,\"pair\":%d,\"f32_ms\":%.9g,\"candidate_ms\":%.9g,\"repeats\":%d}\n",scorer.scaled?"true":"false",scorer.prepared?"true":"false",scorer.tile,T,p0,pair,f32,candidate,repeats);}
+#ifdef STRATA_V100_REFINE_TEST
+        const float score_ms=timing([&]{strata::kernels::volta::indexer_batch_scaled(dq.p,dk.p,dw.p,p0,T,ld,out.p,ids.p,nullptr,prepared.p,prepared.n,shifts.p,shifts.n,false);},1);
+        const float select_ms=timing([&]{strata::kernels::volta::select_refinement(out.p,ld,p0,T,ids.p,nullptr);},1);
+        const float refine_ms=timing([&]{strata::kernels::volta::refine_scaled_selection<<<T,256>>>(dq.p,dk.p,dw.p,p0,T,ld,out.p,ids.p,prepared.p,shifts.p);ck(cudaGetLastError());},1);
+        std::printf("{\"case\":\"refinement_phase_timing\",\"T\":%d,\"p0\":%d,\"prepared_score_ms\":%.9g,\"selection_pass_ms\":%.9g,\"rescore_ms\":%.9g}\n",T,p0,score_ms,select_ms,refine_ms);
+#endif
+    }
 }
 }
 int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"batched MMA requires actual SM70");
 #ifdef STRATA_V100_REFINE_TEST
-        std::printf("{\"matrix_revision\":5,\"scope\":\"isolated prepared MMA with empirical cutoff-band operational-F32 rescore; no model admission\"}\n");
+        std::printf("{\"matrix_revision\":6,\"scope\":\"isolated empirical cutoff rescore with batched unchanged selection; no model admission\"}\n");
 #else
         std::printf("{\"matrix_revision\":4,\"scope\":\"unscaled and per-head controls plus prepared per-token scaled MMA884 hi/lo\"}\n");
 #endif

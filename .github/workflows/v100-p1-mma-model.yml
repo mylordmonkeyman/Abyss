@@ -1,13 +1,6 @@
 name: V100 P1 scaled MMA model qualification
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/deepseek-v100-p1]
-    paths:
-      - '.github/workflows/v100-p1-mma-model.yml'
-      - 'src/kernels/cuda/dsv4_volta_idx_runner.cuh'
-      - 'src/core/v100_mma_query_range.hpp'
-      - 'tools/profiling/p1_mma_model.py'
 permissions:
   contents: read
 concurrency:

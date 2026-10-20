@@ -30,7 +30,7 @@ __global__ void prepare_scaled_queries(const float* q,int T,uint32_t* packed,int
 }
 inline void indexer_batch_scaled(const float* q,const uint16_t* k,const float* w,
     int p0,int T,int ld,float* scores,int* ids,cudaStream_t stream,
-    uint32_t* packed,size_t packed_count,int* shifts,size_t shift_count){
+    uint32_t* packed,size_t packed_count,int* shifts,size_t shift_count,bool select=true){
     if(!q||!k||!w||!scores||!ids||!packed||!shifts||p0<0||T<=0||ld<(p0+T)/4||
        packed_count<(size_t)T*64*128||shift_count<(size_t)T)
         throw std::runtime_error("scaled MMA indexer shape/pointer contract violated");
@@ -43,7 +43,7 @@ inline void indexer_batch_scaled(const float* q,const uint16_t* k,const float* w
     idx_score_volta_batch_kernel<8,false,true><<<grid,128,0,stream>>>(q,k,w,p0,T,ld,scores,packed,shifts);
     if(cudaGetLastError()!=cudaSuccess)throw std::runtime_error("scaled MMA indexer launch failed");
     // Literal upstream selector, including its causal mask and tie rule.
-    for(int t=0;t<T;++t)strata::kernels::dsv4::indexer_select(
+    if(select)for(int t=0;t<T;++t)strata::kernels::dsv4::indexer_select(
         scores+(size_t)t*ld,(p0+t+1)/4,512,ids+(size_t)t*512,stream);
 }
 }
