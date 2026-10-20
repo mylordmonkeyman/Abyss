@@ -27,6 +27,39 @@ This takes priority over P3 and standalone MMA performance campaigns.
 
 ### Refined MMA model result and cuBLAS intervention checkpoint
 
+
+**Measurement continuation update (20 October).** Clean run39492718045 built
+successfully but stopped on its first100K F32 hash mismatch, before any candidate
+or timing arm. Its100K allocation context135168 differed from the qualified
+102400; a hash mismatch alone does not establish a candidate regression or its
+cause. Artifact12296513506 has SHA256
+`5dc75b8ee1241d51fcc0d6677a66d754dbfca1bd598424fe70431d99b6b945b9`.
+
+At the user's direction, the next clean campaign separates measurement from
+admission. It first runs a clean100K F32 control at the original102400 allocation
+context, then all eight100K/128K common-context arms. It records every hash,
+FP64 KL comparison, same-clean-binary F32/candidate comparison and dispatch
+failure instead of stopping on the first failed numerical gate. The prior failed
+clean100K F32 dump is reused read-only, if intact, as a reproducibility control.
+Nine raw dumps are bounded at160MiB; per-artifact64MiB limits remain.
+
+All four serialized Williams timing blocks run after bridge measurements finish,
+even if quality/hash gates fail. Matrix fail-fast is disabled. Dispatch, metric
+and instrumentation gate failures are retained per mode; invalid measurements
+are excluded from pair deltas. A separate final assessment runs after every
+block and fails overall admission when gates fail or measurements are incomplete.
+Performance remains explicitly diagnostic if parity fails. Mean KL0.0005,
+exact parity requirements and production defaults are unchanged.
+
+Frozen identity, source/library/binary checks, memory/disk guards, child-process
+failure/timeouts and bounded evidence remain execution requirements. Their
+failure may stop dependent unsafe work; they are not waived to finish a run.
+Tests exercise nine-arm completion after failed hashes and distinguish deferred
+validation errors from fatal safety errors. They run before GPU work in the
+trusted workflow. Local execution was unavailable while preparing this update;
+physical test outcomes must be read from that new workflow before claiming pass.
+
+
 **Four-way model evidence independently verified; clean comparison ready.**
 Run `39473440895` completed successfully at runtime source `dda573a`. All seven
 artifact ZIP digests and six raw captures have now passed

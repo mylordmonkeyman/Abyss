@@ -53,8 +53,14 @@ KL subtraction. Refined MMA's passing 128K control is recorded separately.
    Quality completed in39473440895 and all raw captures independently verified:
    corrected cuBLAS and refined MMA are bitwise F32 with zero KL at both fixtures.
    Original cuBLAS still fails128K atmeanKL0.01040475762. The clean campaign next
-   requires eight matching clean logit hashes before four balanced, serialized
-   end-to-end timing blocks at8K/100K/128K, including direct corrected/MMA deltas.
+   records a native-context F32 control plus all eight common-context logit arms,
+   then four balanced, serialized end-to-end timing blocks at8K/100K/128K,
+   including direct corrected/MMA deltas. Hash/KL/dispatch gate failures do not
+   cancel remaining measurements. A separate final assessment reports failures;
+   timings without parity remain diagnostic and cannot admit a default. Identity,
+   resource, process-execution and evidence bounds remain mandatory. The first
+   clean run39492718045 stopped at100K F32 hash mismatch, not a candidate failure;
+   allocation context and capture-off effects need controlled separation.
 
 Do not initially change quantization, softmax, GEMM output precision, TF32 mode
 or KL estimator, and do not use FP64 scoring everywhere. Every GPU campaign uses
