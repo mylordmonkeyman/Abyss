@@ -1,0 +1,883 @@
+{
+  "schema": 1,
+  "run": 39361291597,
+  "source_sha": "ecfd4e92e807581b105e2c4127ca73a8f2918032",
+  "artifact_zip_sha256": "16073a26d3b44a121d9c66ffda9a9e418484a8e66016999b0d86ce51a3809a0c",
+  "kind": "candidate",
+  "control": {
+    "schema": 1,
+    "status": "diagnostic failed; original P1 gate remains blocked",
+    "source_sha": "ecfd4e92e807581b105e2c4127ca73a8f2918032",
+    "source_run": "39361291597",
+    "binary_sha256": "fc7a26eca2da31c1a63819b3b4a6440616cbedd59d775c4f70dc8cc51c8c2392",
+    "geometry": {
+      "score_start": 131039,
+      "token_count": 131072,
+      "max_context": 135168,
+      "candidate_positions": [
+        98304,
+        100352,
+        102400,
+        104448,
+        106496,
+        108544,
+        110592,
+        112640,
+        114688,
+        116736,
+        118784
+      ]
+    },
+    "fixture_sha256": "d6887f12762454266b113168580c6a3dcce445b1d9b60c74f1f5b1c940fd23bb",
+    "retained_directory": "/actions-runner/abyss-p1-v9/triage/39361291597-1",
+    "changed_variable": {
+      "STRATA_GLM_CPU_LANE": "0"
+    },
+    "arms": {
+      "f32-0": {
+        "mode": "f32",
+        "candidate_calls": 0,
+        "diagnostic_wall_s_including_load": 459.6674519950029,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 0
+        }
+      },
+      "cublas-0": {
+        "mode": "cublas",
+        "candidate_calls": 231,
+        "diagnostic_wall_s_including_load": 455.13118341201334,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 231
+        }
+      },
+      "cublas-1": {
+        "mode": "cublas",
+        "candidate_calls": 231,
+        "diagnostic_wall_s_including_load": 454.5260756459902,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 231
+        }
+      },
+      "f32-1": {
+        "mode": "f32",
+        "candidate_calls": 0,
+        "diagnostic_wall_s_including_load": 461.74670421500923,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 0
+        }
+      }
+    },
+    "dumps": {
+      "f32-0": {
+        "bytes": 16547840,
+        "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+        "path": "/actions-runner/abyss-p1-v9/triage/39361291597-1/f32-0.f32"
+      },
+      "cublas-0": {
+        "bytes": 16547840,
+        "sha256": "41b9ee16aeafa11b1524a8957c9f74df42eb8a618dc0b6c7a263f171f931118e",
+        "path": "/actions-runner/abyss-p1-v9/triage/39361291597-1/cublas-0.f32"
+      },
+      "cublas-1": {
+        "bytes": 16547840,
+        "sha256": "41b9ee16aeafa11b1524a8957c9f74df42eb8a618dc0b6c7a263f171f931118e",
+        "path": "/actions-runner/abyss-p1-v9/triage/39361291597-1/cublas-1.f32"
+      },
+      "f32-1": {
+        "bytes": 16547840,
+        "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+        "path": "/actions-runner/abyss-p1-v9/triage/39361291597-1/f32-1.f32"
+      }
+    },
+    "scope": "Two F32 repeats at the original failed partial-tail geometry with CPU expert lane disabled. This isolates a scheduling/arithmetic axis; even a pass does not repair or qualify the default CPU-lane-28 configuration. No automatic promotion, default-setting acceptance, throughput or root-cause claim. Raw logits stay runner-side (64 MiB total cap).",
+    "candidate_control": true,
+    "comparisons": [
+      {
+        "mean_kl": 0.0,
+        "max_kl": 0.0,
+        "top1_matches": 32,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.0
+          }
+        ],
+        "reference": "f32-0",
+        "candidate": "f32-1",
+        "passes_written_mean_kl_limit": true
+      },
+      {
+        "mean_kl": 0.0,
+        "max_kl": 0.0,
+        "top1_matches": 32,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.0
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.0
+          }
+        ],
+        "reference": "cublas-0",
+        "candidate": "cublas-1",
+        "passes_written_mean_kl_limit": true
+      },
+      {
+        "mean_kl": 0.01040475762279092,
+        "max_kl": 0.12950428213123985,
+        "top1_matches": 31,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 1.1729210570130298e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 1.202019081058606e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 7.454682310875175e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 1.922192470130904e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 3.741790061071882e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 1.3330358214259678e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 1.0125973871020343e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 4.4477093697635284e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 5.504234500696662e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 1.359881726590111e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 1.1772558326195434e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 4.2219730374633483e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 1.6136584742424027e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 1.2569922011707708e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 5.164876383484255e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 4.844748264394347e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 1.4698305731185573e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 1.8935076704679527e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 3.4644146377590413e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.00011004290187969697
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.00024378755857857627
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.012639978455173869
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.0033226580344883896
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.00872340615622226
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.008768137169261258
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.014200533009705843
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.02370318206993983
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.037909313973930006
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.12950428213123985
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.006397164266989255
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.008086397491346273
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.07922908136565542
+          }
+        ],
+        "reference": "f32-0",
+        "candidate": "cublas-0",
+        "passes_written_mean_kl_limit": false
+      },
+      {
+        "mean_kl": 0.01040475762279092,
+        "max_kl": 0.12950428213123985,
+        "top1_matches": 31,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 1.1729210570130298e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 1.202019081058606e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 7.454682310875175e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 1.922192470130904e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 3.741790061071882e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 1.3330358214259678e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 1.0125973871020343e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 4.4477093697635284e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 5.504234500696662e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 1.359881726590111e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 1.1772558326195434e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 4.2219730374633483e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 1.6136584742424027e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 1.2569922011707708e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 5.164876383484255e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 4.844748264394347e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 1.4698305731185573e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 1.8935076704679527e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 3.4644146377590413e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.00011004290187969697
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.00024378755857857627
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.012639978455173869
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.0033226580344883896
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.00872340615622226
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.008768137169261258
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.014200533009705843
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.02370318206993983
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.037909313973930006
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.12950428213123985
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.006397164266989255
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.008086397491346273
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.07922908136565542
+          }
+        ],
+        "reference": "f32-1",
+        "candidate": "cublas-1",
+        "passes_written_mean_kl_limit": false
+      }
+    ],
+    "comparison": {
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 131040,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131041,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131042,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131043,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131044,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131045,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131046,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131047,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131048,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131049,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131050,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131051,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131052,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131053,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131054,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131055,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131056,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131057,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131058,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131059,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131060,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131061,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131062,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131063,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131064,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131065,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131066,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131067,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131068,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131069,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131070,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131071,
+          "kl": 0.0
+        }
+      ],
+      "reference": "f32-0",
+      "candidate": "f32-1"
+    },
+    "error": "CPU-lane-off diagnostic exceeds original KL threshold"
+  },
+  "telemetry": {
+    "f32-1": {
+      "memory": {
+        "peak_rss_bytes": 85007372288,
+        "peak_pss_bytes": 85000863744,
+        "peak_anonymous_bytes": 1141821440,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48514048000,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "cublas-0": {
+      "memory": {
+        "peak_rss_bytes": 85011378176,
+        "peak_pss_bytes": 85004869632,
+        "peak_anonymous_bytes": 1145106432,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48570433536,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "cublas-1": {
+      "memory": {
+        "peak_rss_bytes": 85008072704,
+        "peak_pss_bytes": 85001635840,
+        "peak_anonymous_bytes": 1142231040,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48502632448,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "f32-0": {
+      "memory": {
+        "peak_rss_bytes": 85010640896,
+        "peak_pss_bytes": 85004168192,
+        "peak_anonymous_bytes": 1144885248,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48555495424,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    }
+  },
+  "disposition": "Characterization only; collection success is not quality acceptance. Original upstream repeats exceed the written limit at CPU lane 28. Under CPU lane 0 each scorer repeats bitwise, while F32/candidate drift independently exceeds the limit. Neither baseline subtraction nor a threshold waiver is justified. No production arithmetic/default or P1 admission change; raw logits remain on the existing runner. Local manifest integrity is not publisher authenticity; counters/QPI remain unavailable/unmeasured."
+}

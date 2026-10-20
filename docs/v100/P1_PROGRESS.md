@@ -14,27 +14,61 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
 | Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct score/selection/attention passed (105 live samples); **full-128K KL FAILED, including F32 repeat**; SM80 compile/link passes, HIP SDK unavailable; CPU-lane-off F32 repeat is bitwise identical; auto unchanged |
 
-Next: establish the missing original-upstream repeatability control at the
-exact failed 128K geometry. `v100-p1-upstream-repeat.yml` runs preserved upstream
-v1.3.31 / working F32 / working F32 / upstream, with the original CPU-lane-28
-settings, frozen model/pack/input and scoring positions. The selected upstream
-binary is SHA256 `5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89`;
-no rebuild or arithmetic edit is involved. It retains four raw distributions
-on the runner under a 64 MiB total cap, hashes and checkpoints each completed
-arm, and reports upstream repeat, working repeat and two matched port comparisons.
-Collection success is not acceptance: every comparison explicitly reports
-whether the existing 0.0005 limit passed, without subtracting a baseline floor.
+Next: diagnose reproducible candidate drift at a later indexer chunk. Both
+new controls are complete: upstream itself is variable at CPU lane 28, while
+each scorer is bitwise repeatable at CPU lane 0 but the candidate differs from
+F32 beyond the KL limit. These are distinct findings; upstream variability does
+not excuse the deterministic candidate difference.
 
-Earlier selected-base repeatability tests covered a bounded teacher fixture,
-not the exact failed 128K geometry. Therefore the existing failure establishes
-working-configuration instability, not a regression caused by the candidate.
-The already-running CPU-lane-off diagnostic is a separate control and cannot
-replace the default-setting upstream measurement. The shared workflow concurrency
-group serializes both jobs; no overlapping GPU processes are authorized.
-Automatic dispatch remains upstream; cuBLAS stays explicit and full-context
-admission is unresolved. MMA remains isolated because tiny-query precision is
-unqualified. SM80/HIP inventory and compilation remain in the independent
-triage workflow rather than repeating them in the upstream control.
+The next compile-only capture uses the original 128K fixture/partial-tail score
+geometry, CPU lane 0 and p0=118784, after all eleven candidate chunks have run.
+It compares F32 against cuBLAS on the same live inputs within that chunk,
+records paired scores/IDs/attention at five sampled tokens across all 21 C4
+layers, and reports selection overlap/order for every one of its 2048 tokens.
+Raw paired tensors remain capped at 56 MiB and the complete artifact at 64 MiB.
+It bitwise restores the candidate IDs before model continuation. This isolates
+local rounding/selection effects after accumulation; it does not locate the first
+whole-model divergence or establish throughput. Production arithmetic/defaults
+and the <=0.0005 mean-KL threshold remain unchanged.
+
+## Original-upstream and deterministic candidate controls — 20 October 2026
+
+[Original-upstream control 39360007121](https://github.com/mylordmonkeyman/Abyss/actions/runs/39360007121)
+uses the immutable selected v1.3.31 binary and working F32 in upstream/working/
+working/upstream order, with the same CPU-lane-28 settings and exact failed
+128K fixture/scoring geometry. Collection completed; all comparisons exceed the
+written KL limit. A successful collection job is not a quality pass.
+
+| Comparison | Mean KL | Maximum KL | Top-1 matches |
+| --- | ---: | ---: | ---: |
+| Upstream repeat | 0.01145396 | 0.11544902 | 32/32 |
+| Working F32 repeat | 0.00853500 | 0.06895841 | 31/32 |
+| Upstream-0 / working-0 | 0.00894022 | 0.07876772 | 32/32 |
+| Upstream-1 / working-1 | 0.01329741 | 0.12122638 | 31/32 |
+
+This closes the missing upstream baseline characterization and shows the
+original variability is not unique to our branch. It does not prove port parity
+under a deterministic configuration. `p1-upstream-repeat-2026-10-20.json`
+preserves artifact 12238690139, ZIP SHA256
+`b9546e611e241b74487dad2eabe5e9464bf9e1765db6f3a7e414ae294230224f`.
+
+[CPU-lane-off candidate control 39361291597](https://github.com/mylordmonkeyman/Abyss/actions/runs/39361291597)
+completes all four arms and fails quality for a separate reproducible reason:
+
+| Comparison | Mean KL | Maximum KL | Top-1 matches |
+| --- | ---: | ---: | ---: |
+| F32 repeat | 0 | 0 | 32/32 |
+| cuBLAS repeat | 0 | 0 | 32/32 |
+| F32 / cuBLAS, both matched pairs | 0.01040476 | 0.12950428 | 31/32 |
+
+Each scorer's two raw distributions have identical hashes. Both candidate arms
+execute all 231 intended calls. The F32 dump also matches the previous lane-off
+baseline hash. Thus candidate drift persists independently of CPU-lane-28
+repeatability. Do not subtract the upstream repeat KL or relax thresholds.
+`p1-lane-off-candidate-2026-10-20.json` preserves artifact 12238708864, ZIP SHA256
+`16073a26d3b44a121d9c66ffda9a9e418484a8e66016999b0d86ce51a3809a0c`.
+Both controls are reproduced by `summarize_p1_controls.py`; raw distributions
+remain on the existing runner, with hashes and per-position KL in the ledgers.
 
 ## CPU-lane-off control and platform result — 20 October 2026
 
@@ -45,7 +79,7 @@ SHA256 `ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81`:
 mean/max KL **0**, top-1 **32/32**. All indexer dispatches remain F32.
 This makes CPU/GPU expert execution a useful investigation axis, without proving
 which part causes the original variability or establishing a candidate regression.
-Original-upstream CPU-lane-28 repeatability remains under measurement.
+Original-upstream CPU-lane-28 repeatability is now characterized above.
 
 The independent SM80 compile/link and embedded-image check pass; binary SHA256
 `4524ccf401db1e4b60cc925012ead29c8481c0a21a3f9127437d0feec8deeb85`.
@@ -61,13 +95,9 @@ Each arm has 42 telemetry samples, no sampled thermal reason and observed power
 limiting. Minimum host MemAvailable is 48,571,547,648 bytes; overlapping memory
 ledgers are not summed. Raw logits and checkpoints stay on the existing runner.
 
-The next serialized control runs F32/cuBLAS/cuBLAS/F32 at this same CPU-lane-off
-configuration, checking all 231 intended candidate calls per candidate arm and
-the same four <=0.0005 mean-KL comparisons. It tests candidate drift under a
-measured reproducible baseline. Even a pass would apply only to CPU lane 0;
-it cannot qualify the default CPU-lane-28 setting, establish upstream baseline
-behavior, replace default-setting performance tests or automatically promote P1.
-No production math, threshold or default dispatch is changed.
+The subsequent F32/cuBLAS/cuBLAS/F32 control at this same CPU-lane-off
+configuration fails the matched comparisons as recorded above. No production
+math, threshold or default dispatch is changed.
 
 ## Full-128K admission blocker — 20 October 2026
 

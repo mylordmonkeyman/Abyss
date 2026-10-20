@@ -25,6 +25,18 @@ class LiveCapture(unittest.TestCase):
             result=compare_capture(base)
             self.assertEqual(len(result['samples']),105)
             self.assertTrue(all(x['overlap']==512 and x['attention_max_abs']==0 for x in result['samples']))
+            with self.assertRaisesRegex(ValueError,'capture geometry changed'):
+                compare_capture(base,118784)
+            for layer in range(2,43,2):
+                (base/f'layer-{layer}/full-selection.tsv').write_text(
+                    'token_offset\tordered_equal\tmembership_overlap\n'+''.join(f'{t}\t1\t512\n' for t in range(2048)))
+            result=compare_capture(base)
+            self.assertEqual(len(result['full_selection']),21)
+            self.assertTrue(all(x['ordered_identical']==2048 for x in result['full_selection']))
+            report=base/'layer-2/full-selection.tsv'
+            original=report.read_text();report.write_text(original.replace('0\t1\t512','0\t0\t511',1))
+            with self.assertRaisesRegex(ValueError,'disagrees with raw sampled IDs'):compare_capture(base)
+            report.write_text(original)
             path=base/'layer-2/t-0-candidate-ids.i32'
             bad=np.arange(512,dtype='<i4');bad[0]=30000;bad.tofile(path)
             with self.assertRaisesRegex(ValueError,'range/duplicate/future'):compare_capture(base)

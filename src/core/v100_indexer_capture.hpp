@@ -1,6 +1,8 @@
 #pragma once
 // Compile-only P1 same-input diagnostic. No production toggle or GPU allocation.
 #ifdef STRATA_V100_CAPTURE_INDEXER
+#include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -17,7 +19,17 @@ struct IndexerCapture {
     static void ck(cudaError_t e){if(e!=cudaSuccess)throw std::runtime_error(cudaGetErrorString(e));}
     IndexerCapture(bool candidate,int layer,int pos,int tokens,int width,int stride,cudaStream_t s)
         :T(tokens),hd(width),ld(stride),p0(pos),stream(s){
-        if(!candidate || pos!=98304 || tokens!=2048)return;
+        if(!candidate || tokens!=2048)return;
+        // Compile-only diagnostic target: one chunk per process keeps raw
+        // paired score/attention capture under the existing 56 MiB hard cap.
+        int target=98304;
+        if(const char* v=std::getenv("ABYSS_V100_CAPTURE_P0")){
+            char* end=nullptr;const long value=std::strtol(v,&end,10);
+            if(end==v || *end || value<98304 || value>120000 || value%2048)
+                throw std::runtime_error("invalid P1 capture chunk target");
+            target=(int)value;
+        }
+        if(pos!=target)return;
         if(layer<0 || layer>=64 || width!=32768 || stride<(pos+tokens)/4)
             throw std::runtime_error("unsupported P1 live-capture geometry");
         static bool seen[64]={};
@@ -53,6 +65,30 @@ struct IndexerCapture {
         if(!enabled)return;
         ck(cudaStreamSynchronize(stream));
         if(candidate)candidate_selection=read(ids,(size_t)T*512);
+        else {
+            const auto reference=read(ids,(size_t)T*512);
+            std::ofstream report(dir/"full-selection.tsv");
+            report<<"token_offset\tordered_equal\tmembership_overlap\n";
+            for(int t=0;t<T;++t){
+                auto c=candidate_selection.begin()+(size_t)t*512;
+                auto r=reference.begin()+(size_t)t*512;
+                const bool equal=std::equal(c,c+512,r);
+                std::vector<int> cs(c,c+512),rs(r,r+512);
+                std::sort(cs.begin(),cs.end());std::sort(rs.begin(),rs.end());
+                const int visible=(p0+t+1)/4;
+                for(const auto* sorted:{&cs,&rs})
+                    if(sorted->front()<0 || sorted->back()>=visible ||
+                       std::adjacent_find(sorted->begin(),sorted->end())!=sorted->end())
+                        throw std::runtime_error("P1 full-row selection range/duplicate error");
+                int overlap=0;size_t i=0,j=0;
+                while(i<512 && j<512){
+                    if(cs[i]==rs[j]){++overlap;++i;++j;}
+                    else if(cs[i]<rs[j])++i;else ++j;
+                }
+                report<<t<<'\t'<<equal<<'\t'<<overlap<<'\n';
+            }
+            if(!report)throw std::runtime_error("P1 full selection diagnostic write failed");
+        }
         for(int t:samples){
             const std::string prefix="t-"+std::to_string(t)+(candidate?"-candidate":"-reference");
             save(prefix+"-score.f32",score+(size_t)t*ld,(p0+t+1)/4);

@@ -1,4 +1,4 @@
-name: V100 P1 live score-selection-attention diagnostic
+name: V100 P1 late-128K same-input drift diagnostic
 on:
   workflow_dispatch:
   push:
@@ -61,7 +61,7 @@ jobs:
           cmake --build build-v100-p1-capture --target strata --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
           sha256sum build-v100-p1-capture/strata > "$EVIDENCE/binary-sha256.txt"
       - name: Compare same-input scores, selection, attention and model logits
-        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_live_capture.py
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_live_capture.py --geometry 128k --cpu-lane 0 --capture-position 118784
       - name: Enforce bounded diagnostic artifact
         if: always()
         run: |

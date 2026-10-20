@@ -1,0 +1,734 @@
+{
+  "schema": 1,
+  "run": 39360007121,
+  "source_sha": "7ab8197611dd5b3af8028bea0f1729980356d0c8",
+  "artifact_zip_sha256": "b9546e611e241b74487dad2eabe5e9464bf9e1765db6f3a7e414ae294230224f",
+  "kind": "upstream",
+  "control": {
+    "schema": 1,
+    "status": "complete; baseline characterized; P1 admission remains separate",
+    "source_run": "39360007121",
+    "source_sha": "7ab8197611dd5b3af8028bea0f1729980356d0c8",
+    "upstream_source_sha": "7c893ac17e61ec45c934b3278356807fc4626c3c",
+    "binary_sha256": {
+      "upstream": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89",
+      "working": "fc7a26eca2da31c1a63819b3b4a6440616cbedd59d775c4f70dc8cc51c8c2392"
+    },
+    "geometry": {
+      "score_start": 131039,
+      "token_count": 131072,
+      "max_context": 135168,
+      "candidate_positions": [
+        98304,
+        100352,
+        102400,
+        104448,
+        106496,
+        108544,
+        110592,
+        112640,
+        114688,
+        116736,
+        118784
+      ]
+    },
+    "fixture_sha256": "d6887f12762454266b113168580c6a3dcce445b1d9b60c74f1f5b1c940fd23bb",
+    "retained_directory": "/actions-runner/abyss-p1-v9/upstream-repeat/39360007121-1",
+    "order": [
+      "upstream-0",
+      "working-0",
+      "working-1",
+      "upstream-1"
+    ],
+    "arms": {
+      "upstream-0": {
+        "binary_sha256": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89",
+        "diagnostic_wall_s_including_load": 460.5337948200031,
+        "dispatch_expectation": "Original upstream has no P1 dispatch instrumentation; legacy STRATA_DS4_IDX=1 forces F32 in both binaries"
+      },
+      "working-0": {
+        "binary_sha256": "fc7a26eca2da31c1a63819b3b4a6440616cbedd59d775c4f70dc8cc51c8c2392",
+        "diagnostic_wall_s_including_load": 462.20009974599816,
+        "dispatch_expectation": "Original upstream has no P1 dispatch instrumentation; legacy STRATA_DS4_IDX=1 forces F32 in both binaries"
+      },
+      "working-1": {
+        "binary_sha256": "fc7a26eca2da31c1a63819b3b4a6440616cbedd59d775c4f70dc8cc51c8c2392",
+        "diagnostic_wall_s_including_load": 460.61838391498895,
+        "dispatch_expectation": "Original upstream has no P1 dispatch instrumentation; legacy STRATA_DS4_IDX=1 forces F32 in both binaries"
+      },
+      "upstream-1": {
+        "binary_sha256": "5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89",
+        "diagnostic_wall_s_including_load": 458.8236961230141,
+        "dispatch_expectation": "Original upstream has no P1 dispatch instrumentation; legacy STRATA_DS4_IDX=1 forces F32 in both binaries"
+      }
+    },
+    "dumps": {
+      "upstream-0": {
+        "bytes": 16547840,
+        "sha256": "feb2110cee9f4d7f9365509b50e87ae03268f9b9957e250b51c0e2a52c99b900",
+        "path": "/actions-runner/abyss-p1-v9/upstream-repeat/39360007121-1/upstream-0.f32"
+      },
+      "working-0": {
+        "bytes": 16547840,
+        "sha256": "a78051d6c5acd021ae4ac27960bbb20cc06fb079ec61b88053bedd3d5e3721db",
+        "path": "/actions-runner/abyss-p1-v9/upstream-repeat/39360007121-1/working-0.f32"
+      },
+      "working-1": {
+        "bytes": 16547840,
+        "sha256": "1124e253cca471609ba0f83dccd5b8c82234eeff43d31b2d4a2f3251d57139b3",
+        "path": "/actions-runner/abyss-p1-v9/upstream-repeat/39360007121-1/working-1.f32"
+      },
+      "upstream-1": {
+        "bytes": 16547840,
+        "sha256": "6515b662a44021ae79cbbeb505b74a188f645663ead26149f4306e9cefbe9420",
+        "path": "/actions-runner/abyss-p1-v9/upstream-repeat/39360007121-1/upstream-1.f32"
+      }
+    },
+    "comparisons": [
+      {
+        "mean_kl": 0.008940223704102615,
+        "max_kl": 0.07876771836169598,
+        "top1_matches": 32,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 7.244921768416632e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 1.3038796444205264e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 3.5298652647471115e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 7.673377121151683e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 6.336650237796866e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 1.1993363080545846e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 2.4994044613933285e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 2.1048308055402545e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 1.1083732086010851e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 2.23740645842838e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 4.2952872064542196e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 1.0841669689351665e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 4.5308130483391584e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 3.7391816125948667e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 2.7881846313125775e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 7.085744795047673e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 4.012209726675102e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 3.735441613184212e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 2.597969621961647e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.0003495080781695502
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0022155548129738026
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.025097647370497415
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.00836913949374325
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.02514711621427415
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.010638317941279871
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.010358491154692456
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.014660926398382268
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.025782084656019645
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.07876771836169598
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.008926768641162373
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.014758202395064798
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.0609886079952903
+          }
+        ],
+        "reference": "upstream-0",
+        "candidate": "working-0",
+        "passes_written_mean_kl_limit": false
+      },
+      {
+        "mean_kl": 0.008535001799762128,
+        "max_kl": 0.06895841100199682,
+        "top1_matches": 31,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 1.0033128106174987e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 7.917244277702884e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 1.297236491555717e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 2.3480883470494976e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 7.575413114430757e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 1.3058776496784293e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 1.3258203355477937e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 1.043010549768561e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 9.111451616635548e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 1.1862263211894277e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 6.70950660947218e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 4.011694865945861e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 4.5946092450601804e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 3.116380992414694e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 7.109628856681022e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 2.2277404615052918e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 2.6900924757842823e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 1.445103947479718e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 2.2675209764433215e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 9.072961081752234e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.00486046021526201
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.030263385201964678
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.014614559125567516
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.018510682351123568
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.012412887263696961
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.010021219521982974
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.01920170737064201
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.041500886759216524
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.034653765839147546
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.003286306218022278
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.014725814588715108
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.06895841100199682
+          }
+        ],
+        "reference": "working-0",
+        "candidate": "working-1",
+        "passes_written_mean_kl_limit": false
+      },
+      {
+        "mean_kl": 0.011453957672229178,
+        "max_kl": 0.11544902098597341,
+        "top1_matches": 32,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 1.1786025244822924e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 1.4963815791130738e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 3.809885451827887e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 3.1731448076424207e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 1.3072721952806903e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 3.330728371953598e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 4.28294655696344e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 7.123455751535393e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 2.7607434409434843e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 5.105285046152993e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 3.246930409749989e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 2.209556677943508e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 4.847568985166412e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 2.1425291570044423e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 9.765678683081134e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 8.291176342872113e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 7.589417564757749e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 7.553244975619606e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 1.6014486243612841e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.0004363566867709502
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0017238596927034618
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.0385430874268222
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.0064197506340420854
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.017545519686102226
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.011255456146472241
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.02139250248083915
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.03411969011500199
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.04819715376297358
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.0511197636865696
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.00508648314118469
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.0150983366052291
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.11544902098597341
+          }
+        ],
+        "reference": "upstream-0",
+        "candidate": "upstream-1",
+        "passes_written_mean_kl_limit": false
+      },
+      {
+        "mean_kl": 0.013297406317276945,
+        "max_kl": 0.12122637785015775,
+        "top1_matches": 31,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 8.899672894327417e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 7.359529658171689e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 6.719085141909035e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 1.9190413016677588e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 3.2666092916355865e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 9.71416349418748e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 1.2469598953275724e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 4.828449125400679e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 1.3940243930888138e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 3.124269941111216e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 3.734837623071255e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 6.517166297436826e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 1.3163323116315916e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 4.008033966348636e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 0.0001576844177248702
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 1.0270868004337171e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 1.5383190838352376e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 1.6772223852830858e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 5.031543173928497e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 6.740140722104717e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0010743574205614847
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.0379555204262407
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.005277798733314481
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.015158446661306552
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.012038980513607835
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.012271449647587581
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.048724038002289985
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.03261774512424513
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.11366653887380787
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.004861754507576764
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.020331301117974977
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.12122637785015775
+          }
+        ],
+        "reference": "upstream-1",
+        "candidate": "working-1",
+        "passes_written_mean_kl_limit": false
+      }
+    ],
+    "scope": "Exact failed 128K geometry, CPU lane 28 and fixed settings. Original selected upstream and working F32, interleaved upstream/working/working/upstream. No candidate arithmetic. Characterizes baseline repeat and port drift, not known-correct answers or optimization admission. Do not subtract baseline KL or relax thresholds. Raw logits retained runner-side under 64 MiB cap; wall times include load and diagnostics, not speed evidence. Model integrity is against the local manifest, not independent publisher authenticity; hardware counters/QPI remain unavailable/unmeasured."
+  },
+  "telemetry": {
+    "working-0": {
+      "memory": {
+        "peak_rss_bytes": 85579702272,
+        "peak_pss_bytes": 85573259264,
+        "peak_anonymous_bytes": 1163870208,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 47944081408,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "working-1": {
+      "memory": {
+        "peak_rss_bytes": 85577641984,
+        "peak_pss_bytes": 85571137536,
+        "peak_anonymous_bytes": 1164046336,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 47874785280,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "upstream-0": {
+      "memory": {
+        "peak_rss_bytes": 85571575808,
+        "peak_pss_bytes": 85565074432,
+        "peak_anonymous_bytes": 1159487488,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 47900180480,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "upstream-1": {
+      "memory": {
+        "peak_rss_bytes": 85571207168,
+        "peak_pss_bytes": 85564705792,
+        "peak_anonymous_bytes": 1158791168,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 47915442176,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    }
+  },
+  "disposition": "Characterization only; collection success is not quality acceptance. Original upstream repeats exceed the written limit at CPU lane 28. Under CPU lane 0 each scorer repeats bitwise, while F32/candidate drift independently exceeds the limit. Neither baseline subtraction nor a threshold waiver is justified. No production arithmetic/default or P1 admission change; raw logits remain on the existing runner. Local manifest integrity is not publisher authenticity; counters/QPI remain unavailable/unmeasured."
+}
