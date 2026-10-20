@@ -191,3 +191,41 @@ No global cache drops, all-pages NUMA binding, competing load, container churn
 or privilege changes are used. Cold-to-warm, load and placement controls remain
 separate outstanding measurements. All 65 local tooling tests and the HIP-name
 mapping check pass before this control dispatch.
+
+## Observer controls reviewed; natural cache evolution next
+
+[Run 39419705642](https://github.com/mylordmonkeyman/Abyss/actions/runs/39419705642)
+passes on `72c2474c3600c9a0d28c8d4af66aa06ec80fc4d4`. Artifact `12263990850`,
+ZIP SHA256 `8da7dc1547e941fae08f3a85a8a002134024174fb7424c240450b4237edc1de1`,
+is recomputed by `summarize_p3_control.py` into
+`p3-observer-control-2026-10-20.json`. It checks wire replies, arm order and
+population, binary/source identities, equal environments, observer ledgers,
+profiler start/stop success and checkpoint consistency before recomputing
+contrasts. All four observer-enabled arms have nonempty, zero-drop ledgers;
+both compiled-out arms have no observer ledger. The observer binary is the
+same digest used in the preceding context captures.
+
+| Order half | Plain median wire ms | Observer median ms | Traced median ms | Observer vs plain | Traced vs observer |
+| --- | --- | --- | --- | --- | --- |
+| Forward | 12657.87 | 12740.76 | 13319.98 | +0.65% | +4.55% |
+| Reverse | 12901.06 | 12832.57 | 13287.07 | -0.53% | +3.54% |
+
+No consistent observer-only slowdown is established by these two contrasts;
+they are not a confidence bound or proof of zero overhead. Tracing is slower
+in both order halves. Different likelihoods and annotation counts preserve
+the known CPU-lane-28 trajectory limitation even with fixed token bytes.
+Therefore profiled cost captures remain diagnostics, never clean throughput
+or a causal predictor of a better split. No KL threshold is waived or baseline
+variance subtracted. Minimum sampled host MemAvailable is 48,256,970,752 bytes;
+no thermal flag is sampled and power limiting is observed in four of six arms.
+Raw reports of 25,300,658 and 23,725,990 bytes stay on the runner with digests.
+
+Next the existing cost harness omits the excluded warm-up and observes the
+**first post-load request and its subsequent request**, both with genuine 8K
+history and 32 outputs. The protocol is recorded in invocation/raw identities
+and the summary rejects a mislabeled warm-up. This is natural process/device
+cache evolution, not a known-cold OS/file cache: startup itself primes experts
+and all model pages retain their existing policy. No cache drop, eviction
+workload, NUMA bind, artificial CPU load or new privileges are introduced.
+It does not substitute for separate load and alternate-placement conditions.
+All 66 local tooling tests and the HIP-name mapping check pass before dispatch.

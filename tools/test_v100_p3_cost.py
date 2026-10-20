@@ -36,6 +36,7 @@ class CostJoin(unittest.TestCase):
             'raw-identity.json':dict(source_sha='source',binary_sha256='binary',fixture_sha256='fixture'),
             'invocation.json':dict(binary_sha256='binary',fixture_sha256='fixture',context_tokens=32768),
             'requests.json':[dict(request=i,done='DONE 32 32768') for i in range(2)],
+            'warmup.json':dict(done='DONE 16 32768'),
             'memory_summary.json':{},'thermal.json':{}}
         def check(data,engine='V100_COST_END ranges=1 dropped=0',digest=None):
             with tempfile.TemporaryDirectory() as folder:
@@ -54,6 +55,13 @@ class CostJoin(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'request population'):check(bad)
         with self.assertRaisesRegex(ValueError,'dropped or incomplete'):check(entries,'V100_COST_END ranges=2 dropped=1')
         with self.assertRaisesRegex(ValueError,'digest mismatch'):check(entries,digest='wrong')
+        fresh=copy.deepcopy(entries)
+        fresh['invocation.json']['cache_protocol']='first post-load request versus subsequent request; OS/file caches uncontrolled'
+        fresh['warmup.json']['done']=None
+        fresh['warmup.json']['disposition']=fresh['invocation.json']['cache_protocol']
+        self.assertIn('first post-load',check(fresh)['cache_protocol'])
+        fresh['warmup.json']['done']='DONE 16 32768'
+        with self.assertRaisesRegex(ValueError,'cache protocol unexpectedly warmed'):check(fresh)
 
     def test_conditioned_summary_keeps_noop_and_misses_separate(self):
         rows=[dict(request_index=0,cpu_experts=0,fetch_experts=0,miss=0,

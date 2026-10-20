@@ -80,6 +80,17 @@ def summarize(archive,digest,run):
         if len(counts)!=1 or int(counts[0][1]):raise ValueError('observer dropped or incomplete')
         rows=cost['rows'];requests=read('requests.json')
         context=invocation.get('context_tokens',8192)
+        protocol=invocation.get('cache_protocol','excluded 16-output warm-up then two warmed requests')
+        if raw.get('cache_protocol',protocol)!=protocol:raise ValueError('cache protocol identities disagree')
+        warmup=read('warmup.json')
+        if protocol=='first post-load request versus subsequent request; OS/file caches uncontrolled':
+            if 'done' not in warmup or warmup.get('disposition')!=protocol:
+                raise ValueError('cache protocol missing explicit first-request disposition')
+            if warmup.get('done') is not None:raise ValueError('cache protocol unexpectedly warmed first request')
+        elif protocol=='excluded 16-output warm-up then two warmed requests':
+            if (warmup.get('done') or '').split()[:3]!=['DONE','16',str(context)]:
+                raise ValueError('cache protocol missing excluded warm-up')
+        else:raise ValueError('unsupported cache protocol')
         if len(requests)!=2 or any(r['request']!=i or r['done'].split()[:3]!=['DONE','32',str(context)]
             for i,r in enumerate(requests)):raise ValueError('unexpected request population')
         expected={(layer,token) for layer in range(43) for token in range(64)}
@@ -93,13 +104,14 @@ def summarize(archive,digest,run):
             raise ValueError('cost population totals disagree')
         return dict(schema=1,run=run,artifact_zip_sha256=digest,source_sha=source,binary_sha256=binary,
             raw_identity=raw,fixture_sha256=raw['fixture_sha256'],context_tokens=context,requests=requests,
+            cache_protocol=protocol,
             completed_layer_tokens=len(rows),cpu_completion_records=cpu,
             observer_ranges_including_excluded_warmup=int(counts[0][0]),observer_dropped=0,
             nonzero_miss_mask_records=sum(bool(r['miss']) for r in rows),
             conditioned_costs=population(rows),per_layer={str(layer):layer_summary([r for r in rows if r['layer']==layer])
                 for layer in range(43)},request_strata_minimum_samples=8,
             same_layer_count_request_strata=request_strata(rows),memory=read('memory_summary.json'),thermal=read('thermal.json'),
-            scope='Warmed profiled observations only; first prompt-final forward included in each request. '
+            scope='Profiled observations under the declared cache protocol, not known-cold OS caches; first prompt-final forward included in each request. '
             'CPU completed-call wall, mapped-read fetch kernel and exposed CPU wait overlap: do not add them. '
             'Zero-fetch overhead separated; nonzero miss mask is not pure RAM transfer. '
             'Different work counts/routes are not paired allocation experiments. No fitted estimator, physical bandwidth, '

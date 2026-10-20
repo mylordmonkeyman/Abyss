@@ -24,6 +24,8 @@ def main():
     ap.add_argument('--replay-run',help='analyze a completed numeric run-attempt cache without loading a model')
     ap.add_argument('--context',type=int,choices=(8192,32768,131072),default=8192,
         help='genuine frozen history length; no synthetic position offsets')
+    ap.add_argument('--first-versus-warmed',action='store_true',
+        help='observe first post-load request and subsequent request, without asserting cold OS caches')
     args=ap.parse_args()
     out=Path(os.environ['EVIDENCE']).absolute();out.mkdir(parents=True,exist_ok=True)
     if args.replay_run:
@@ -52,10 +54,13 @@ def main():
     env=fixed_env();env.update(STRATA_DS4_IDX='1',STRATA_DS4_ATTN='1',STRATA_GLM_KDA_GRAPH='0',STRATA_GLM_DEFER='0')
     argv=[str(binary),'--glm-pack',str(PACK),'--serve','--max-context','135168','--max-new','32',
           '--prefill','auto','--temperature','0','--eos-ids','2147483647']
+    cache_protocol=('first post-load request versus subsequent request; OS/file caches uncontrolled'
+        if args.first_versus_warmed else 'excluded 16-output warm-up then two warmed requests')
     p0.write_json(out/'invocation.json',dict(argv=argv,binary_sha256=p0.sha256(binary),model_identity=model,
         context_tokens=args.context,fixture_sha256=p0.sha256(campaign.CAMPAIGN/('fixtures/'+fixture_name+'.tokens')),
+        cache_protocol=cache_protocol,
         environment={k:v for k,v in env.items() if k.startswith('STRATA_')},
-        scope='One excluded 16-output warm-up, two 32-output uncached genuine-history requests in a rootless CUDA/NVTX trace. '
+        scope='Two 32-output uncached genuine-history requests under the declared cache protocol in a rootless CUDA/NVTX trace. '
         'No cold-cache, competing-load, alternate-NUMA, estimator or clean throughput claim.'))
     with tempfile.TemporaryDirectory(prefix='abyss-p3-cost-',dir=os.environ.get('RUNNER_TEMP')) as tmp:
         tmp=Path(tmp);fifo=tmp/'input';wire=tmp/'wire';log=tmp/'engine';status=tmp/'status';pidfile=tmp/'pid'
@@ -90,8 +95,12 @@ def main():
             if campaign.memory_available()<16*1024**3:raise RuntimeError('initial host margin below 16 GiB')
             with campaign.Monitor(out) as monitor,(out/'launch.log').open('w') as launchlog:
                 child=subprocess.Popen(launch,env=env,stdout=launchlog,stderr=subprocess.STDOUT)
-                until('READY ',monitor);writer.write('GEN 16 temperature=0 '+tokens+'\n');writer.flush()
-                p0.write_json(out/'warmup.json',dict(done=until('DONE ',monitor)))
+                until('READY ',monitor)
+                if args.first_versus_warmed:
+                    p0.write_json(out/'warmup.json',dict(done=None,disposition=cache_protocol))
+                else:
+                    writer.write('GEN 16 temperature=0 '+tokens+'\n');writer.flush()
+                    p0.write_json(out/'warmup.json',dict(done=until('DONE ',monitor)))
                 cli(['start','--session='+session,'--output='+str(cache/'request'),'--stop-on-exit=true','--sample=none','--cpuctxsw=none'])
                 requests=[]
                 for request in range(2):
@@ -121,6 +130,7 @@ def main():
     if database.stat().st_size>4*1024**3:raise ValueError('oversized raw SQLite export')
     raw_identity=dict(source_sha=p0.command(['git','rev-parse','HEAD'])['stdout'].strip(),
         binary_sha256=p0.sha256(binary),context_tokens=args.context,
+        cache_protocol=cache_protocol,
         fixture_sha256=p0.sha256(campaign.CAMPAIGN/('fixtures/'+fixture_name+'.tokens')),
         report_path=str(report),report_bytes=report.stat().st_size,report_sha256=p0.sha256(report),
         sqlite_path=str(database),sqlite_sha256=p0.sha256(database),raw_uploaded=False)

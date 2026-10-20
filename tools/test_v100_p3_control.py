@@ -5,9 +5,18 @@ import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parent/'profiling'))
 from p3_observer_control import contrasts,ORDER
+from summarize_p3_control import ledger
 
 
 class ObserverControl(unittest.TestCase):
+    def test_observer_ledger_proves_compiled_out_and_nontruncated_arms(self):
+        self.assertEqual(ledger('plain',''),[])
+        self.assertEqual(ledger('observer','V100_COST_END ranges=200 dropped=0'),[['200','0']])
+        for mode,text in [('plain','V100_COST_END ranges=1 dropped=0'),('trace',''),
+            ('observer','V100_COST_END ranges=0 dropped=0'),('trace','V100_COST_END ranges=32769 dropped=0'),
+            ('trace','V100_COST_END ranges=200 dropped=1')]:
+            with self.assertRaises(ValueError):ledger(mode,text)
+
     def arms(self):
         return [dict(mode=mode,requests=[dict(repetition=i,warmup=i==0,scored_tokens=32,
             wire_ms=(999 if i==0 else {'plain':100,'observer':110,'trace':220}[mode]))

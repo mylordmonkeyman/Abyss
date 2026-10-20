@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "run": 39419705642,
+  "artifact_zip_sha256": "8da7dc1547e941fae08f3a85a8a002134024174fb7424c240450b4237edc1de1",
+  "source_sha": "72c2474c3600c9a0d28c8d4af66aa06ec80fc4d4",
+  "binary_sha256": {
+    "plain": "ce2509142f3b3d5a5848c1d68bed44429ab7882b45055acc2f7a5a04e3b4b446",
+    "observer": "be1e0c02b7087b49b94232c32794a5ac736eea1f05fab1e1281b2f4483f4f602"
+  },
+  "source_fixture": "mixed-32768.tokens",
+  "model_identity": {
+    "stat_signature": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": {
+        "bytes": 5257664,
+        "mtime_ns": 1792302371602863171,
+        "inode": 84432126,
+        "device": 64512
+      },
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": {
+        "bytes": 49437013568,
+        "mtime_ns": 1792302912325395405,
+        "inode": 84432127,
+        "device": 64512
+      },
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": {
+        "bytes": 47390237120,
+        "mtime_ns": 1792303455495151894,
+        "inode": 84432160,
+        "device": 64512
+      }
+    },
+    "sha256": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": "de65c5bb660817b95cc281bf54935f9d1bcc3b22535f2eae63b35a14c7c5724b",
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": "c8728a298862cd8736782e2e4056e5e3e03c415ba552a38173264494e41ef327",
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": "a4bae0788c025c1b2388754592c98fefa1372981748ac9875039bf6a30e6eeb4"
+    },
+    "computed_utc": "2026-10-19T01:24:35.819189+00:00",
+    "cache_policy": "reused only with unchanged read-only mount stat signature",
+    "local_SHA256SUMS_sha256": "60f0a8ab9daf73c7813c417e8b7f88b7ac0c53e2cbee793605bd725d735f394f",
+    "matches_local_SHA256SUMS": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": true,
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": true,
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": true
+    }
+  },
+  "pack_identity_sha256": "a328892caf98651d8b207be32dc8a228852666b5f5ffea7242487e4434526351",
+  "source_fixture_sha256": "6e4f7094be57397d954c29b30b864c8bc320e447b27539f0694da6e0cfa75751",
+  "fixed_token_sha256": "5d9b60b683c467b72940a76afa8732d7062c104a9372265bc49c96d2a410190c",
+  "context_tokens": 8192,
+  "scored_tokens": 32,
+  "environment": {
+    "STRATA_DS4_SPEC": "0",
+    "STRATA_GLM_RAM_GB": "72",
+    "STRATA_GLM_CPU_LANE": "28",
+    "STRATA_GLM_PCIE_SHARE": "0.21",
+    "STRATA_GLM_USAGE": "0",
+    "STRATA_GLM_NO_REUSE": "1",
+    "STRATA_GLM_SLOTS": "0",
+    "STRATA_DS4_IDX": "1",
+    "STRATA_DS4_ATTN": "1",
+    "STRATA_GLM_KDA_GRAPH": "0",
+    "STRATA_GLM_DEFER": "0"
+  },
+  "arms": [
+    {
+      "index": 0,
+      "mode": "plain",
+      "binary_sha256": "ce2509142f3b3d5a5848c1d68bed44429ab7882b45055acc2f7a5a04e3b4b446",
+      "observer_ledger": [],
+      "requests": [
+        {
+          "sum_log_probability": -0.003102,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 0,
+          "warmup": true,
+          "wire_ms": 13789.88248600217
+        },
+        {
+          "sum_log_probability": -0.000635,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 1,
+          "warmup": false,
+          "wire_ms": 13036.791184000322
+        },
+        {
+          "sum_log_probability": -0.000907,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 2,
+          "warmup": false,
+          "wire_ms": 12657.872596988454
+        },
+        {
+          "sum_log_probability": -0.000908,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 3,
+          "warmup": false,
+          "wire_ms": 12586.107884999365
+        }
+      ],
+      "memory": {
+        "peak_rss_bytes": 84204826624,
+        "peak_pss_bytes": 84198306816,
+        "peak_anonymous_bytes": 1172918272,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 49190776832,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 14
+      },
+      "thermal": {
+        "samples": 14,
+        "valid_samples": 14,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    {
+      "index": 1,
+      "mode": "observer",
+      "binary_sha256": "be1e0c02b7087b49b94232c32794a5ac736eea1f05fab1e1281b2f4483f4f602",
+      "observer_ledger": [
+        [
+          "22746",
+          "0"
+        ]
+      ],
+      "requests": [
+        {
+          "sum_log_probability": -0.000698,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 0,
+          "warmup": true,
+          "wire_ms": 13681.222379003884
+        },
+        {
+          "sum_log_probability": -0.000997,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 1,
+          "warmup": false,
+          "wire_ms": 13166.327845989144
+        },
+        {
+          "sum_log_probability": -0.000906,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 2,
+          "warmup": false,
+          "wire_ms": 12740.761962995748
+        },
+        {
+          "sum_log_probability": -0.001492,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 3,
+          "warmup": false,
+          "wire_ms": 12623.481964998064
+        }
+      ],
+      "memory": {
+        "peak_rss_bytes": 84206272512,
+        "peak_pss_bytes": 84199752704,
+        "peak_anonymous_bytes": 1174204416,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 49360277504,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 14
+      },
+      "thermal": {
+        "samples": 14,
+        "valid_samples": 14,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    {
+      "index": 2,
+      "mode": "trace",
+      "binary_sha256": "be1e0c02b7087b49b94232c32794a5ac736eea1f05fab1e1281b2f4483f4f602",
+      "observer_ledger": [
+        [
+          "22728",
+          "0"
+        ]
+      ],
+      "requests": [
+        {
+          "sum_log_probability": -0.000616,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 0,
+          "warmup": true,
+          "wire_ms": 13656.66844700172
+        },
+        {
+          "sum_log_probability": -0.000757,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 1,
+          "warmup": false,
+          "wire_ms": 13378.73363000108
+        },
+        {
+          "sum_log_probability": -0.000517,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 2,
+          "warmup": false,
+          "wire_ms": 13030.293294999865
+        },
+        {
+          "sum_log_probability": -0.001105,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 3,
+          "warmup": false,
+          "wire_ms": 13319.983244989999
+        }
+      ],
+      "memory": {
+        "peak_rss_bytes": 85263286272,
+        "peak_pss_bytes": 85255374848,
+        "peak_anonymous_bytes": 2213019648,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48256970752,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 15
+      },
+      "thermal": {
+        "samples": 15,
+        "valid_samples": 15,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "raw_report": {
+        "path": "/actions-runner/abyss-p3-v9/observer-control/39419705642-1/2-trace/requests.nsys-rep",
+        "bytes": 25300658,
+        "sha256": "8be8292306a32550651f516cca5dfb7e3457ebfd4f0a85cbc70b06f5e06fe1ca",
+        "uploaded": false
+      }
+    },
+    {
+      "index": 3,
+      "mode": "trace",
+      "binary_sha256": "be1e0c02b7087b49b94232c32794a5ac736eea1f05fab1e1281b2f4483f4f602",
+      "observer_ledger": [
+        [
+          "22751",
+          "0"
+        ]
+      ],
+      "requests": [
+        {
+          "sum_log_probability": -0.000651,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 0,
+          "warmup": true,
+          "wire_ms": 13463.727495996864
+        },
+        {
+          "sum_log_probability": -0.00073,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 1,
+          "warmup": false,
+          "wire_ms": 13287.069159006933
+        },
+        {
+          "sum_log_probability": -0.000667,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 2,
+          "warmup": false,
+          "wire_ms": 13775.704908999614
+        },
+        {
+          "sum_log_probability": -0.000853,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 3,
+          "warmup": false,
+          "wire_ms": 13250.655686002574
+        }
+      ],
+      "memory": {
+        "peak_rss_bytes": 85248909312,
+        "peak_pss_bytes": 85241048064,
+        "peak_anonymous_bytes": 2195156992,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48324014080,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 15
+      },
+      "thermal": {
+        "samples": 15,
+        "valid_samples": 15,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      },
+      "raw_report": {
+        "path": "/actions-runner/abyss-p3-v9/observer-control/39419705642-1/3-trace/requests.nsys-rep",
+        "bytes": 23725990,
+        "sha256": "01354090860b166c269ab1b82b7892f27f119f31e840ab7d37e3b8069f548c86",
+        "uploaded": false
+      }
+    },
+    {
+      "index": 4,
+      "mode": "observer",
+      "binary_sha256": "be1e0c02b7087b49b94232c32794a5ac736eea1f05fab1e1281b2f4483f4f602",
+      "observer_ledger": [
+        [
+          "22712",
+          "0"
+        ]
+      ],
+      "requests": [
+        {
+          "sum_log_probability": -0.000906,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 0,
+          "warmup": true,
+          "wire_ms": 13709.066430004896
+        },
+        {
+          "sum_log_probability": -0.001121,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 1,
+          "warmup": false,
+          "wire_ms": 13153.756516010617
+        },
+        {
+          "sum_log_probability": -0.000889,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 2,
+          "warmup": false,
+          "wire_ms": 12832.569940001122
+        },
+        {
+          "sum_log_probability": -0.000561,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 3,
+          "warmup": false,
+          "wire_ms": 12661.899276004988
+        }
+      ],
+      "memory": {
+        "peak_rss_bytes": 84214472704,
+        "peak_pss_bytes": 84207912960,
+        "peak_anonymous_bytes": 1175314432,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 49373192192,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 14
+      },
+      "thermal": {
+        "samples": 14,
+        "valid_samples": 14,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    {
+      "index": 5,
+      "mode": "plain",
+      "binary_sha256": "ce2509142f3b3d5a5848c1d68bed44429ab7882b45055acc2f7a5a04e3b4b446",
+      "observer_ledger": [],
+      "requests": [
+        {
+          "sum_log_probability": -0.001048,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 0,
+          "warmup": true,
+          "wire_ms": 13749.320823000744
+        },
+        {
+          "sum_log_probability": -0.000672,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 1,
+          "warmup": false,
+          "wire_ms": 13163.365315005649
+        },
+        {
+          "sum_log_probability": -0.001078,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 2,
+          "warmup": false,
+          "wire_ms": 12901.055188995088
+        },
+        {
+          "sum_log_probability": -0.000791,
+          "scored_tokens": 32,
+          "all_greedy": true,
+          "repetition": 3,
+          "warmup": false,
+          "wire_ms": 12795.381490999716
+        }
+      ],
+      "memory": {
+        "peak_rss_bytes": 84204646400,
+        "peak_pss_bytes": 84198127616,
+        "peak_anonymous_bytes": 1172500480,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 49362903040,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 13
+      },
+      "thermal": {
+        "samples": 13,
+        "valid_samples": 13,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "no_thermal_reason_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    }
+  ],
+  "contrasts": [
+    {
+      "order_half": 0,
+      "plain_median_wire_ms": 12657.872596988454,
+      "observer_median_wire_ms": 12740.761962995748,
+      "trace_median_wire_ms": 13319.983244989999,
+      "observer_vs_plain_pct": 0.6548443695587158,
+      "trace_vs_observer_pct": 4.546205977919837
+    },
+    {
+      "order_half": 1,
+      "plain_median_wire_ms": 12901.055188995088,
+      "observer_median_wire_ms": 12832.569940001122,
+      "trace_median_wire_ms": 13287.069159006933,
+      "observer_vs_plain_pct": -0.5308499808014622,
+      "trace_vs_observer_pct": 3.541763038353407
+    }
+  ],
+  "scope": "Fixed token bytes, F32 and fixed startup split; fresh process per arm, one excluded and three warmed LOGP replays. LOGP wire time includes prefill, host logits/log-softmax and <=10 ms controller polling: not normal decode throughput. OS cache, clocks and CPU-lane-28 router variability remain uncontrolled; identical input tokens do not prove identical expert trajectories. Reverse order is descriptive overhead screening, not a causal speed claim or adaptive-plan admission. No cache drops, placement changes, privileges, arithmetic or allocation changes. Local-manifest model verification is not independent publisher authenticity; hardware counters/QPI remain unavailable/unmeasured.",
+  "performance_claim_admitted": false,
+  "observer_contrasts_change_sign": true,
+  "trace_slower_in_both_order_halves": true,
+  "disposition": "These descriptive fixed-token LOGP controls neither isolate causal overhead nor admit adaptive allocation."
+}
