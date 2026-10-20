@@ -27,6 +27,31 @@ This takes priority over P3 and standalone MMA performance campaigns.
 
 ### Refined MMA model result and cuBLAS intervention checkpoint
 
+**Common model run and independent verification checkpoint.**
+[Run 39473440895](https://github.com/mylordmonkeyman/Abyss/actions/runs/39473440895)
+at source `dda573a` has passed its build, actual key/state and dot/list alias
+tests, graphs, memcheck and synccheck. The balanced 100K/128K model arms are
+still running; no new model quality or clean performance result is asserted.
+Do not overlap another GPU campaign with this run.
+
+`summarize_p1_head_to_head.py` now requires the summary ZIP plus exactly six
+digest-identified candidate capture ZIPs. It independently validates both frozen
+geometries, all 16 arm/logit identities, 20 complete KL comparisons and their
+mean/p99/worst tails, deterministic repeat hashes, actual engine dispatch and
+correction logs, capture controls, scoring positions and context/token-file
+arguments. It re-reads the raw score/ID/attention captures and checks them against
+the worker ledger, including exact corrected/MMA selected scores and all-row
+ordered selections. Alias-case populations and sanitizer completion are checked
+again. Original-cuBLAS cross-quality is explicitly reported separately; neither
+baseline subtraction nor a failed corrected candidate is accepted. ZIP digest,
+path, duplicate-member and size checks precede extraction. Model authenticity
+and counter/QPI limitations remain unchanged.
+
+All 87 local V100 tooling tests pass. A separate smoke check re-read the prior
+passing refined-MMA artifact (`39445943674`, recorded digest below): 105 sampled
+selected scores and 43008 ordered rows are exact. This verifies the review path
+on real saved data; it is not evidence for the still-running common campaign.
+
 **Corrected cuBLAS component winner; common model campaign prepared.**
 [Run 39471901764](https://github.com/mylordmonkeyman/Abyss/actions/runs/39471901764)
 passes all 140 cases, graphs, overflow/tie/causal guards and both sanitizers,
@@ -72,7 +97,8 @@ all-row ordered-ID and sampled-attention checks. Each first candidate captures
 the same late live inputs/ranges. Raw logit retention is bounded at 256 MiB total;
 six capture artifacts and the summary artifact are each bounded at 64 MiB. These
 diagnostic arms do not establish clean end-to-end speed. 83 local V100 tooling
-tests and HIP mapping pass. Physical alias/model results are pending.
+tests and HIP mapping pass. Physical alias validation has since passed in the
+common workflow; model results remain pending as recorded above.
 
 **Causality control underlying the correction campaign.**
 [Run 39453135796](https://github.com/mylordmonkeyman/Abyss/actions/runs/39453135796)
