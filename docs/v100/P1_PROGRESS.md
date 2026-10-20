@@ -130,6 +130,27 @@ source triggers are retired here so this model change creates only one pending
 GPU campaign. Runner concurrency/owner guards, immutable binaries/pack/fixtures,
 64 MiB upload cap and existing memory margins remain intact.
 
+[Model qualification run 39436237767](https://github.com/mylordmonkeyman/Abyss/actions/runs/39436237767)
+uses source `13765226c5e1531cb1f6bfe2facd898d0b62991f`. Its dedicated build,
+shared 110-case entry-point test and both sanitizers passed; the four actual
+full-128K arms are running. Do not dispatch another GPU campaign until it ends
+and its evidence is reviewed. `summarize_p1_mma_model.py` independently recomputes
+the paired raw capture and checks all four KL ledgers, actual dispatch, model
+input ranges and retained logit identities. It does not claim to recompute KL
+from raw logits that remain on the runner.
+
+`p1_mma_clean_ab.py` prepares the next step **conditional on a passing model
+screen**, with no new GPU dispatch at this checkpoint. It refuses failed quality,
+nonidentical CPU-lane-0 repeats, changed runtime sources/model/pack/fixtures or
+builds with capture instrumentation enabled. Two clean-build full-128K arms
+must reproduce the qualified F32 and MMA logit hashes before three interleaved
+process pairs measure 8K and 128K requests. The clean benchmark remains at the
+qualified CPU lane 0; it cannot qualify CPU lane 28 or justify a production
+default. Request 0 is retained as warm-up, request 1 is the primary comparison;
+telemetry, actual selection of the candidate, generated-ID differences and
+per-pair prefill/decode/TTFT deltas are retained for review. Neither passing
+synthetic tests nor this prepared harness is a model-performance result.
+
 P3 checkpoint: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
 P2 also concludes with F32 fallback; see `P2_COMPLETION.md`.
 The fallback disposition and evidence inventory are in `P1_COMPLETION.md`.
