@@ -1396,16 +1396,16 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     bool experimental_idx=false;
     if(idx_mode==ds::p1::Mode::cublas) {
 #ifdef STRATA_USE_HIP
-        err="ABYSS_V100_IDX=cublas requires CUDA SM70; HIP is unsupported";return false;
+        err=ds::p1::backend_error(idx_mode,true,0,0,g.idx_heads,g.idx_key,g.idx_top_k);return false;
 #else
         cudaDeviceProp prop{};
-        if(cudaGetDeviceProperties(&prop,dev_)!=cudaSuccess || prop.major!=7 || prop.minor!=0) {
-            err="ABYSS_V100_IDX=cublas requires an SM70 device";return false;
+        if(cudaGetDeviceProperties(&prop,dev_)!=cudaSuccess) {
+            err="cannot query CUDA device for ABYSS_V100_IDX=cublas";return false;
         }
-        if(g.idx_heads!=64 || g.idx_key!=128 || g.idx_top_k!=512) {
-            err="ABYSS_V100_IDX=cublas requires 64 heads, dimension 128 and top-512";return false;
+        if(const char* failure=ds::p1::backend_error(idx_mode,false,prop.major,prop.minor,g.idx_heads,g.idx_key,g.idx_top_k)) {
+            err=failure;return false;
         }
-        experimental_idx=r==4 && ds::p1::eligible(g.idx_heads,g.idx_key,g.idx_top_k,tn,p0);
+        experimental_idx=ds::p1::use_cublas(idx_mode,r,g.idx_heads,g.idx_key,g.idx_top_k,tn,p0);
 #endif
     }
     // 1. the projections

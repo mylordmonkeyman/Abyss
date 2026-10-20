@@ -6,8 +6,9 @@ graph/sanitizer and bounded 100K-context model-KL/repeatability (mean KL <=2.93e
 Three whole-model pairs reduce 128K prefill latency by 1.50–1.58% (median 1.53%);
 8K fallback is near noise. Decode variations are not attributable speedups.
 Batched MMA key reuse wins long synthetic shapes but tiny-query relative error
-remains unqualified, so it stays isolated. Direct real-model score/selection/
-attention diagnostics and boundary/platform acceptance remain open. Automatic
+remains unqualified, so it stays isolated. Direct real-model score/selection/attention passes all 105 live samples with
+512/512 membership and negligible attention drift. Full-128K accumulated KL,
+remaining boundary and platform acceptance are in progress. Automatic
 dispatch/default arithmetic is unchanged; the P0 branch/evidence below are frozen.
 
 Branch base: upstream `47001f31cbfba14bcbf4c083e3af07c50707ec0c` (v1.3.28).

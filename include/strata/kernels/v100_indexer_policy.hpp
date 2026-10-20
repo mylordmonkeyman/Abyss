@@ -23,4 +23,18 @@ inline Mode mode() {
 inline bool eligible(int heads,int dim,int top,int T,int p0) {
     return heads==64 && dim==128 && top==512 && T==2048 && p0>=98304 && p0<=120000;
 }
+
+// This is also the actual prefill host guard: tests cover unsupported backends
+// without pretending a policy unit test executes inference on those devices.
+inline const char* backend_error(Mode selected,bool hip,int major,int minor,int heads,int dim,int top) {
+    if(selected!=Mode::cublas)return nullptr;
+    if(hip)return "ABYSS_V100_IDX=cublas requires CUDA SM70; HIP is unsupported";
+    if(major!=7 || minor!=0)return "ABYSS_V100_IDX=cublas requires an SM70 device";
+    if(heads!=64 || dim!=128 || top!=512)
+        return "ABYSS_V100_IDX=cublas requires 64 heads, dimension 128 and top-512";
+    return nullptr;
+}
+inline bool use_cublas(Mode selected,int ratio,int heads,int dim,int top,int T,int p0) {
+    return selected==Mode::cublas && ratio==4 && eligible(heads,dim,top,T,p0);
+}
 }

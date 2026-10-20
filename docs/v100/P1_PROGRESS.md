@@ -12,14 +12,13 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct attention/boundary/platform acceptance pending; auto unchanged |
+| Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct score/selection/attention passed (105 live samples); full-128K KL and boundary/platform acceptance pending; auto unchanged |
 
-Next: complete same-input real-model score/selection/attention diagnostics,
-remaining boundary and sm80/HIP acceptance. Three whole-model pairs now show
-128K prefill latency reductions of 1.50–1.58%; short fallback is near noise.
-Batched MMA key reuse wins at long synthetic shapes but tiny-query relative
-precision remains unqualified, so it stays isolated. No automatic dispatch or
-default arithmetic is changed.
+Next: validate full-128K KL/repeatability after all eleven eligible mixer chunks,
+expanded runtime policy boundaries and SM80 compilation; inventory HIP SDK/runtime
+availability without claiming unrun tests. Direct same-input diagnostics now pass
+all 105 live samples. Automatic dispatch remains upstream; cuBLAS stays explicit.
+MMA key reuse remains isolated because tiny-query precision is unqualified.
 
 ## Experimental integration checkpoint — bounded model validation passed
 
@@ -469,3 +468,59 @@ The diagnostic uses its own build directory and is excluded from timing claims.
 Default-off integration is revalidated separately; working binaries are frozen
 by digest on the existing runner before build-tree reuse. Counter/QPI and model
 publisher-authenticity limitations remain unchanged.
+
+## Direct diagnostic and default-off regression — 20 October 2026 UTC
+
+[Default-off run 39344305603](https://github.com/mylordmonkeyman/Abyss/actions/runs/39344305603)
+passes engine/component build, 48 shapes, graph/sanitizers and all four 100K-context
+quality/repeatability arms after the compile-only instrumentation was added.
+Artifact `12231382117`, ZIP SHA256
+`56ebb3fa82c03b8342b7dbc589bf0bbd10f55203a7bbebbb8dbede75c72169e2`,
+is reproduced into `p1-off-regression-2026-10-20.json`. The preceding throughput
+binary is preserved by digest on the existing runner before build-tree reuse.
+
+[Live capture run 39344362285](https://github.com/mylordmonkeyman/Abyss/actions/runs/39344362285)
+passes all 105 sampled rows, five per C4 layer, with no membership mismatch,
+meaningful-margin violation, range/duplicate/future index, restoration or attention
+screen failure. Artifact `12231837565`, ZIP SHA256
+`55bfb48f8936f2dca4782a28092a417f7db991b328f5d013a9ec8ebdd52c21ce`,
+is independently recomputed from raw tensors by `summarize_p1_capture.py` into
+`p1-live-capture-2026-10-20.json`. Raw artifact size is 50,769,524 bytes before
+ZIP compression; the 64 MiB upload cap passes. Every layer bitwise restores
+all 1,048,576 candidate IDs before model continuation.
+
+- Score relative L2 <=1.7174e-7, maximum absolute difference 1.43052e-6.
+- Top-512 **membership is 512/512 in all 105 rows**; 103 rows also have identical
+  order. Two internal adjacent rank swaps are traced, not discarded as noise.
+- Layer 2 / t=1023 swaps ranks 185/186: F32 gap 4.76837e-7 becomes a candidate
+  exact tie, correctly resolved by index. Per-row maximum score error is
+  7.15256e-7. Layer 26 / t=256 swaps ranks 497/498: F32 gap 1.63913e-7,
+  candidate gap 2.98023e-8, within per-row maximum score error 9.53674e-7.
+  Neither affects the 512/513 cutoff or membership.
+- Maximum direct attention relative L2 4.24527e-9 and absolute difference
+  1.19210e-7; identical ordered selections reproduce identical attention.
+- Capture-build mean model KL 9.30197e-7, maximum position KL 1.70362e-5,
+  top-1 32/32. This passes the bounded mean-KL gate, not arbitrary task quality.
+
+The extra reference kernels, copies and synchronization are compile-only and
+excluded from performance conclusions. Model local-manifest/publisher-authenticity,
+power-limit, unavailable counters and unmeasured QPI limitations are unchanged.
+
+## Final-boundary/platform work — implemented, physical validation pending
+
+The actual runtime backend guard is now a shared host policy, tested for legacy
+precedence, auto/F32 preservation, HIP/SM75/SM80/SM90 rejection of forced cuBLAS,
+invalid geometry and both context/tile boundaries. These are host policy tests,
+**not** inference on absent devices. Arithmetic and dispatch eligibility are
+unchanged; the default-off integration workflow revalidates the refactored guard.
+
+The next quality screen extends the frozen fixture to 131,072 tokens, scoring
+positions 131,040–131,071. Each candidate arm must execute all 231 expected
+layer/chunk pairs (21 layers × 11 chunks), rather than validating just the first
+eligible chunk. The four F32/candidate/candidate/F32 arms keep existing safety
+margins, same-pack identities and bounded temporary dumps. Quality-only evidence
+can reuse component evidence only when the actual engine SHA256 matches.
+SM80 gets a separate full compile/link and object-image check. A read-only HIP
+SDK/device probe records unavailability honestly; if the SDK exists, a HIP
+compile is required. No other-device runtime is claimed without actual hardware.
+No automatic admission or P1 completion is asserted by this checkpoint.

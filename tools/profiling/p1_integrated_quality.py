@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Same-binary long-context candidate/repeat screen; no model speed claim."""
-import gzip
+import argparse
 import json
 import os
 from pathlib import Path
@@ -17,19 +17,20 @@ import v100_p0_campaign as campaign
 from p0_accounting import fixture,compress
 from model_baseline import fixed_env,normalize_logprobs,PACK
 
-# c-1=100352: the prompt ends with a complete 2048-token mixer chunk at
-# p0=98304. Score 32 subsequent positions after the candidate has actually run.
-CONTEXT=100353
-COUNT=100386
+# First candidate chunk and full 128K accumulation use the same frozen corpus.
+GEOMETRIES={
+    '100k':dict(score_start=100353,token_count=100386,max_context=102400,candidate_positions=[98304]),
+    '128k':dict(score_start=131039,token_count=131072,max_context=135168,candidate_positions=list(range(98304,120001,2048))),
+}
 
-def arm(binary,out,tokens,dump,mode):
+def arm(binary,out,tokens,dump,mode,geometry):
     out.mkdir()
     env=fixed_env();env.update(ABYSS_V100_IDX=mode,STRATA_DS4_ATTN='1',
-        STRATA_GLM_SCORE=str(CONTEXT),STRATA_GLM_SCORE_DUMP=str(dump),
+        STRATA_GLM_SCORE=str(geometry['score_start']),STRATA_GLM_SCORE_DUMP=str(dump),
         STRATA_GLM_SCORE_PREFILL='1',ABYSS_V100_PROFILE='1')
     if mode=='f32':env['STRATA_DS4_IDX']='1'
     argv=[str(binary),'--glm-pack',str(PACK),'--tokens-file',str(tokens),
-          '--max-new','1','--max-context','102400','--prefill','auto','--temperature','0']
+          '--max-new','1','--max-context',str(geometry['max_context']),'--prefill','auto','--temperature','0']
     p0.write_json(out/'invocation.json',dict(argv=argv,environment={k:v for k,v in env.items()
         if k.startswith(('STRATA_','ABYSS_V100_'))}))
     if campaign.memory_available()<16*1024**3:raise RuntimeError('host margin below 16 GiB before quality arm')
@@ -50,8 +51,9 @@ def arm(binary,out,tokens,dump,mode):
     records=[dict(re.findall(r'(\w+)=([^\s]+)',line)) for line in text.splitlines() if line.startswith('p1_indexer ')]
     candidate=[r for r in records if r.get('scorer')=='cublas']
     if mode=='cublas':
-        if not candidate or any(r['p0']!='98304' or r['T']!='2048' for r in candidate):
-            raise ValueError('candidate did not run at the intended real-model shape')
+        expected={(str(layer),str(pos)) for layer in range(2,43,2) for pos in geometry['candidate_positions']}
+        if len(candidate)!=len(expected) or {(r['layer'],r['p0']) for r in candidate}!=expected or any(r['T']!='2048' for r in candidate):
+            raise ValueError('candidate did not run at every intended real-model layer/chunk')
     elif candidate:raise ValueError('F32 arm unexpectedly dispatched a candidate')
     if not records:raise ValueError('missing actual scorer dispatch records')
     compress(out/'engine.log')
@@ -62,21 +64,25 @@ def arm(binary,out,tokens,dump,mode):
 
 
 def main():
+    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--geometry',choices=GEOMETRIES,default='100k')
+    args=ap.parse_args();geometry=GEOMETRIES[args.geometry]
     out=Path(os.environ['EVIDENCE']).absolute()/'model-quality';out.mkdir(parents=True,exist_ok=False)
     binary=ROOT/'build-v100-diagnostics/strata'
     model=campaign.model_identity();identity=json.loads((campaign.CAMPAIGN/'identity.json').read_text())
     if identity['model_sha256']!=model['sha256']:raise ValueError('frozen model identity changed')
     if identity['pack']!=json.loads((PACK/'v100_pack_complete.json').read_text()):raise ValueError('frozen pack changed')
     p0.write_json(out/'model-identity.json',model)
-    ids=fixture('mixed-131072')[:COUNT]
-    if len(ids)!=COUNT:raise ValueError('frozen fixture too short')
+    ids=fixture('mixed-131072')[:geometry['token_count']]
+    if len(ids)!=geometry['token_count']:raise ValueError('frozen fixture too short')
     arrays={};dumps={};arms={}
     with tempfile.TemporaryDirectory(prefix='abyss-p1-integrated-',dir=os.environ.get('RUNNER_TEMP')) as tmp:
         tokens=Path(tmp)/'tokens';tokens.write_text(','.join(map(str,ids)))
         fixture_sha=p0.sha256(tokens)
         for label,mode in [('f32-0','f32'),('cublas-0','cublas'),('cublas-1','cublas'),('f32-1','f32')]:
             dump=Path(tmp)/(label+'.f32')
-            arms[label]=arm(binary,out/label,tokens,dump,mode)
+            print('Starting quality arm',label,args.geometry,flush=True)
+            arms[label]=arm(binary,out/label,tokens,dump,mode,geometry)
+            print('Completed quality arm',label,flush=True)
             size=dump.stat().st_size
             if size<=0 or size%(32*4):raise ValueError('unexpected 32-position distribution ABI')
             vocab=size//(32*4)
@@ -89,10 +95,10 @@ def main():
             if not np.isfinite(kl).all():raise ValueError('nonfinite KL')
             comparisons.append(dict(reference=a,candidate=b,mean_kl=float(kl.mean()),max_kl=float(kl.max()),
                 top1_matches=int((ref.argmax(1)==test.argmax(1)).sum()),rows=32,
-                positions=[dict(predicted_token_index_zero_based=CONTEXT+1+i,kl=float(k)) for i,k in enumerate(kl)]))
+                positions=[dict(predicted_token_index_zero_based=geometry['score_start']+1+i,kl=float(k)) for i,k in enumerate(kl)]))
         result=dict(schema=1,source_sha=p0.command(['git','rev-parse','HEAD'])['stdout'].strip(),
             source_run=os.environ.get('GITHUB_RUN_ID'),binary_sha256=p0.sha256(binary),
-            fixture=dict(parent='mixed-131072.tokens',prefix_tokens=COUNT,sha256=fixture_sha),
+            geometry=geometry,fixture=dict(parent='mixed-131072.tokens',prefix_tokens=geometry['token_count'],sha256=fixture_sha),
             arms=arms,dumps=dumps,comparisons=comparisons,scope='Same-pack same-binary explicit experimental '
             'cuBLAS long-context downstream logits and repeatability screen; profiles/dispatch logging enabled. '
             'No whole-model speed, direct downstream-attention or full P1 acceptance claim.')
