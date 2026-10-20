@@ -27,12 +27,56 @@ This takes priority over P3 and standalone MMA performance campaigns.
 
 ### Refined MMA model result and cuBLAS intervention checkpoint
 
+**Four-way model evidence independently verified; clean comparison ready.**
+Run `39473440895` completed successfully at runtime source `dda573a`. All seven
+artifact ZIP digests and six raw captures have now passed
+`summarize_p1_head_to_head.py`, producing
+`p1-indexer-model-head-to-head-2026-10-20.json`. Summary artifact `12293884454`
+has SHA256 `dbd92cafd96d548e73060e08bad0dac1c9737360aaa4434cc96c82b154f6a463`;
+the committed ledger retains all six capture digests, hashes and tail metrics.
+
+At both 100K and full 128K, corrected cuBLAS and refined MMA repeat bitwise and
+are bitwise F32: mean/p99/worst KL zero, top-1 32/32. Each candidate/fixture has
+43008 identical ordered selection rows, 105 exact sampled selected-score rows
+and zero sampled attention error. Original cuBLAS repeats bitwise but has mean
+KL 7.21221449e-8 at100K and **0.01040475762 at128K** (p99 0.11391896989,
+worst 0.12950428213). Original late ordered IDs match on 41936/43008 rows at100K
+and 41903/43008 at128K, with four/six membership changes, respectively.
+Corrected counters cover 21/231 actual calls per repeat. Margin flags occur on
+5.2037%/5.2295% of tokens, but all tokens receive cutoff rescore to restore
+ordering: 22022404/242246605 scored rows per repeat, zero full-rescore overflow.
+These remain bounded CPU0 quality results; CPU28/task/platform admission is separate.
+
+`p1_indexer_clean.py` and `v100-p1-indexer-clean.yml` advance this verified
+checkpoint without arithmetic changes. A Release SM70 build with all three
+capture modes OFF must reproduce all eight qualified 100K/128K logit hashes
+before timing. The bridge also checks the common 135168 allocation context used
+by the timing cases. The new binary is copied to a run-owned immutable checkpoint;
+its hash, resolved shared-library hashes, GPU UUID, source, model/pack, fixtures
+and clean CMake flags are checked before each timing block.
+
+Four serialized Williams-design blocks run all four modes in balanced process
+positions and predecessor order. Each process runs 8K/128 outputs, 100K/32 outputs
+and 128K/32 outputs twice without prefix reuse. All 96 requests are retained;
+primary comparisons use request1, with four repeats per mode/fixture, including
+direct corrected-cuBLAS versus MMA deltas. Per-process first/second-request
+expert residency and uncontrolled OS cache remain explicit. Telemetry includes
+clocks/power/thermal state, memory/NUMA, host load and I/O. Original cuBLAS remains
+a quality-failing comparator at128K; generated-token differences must be disclosed
+when interpreting decode. No default is promoted from these measurements alone.
+
+The workflow holds `abyss-v100` across the bridge and all timing blocks; matrix
+max-parallel is one. Each job is bounded at180minutes with a64MiB artifact cap;
+bridge raw logits are retained only on the runner at<=128MiB. Job retries reuse
+completed, identity-matched checkpoints and stop on an incomplete child directory
+for inspection. No cache eviction, GPU reset, privilege or container changes.
+All 91 local V100 tooling tests pass; clean bridge/timing results remain pending.
+
 **Common model run and independent verification checkpoint.**
 [Run 39473440895](https://github.com/mylordmonkeyman/Abyss/actions/runs/39473440895)
 at source `dda573a` has passed its build, actual key/state and dot/list alias
-tests, graphs, memcheck and synccheck. The balanced 100K/128K model arms are
-still running; no new model quality or clean performance result is asserted.
-Do not overlap another GPU campaign with this run.
+tests, graphs, memcheck and synccheck. The balanced 100K/128K model arms subsequently
+completed; their verified result is recorded above. Clean performance remains pending.
 
 `summarize_p1_head_to_head.py` now requires the summary ZIP plus exactly six
 digest-identified candidate capture ZIPs. It independently validates both frozen

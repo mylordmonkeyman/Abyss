@@ -50,6 +50,11 @@ KL subtraction. Refined MMA's passing 128K control is recorded separately.
    memory/NUMA accounting. Different generated trajectories confound causal
    decode comparisons and must be disclosed. CPU-lane-28/default/task/platform
    gates remain separate; a bounded CPU-lane-0 pass is not general admission.
+   Quality completed in39473440895 and all raw captures independently verified:
+   corrected cuBLAS and refined MMA are bitwise F32 with zero KL at both fixtures.
+   Original cuBLAS still fails128K atmeanKL0.01040475762. The clean campaign next
+   requires eight matching clean logit hashes before four balanced, serialized
+   end-to-end timing blocks at8K/100K/128K, including direct corrected/MMA deltas.
 
 Do not initially change quantization, softmax, GEMM output precision, TF32 mode
 or KL estimator, and do not use FP64 scoring everywhere. Every GPU campaign uses
