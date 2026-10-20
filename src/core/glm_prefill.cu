@@ -21,9 +21,11 @@
 #include "strata/kernels/dsv4_fast.hpp"
 #include "v100_stage_capture.hpp"
 #include "v100_indexer_capture.hpp"
+#include "v100_mma_query_range.hpp"
 #include "strata/kernels/v100_indexer_policy.hpp"
 #ifndef STRATA_USE_HIP
 #include "../kernels/cuda/dsv4_cublas_idx.cuh"
+#include "../kernels/cuda/dsv4_volta_idx_runner.cuh"
 #endif
 
 #include "strata/core/progress.hpp"
@@ -1394,18 +1396,19 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     Ds4Bufs B = carve_ds4(c, (size_t) tn, g, S->max_pools);
     const auto idx_mode=ds::p1::mode();
     bool experimental_idx=false;
-    if(idx_mode==ds::p1::Mode::cublas) {
+    if(idx_mode==ds::p1::Mode::cublas || idx_mode==ds::p1::Mode::volta) {
 #ifdef STRATA_USE_HIP
         err=ds::p1::backend_error(idx_mode,true,0,0,g.idx_heads,g.idx_key,g.idx_top_k);return false;
 #else
         cudaDeviceProp prop{};
         if(cudaGetDeviceProperties(&prop,dev_)!=cudaSuccess) {
-            err="cannot query CUDA device for ABYSS_V100_IDX=cublas";return false;
+            err="cannot query CUDA device for experimental ABYSS_V100_IDX";return false;
         }
         if(const char* failure=ds::p1::backend_error(idx_mode,false,prop.major,prop.minor,g.idx_heads,g.idx_key,g.idx_top_k)) {
             err=failure;return false;
         }
-        experimental_idx=ds::p1::use_cublas(idx_mode,r,g.idx_heads,g.idx_key,g.idx_top_k,tn,p0);
+        experimental_idx=ds::p1::use_cublas(idx_mode,r,g.idx_heads,g.idx_key,g.idx_top_k,tn,p0) ||
+            ds::p1::use_volta(idx_mode,r,g.idx_heads,g.idx_key,g.idx_top_k,tn,p0);
 #endif
     }
     // 1. the projections
@@ -1494,26 +1497,37 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     if (r == 4) {
 #ifndef STRATA_USE_HIP
         if(experimental_idx) {
+            if(idx_mode==ds::p1::Mode::volta){
+                // Outputs are still dead, as for the cuBLAS borrower below.
+                strata::kernels::volta::indexer_batch_scaled(B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,s,
+                    reinterpret_cast<uint32_t*>(B.o),(size_t)tn*HD,reinterpret_cast<int*>(B.oa),(size_t)tn*OL);
+            }else{
             // B.o is written next by attend_batch; B.oa is written later by
             // output LoRA with beta=0. Neither has a live value at this point.
             // Same stream and existing S->blas/S->ws: no persistent allocation,
             // handle state mutation, synchronization or cross-stream borrower.
             ds::p1::run(S->blas,s,B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,
                         B.oa,(size_t)tn*OL,B.o,(size_t)tn*HD);
+            }
         } else
 #endif
             ds::indexer_batch(B.iq,Ly.idx_cache,B.iw,g.idx_heads,4,p0,tn,g.idx_top_k,
                               B.score,B.score_ld,B.sel,s);
         if(idx_mode!=ds::p1::Mode::automatic)std::fprintf(stderr,
             "p1_indexer layer=%d p0=%d T=%d heads=%d dim=%d scorer=%s reason=%s dynamic_shared=0 borrowed_scratch_bytes=%zu\n",
-            il,p0,tn,g.idx_heads,g.idx_key,experimental_idx?"cublas":"f32",
+            il,p0,tn,g.idx_heads,g.idx_key,experimental_idx?(idx_mode==ds::p1::Mode::volta?"volta":"cublas"):"f32",
             experimental_idx?"explicit-experiment":idx_mode==ds::p1::Mode::f32?"force-f32":"outside-experimental-regime",
-            experimental_idx?(size_t)(ds::p1::eligible(64,128,512,tn,p0)?(256*64*512+512*128)*sizeof(float):0):0);
+            experimental_idx?(idx_mode==ds::p1::Mode::cublas?(size_t)((256*64*512+512*128)*sizeof(float)):
+                ((size_t)tn*64*128+tn)*sizeof(uint32_t)):0);
     }
     S->mark("ds4_index", s);
 #ifdef STRATA_V100_CAPTURE_INDEXER
-    v100diag::IndexerCapture idx_capture(experimental_idx,il,p0,tn,HD,B.score_ld,s);
+    const char* mma_capture=std::getenv("STRATA_V100_MMA_CAPTURE");
+    const bool capture_candidate=experimental_idx && (idx_mode!=ds::p1::Mode::volta ||
+        (mma_capture && std::atoi(mma_capture)==1));
+    v100diag::IndexerCapture idx_capture(capture_candidate,il,p0,tn,HD,B.score_ld,s);
     if(idx_capture.enabled){
+        if(idx_mode==ds::p1::Mode::volta)v100diag::mma_query_range(idx_capture,B.iq);
         idx_capture.selected(B.score,B.sel,true);
         // Original F32 scorer/selector on exactly the same live iq, keys and
         // weights; no allocation. B.score is dead after selection. Restore all

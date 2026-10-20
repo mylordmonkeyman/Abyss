@@ -12,7 +12,7 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Evaluation concluded: keep F32**, as revision 9 permits. No candidate promoted. Full-128K deterministic candidate KL fails; late capture finds near-tie membership/attention effects. See `P1_COMPLETION.md`. SM80 compilation passes; HIP SDK unavailable. |
+| Production integration / P1 exit | **Reopened: scaled MMA model qualification active.** Earlier cuBLAS full-128K deterministic quality failure remains documented. Prepared scaled MMA now passes component precision and wins long shapes; model quality/repeatability, input-range and clean performance evidence are pending. Production auto remains upstream. |
 
 Current priority: **P1 batched MMA884 reopened on 20 October at user direction**.
 The optional query-scaling experiment was not exhausted by the earlier fallback
@@ -81,6 +81,54 @@ graph/sanitizer checks, with 15 shapes/90 pairs including the preparation launch
 Caller-owned packed-query scratch is `(T*64*128+T)*4` bytes (64 MiB + 8 KiB at
 T=2048), bounded explicitly and included in resource accounting. No model
 runtime is enabled by this isolated experiment.
+
+### Prepared scaled MMA qualifies for model investigation
+
+[Run 39435543848](https://github.com/mylordmonkeyman/Abyss/actions/runs/39435543848)
+passes all 110 cases, graphs, both sanitizers, SM70 PTX/SASS checks and 90
+timing pairs. Artifact `12271470189`, ZIP SHA256
+`5e1b79e6a79c6daa1fd53f5327dea72d013b034bf53ee3b0f1e5214d24f629ba`,
+recomputes `p1-mma-prepared-2026-10-20.json`. The prepared variant keeps all
+4608 selected IDs in each stress population, including tiny, mixed-head and
+extreme-exponent inputs. Tiny-query relative L2 is 3.75204915e-7; the FP32
+subnormal case is 1.78465872e-6. The scorer uses 196 registers, 33536 shared
+bytes, zero local bytes and two active CTAs/SM. Preparation scratch is counted.
+
+At actual T=2048, full isolated stage elapsed changes are -1.71% at 64K,
+**-10.83% at 96K** and **-14.59% at 120K**, all six pairs faster in each.
+Shorter shapes lose. These are component results, not model throughput or
+automatic dispatch qualification.
+
+The explicit experimental `ABYSS_V100_IDX=volta` model path now uses the same
+prepared eight-query entry point as the component test. It is limited to
+CUDA SM70, C4, 64 index heads, 128 dimensions, top-512, T=2048 and the bounded
+98,304–120,000 starting-position investigation regime. Other shapes retain F32;
+legacy `STRATA_DS4_IDX=1` wins, and `auto` stays upstream. Unsupported forced
+backend/geometry errors are tested by the actual shared host policy. This is
+an opt-in research path while model qualification is pending.
+
+Packed-query scratch borrows the still-dead `B.o` output (needs 8192*T words
+versus 32768*T available); T integer exponents borrow the still-dead `B.oa`
+output (8192*T words available). Preparation, score and unchanged selection
+run on the existing stream; normal attention/output projections overwrite
+these borrowers before their outputs become live. No extra GPU allocation,
+handle or synchronization is added by the candidate.
+
+`p1_mma_model.py` runs F32 / MMA / MMA / F32 on the full frozen 128K fixture,
+CPU lane 0, retaining bounded raw logits on the runner and requiring all 231
+eligible layer/chunk calls in each candidate arm. Only the first candidate
+captures p0=118784: five query rows per C4 layer, paired scores/IDs/attention,
+all 43008 selection rows, and bitwise restoration of candidate IDs. The same
+0.0005 mean-KL gate and attention investigation screen apply. This diagnoses
+the earlier CPU-lane-28 variability separately; it does not qualify CPU lane
+28, task quality or clean throughput by itself.
+
+The new trusted workflow builds a dedicated model tree, rechecks the shared
+component and both sanitizers, then runs the four model arms. Historical
+cuBLAS and isolated-MMA workflows remain manually dispatchable; their automatic
+source triggers are retired here so this model change creates only one pending
+GPU campaign. Runner concurrency/owner guards, immutable binaries/pack/fixtures,
+64 MiB upload cap and existing memory margins remain intact.
 
 P3 checkpoint: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
 P2 also concludes with F32 fallback; see `P2_COMPLETION.md`.

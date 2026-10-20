@@ -17,9 +17,10 @@ int main(){
  assert(parse("auto",nullptr)==Mode::automatic);
  assert(parse("f32",nullptr)==Mode::f32);
  assert(parse("cublas",nullptr)==Mode::cublas);
+ assert(parse("volta",nullptr)==Mode::volta);
  assert(parse("volta","1")==Mode::f32);
  assert(parse("bad","1")==Mode::f32);
- for(auto v:{"volta","bad"}){bool threw=false;try{parse(v,nullptr);}catch(const std::runtime_error&){threw=true;}assert(threw);}
+ for(auto v:{"bad"}){bool threw=false;try{parse(v,nullptr);}catch(const std::runtime_error&){threw=true;}assert(threw);}
  assert(eligible(64,128,512,2048,98304));
  assert(eligible(64,128,512,2048,120000));
  assert(!eligible(64,128,512,2048,65536));
@@ -45,6 +46,20 @@ int main(){
  assert(backend_error(Mode::cublas,false,7,0,32,128,512));
  assert(backend_error(Mode::cublas,false,7,0,64,64,512));
  assert(backend_error(Mode::cublas,false,7,0,64,128,256));
+ assert(!use_volta(Mode::automatic,4,64,128,512,2048,98304));
+ assert(!use_volta(Mode::f32,4,64,128,512,2048,98304));
+ assert(!use_volta(Mode::cublas,4,64,128,512,2048,98304));
+ for(int pos:{98304,100352,118784,120000})assert(use_volta(Mode::volta,4,64,128,512,2048,pos));
+ for(int pos:{0,65536,98303,120001})assert(!use_volta(Mode::volta,4,64,128,512,2048,pos));
+ for(int t:{1,256,2047,2049,4096})assert(!use_volta(Mode::volta,4,64,128,512,t,98304));
+ for(int ratio:{0,128})assert(!use_volta(Mode::volta,ratio,64,128,512,2048,98304));
+ assert(backend_error(Mode::volta,false,7,0,64,128,512)==nullptr);
+ assert(std::strstr(backend_error(Mode::volta,true,0,0,64,128,512),"HIP"));
+ for(int major:{6,8,9})assert(std::strstr(backend_error(Mode::volta,false,major,0,64,128,512),"SM70"));
+ assert(backend_error(Mode::volta,false,7,5,64,128,512));
+ assert(backend_error(Mode::volta,false,7,0,32,128,512));
+ assert(backend_error(Mode::volta,false,7,0,64,64,512));
+ assert(backend_error(Mode::volta,false,7,0,64,128,256));
 
 }'''
         with tempfile.TemporaryDirectory() as tmp:

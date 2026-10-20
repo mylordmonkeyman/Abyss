@@ -1,17 +1,6 @@
 name: V100 P1 cuBLAS integration and quality
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/deepseek-v100-p1]
-    paths:
-      - '.github/workflows/v100-p1-batched.yml'
-      - 'tests/v100/test_dsv4_cublas_indexer.cu'
-      - 'tools/profiling/p1_cublas_bench.py'
-      - 'tools/profiling/p1_integrated_quality.py'
-      - 'src/kernels/cuda/dsv4_cublas_idx.cuh'
-      - 'include/strata/kernels/v100_indexer_policy.hpp'
-      - 'src/core/glm_prefill.cu'
-      - 'src/kernels/cuda/dsv4_fast.cu'
 permissions:
   contents: read
 concurrency:

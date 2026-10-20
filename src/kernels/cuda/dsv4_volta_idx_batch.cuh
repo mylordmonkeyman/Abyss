@@ -1,5 +1,5 @@
 #pragma once
-// Isolated P1 batched experiment. No production include/dispatch.
+// P1 batched controls and explicit experimental model scorer; auto stays upstream.
 #ifndef STRATA_USE_HIP
 #include "volta_mma884.cuh"
 #include <cuda_fp16.h>
@@ -10,7 +10,7 @@ namespace strata::kernels::volta {
 // independent hi/lo accumulator chains and reuses each packed K fragment
 // across those queries. Four warps/CTA, 128 compressed rows/CTA. Query shared
 // memory holds only the current eight-head band, padded to 130 half elements.
-// No global [token,key,head] intermediate and no new arithmetic in the engine.
+// No global [token,key,head] intermediate. Packed queries are prepared once.
 template<int Tokens,bool Scaled=false,bool Packed=false>
 __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
     const float* iq,const uint16_t* keys,const float* weights,

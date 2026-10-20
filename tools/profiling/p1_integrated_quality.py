@@ -23,11 +23,12 @@ GEOMETRIES={
     '128k':dict(score_start=131039,token_count=131072,max_context=135168,candidate_positions=list(range(98304,120001,2048))),
 }
 
-def arm(binary,out,tokens,dump,mode,geometry):
+def arm(binary,out,tokens,dump,mode,geometry,overrides=None,cwd=None):
     out.mkdir()
     env=fixed_env();env.update(ABYSS_V100_IDX=mode,STRATA_DS4_ATTN='1',
         STRATA_GLM_SCORE=str(geometry['score_start']),STRATA_GLM_SCORE_DUMP=str(dump),
         STRATA_GLM_SCORE_PREFILL='1',ABYSS_V100_PROFILE='1')
+    env.update(overrides or {})
     if mode=='f32':env['STRATA_DS4_IDX']='1'
     argv=[str(binary),'--glm-pack',str(PACK),'--tokens-file',str(tokens),
           '--max-new','1','--max-context',str(geometry['max_context']),'--prefill','auto','--temperature','0']
@@ -36,7 +37,7 @@ def arm(binary,out,tokens,dump,mode,geometry):
     if campaign.memory_available()<16*1024**3:raise RuntimeError('host margin below 16 GiB before quality arm')
     started=time.monotonic()
     with campaign.Monitor(out) as monitor,(out/'engine.log').open('w') as log:
-        child=subprocess.Popen(argv,env=env,stdout=log,stderr=subprocess.STDOUT)
+        child=subprocess.Popen(argv,env=env,cwd=cwd,stdout=log,stderr=subprocess.STDOUT)
         monitor.pid=child.pid
         try:
             while child.poll() is None:
@@ -49,10 +50,10 @@ def arm(binary,out,tokens,dump,mode,geometry):
             if child.poll() is None:child.kill();child.wait()
     text=(out/'engine.log').read_text()
     records=[dict(re.findall(r'(\w+)=([^\s]+)',line)) for line in text.splitlines() if line.startswith('p1_indexer ')]
-    candidate=[r for r in records if r.get('scorer')=='cublas']
-    if mode=='cublas':
+    candidate=[r for r in records if r.get('scorer') in ('cublas','volta')]
+    if mode in ('cublas','volta'):
         expected={(str(layer),str(pos)) for layer in range(2,43,2) for pos in geometry['candidate_positions']}
-        if len(candidate)!=len(expected) or {(r['layer'],r['p0']) for r in candidate}!=expected or any(r['T']!='2048' for r in candidate):
+        if len(candidate)!=len(expected) or {(r['layer'],r['p0']) for r in candidate}!=expected or any(r['T']!='2048' or r['scorer']!=mode for r in candidate):
             raise ValueError('candidate did not run at every intended real-model layer/chunk')
     elif candidate:raise ValueError('F32 arm unexpectedly dispatched a candidate')
     if not records:raise ValueError('missing actual scorer dispatch records')

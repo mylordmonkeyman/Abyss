@@ -1,13 +1,6 @@
 name: V100 P1 isolated batched MMA key reuse
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/deepseek-v100-p1]
-    paths:
-      - '.github/workflows/v100-p1-mma-batched.yml'
-      - 'src/kernels/cuda/dsv4_volta_idx_batch.cuh'
-      - 'tests/v100/test_dsv4_mma_batched.cu'
-      - 'tools/profiling/p1_mma_bench.py'
 permissions:
   contents: read
 concurrency:

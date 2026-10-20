@@ -1,5 +1,5 @@
 #pragma once
-// Isolated arithmetic primitive only; no production dispatch uses this header yet.
+// Validated arithmetic primitive, reused by explicit experimental SM70 paths.
 // Operand/quadpair layout adapted from Strata-V100 qsa_prompt_attn.cu at
 // ebd2f7ad4e9fd0f9744ae419eab9d1dbdc3388f9 and cross-checked against
 // llama-superfast-v100 mma.cuh at 70df8710401a32c4735cf0c7874bf626bbe6b493.
