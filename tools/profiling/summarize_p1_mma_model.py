@@ -16,6 +16,17 @@ from summarize_p1_mma_batched import check_numerical,rows
 PAIRS={('f32-0','f32-1'),('volta-0','volta-1'),('f32-0','volta-0'),('f32-1','volta-1')}
 
 
+def compact(result):
+    """Retain numerical evidence; replace duplicated raw identity ledgers by hashes."""
+    for arm in result['quality']['arms'].values():
+        records=arm.pop('dispatch_records')
+        arm['dispatch_records_count']=len(records)
+        arm['dispatch_records_canonical_sha256']=hashlib.sha256(json.dumps(records,sort_keys=True).encode()).hexdigest()
+    files=result['direct'].pop('files')
+    result['direct']['file_ledger_canonical_sha256']=hashlib.sha256(json.dumps(files,sort_keys=True).encode()).hexdigest()
+    return result
+
+
 def check_comparisons(comparisons):
     if len(comparisons)!=4 or {(r['reference'],r['candidate']) for r in comparisons}!=PAIRS:
         raise ValueError('incomplete model comparison population')
@@ -132,4 +143,6 @@ if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('archive',type=Path)
     ap.add_argument('--sha256',required=True);ap.add_argument('--run',type=int,required=True)
     ap.add_argument('--output',type=Path,required=True);ap.add_argument('--diagnostic-failure',action='store_true')
-    a=ap.parse_args();a.output.write_text(json.dumps(summarize(a.archive,a.sha256,a.run,a.diagnostic_failure),indent=2)+'\n')
+    ap.add_argument('--compact',action='store_true')
+    a=ap.parse_args();result=summarize(a.archive,a.sha256,a.run,a.diagnostic_failure)
+    a.output.write_text(json.dumps(compact(result) if a.compact else result,indent=2)+'\n')

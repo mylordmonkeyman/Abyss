@@ -1,0 +1,46 @@
+# cuBLAS correction and common MMA comparison
+
+User-authorized priority, 20 October 2026. Preserve the operational F32 reference,
+production defaults, model/pack/fixtures and mean KL limit **0.0005**. No baseline
+KL subtraction. Refined MMA's passing 128K control is recorded separately.
+
+1. **Causality intervention (implemented; physical validation next).** Keep the
+   original cuBLAS score calculation but substitute F32 selection at every
+   eligible call. Compare F32 membership+order against F32 membership ordered
+   by cuBLAS scores. Bracket with deterministic F32 repeats at the failed 128K
+   geometry. Record membership/ordering counters and full-model KL. This is
+   diagnostic work, excluded from speed claims. If reference-order substitution
+   fails, inspect non-selection effects before claiming the cause is proved.
+2. **Adaptive full-token F32 fallback.** Keep SGEMM. On GPU, measure the 512/513
+   margin against a calibrated conservative error envelope. Recompute flagged
+   tokens using operational batch-F32 dimension/head accumulation and original
+   selection. Record correction fraction and all costs; no CPU decision/sync.
+   A measured empirical envelope must be labeled as such, not called a proof.
+3. **Cutoff/top-k+delta rescore.** Reuse validated reference-matched arithmetic
+   and GPU compaction/selection work from the MMA investigation where practical.
+   Recompute candidates within the conservative cutoff envelope. Overflow must
+   trigger full reference scoring, never truncate candidates. Validate exact
+   selected scores, ordering/ties, ratio-4 visibility, graph capture, guards and
+   both sanitizers before model tests. Count corrected tokens and scored rows.
+4. **Reference-order epilogue.** Separately test sequential 64-head weighted
+   F32 accumulation against the current warp reduction. Preserve per-head ReLU,
+   F32 SGEMM outputs and original FP16 keys. Measure whether selection differences
+   and correction rate decrease; include epilogue cost. Keep the original variant
+   as a named comparator. Do not combine changes without isolated evidence.
+5. **Common quality and performance.** Use deterministic same-pack 100K/128K
+   fixtures and CPU-lane-0 repeats first. Compare F32, original cuBLAS, corrected
+   cuBLAS and refined MMA in the same source/binary/configuration. Report mean,
+   p99/worst KL, logit hashes, top-512 membership/order, correction fractions,
+   stage times and end-to-end prefill/TTFT/decode with overhead included. Verify
+   clean-build arithmetic before uninstrumented sustained interleaved timing.
+   Use balanced process order and retain individual deltas, telemetry and unique
+   memory/NUMA accounting. Different generated trajectories confound causal
+   decode comparisons and must be disclosed. CPU-lane-28/default/task/platform
+   gates remain separate; a bounded CPU-lane-0 pass is not general admission.
+
+Do not initially change quantization, softmax, GEMM output precision, TF32 mode
+or KL estimator, and do not use FP64 scoring everywhere. Every GPU campaign uses
+`abyss-v100` serialization, the existing trusted runner and immutable upstream
+binaries. No privilege/container/cache/GPU-reset/NUMA-page-placement changes.
+Publisher authenticity, unavailable hardware counters and unmeasured QPI remain
+limitations. Resume P3/P4 after these P1 decisions, not in parallel with GPU work.

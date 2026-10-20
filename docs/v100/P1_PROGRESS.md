@@ -12,12 +12,52 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Reopened: refined MMA model investigation.** Unrefined prepared MMA fails deterministic full-128K KL. Cutoff F32 rescore with batched unchanged selectors passes component decisions/sanitizers and wins long stages; its full-model quality/repeatability is pending. Earlier cuBLAS failure remains documented. Production auto remains upstream. |
+| Production integration / P1 exit | **cuBLAS correction and head-to-head qualification active.** Refined MMA passes deterministic full-128K quality with bitwise F32 logits; clean end-to-end qualification remains. User requested cuBLAS causality/correction trials before the common performance comparison. Production auto remains upstream. |
 
 Current priority: **P1 batched MMA884 reopened on 20 October at user direction**.
 The optional query-scaling experiment was not exhausted by the earlier fallback
 decision. Implement and physically test it before further P3 work. Existing
 cuBLAS rejection and production F32 defaults remain in force.
+
+**Latest user steering, 20 October:** implement the cuBLAS KL-reduction plan in
+`P1_CUBLAS_KL_PLAN.md`, starting with selection-substitution causality controls,
+then GPU adaptive fallback/cutoff rescoring/reference-order epilogue, followed by
+same-fixture F32/cuBLAS/corrected-cuBLAS/MMA quality and end-to-end comparisons.
+This takes priority over P3 and standalone MMA performance campaigns.
+
+### Refined MMA model result and cuBLAS intervention checkpoint
+
+[Refined model run 39445943674](https://github.com/mylordmonkeyman/Abyss/actions/runs/39445943674)
+passes its dedicated build, 26 exact-selection cases, graphs and both sanitizers,
+then all four full-128K CPU-lane-0 model arms. All four raw-logit SHA256 values
+are identical: `ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81`.
+Mean/worst/p99 KL are zero in every matched comparison and repeat, top-1 32/32.
+All 43008 late captured selection rows have identical membership and ordering;
+all 105 sampled attention comparisons are identical. No production arithmetic
+is admitted by this bounded result. Artifact `12278821430`, ZIP SHA256
+`cdadf4175dd05da10602ad5bdb68fb48d246ef8062346c56c6fd51571dbcaeb8`,
+is independently checked with `summarize_p1_mma_model.py --compact` into
+`p1-mma-model-refined-2026-10-20.json`. CPU-lane-28/task/platform/clean throughput
+gates remain; no subtraction from baseline KL or empirical-band certification.
+
+The new cuBLAS diagnostic retains original SGEMM/epilogue work but substitutes
+the operational F32 selection before attention at every eligible layer/chunk.
+`reference-order` uses F32 membership and ordering; `reference-membership`
+uses F32 membership sorted by original cuBLAS scores with row-ID ties. GPU
+counters distinguish pre-intervention ordering and membership differences on
+each control's trajectory. The reference scores borrow dead `B.o`; candidate
+IDs/counters borrow dead `B.oa`. No GPU allocation is added. Extra F32 work,
+copies and synchronization to log four integer counters are diagnostic only,
+compiled under `STRATA_V100_CAPTURE_INDEXER`, and excluded from timing. Ordinary
+builds and `auto` are unchanged. Live tensor capture is disabled for these
+interventions to avoid confusing candidate restoration with substituted IDs.
+
+The dedicated workflow first tests 12 zero/normal-query, visibility/tie,
+membership/order and graph cases plus memcheck/synccheck, then brackets the two
+128K CPU-lane-0 intervention arms with F32 repeats. It checks all 231 eligible
+calls, retains at most 64 MiB of raw logits in a run-owned runner checkpoint,
+and uploads a bounded summary/telemetry artifact. The original cuBLAS scorer
+source is checked unchanged against `25ca814` before this root-cause control.
 
 The new isolated matrix keeps unscaled one/eight-query controls and adds
 per-query/head power-of-two normalization before the FP16 hi/lo split. Each

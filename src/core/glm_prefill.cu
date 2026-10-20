@@ -26,6 +26,9 @@
 #ifndef STRATA_USE_HIP
 #include "../kernels/cuda/dsv4_cublas_idx.cuh"
 #include "../kernels/cuda/dsv4_volta_idx_refine.cuh"
+#ifdef STRATA_V100_CAPTURE_INDEXER
+#include "v100_cublas_selection_control.cuh"
+#endif
 #endif
 
 #include "strata/core/progress.hpp"
@@ -1524,8 +1527,10 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     S->mark("ds4_index", s);
 #ifdef STRATA_V100_CAPTURE_INDEXER
     const char* mma_capture=std::getenv("STRATA_V100_MMA_CAPTURE");
+    const char* cublas_capture=std::getenv("STRATA_V100_CUBLAS_CAPTURE");
     const bool capture_candidate=experimental_idx && (idx_mode!=ds::p1::Mode::volta ||
-        (mma_capture && std::atoi(mma_capture)==1));
+        (mma_capture && std::atoi(mma_capture)==1)) &&
+        (idx_mode!=ds::p1::Mode::cublas || !cublas_capture || std::atoi(cublas_capture)!=0);
     v100diag::IndexerCapture idx_capture(capture_candidate,il,p0,tn,HD,B.score_ld,s);
     if(idx_capture.enabled){
         if(idx_mode==ds::p1::Mode::volta)v100diag::mma_query_range(idx_capture,B.iq);
@@ -1540,6 +1545,24 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
         idx_capture.attention(B.o,false);
         idx_capture.restore(B.sel);
     }
+#ifndef STRATA_USE_HIP
+    const char* control=std::getenv("STRATA_V100_CUBLAS_SELECTION_CONTROL");
+    if(experimental_idx && idx_mode==ds::p1::Mode::cublas && control && *control){
+        const bool membership_only=std::strcmp(control,"reference-membership")==0;
+        if(!membership_only && std::strcmp(control,"reference-order")!=0)
+            throw std::runtime_error("invalid internal cuBLAS selection control");
+        if(idx_capture.enabled)throw std::runtime_error("selection intervention requires live capture disabled");
+        // The original cuBLAS dot/key scratch is dead. Borrow it for reference
+        // scores and backed-up candidate IDs; no model allocation is added.
+        v100diag::cublas_selection_control(B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,s,
+            B.o,(size_t)tn*HD,reinterpret_cast<int*>(B.oa),(size_t)tn*OL,membership_only);
+        int counts[4];
+        if(cudaMemcpyAsync(counts,reinterpret_cast<int*>(B.oa)+(size_t)tn*512,sizeof(counts),cudaMemcpyDeviceToHost,s)!=cudaSuccess ||
+           cudaStreamSynchronize(s)!=cudaSuccess)throw std::runtime_error("selection control accounting failed");
+        std::fprintf(stderr,"p1_cublas_selection_control kind=%s layer=%d p0=%d T=%d rows=%d ordered_equal_rows=%d membership_equal_rows=%d overlap=%d\n",
+            control,il,p0,tn,counts[0],counts[1],counts[2],counts[3]);
+    }
+#endif
 #endif
 #ifdef STRATA_V100_CAPTURE_STAGES
     if(capture.enabled) {
