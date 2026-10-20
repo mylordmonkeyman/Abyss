@@ -9,7 +9,7 @@ import zipfile
 import numpy as np
 from p1_live_capture import compare_capture
 
-def summarize(archive,digest,run):
+def summarize(archive,digest,run,diagnostic_failure=False):
     if hashlib.sha256(archive.read_bytes()).hexdigest()!=digest:raise ValueError('live artifact digest mismatch')
     with zipfile.ZipFile(archive) as z,tempfile.TemporaryDirectory(prefix='p1-capture-recheck-') as tmp:
         if sum(i.file_size for i in z.infolist())>64*1024**2:raise ValueError('live artifact cap exceeded')
@@ -23,7 +23,7 @@ def summarize(archive,digest,run):
             if info.filename.startswith(prefix) and not info.is_dir():
                 target=root/info.filename[len(prefix):];target.parent.mkdir(parents=True,exist_ok=True)
                 target.write_bytes(z.read(info))
-        direct=compare_capture(root);recorded=result['direct']
+        direct=compare_capture(root,result.get('capture_position',98304));recorded=result['direct']
         if direct['files']!=recorded['files'] or len(direct['samples'])!=len(recorded['samples']):raise ValueError('raw capture identity changed')
         for a,b in zip(direct['samples'],recorded['samples']):
             if set(a)!=set(b):raise ValueError('capture schema changed')
@@ -47,16 +47,22 @@ def summarize(archive,digest,run):
             swaps.append(dict(layer=row['layer'],token_offset=row['token_offset'],membership_overlap=row['overlap'],
                 score_max_error=row['score_max_abs'],changes=changes))
         q=result['quality']
-        if not q['mean_kl']<=.0005 or len(q['positions'])!=32:raise ValueError('bounded model KL gate failed')
+        if len(q['positions'])!=32:raise ValueError('wrong scored population')
+        quality_pass=q['mean_kl']<=.0005
+        if not quality_pass and not diagnostic_failure:raise ValueError('bounded model KL gate failed')
         telemetry={mode:dict(thermal=json.loads(z.read(mode+'/thermal.json')),memory=json.loads(z.read(mode+'/memory_summary.json')))
                    for mode in ('f32','cublas')}
         return dict(schema=1,run=run,source_sha=source,artifact_zip_sha256=digest,binary_sha256=result['binary_sha256'],
             model_identity=result['model_identity'],fixture_sha256=result['fixture_sha256'],quality=q,telemetry=telemetry,
-            direct=direct,internal_rank_changes=swaps,
-            scope='Independent recomputation from raw paired scores/IDs/attention. Full top-512 membership matches '
-            'all sampled rows; internal ordering differences are traced separately. No throughput claim from '
+            direct=direct,internal_rank_changes=swaps,geometry=result.get('geometry'),cpu_lane=result.get('cpu_lane',28),
+            capture_position=result.get('capture_position',98304),passes_written_mean_kl_limit=quality_pass,
+            disposition='Failed diagnostic; no admission' if not quality_pass else 'Bounded capture pass only; no automatic promotion',
+            scope='Independent recomputation from raw paired scores/IDs/attention. Membership and ordering '
+            'differences are traced separately; a diagnostic failure is never admission. No throughput claim from '
             'instrumented runs. Local-manifest model integrity is not publisher authenticity; counters/QPI remain unmeasured.')
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--sha256',required=True)
-    p.add_argument('--run',required=True,type=int);p.add_argument('--output',required=True,type=Path);a=p.parse_args()
-    a.output.write_text(json.dumps(summarize(a.archive,a.sha256,a.run),indent=2)+'\n')
+    p.add_argument('--run',required=True,type=int);p.add_argument('--output',required=True,type=Path)
+    p.add_argument('--diagnostic-failure',action='store_true',help='preserve failed quality evidence without admitting it')
+    a=p.parse_args()
+    a.output.write_text(json.dumps(summarize(a.archive,a.sha256,a.run,a.diagnostic_failure),indent=2)+'\n')

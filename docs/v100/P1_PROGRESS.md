@@ -12,13 +12,12 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct score/selection/attention passed (105 live samples); **full-128K KL FAILED, including F32 repeat**; SM80 compile/link passes, HIP SDK unavailable; CPU-lane-off F32 repeat is bitwise identical; auto unchanged |
+| Production integration / P1 exit | **Evaluation concluded: keep F32**, as revision 9 permits. No candidate promoted. Full-128K deterministic candidate KL fails; late capture finds near-tie membership/attention effects. See `P1_COMPLETION.md`. SM80 compilation passes; HIP SDK unavailable. |
 
-Next: diagnose reproducible candidate drift at a later indexer chunk. Both
-new controls are complete: upstream itself is variable at CPU lane 28, while
-each scorer is bitwise repeatable at CPU lane 0 but the candidate differs from
-F32 beyond the KL limit. These are distinct findings; upstream variability does
-not excuse the deterministic candidate difference.
+Next: P2 selected-base attention feasibility, tracked in `P2_PROGRESS.md`.
+The fallback disposition and evidence inventory are in `P1_COMPLETION.md`.
+The following investigation checkpoint is preserved as history, superseded by
+the completed late capture and fallback decision.
 
 The next compile-only capture uses the original 128K fixture/partial-tail score
 geometry, CPU lane 0 and p0=118784, after all eleven candidate chunks have run.
