@@ -14,7 +14,8 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
 | Production integration / P1 exit | **Evaluation concluded: keep F32**, as revision 9 permits. No candidate promoted. Full-128K deterministic candidate KL fails; late capture finds near-tie membership/attention effects. See `P1_COMPLETION.md`. SM80 compilation passes; HIP SDK unavailable. |
 
-Next: P2 selected-base attention feasibility, tracked in `P2_PROGRESS.md`.
+Next: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
+P2 also concludes with F32 fallback; see `P2_COMPLETION.md`.
 The fallback disposition and evidence inventory are in `P1_COMPLETION.md`.
 The following investigation checkpoint is preserved as history, superseded by
 the completed late capture and fallback decision.

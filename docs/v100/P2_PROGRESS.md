@@ -4,6 +4,12 @@
 its selected v1.3.31 base and P0/P1 history. P1 concludes with the documented
 F32 fallback in `P1_COMPLETION.md`; no candidate indexer is promoted.
 
+**Evaluation concluded: keep F32.** The dimension-partitioned follow-up passes
+all numerical/sanitizer gates but remains slower in every timing pair. See
+`P2_COMPLETION.md` and `p2-tile-parallel-2026-10-20.json`. Next work is the
+P0-admitted completed-cost measurement in `P3_PROGRESS.md`; the checkpoint
+descriptions below remain as the investigation history.
+
 The first P2 checkpoint revalidates the existing isolated QK/softmax/PV and
 latent-gather/compressor/inverse-RoPE/grouped-projection diagnostics against this
 selected base. `v100-p2-feasibility.yml` uses a dedicated build directory and

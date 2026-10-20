@@ -16,6 +16,7 @@
 // slot while it is overwritten: the device is parked in that layer's wait kernel, the layer's
 // resident experts are excluded, and every other layer's slots are untouched.
 #include "glm_fast_state.hpp"
+#include "v100_cost_capture.hpp"
 #include "strata/core/v100_dispatch.hpp"
 #include "strata/core/glm_model.hpp"
 #include "strata/kernels/glm_fast.hpp"
@@ -2834,6 +2835,9 @@ void Glm5Model::fast_service() {
             const unsigned int miss = rq->miss_mask, fetch = rq->fetch_mask, promo = rq->promo_mask;
             const unsigned int cpu = rq->cpu_mask;   // the CPU lane's experts: not in VRAM, computed below
             const unsigned int skip = rq->skip_mask;   // left out (the draft block's misses, the trunk's tail skip)
+#ifdef STRATA_V100_CAPTURE_COST
+            v100cost::route(dev_,il,next,cpu,fetch,miss,F->L[(size_t)il].blob);
+#endif
             if (skip != 0u && il != mtp_il_)
                 F->tail_skips.fetch_add((uint64_t) std::popcount(skip), std::memory_order_relaxed);
             auto& P = F->lp[(size_t) il];
@@ -3171,7 +3175,12 @@ void Glm5Model::fast_service() {
                 }
             gf::CpuAnswer* ans = F->cpu_ans_h + (next % gf::kCpuAnswers);
             v100dispatch::Scope service_scope({2,rq->layer,1,-1,next});
-            fast_cpu_experts(rq->layer, ne, blob, w, rq->x, ans->part);
+            {
+#ifdef STRATA_V100_CAPTURE_COST
+                v100cost::Scope cost("cpu",dev_,rq->layer,next,ne);
+#endif
+                fast_cpu_experts(rq->layer, ne, blob, w, rq->x, ans->part);
+            }
             const auto t1 = std::chrono::steady_clock::now();
             std::atomic_thread_fence(std::memory_order_release);
             ans->seq = next;
@@ -4145,8 +4154,13 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     // in VRAM is then pulled over PCIe into its slot, and all 8 run from VRAM
     gf::moe_wait(md, g.n_embd, s);
     if (F->prof_on) F->mark("moe_wait");
-    if (F->stream_fetch) gf::moe_fetch(md, g.n_exp_used, Ly.blob, s, Ly.gu_bytes, Ly.dn_bytes, F->read_chunks);
-    else gf::moe_fetch(md, g.n_exp_used, Ly.blob, s);
+    {
+#ifdef STRATA_V100_CAPTURE_COST
+        v100cost::Scope cost("fetch",dev_,il,F->expected);
+#endif
+        if (F->stream_fetch) gf::moe_fetch(md, g.n_exp_used, Ly.blob, s, Ly.gu_bytes, Ly.dn_bytes, F->read_chunks);
+        else gf::moe_fetch(md, g.n_exp_used, Ly.blob, s);
+    }
     if (F->prof_on) F->mark("moe_fetch");
     if (pf && pf_at == 1) issue_prefetch();
     // this layer's own prefetched experts (issued one layer ago) must have landed before they are read
@@ -4164,12 +4178,18 @@ bool Glm5Model::fast_moe(int il, bool& pf_pending, std::string& err) {
     // layer split each part's last layer, so the hop carries a complete residual and the next part starts clean)
     if (F->defer && !Ly.mtp) {
         if (il == l1_ - 1) {   // the trunk's (or this part's) last layer: nothing after it here to defer into
+#ifdef STRATA_V100_CAPTURE_COST
+            v100cost::Scope cost("cpu_wait_deferred",dev_,il,F->expected);
+#endif
             gf::moe_cpu_wait(md, g.n_embd, F->ffn, s);
             if (F->prof_on) F->mark("moe_cpu_wait");
         } else if (lane) {            // its write weights, for the add after the next layer's attention
             gf::copy_floats(F->post_defer, F->post, 8, s);
         }
     } else if (lane) {
+#ifdef STRATA_V100_CAPTURE_COST
+        v100cost::Scope cost("cpu_wait",dev_,il,F->expected);
+#endif
         gf::moe_cpu_wait(md, g.n_embd, F->ffn, s);
         if (F->prof_on) F->mark("moe_cpu_wait");
     }
