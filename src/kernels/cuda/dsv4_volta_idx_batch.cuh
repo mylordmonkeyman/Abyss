@@ -4,13 +4,14 @@
 #include "volta_mma884.cuh"
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
+#include <cmath>
 namespace strata::kernels::volta {
 // Tokens=1 is the correctness-first batched grid. Tokens=8 holds eight
 // independent hi/lo accumulator chains and reuses each packed K fragment
 // across those queries. Four warps/CTA, 128 compressed rows/CTA. Query shared
 // memory holds only the current eight-head band, padded to 130 half elements.
 // No global [token,key,head] intermediate and no new arithmetic in the engine.
-template<int Tokens>
+template<int Tokens,bool Scaled=false>
 __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
     const float* iq,const uint16_t* keys,const float* weights,
     int p0,int T,int ld,float* score) {
@@ -19,15 +20,33 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
     constexpr int QStride=130;
     __shared__ uint16_t qhi[Tokens*8*QStride],qlo[Tokens*8*QStride];
     __shared__ float w[Tokens*8];
+    __shared__ int shifts[Scaled?Tokens*8:1];
     const int lane=threadIdx.x&31,warp=threadIdx.x>>5;
     const int qp=(lane>>2)&3,j=(lane&3)+4*(lane>>4);
     const int row0=(blockIdx.x*4+warp)*32+qp*8;
     const int t0=blockIdx.y*Tokens,max_vis=(p0+T)/4;
     float total[Tokens][2]={};
     for(int head0=0;head0<64;head0+=8){
+        if constexpr(Scaled){
+            // One exact power-of-two normalization per query/head. Keep the
+            // exponent as an integer: even subnormal FP32 queries need no
+            // overflowing floating-point scale factor. All lanes participate.
+            for(int i=warp;i<Tokens*8;i+=4){
+                float maximum=0;
+                for(int d=lane;d<128;d+=32){
+                    const float x=t0+i/8<T?iq[((size_t)(t0+i/8)*64+head0+i%8)*128+d]:0;
+                    maximum=fmaxf(maximum,fabsf(x));
+                }
+                for(int offset=16;offset;offset>>=1)
+                    maximum=fmaxf(maximum,__shfl_down_sync(0xffffffffu,maximum,offset));
+                if(lane==0){int exponent=0;if(maximum>0)frexpf(maximum,&exponent);shifts[i]=-exponent;}
+            }
+            __syncthreads();
+        }
         for(int i=threadIdx.x;i<Tokens*8*128;i+=128){
             const int t=i/(8*128),h=(i/128)%8,d=i%128;
-            const float q=t0+t<T?iq[((size_t)(t0+t)*64+head0+h)*128+d]:0;
+            float q=t0+t<T?iq[((size_t)(t0+t)*64+head0+h)*128+d]:0;
+            if constexpr(Scaled)q=scalbnf(q,shifts[t*8+h]);
             const __half hi=__float2half_rn(q);
             const int dst=(t*8+h)*QStride+d;
             qhi[dst]=__half_as_ushort(hi);
@@ -68,7 +87,10 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
 #pragma unroll
                     for(int c=0;c<2;++c){
                         const int i=2*r+4*band+c;
-                        sum+=fmaxf(hi[t][i]+lo[t][i],0.0f)*w[t*8+(lane&2)+4*band+c];
+                        const int h=(lane&2)+4*band+c;
+                        float dot=hi[t][i]+lo[t][i];
+                        if constexpr(Scaled)dot=scalbnf(dot,-shifts[t*8+h]);
+                        sum+=fmaxf(dot,0.0f)*w[t*8+h];
                     }
                 }
                 sum+=__shfl_xor_sync(0xffffffffu,sum,2);

@@ -14,7 +14,25 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
 | Production integration / P1 exit | **Evaluation concluded: keep F32**, as revision 9 permits. No candidate promoted. Full-128K deterministic candidate KL fails; late capture finds near-tie membership/attention effects. See `P1_COMPLETION.md`. SM80 compilation passes; HIP SDK unavailable. |
 
-Next: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
+Current priority: **P1 batched MMA884 reopened on 20 October at user direction**.
+The optional query-scaling experiment was not exhausted by the earlier fallback
+decision. Implement and physically test it before further P3 work. Existing
+cuBLAS rejection and production F32 defaults remain in force.
+
+The new isolated matrix keeps unscaled one/eight-query controls and adds
+per-query/head power-of-two normalization before the FP16 hi/lo split. Each
+head's combined FP32 dot is rescaled before ReLU and its learned weight.
+Exponents are integers, so tiny FP32 input needs no overflowing scale value.
+No clamping, changed selection or relaxed precision threshold is introduced.
+All scaled cases, including the former 2^-20 query failure, must meet relative
+L2 <1e-5 versus F32 and the sampled FP64 oracle. Additional 2^-100, 2^80 and
+mixed per-head scales test the extended domain. Normal-case FP64 absolute
+bounds are retained. Graph replays, padding/visibility/selection guards,
+memcheck/synccheck, resources, PTX/SASS and a 60-shape / 360-pair stage matrix
+include normalization cost. Physical results are pending; a passing competitive
+variant must next receive actual-model input-range/selection and quality tests.
+
+P3 checkpoint: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
 P2 also concludes with F32 fallback; see `P2_COMPLETION.md`.
 The fallback disposition and evidence inventory are in `P1_COMPLETION.md`.
 The following investigation checkpoint is preserved as history, superseded by

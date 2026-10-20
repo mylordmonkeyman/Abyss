@@ -1,5 +1,11 @@
 # P1 evaluation disposition — keep F32
 
+**Reopened 20 October 2026 at user direction:** this document records the
+earlier fallback evaluation, not exhaustion of all optional MMA refinements.
+The per-head query-scaling experiment is active in `P1_PROGRESS.md`; physical
+component and any subsequent model qualification remain pending. The cuBLAS
+quality failure is unchanged, and no MMA candidate is admitted for production.
+
 20 October 2026. Revision 9 permits a P1/P2 evaluation to conclude “keep F32”
 (critical-path introduction and P1.3.4/P1 exit). P1 experimentation concludes
 with that disposition. **No new indexer arithmetic is admitted for production.**
