@@ -1,0 +1,678 @@
+{
+  "schema": 1,
+  "status": "FAILED; P1 admission blocked",
+  "run": 39353531268,
+  "artifact_id": 12236690630,
+  "artifact_zip_sha256": "b25fddd238b96505b5dfab1a7f340ebe4ba1b103a38fada1c85b3fbc99a281fb",
+  "quality": {
+    "schema": 1,
+    "source_sha": "1e6f3b1628910678cc5d9ae8d8ca376e0a4dc875",
+    "source_run": "39353531268",
+    "binary_sha256": "fc7a26eca2da31c1a63819b3b4a6440616cbedd59d775c4f70dc8cc51c8c2392",
+    "geometry": {
+      "score_start": 131039,
+      "token_count": 131072,
+      "max_context": 135168,
+      "candidate_positions": [
+        98304,
+        100352,
+        102400,
+        104448,
+        106496,
+        108544,
+        110592,
+        112640,
+        114688,
+        116736,
+        118784
+      ]
+    },
+    "fixture": {
+      "parent": "mixed-131072.tokens",
+      "prefix_tokens": 131072,
+      "sha256": "d6887f12762454266b113168580c6a3dcce445b1d9b60c74f1f5b1c940fd23bb"
+    },
+    "arms": {
+      "f32-0": {
+        "mode": "f32",
+        "candidate_calls": 0,
+        "diagnostic_wall_s_including_load": 460.28706544700253,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 0,
+          "mixer_tail_shapes": [
+            [
+              129024,
+              2014
+            ]
+          ]
+        }
+      },
+      "cublas-0": {
+        "mode": "cublas",
+        "candidate_calls": 231,
+        "diagnostic_wall_s_including_load": 453.7619397540111,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 231,
+          "mixer_tail_shapes": [
+            [
+              129024,
+              2014
+            ]
+          ]
+        }
+      },
+      "cublas-1": {
+        "mode": "cublas",
+        "candidate_calls": 231,
+        "diagnostic_wall_s_including_load": 450.64508901000954,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 231,
+          "mixer_tail_shapes": [
+            [
+              129024,
+              2014
+            ]
+          ]
+        }
+      },
+      "f32-1": {
+        "mode": "f32",
+        "candidate_calls": 0,
+        "diagnostic_wall_s_including_load": 460.6418672409927,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 0,
+          "mixer_tail_shapes": [
+            [
+              129024,
+              2014
+            ]
+          ]
+        }
+      }
+    },
+    "dumps": {
+      "f32-0": {
+        "bytes": 16547840,
+        "sha256": "27fb360960d61ac876b3b215859d8a3b48f54a96b5fec28b85252a4c39e28173",
+        "vocab": 129280
+      },
+      "cublas-0": {
+        "bytes": 16547840,
+        "sha256": "98651ded83e43d52f1e9f0fd246cc103716d7de3656002159fd8a61efd215793",
+        "vocab": 129280
+      },
+      "cublas-1": {
+        "bytes": 16547840,
+        "sha256": "d5c296d498c64654c8aa4d90563052c9effb4d094428914130a6e9548b214ef6",
+        "vocab": 129280
+      },
+      "f32-1": {
+        "bytes": 16547840,
+        "sha256": "3c4634c94382c3e6408e4214d5762cd0df2ee072dc6317721398fb8b16c7c7ea",
+        "vocab": 129280
+      }
+    },
+    "comparisons": [
+      {
+        "reference": "f32-0",
+        "candidate": "f32-1",
+        "mean_kl": 0.0070883040729079055,
+        "max_kl": 0.06689905666277116,
+        "top1_matches": 32,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 8.98057226249651e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 3.4489608644835904e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 9.597515251521565e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 1.7021732443769065e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 9.44878435698407e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 1.8583684238713176e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 2.419887381998756e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 6.702310966314412e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 5.252913381053897e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 2.3463515579347803e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 1.4976009071610624e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 1.204154796949788e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 5.839778190750957e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 5.208088372397817e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 2.3357185337921343e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 4.521863282160804e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 1.6432305632056647e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 3.7218494039437927e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 7.594064322091206e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.00022990374744956228
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.006288082444140464
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.04047816823108012
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.01122536211593079
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.014583609293357674
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.007869219834069682
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.005806450614167175
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.018970732617315814
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.026601452441002746
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.01628384022520694
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.0018608200602578638
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.009694056956862047
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.06689905666277116
+          }
+        ]
+      },
+      {
+        "reference": "cublas-0",
+        "candidate": "cublas-1",
+        "mean_kl": 0.01895305533926536,
+        "max_kl": 0.2957759257904549,
+        "top1_matches": 30,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 2.2997224493574464e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 4.863191734119413e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 1.8406616931816234e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 1.1084159805510578e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 4.389300076552273e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 6.522122218763471e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 2.0764532985881027e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 2.2820560053148464e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 1.8335657534509647e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 4.214511703882122e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 9.911329525301872e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 3.709269117487441e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 1.170850505226398e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 1.3257508459642068e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 1.2507405267463637e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 1.911127075353494e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 4.1118963152344434e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 6.570247098708969e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 2.8152618379189443e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.00012075676042947542
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0008541293724887346
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.03936823495264618
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.01646481215420314
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.011516816560164718
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.009350946620632237
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.006756557589328128
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.04611450195858215
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.08950630672164504
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.2957759257904549
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.006472332909021878
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.03209147466608141
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.052071582244225326
+          }
+        ]
+      },
+      {
+        "reference": "f32-0",
+        "candidate": "cublas-0",
+        "mean_kl": 0.014245207692433953,
+        "max_kl": 0.1263606028650772,
+        "top1_matches": 32,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 1.0114949453079862e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 1.2936632267594572e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 1.926214442727546e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 1.672463869140988e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 3.7774363687793277e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 2.4879769261313295e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 6.789611794223561e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 1.0724514081133488e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 2.0689001021405837e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 2.7896989015456073e-08
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 1.7119674741598693e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 1.7555609365441544e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 1.5846022683436652e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 2.417151710788335e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 3.5514035545249376e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 1.4187941993541e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 9.511049263655073e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 3.783301250283721e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 1.9465567168919065e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 0.0002925439399649771
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.007679914055767709
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.036448114985599994
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.009427478187836515
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.01879831445449479
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.0030853241165735034
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.0032089694412203687
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.031486233038107714
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.0860954034393066
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.1263606028650772
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.002010346675235648
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.016828450104825254
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.11409868249137185
+          }
+        ]
+      },
+      {
+        "reference": "f32-1",
+        "candidate": "cublas-1",
+        "mean_kl": 0.007866978626482078,
+        "max_kl": 0.05892073686975464,
+        "top1_matches": 30,
+        "rows": 32,
+        "positions": [
+          {
+            "predicted_token_index_zero_based": 131040,
+            "kl": 1.1338123926690384e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131041,
+            "kl": 1.4406050204546911e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131042,
+            "kl": 2.568464201002257e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131043,
+            "kl": 4.1618339263049393e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131044,
+            "kl": 4.65820058362611e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131045,
+            "kl": 6.092499299651005e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131046,
+            "kl": 1.5631216762261493e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131047,
+            "kl": 1.4533218446161538e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131048,
+            "kl": 2.838895188467842e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131049,
+            "kl": 2.717246231090417e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131050,
+            "kl": 1.3608150964557593e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131051,
+            "kl": 1.47399670627903e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131052,
+            "kl": 7.674214706145288e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131053,
+            "kl": 6.229737072987499e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131054,
+            "kl": 5.21838515355627e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131055,
+            "kl": 4.868186845988805e-07
+          },
+          {
+            "predicted_token_index_zero_based": 131056,
+            "kl": 1.1116384419235339e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131057,
+            "kl": 2.252006996358239e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131058,
+            "kl": 4.995598985438724e-06
+          },
+          {
+            "predicted_token_index_zero_based": 131059,
+            "kl": 7.583511665165009e-05
+          },
+          {
+            "predicted_token_index_zero_based": 131060,
+            "kl": 0.0004423280571078667
+          },
+          {
+            "predicted_token_index_zero_based": 131061,
+            "kl": 0.039909646476058866
+          },
+          {
+            "predicted_token_index_zero_based": 131062,
+            "kl": 0.009320650681975356
+          },
+          {
+            "predicted_token_index_zero_based": 131063,
+            "kl": 0.008984328994700454
+          },
+          {
+            "predicted_token_index_zero_based": 131064,
+            "kl": 0.002392308142650823
+          },
+          {
+            "predicted_token_index_zero_based": 131065,
+            "kl": 0.0028533936790960616
+          },
+          {
+            "predicted_token_index_zero_based": 131066,
+            "kl": 0.021668199532988437
+          },
+          {
+            "predicted_token_index_zero_based": 131067,
+            "kl": 0.03650294691100012
+          },
+          {
+            "predicted_token_index_zero_based": 131068,
+            "kl": 0.05892073686975464
+          },
+          {
+            "predicted_token_index_zero_based": 131069,
+            "kl": 0.004503943564269727
+          },
+          {
+            "predicted_token_index_zero_based": 131070,
+            "kl": 0.018847788974342028
+          },
+          {
+            "predicted_token_index_zero_based": 131071,
+            "kl": 0.047290810153763026
+          }
+        ]
+      }
+    ],
+    "scope": "Same-pack same-binary explicit experimental cuBLAS long-context downstream logits and repeatability screen; profiles/dispatch logging enabled. No whole-model speed, direct downstream-attention or full P1 acceptance claim."
+  },
+  "gate_mean_kl_maximum": 0.0005,
+  "interpretation": "All four comparisons fail, including F32 repeat. No threshold relaxation or baseline subtraction. Raw dumps were temporary and are unavailable; per-position KL, logit hashes, dispatch and telemetry remain in the artifact. Platform steps were skipped, not unavailable.",
+  "scope": "Failed diagnostic evidence only. Prior bounded 100K passes do not establish 128K admission. Local model manifest integrity is not independent publisher authenticity; counters/QPI remain unavailable/unmeasured."
+}
