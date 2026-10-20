@@ -12,7 +12,7 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Reopened: scaled MMA model qualification active.** Earlier cuBLAS full-128K deterministic quality failure remains documented. Prepared scaled MMA now passes component precision and wins long shapes; model quality/repeatability, input-range and clean performance evidence are pending. Production auto remains upstream. |
+| Production integration / P1 exit | **Reopened: isolated cutoff-rescore investigation.** Prepared scaled MMA passes components and wins long shapes but fails deterministic full-128K model KL. A new isolated F32 rescore candidate is being tested before any further model/performance admission. Earlier cuBLAS failure remains documented. Production auto remains upstream. |
 
 Current priority: **P1 batched MMA884 reopened on 20 October at user direction**.
 The optional query-scaling experiment was not exhausted by the earlier fallback
@@ -132,12 +132,50 @@ GPU campaign. Runner concurrency/owner guards, immutable binaries/pack/fixtures,
 
 [Model qualification run 39436237767](https://github.com/mylordmonkeyman/Abyss/actions/runs/39436237767)
 uses source `13765226c5e1531cb1f6bfe2facd898d0b62991f`. Its dedicated build,
-shared 110-case entry-point test and both sanitizers passed; the four actual
-full-128K arms are running. Do not dispatch another GPU campaign until it ends
-and its evidence is reviewed. `summarize_p1_mma_model.py` independently recomputes
+shared 110-case entry-point test and both sanitizers passed; all four actual
+full-128K arms completed. **The model quality gate failed.** `summarize_p1_mma_model.py` independently recomputes
 the paired raw capture and checks all four KL ledgers, actual dispatch, model
 input ranges and retained logit identities. It does not claim to recompute KL
 from raw logits that remain on the runner.
+
+Artifact `12274735996`, ZIP SHA256
+`a7a6ab62989c9c9c67960647a3d4296f63f8eeb4445e59155036a229aec0dfe3`,
+is reproduced into `p1-mma-model-2026-10-20.json` by
+`p1_mma_cutoff_replay.py`, which runs the underlying model checker with
+`diagnostic_failure=True` and preserves the failed disposition. F32 repeats and MMA
+repeats are each bitwise identical. Both matched cross-path comparisons have
+mean KL **0.009806128696**, worst-position KL **0.1207134282**, top-1 32/32.
+The mean limit remains 0.0005; no baseline KL is subtracted. Both candidate
+arms execute all 231 expected layer/chunk pairs. CPU-lane-28 variability is
+not the cause of these deterministic CPU-lane-0 cross-path results.
+
+Late-chunk same-input capture has 18 membership changes among 43008 rows,
+each overlap 511/512; 38872 ordered selections are identical. Of 105 raw
+sampled rows, one changes membership (layer 2, token offset 2047), with
+maximum absolute score error 2.14577e-6 and reference rank-512/513 margin
+7.15256e-7. Maximum sampled score relative L2 is 8.33859e-7; maximum direct
+attention relative L2 is 8.53527e-4, above its investigation screen. This
+supports a near-cutoff investigation, not proof that this capture explains
+every downstream difference. Live sampled Q magnitudes range 3.30176e-8 to
+4.91455; common-token normalization shifts range -3 to 0.
+
+Offline replacement of scores at or above `candidate_cutoff - 1e-4*max_abs_score`
+with the captured F32 scores recovers exact reference ordering in all 105
+sampled rows. It rescores about 1.72% of visible rows, and the largest observed
+score error is under 1.56% of that band's width. **This is an empirical band,
+not a certified error bound**, and does not validate unobserved rows, changed
+model trajectories, implemented arithmetic or throughput.
+
+The next isolated candidate keeps prepared MMA and the first upstream select,
+compacts this band into dead packed-query scratch, recomputes its scores in
+the operational F32 sequential dimension/head order, then repeats the upstream
+selector. Compact-list overflow falls back to rescoring every visible row;
+it never truncates the candidate population. No GPU allocation or runtime
+integration is added. A separate 26-case matrix requires exact reference
+selected scores and ordered IDs, plus unchanged F32/FP64 error limits, graph
+replay and sanitizers. It includes list overflow and dense near-ties. The
+15-shape / 90-pair stage timing includes preparation, both selects, compaction
+and rescoring. Measure this cost before considering another model campaign.
 
 `p1_mma_clean_ab.py` prepares the next step **conditional on a passing model
 screen**, with no new GPU dispatch at this checkpoint. It refuses failed quality,

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bounded isolated batched MMA matrix; no model or production dispatch."""
 import os
+import argparse
 from pathlib import Path
 import subprocess
 import sys
@@ -13,11 +14,14 @@ class Monitor(campaign.Monitor):
     loop=campaign.Sampler.loop
 
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--binary',type=Path,default=ROOT/'build-v100-diagnostics/test_dsv4_mma_batched')
+    args=parser.parse_args()
     out=Path(os.environ['EVIDENCE'])
     if campaign.memory_available()<16*1024**3:raise RuntimeError('host margin below 16 GiB')
     env=fixed_env();env['STRATA_DS4_IDX']='1'
     with Monitor(out) as monitor,(out/'mma-batch-benchmark.jsonl').open('w') as log:
-        child=subprocess.Popen([str(ROOT/'build-v100-diagnostics/test_dsv4_mma_batched'),'--bench'],
+        child=subprocess.Popen([str(args.binary.resolve()),'--bench'],
             env=env,stdout=log,stderr=subprocess.STDOUT)
         monitor.pid=child.pid;deadline=time.monotonic()+2400
         try:

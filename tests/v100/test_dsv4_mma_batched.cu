@@ -3,6 +3,9 @@
 #ifndef STRATA_USE_HIP
 #include "dsv4_volta_idx_batch.cuh"
 #include "dsv4_volta_idx_runner.cuh"
+#ifdef STRATA_V100_REFINE_TEST
+#include "dsv4_volta_idx_refine.cuh"
+#endif
 #include "strata/kernels/dsv4_fast.hpp"
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
@@ -34,6 +37,9 @@ struct Scorer {
         ck(cudaGetLastError());
     }
     void run(const float* q,const uint16_t* k,const float* w,int p0,int T,int ld,float* score,int* ids,cudaStream_t stream=nullptr){
+#ifdef STRATA_V100_REFINE_TEST
+        strata::kernels::volta::indexer_batch_scaled_refined(q,k,w,p0,T,ld,score,ids,stream,packed,packed_count,shifts,shift_count);return;
+#endif
         if(prepared){strata::kernels::volta::indexer_batch_scaled(q,k,w,p0,T,ld,score,ids,stream,packed,packed_count,shifts,shift_count);return;}
         if(scaled){if(tile==1)launch<1,true>(q,k,w,p0,T,ld,score,stream);else launch<8,true>(q,k,w,p0,T,ld,score,stream);}
         else{if(tile==1)launch<1,false>(q,k,w,p0,T,ld,score,stream);else launch<8,false>(q,k,w,p0,T,ld,score,stream);}
@@ -66,6 +72,16 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
         for(auto& x:q)x=std::ldexp(x,127);
         for(auto& x:k)x=__half_as_ushort(__float2half_rn(std::ldexp(__half2float(__ushort_as_half(x)),-14)));
     } // Large-query fallback with finite dots/results, rather than overflowing the oracle.
+#ifdef STRATA_V100_REFINE_TEST
+    if(mode==10){
+        // Near-identical keys stress dense rank ties/cutoff crossings.
+        for(int j=1;j<visible;++j){
+            std::copy_n(k.begin(),DIM,k.begin()+size_t(j)*DIM);
+            const float first=__half2float(__ushort_as_half(k[size_t(j)*DIM]));
+            k[size_t(j)*DIM]=__half_as_ushort(__float2half_rn(first+(j%3-1)*0.00048828125f));
+        }
+    }
+#endif
     for(float x:q)need(std::isfinite(x)&&(scorer.scaled||std::abs(x)<=65504),"query outside candidate domain");
     if(mode==3)for(int j=1;j<visible;++j)if(j&1)std::copy_n(k.begin()+size_t(j-1)*DIM,DIM,k.begin()+size_t(j)*DIM);
     Buffer<float> dq(q),dw(w),out(blank),old(blank);Buffer<uint16_t> dk(k);
@@ -90,6 +106,18 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
         ck(cudaStreamDestroy(stream));
     }
     const auto a=old.get(),b=out.get();const auto sel=ids.get(),prior=baseline.get();
+#ifdef STRATA_V100_REFINE_TEST
+    const auto refined=shifts.get();size_t refined_rows=0;
+    for(int t=0;t<T;++t){
+        const int top=std::min(512,(p0+t+1)/4);refined_rows+=refined[t];
+        for(int i=0;i<top;++i){
+            need(sel[t*512+i]==prior[t*512+i],"refined selection differs from operational F32 order");
+            const size_t index=size_t(t)*ld+sel[t*512+i];
+            need(b[index]==a[index],"refined selected score differs from operational F32 arithmetic");
+        }
+    }
+    std::printf("{\"case\":\"refinement\",\"T\":%d,\"p0\":%d,\"mode\":%d,\"refined_rows\":%zu,\"exact_selected_scores_and_order\":true}\n",T,p0,mode,refined_rows);
+#endif
     double sq=0,norm=0,max_abs=0,max_cpu=0,oracle_sq=0,oracle_norm=0,min_margin=INFINITY;size_t count=0,overlap=0,selected=0;
     std::vector<float> errors;errors.reserve(size_t(T)*visible);
     for(int t=0;t<T;++t){
@@ -147,9 +175,16 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
 int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"batched MMA requires actual SM70");
+#ifdef STRATA_V100_REFINE_TEST
+        std::printf("{\"matrix_revision\":5,\"scope\":\"isolated prepared MMA with empirical cutoff-band operational-F32 rescore; no model admission\"}\n");
+#else
         std::printf("{\"matrix_revision\":4,\"scope\":\"unscaled and per-head controls plus prepared per-token scaled MMA884 hi/lo\"}\n");
+#endif
         const bool bench=argc>1;
         for(int variant=0;variant<5;++variant){
+#ifdef STRATA_V100_REFINE_TEST
+            if(variant!=4)continue;
+#endif
             const bool prepared=variant==4,scaled=variant>=2;const int tile=variant==0||variant==2?1:8;
             if(bench&&!prepared)continue;
             Scorer scorer(tile,scaled,prepared);
@@ -171,6 +206,11 @@ int main(int argc,char**){
                 ck(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&active,strata::kernels::volta::idx_score_volta_batch_kernel<8>,128,0));
             }
             std::printf("{\"case\":\"resources\",\"scaled\":%s,\"prepared\":%s,\"query_tile\":%d,\"registers\":%d,\"shared_bytes\":%zu,\"local_bytes\":%zu,\"active_blocks_per_sm\":%d}\n",scaled?"true":"false",prepared?"true":"false",tile,attr.numRegs,attr.sharedSizeBytes,attr.localSizeBytes,active);
+#ifdef STRATA_V100_REFINE_TEST
+            ck(cudaFuncGetAttributes(&attr,strata::kernels::volta::refine_scaled_selection));
+            ck(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&active,strata::kernels::volta::refine_scaled_selection,256,0));
+            std::printf("{\"case\":\"refinement_resources\",\"registers\":%d,\"shared_bytes\":%zu,\"local_bytes\":%zu,\"active_blocks_per_sm\":%d}\n",attr.numRegs,attr.sharedSizeBytes,attr.localSizeBytes,active);
+#endif
             if(bench){
                 for(int T:{256,1024,4096})for(int p0:{2048,8192,32768,120000})run_case(scorer,T,p0,0,true);
                 for(int p0:{65536,98304,120000})run_case(scorer,2048,p0,0,true);
@@ -178,6 +218,10 @@ int main(int argc,char**){
                 for(int T:{1,3,8,9,33})for(int p0:{2040,2052,8192})run_case(scorer,T,p0,0,false);
                 for(int mode:{1,2,3,4})run_case(scorer,9,2052,mode,false);
                 if(scaled)for(int mode:{5,6,7,8,9})run_case(scorer,9,2052,mode,false);
+#ifdef STRATA_V100_REFINE_TEST
+                run_case(scorer,3,40000,1,false); // Compact-list overflow must rescore every visible row.
+                run_case(scorer,9,2052,10,false);
+#endif
             }
         }
         std::puts("{\"suite\":\"isolated_mma_batch_indexer\",\"pass\":true}");return 0;
