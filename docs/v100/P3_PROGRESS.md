@@ -87,3 +87,12 @@ history. It keeps the startup plan, 28-thread lane, F32 dispatch and all securit
 memory, profiler and artifact limits. No synthetic position offset substitutes
 for long-context routes. Longer context alone does not close observer-overhead,
 cold-to-warm, competing-load or alternate-placement evidence gaps.
+
+The 32K extension is dispatched as
+[run 39405805983](https://github.com/mylordmonkeyman/Abyss/actions/runs/39405805983)
+from `dc409c2d532270b549d06bc8070714b758ef257e`. Inspect its result before
+another GPU dispatch. Artifact-summary regression tests additionally reject
+incomplete populations, source/binary identity disagreement, wrong context,
+observer drops and ZIP digest mismatch. All 62 local V100 tooling tests and
+the HIP-name mapping check pass; this does not substitute for physical HIP or
+other-device inference.

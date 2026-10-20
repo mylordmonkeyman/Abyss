@@ -1,13 +1,45 @@
 """Cost observations must join completed CPU/GPU work without inventing latency."""
 import copy
+import gzip
+import hashlib
+import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+import zipfile
 sys.path.insert(0,str(Path(__file__).resolve().parent/'profiling'))
 from p3_cost_analyze import analyze_rows
-from summarize_p3_cost import distribution,population
+from summarize_p3_cost import distribution,population,summarize
 
 class CostJoin(unittest.TestCase):
+    def test_artifact_summary_rejects_inconsistent_evidence(self):
+        rows=[dict(device=0,layer=layer,token_index=token,request_index=token//32,
+            cpu=0,fetch=0,miss=0,cpu_experts=0,fetch_experts=0,cpu_completed_wall_ns=0,fetch_ns=1)
+            for layer in range(43) for token in range(64)]
+        entries={'costs.json':dict(rows=rows,tokens=64,completed_requests=2752,cpu_completion_records=0),
+            'raw-identity.json':dict(source_sha='source',binary_sha256='binary',fixture_sha256='fixture'),
+            'invocation.json':dict(binary_sha256='binary',fixture_sha256='fixture',context_tokens=32768),
+            'requests.json':[dict(request=i,done='DONE 32 32768') for i in range(2)],
+            'memory_summary.json':{},'thermal.json':{}}
+        def check(data,engine='V100_COST_END ranges=1 dropped=0',digest=None):
+            with tempfile.TemporaryDirectory() as folder:
+                path=Path(folder)/'cost.zip'
+                with zipfile.ZipFile(path,'w') as z:
+                    for name,value in data.items():z.writestr(name,json.dumps(value))
+                    z.writestr('source-sha.txt','source\n');z.writestr('binary-sha256.txt','binary  engine\n')
+                    z.writestr('engine.log.gz',gzip.compress(engine.encode()))
+                return summarize(path,digest or hashlib.sha256(path.read_bytes()).hexdigest(),1)
+        self.assertEqual(check(entries)['completed_layer_tokens'],2752)
+        bad=copy.deepcopy(entries);bad['costs.json']['rows'].pop()
+        with self.assertRaisesRegex(ValueError,'layer-token population'):check(bad)
+        bad=copy.deepcopy(entries);bad['raw-identity.json']['source_sha']='other'
+        with self.assertRaisesRegex(ValueError,'identities disagree'):check(bad)
+        bad=copy.deepcopy(entries);bad['requests.json'][1]['done']='DONE 32 8192'
+        with self.assertRaisesRegex(ValueError,'request population'):check(bad)
+        with self.assertRaisesRegex(ValueError,'dropped or incomplete'):check(entries,'V100_COST_END ranges=2 dropped=1')
+        with self.assertRaisesRegex(ValueError,'digest mismatch'):check(entries,digest='wrong')
+
     def test_conditioned_summary_keeps_noop_and_misses_separate(self):
         rows=[dict(request_index=0,cpu_experts=0,fetch_experts=0,miss=0,
             cpu_completed_wall_ns=0,fetch_ns=3),
