@@ -19,7 +19,8 @@ KL subtraction. Refined MMA's passing 128K control is recorded separately.
    tokens using operational batch-F32 dimension/head accumulation and original
    selection. Record correction fraction and all costs; no CPU decision/sync.
    A measured empirical envelope must be labeled as such, not called a proof.
-   Implemented in the isolated component matrix; physical qualification pending.
+   Passed in isolated run 39471901764; flagged-only correction leaves internal
+   ordering differences and therefore is not selected for model admission.
 3. **Cutoff/top-k+delta rescore.** Reuse validated reference-matched arithmetic
    and GPU compaction/selection work from the MMA investigation where practical.
    Recompute candidates within the conservative cutoff envelope. Overflow must
@@ -29,11 +30,16 @@ KL subtraction. Refined MMA's passing 128K control is recorded separately.
    Implemented flagged-only and all-token policies with an empirical 32eps guard;
    all-token rescoring also repairs internal top-512 ordering. Counterfactual late
    capture calibration is not a global bound or actual-model correction result.
+   The all-token variant passed all component selected-score/order checks and
+   wins actual T=2048 by 45.584% /46.491% at96K/120K. Advance that exact entry
+   point, with its empirical guard disclosed, to common model qualification.
 4. **Reference-order epilogue.** Separately test sequential 64-head weighted
    F32 accumulation against the current warp reduction. Preserve per-head ReLU,
    F32 SGEMM outputs and original FP16 keys. Measure whether selection differences
    and correction rate decrease; include epilogue cost. Keep the original variant
    as a named comparator. Do not combine changes without isolated evidence.
+   Sequential heads passed components but are slower than the warp-sum plus
+   all-token cutoff winner; sequential alone still has diagnostic order errors.
 5. **Common quality and performance.** Use deterministic same-pack 100K/128K
    fixtures and CPU-lane-0 repeats first. Compare F32, original cuBLAS, corrected
    cuBLAS and refined MMA in the same source/binary/configuration. Report mean,

@@ -27,8 +27,55 @@ This takes priority over P3 and standalone MMA performance campaigns.
 
 ### Refined MMA model result and cuBLAS intervention checkpoint
 
-**cuBLAS causality resolved; GPU correction components implemented, not yet
-physically qualified.** [Run 39453135796](https://github.com/mylordmonkeyman/Abyss/actions/runs/39453135796)
+**Corrected cuBLAS component winner; common model campaign prepared.**
+[Run 39471901764](https://github.com/mylordmonkeyman/Abyss/actions/runs/39471901764)
+passes all 140 cases, graphs, overflow/tie/causal guards and both sanitizers,
+plus 105 timing shapes / 630 interleaved F32 pairs. Artifact `12287527749`, ZIP
+SHA256 `f99c05decf2c4d24c814aed92077947f4064ad5c5a24d94980085f70542da1f6`,
+recomputes into `p1-cublas-corrections-2026-10-20.json` with
+`summarize_p1_cublas_corrected.py`.
+
+At actual T=2048, all-token cutoff rescoring with the original warp head sum
+changes stage latency by **-45.584% at 96K / -46.491% at 120K**, all six pairs
+winning in each shape, including all detection, two selectors and rescoring.
+Original cuBLAS changes are -8.529% / -11.603%; this is an isolated component
+comparison, not a whole-model speed result. Sequential-head plus cutoff rescore
+is slower (-25.194% / -25.994%). Without rescore, sequential heads eliminate
+ordering differences on those random timing inputs, but leave three in the
+small diagnostic matrix. Full-token/flagged-band correction leaves 60 / 100
+unflagged ordering errors at 96K / 120K; all-token band has none. The latter
+flags 88/2048 and 99/2048 tokens, respectively, and scores about 1048670 total
+rows (~512/token). It still rescores every token to restore internal ordering.
+Rescore uses 101 registers, 36120 shared bytes, zero local bytes and two active
+CTAs/SM. Telemetry observed power limiting; sustained real-model clock/performance
+qualification remains. Empirical envelope limitations remain unchanged.
+
+The explicit `ABYSS_V100_CUBLAS_CORRECTION=band-all` modifier under forced
+`ABYSS_V100_IDX=cublas` integrates the exact tested entry point, retaining the
+same SM70/T=2048/96K–120K bounds and unconditional legacy F32 override. Auto
+remains upstream. An optional `band-all-sequential` modifier preserves the
+separate slower epilogue experiment. Key/state reuse `B.oa`, dot/list reuse
+`B.o`, on the same stream with disjoint lifetimes. At T=2048 the active borrower
+high-water is 64 MiB lists/dots + 4.03125 MiB state/keys = 68.03125 MiB, within
+already allocated buffers; **zero new GPU allocation**. Existing cuBLAS workspace
+is separately owned and not added again. The new alias test exercises these
+actual lifetimes through the full case matrix, graphs and sanitizers before
+model arms. Capture-only CPU copies report 16 KiB/call of correction counters;
+clean timing builds omit them and their synchronization.
+
+The common quality harness runs F32/cuBLAS/corrected/MMA twice each in balanced
+order at both frozen 100K and full-128K fixtures. Each geometry requires exact
+dispatch coverage, deterministic repeat hashes and ten KL comparisons. Original
+cuBLAS cross-quality is reported even if it reproduces its known failure;
+corrected/MMA remain subject to mean KL <=0.0005 and literal selected-score,
+all-row ordered-ID and sampled-attention checks. Each first candidate captures
+the same late live inputs/ranges. Raw logit retention is bounded at 256 MiB total;
+six capture artifacts and the summary artifact are each bounded at 64 MiB. These
+diagnostic arms do not establish clean end-to-end speed. 83 local V100 tooling
+tests and HIP mapping pass. Physical alias/model results are pending.
+
+**Causality control underlying the correction campaign.**
+[Run 39453135796](https://github.com/mylordmonkeyman/Abyss/actions/runs/39453135796)
 passes the 12 intervention cases, graphs, memcheck/synccheck and four full-128K
 CPU0 model arms. F32 repeats and `reference-order` logits are bitwise identical,
 mean/max KL zero. `reference-membership` still fails: mean KL **0.01026781025**,
@@ -65,7 +112,7 @@ and IDs are asserted; unflagged ordering errors remain disclosed, not waived.
 The campaign requires the pinned successful causality checkpoint before build.
 It tests 140 cases including dense ties, tiny/zero queries, causal boundaries,
 overflow and graphs, then both sanitizers and 105 timing shapes / 630 paired F32
-comparisons including all correction costs. Physical results remain pending.
+comparisons including all correction costs. Physical results are recorded above.
 Component scratch is allocated explicitly for measurement; future runtime reuse
 of dead buffers must receive separate unique-memory/lifetime accounting.
 

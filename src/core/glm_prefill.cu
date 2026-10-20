@@ -25,6 +25,7 @@
 #include "strata/kernels/v100_indexer_policy.hpp"
 #ifndef STRATA_USE_HIP
 #include "../kernels/cuda/dsv4_cublas_idx.cuh"
+#include "../kernels/cuda/dsv4_cublas_corrected.cuh"
 #include "../kernels/cuda/dsv4_volta_idx_refine.cuh"
 #ifdef STRATA_V100_CAPTURE_INDEXER
 #include "v100_cublas_selection_control.cuh"
@@ -1399,6 +1400,14 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
     Ds4Bufs B = carve_ds4(c, (size_t) tn, g, S->max_pools);
     const auto idx_mode=ds::p1::mode();
     bool experimental_idx=false;
+#ifndef STRATA_USE_HIP
+    // Explicit research modifier only; the legacy F32 override still wins.
+    const char* correction_env=idx_mode==ds::p1::Mode::cublas?std::getenv("ABYSS_V100_CUBLAS_CORRECTION"):nullptr;
+    const bool corrected_cublas=correction_env && *correction_env && std::strcmp(correction_env,"none")!=0;
+    if(corrected_cublas && std::strcmp(correction_env,"band-all")!=0 && std::strcmp(correction_env,"band-all-sequential")!=0){
+        err="ABYSS_V100_CUBLAS_CORRECTION requires none, band-all or band-all-sequential";return false;
+    }
+#endif
     if(idx_mode==ds::p1::Mode::cublas || idx_mode==ds::p1::Mode::volta) {
 #ifdef STRATA_USE_HIP
         err=ds::p1::backend_error(idx_mode,true,0,0,g.idx_heads,g.idx_key,g.idx_top_k);return false;
@@ -1509,7 +1518,31 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
             // output LoRA with beta=0. Neither has a live value at this point.
             // Same stream and existing S->blas/S->ws: no persistent allocation,
             // handle state mutation, synchronization or cross-stream borrower.
-            ds::p1::run(S->blas,s,B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,
+            if(corrected_cublas){
+                // Key/dot scratch dies before correction work/state uses these
+                // same buffers. Attention/output LoRA overwrite them afterward.
+                // Sequential execution on s gives disjoint lifetimes; no new allocation.
+                ds::p1::correction::run(S->blas,s,B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,
+                    B.oa,(size_t)tn*OL,B.o,(size_t)tn*HD,
+                    reinterpret_cast<uint32_t*>(B.o),(size_t)tn*HD,
+                    reinterpret_cast<int*>(B.oa),(size_t)tn*OL,
+                    ds::p1::correction::Policy::band_all,std::strcmp(correction_env,"band-all-sequential")==0);
+#ifdef STRATA_V100_CAPTURE_INDEXER
+                // Diagnostic collection only. Clean performance builds omit
+                // these copies and host synchronization entirely.
+                std::vector<int> counts((size_t)tn*2);
+                if(cudaMemcpyAsync(counts.data(),B.oa,counts.size()*sizeof(int),cudaMemcpyDeviceToHost,s)!=cudaSuccess ||
+                   cudaStreamSynchronize(s)!=cudaSuccess)throw std::runtime_error("cuBLAS correction accounting failed");
+                size_t flagged=0,corrected=0,full=0,rescored=0;
+                for(int t=0;t<tn;++t){
+                    const int n=(p0+t+1)/4,count=counts[t];
+                    if(count<0 || count>n)throw std::runtime_error("invalid cuBLAS correction count");
+                    flagged+=counts[tn+t]!=0;corrected+=count>0;full+=count>ds::p1::correction::Capacity;rescored+=count;
+                }
+                std::fprintf(stderr,"p1_cublas_correction layer=%d p0=%d T=%d policy=%s flagged_tokens=%zu corrected_tokens=%zu full_tokens=%zu rescored_rows=%zu\n",
+                    il,p0,tn,correction_env,flagged,corrected,full,rescored);
+#endif
+            }else ds::p1::run(S->blas,s,B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,
                         B.oa,(size_t)tn*OL,B.o,(size_t)tn*HD);
             }
         } else
@@ -1519,9 +1552,20 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
         if(idx_mode!=ds::p1::Mode::automatic)std::fprintf(stderr,
             "p1_indexer layer=%d p0=%d T=%d heads=%d dim=%d scorer=%s refinement=%s reason=%s dynamic_shared=0 borrowed_scratch_bytes=%zu\n",
             il,p0,tn,g.idx_heads,g.idx_key,experimental_idx?(idx_mode==ds::p1::Mode::volta?"volta":"cublas"):"f32",
-            experimental_idx && idx_mode==ds::p1::Mode::volta?"empirical-band-f32":"none",
+            experimental_idx && idx_mode==ds::p1::Mode::volta?"empirical-band-f32":
+#ifndef STRATA_USE_HIP
+                experimental_idx && corrected_cublas?correction_env:
+#endif
+                "none",
             experimental_idx?"explicit-experiment":idx_mode==ds::p1::Mode::f32?"force-f32":"outside-experimental-regime",
-            experimental_idx?(idx_mode==ds::p1::Mode::cublas?(size_t)((256*64*512+512*128)*sizeof(float)):
+            experimental_idx?(idx_mode==ds::p1::Mode::cublas?
+#ifndef STRATA_USE_HIP
+                (corrected_cublas?std::max((size_t)(256*64*512),(size_t)tn*ds::p1::correction::Capacity)+
+                    std::max((size_t)(512*128),(size_t)tn*ds::p1::correction::StateWords):
+                    (size_t)(256*64*512+512*128))*sizeof(float):
+#else
+                (size_t)((256*64*512+512*128)*sizeof(float)):
+#endif
                 ((size_t)tn*64*128+tn)*sizeof(uint32_t)):0);
     }
     S->mark("ds4_index", s);
@@ -1533,7 +1577,7 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
         (idx_mode!=ds::p1::Mode::cublas || !cublas_capture || std::atoi(cublas_capture)!=0);
     v100diag::IndexerCapture idx_capture(capture_candidate,il,p0,tn,HD,B.score_ld,s);
     if(idx_capture.enabled){
-        if(idx_mode==ds::p1::Mode::volta)v100diag::mma_query_range(idx_capture,B.iq);
+        v100diag::mma_query_range(idx_capture,B.iq);
         idx_capture.selected(B.score,B.sel,true);
         // Original F32 scorer/selector on exactly the same live iq, keys and
         // weights; no allocation. B.score is dead after selection. Restore all

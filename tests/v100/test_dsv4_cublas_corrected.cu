@@ -26,6 +26,7 @@ constexpr int TT=256, KK=512, HEADS=64, DIM=128, ROWS_PER_WARP=1;
 const char* labels[]={"original","batched-warp","batched-sequential","full-flagged","band-flagged","band-all","band-all-sequential"};
 struct Scorer {
     int variant;uint32_t* work=nullptr;int* state=nullptr;size_t work_count=0,state_count=0;
+    float* borrowed_key=nullptr;float* borrowed_dot=nullptr;
     // Scratch is capped independently of the common caller-owned score/selection buffers.
     static constexpr size_t WS=16*1024*1024;
     static_assert(WS+(size_t(KK)*DIM+size_t(TT)*HEADS*KK)*sizeof(float)<64*1024*1024,
@@ -39,7 +40,9 @@ struct Scorer {
         if(variant==0){ds::p1::run(handle,stream,q,k,w,p0,T,ld,score,ids,key.p,key.n,dot.p,dot.n);return;}
         using Policy=ds::p1::correction::Policy;
         const auto policy=variant<=2?Policy::none:variant==3?Policy::full_flagged:variant==4?Policy::band_flagged:Policy::band_all;
-        ds::p1::correction::run(handle,stream,q,k,w,p0,T,ld,score,ids,key.p,key.n,dot.p,dot.n,
+        ds::p1::correction::run(handle,stream,q,k,w,p0,T,ld,score,ids,
+            borrowed_key?borrowed_key:key.p,borrowed_key?state_count:key.n,
+            borrowed_dot?borrowed_dot:dot.p,borrowed_dot?work_count:dot.n,
             work,work_count,state,state_count,policy,variant==2||variant==6);
     }
 };
@@ -65,9 +68,16 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
         const float first=__half2float(__ushort_as_half(k[size_t(j)*DIM]));
         k[size_t(j)*DIM]=__half_as_ushort(__float2half_rn(first+(j%3-1)*0.00048828125f));
     }
-    Buffer<uint32_t> work(scorer.variant?size_t(T)*ds::p1::correction::Capacity:1);
-    Buffer<int> state(scorer.variant?size_t(T)*ds::p1::correction::StateWords:1);
+    size_t work_words=scorer.variant?size_t(T)*ds::p1::correction::Capacity:1;
+    size_t state_words=scorer.variant?size_t(T)*ds::p1::correction::StateWords:1;
+#ifdef STRATA_V100_CUBLAS_ALIAS_TEST
+    work_words=std::max(work_words,size_t(TT)*HEADS*KK);state_words=std::max(state_words,size_t(KK)*DIM);
+#endif
+    Buffer<uint32_t> work(work_words);Buffer<int> state(state_words);
     scorer.work=work.p;scorer.work_count=work.n;scorer.state=state.p;scorer.state_count=state.n;
+#ifdef STRATA_V100_CUBLAS_ALIAS_TEST
+    scorer.borrowed_key=reinterpret_cast<float*>(state.p);scorer.borrowed_dot=reinterpret_cast<float*>(work.p);
+#endif
     Buffer<float> dq(q),dw(w),out(blank),old(blank);Buffer<uint16_t> dk(k);
     Buffer<int> ids(std::vector<int>(size_t(T)*512+32,-12345)),baseline(std::vector<int>(size_t(T)*512+32,-12345));
     auto oldrun=[&]{ds::indexer_batch(dq.p,dk.p,dw.p,HEADS,4,p0,T,512,old.p,ld,baseline.p,nullptr);};
@@ -165,7 +175,11 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
 int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"cuBLAS candidate requires actual SM70");
+#ifdef STRATA_V100_CUBLAS_ALIAS_TEST
+        std::puts("{\"matrix_revision\":1,\"borrowed_aliases\":true,\"scope\":\"same-stream key/state and dot/work lifetime reuse\"}");
+#else
         std::puts("{\"matrix_revision\":1,\"scope\":\"isolated cuBLAS correction variants, empirical 32eps envelope, unchanged F32 reference\"}");
+#endif
         const bool bench=argc>1;
         for(int variant=0;variant<7;++variant){
             Scorer scorer(variant);
