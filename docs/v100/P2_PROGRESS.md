@@ -32,13 +32,18 @@ sink-aware online max/denominator, and independent P-hi/P-lo MMA884 chains for
 PV against the identical FP16 K=V rows. Unnormalized probabilities are split
 after fixed x1024 scaling, then PV is divided by 1024. FP32 running numerators
 combine chains at each key-tile boundary and rescale when the maximum changes.
-Only one warp does each tile's QK; PV dimension subtiles are spread over all
-warps. This simple schedule may lose to F32; it is a feasibility comparator.
+The first measured schedule assigned QK to one warp, with PV dimension subtiles
+spread over all warps. It passes numerical/sanitizer gates but loses every
+timed shape, as recorded below. The next schedule splits QK's 512 dimensions
+across all warps, combines each independent hi/lo partition, then reduces
+partition scores in ascending warp order before scaling and softmax.
 
-| Key tile | Query hi/lo | Key rows | Probability hi/lo | Scores | Online state | Total dynamic shared |
+| Key tile / warps | Query hi/lo | Key rows | Probability hi/lo | Partial scores | Online state | Total dynamic shared |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 16 | 16384 B | 16384 B | 512 B | 512 B | 96 B | 33888 B |
-| 32 | 16384 B | 32768 B | 1024 B | 1024 B | 96 B | 51296 B |
+| 16 / 4 | 16384 B | 16384 B | 512 B | 2048 B | 96 B | 35424 B |
+| 16 / 8 | 16384 B | 16384 B | 512 B | 4096 B | 96 B | 37472 B |
+| 32 / 4 | 16384 B | 32768 B | 1024 B | 4096 B | 96 B | 54368 B |
+| 32 / 8 | 16384 B | 32768 B | 1024 B | 8192 B | 96 B | 58464 B |
 
 Both use four/eight warps, explicitly opt in to their checked dynamic shared
 size, and record actual registers/local memory and resource occupancy. The
@@ -70,6 +75,29 @@ the valid upstream path. Candidate arithmetic and numerical thresholds are
 unchanged. Metrics are emitted before assertion, including the independent
 FP64 oracle, so another failure retains its numerical evidence. This corrects
 the test; it does not establish that the candidate will pass the corrected run.
+
+## Corrected serial-QK tile result: correct, uniformly slower
+
+[Run 39390313422](https://github.com/mylordmonkeyman/Abyss/actions/runs/39390313422)
+passes all 32 numerical/graph cases, both sanitizers, and 24 timed numerical
+checks. Maximum full-output relative L2 versus F32 is 4.02383e-6. There are
+144 interleaved timing pairs; the candidate is slower in every pair. Median
+paired elapsed changes range +234.72% to +749.16%, across raw/CSA/HCA,
+T=256/2048 and all four tile/warp layouts. No admission or speedup claim.
+
+`p2-tile-2026-10-20.json` is reproduced by `summarize_p2_tile.py` from artifact
+12248574843, ZIP SHA256
+`96a43a2fefe21d44c95ae1425d69b6f64fef8a060d3f7bed138d0c46ac2dd5f0`.
+The serial-QK layouts use 127/98 registers at 16 keys and 136/122 at 32 keys
+for four/eight warps, zero local bytes, and two/one resource CTAs per SM.
+Six telemetry samples show no thermal reason and observed power limiting;
+this short isolated run does not establish sustained whole-model behavior.
+
+The bounded follow-up changes the identified serial QK dependency/idle-warp
+schedule and adds per-warp score scratch as ledgered above. It must repeat
+the same numerical/graph/sanitizer gates before the same timing matrix.
+No other arithmetic path, model pack, selector, threshold or production default
+changes. If it remains unprofitable, retaining F32 is a permitted P2 outcome.
 
 This is a prerequisite check, not a new fused kernel or P2 performance result.
 After it passes: establish bounded candidate schedules and byte/register/shared

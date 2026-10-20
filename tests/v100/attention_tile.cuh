@@ -9,7 +9,7 @@ template<int TILE,int WARPS> struct AttentionTile {
     static constexpr int QUERY_BYTES=2*8*512*2;
     static constexpr int KEY_BYTES=TILE*512*2;
     static constexpr int PROB_BYTES=2*8*TILE*2;
-    static constexpr int SCORE_BYTES=8*TILE*4;
+    static constexpr int SCORE_BYTES=WARPS*8*TILE*4;
     static constexpr int STATE_BYTES=3*8*4;
     static constexpr int SHARED=QUERY_BYTES+KEY_BYTES+PROB_BYTES+SCORE_BYTES+STATE_BYTES;
     static_assert(SHARED<=64*1024,"P2 tile scratch cap");
@@ -26,7 +26,7 @@ __global__ void attention_tile(const float* query,const uint16_t* raw,const uint
     auto* phi=keys+TILE*D;
     auto* plo=phi+8*TILE;
     auto* score=reinterpret_cast<float*>(plo+8*TILE);
-    auto* maximum=score+8*TILE;
+    auto* maximum=score+WARPS*8*TILE;
     auto* denominator=maximum+8;
     auto* rescale=denominator+8;
     const int tid=threadIdx.x,lane=tid&31,warp=tid/32;
@@ -52,10 +52,13 @@ __global__ void attention_tile(const float* query,const uint16_t* raw,const uint
             keys[i]=value;
         }
         __syncthreads();
-        if(warp==0){
+        {
             float hi[8]={},lo[8]={};
             const int key=quad*8;
-            for(int k0=0;k0<D;k0+=4){
+            // Independent dimension partitions engage every warp during QK.
+            // Combine each partition's hi/lo first, then sum partitions in
+            // ascending warp order before scaling and sink softmax.
+            for(int k0=warp*4;k0<D;k0+=WARPS*4){
                 uint32_t ah[2]={},al[2]={},b[2]={};
 #pragma unroll
                 for(int k=0;k<4;++k){
@@ -71,12 +74,16 @@ __global__ void attention_tile(const float* query,const uint16_t* raw,const uint
 #pragma unroll
             for(int i=0;i<8;++i){
                 const int r=(lane&1)+4*(lane>>4)+2*((i>>1)&1),c=(lane&2)+4*(i>>2)+(i&1);
-                if(key+c<TILE)score[r*TILE+key+c]=(hi[i]+lo[i])*(1.f/sqrtf(float(D)));
+                if(key+c<TILE)score[(warp*8+r)*TILE+key+c]=hi[i]+lo[i];
             }
         }
         __syncthreads();
         if(tid<8){
             const int count=min(TILE,n-begin);float next=maximum[tid];
+            for(int k=0;k<count;++k){
+                float sum=0;for(int w=0;w<WARPS;++w)sum+=score[(w*8+tid)*TILE+k];
+                score[tid*TILE+k]=sum*(1.f/sqrtf(float(D)));
+            }
             for(int k=0;k<count;++k)next=fmaxf(next,score[tid*TILE+k]);
             const float factor=expf(maximum[tid]-next);rescale[tid]=factor;
             float den=denominator[tid]*factor;
