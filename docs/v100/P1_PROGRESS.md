@@ -60,6 +60,28 @@ cases/graphs/sanitizers, and time only the scaled eight-query tile (15 shapes,
 90 pairs); unscaled controls and the one-query loser already have their timing
 dispositions. This tests the revised normalization overhead directly.
 
+The shared-factor schedule passes all 86 cases, graphs, sanitizers and 90
+timing pairs in [run 39434241151](https://github.com/mylordmonkeyman/Abyss/actions/runs/39434241151).
+Artifact `12269701720`, ZIP SHA256
+`6c6656de84ce2dc1ed0ac655790f255385257faba3363ce8328b2b7a323d0ca1`,
+recomputes `p1-mma-scaled-fast-2026-10-20.json`. Both extreme-exponent paths
+pass; the 2^-130 case has relative L2 1.8032e-6 and full membership. The
+eight-query kernel has zero local bytes, 182 registers and 34304 shared bytes.
+It still loses all timed shapes: +12.13% at actual T=2048/96K and +9.20% at
+120K. A model-speed claim or automatic dispatch remains unqualified.
+
+Next prepare scaled hi/lo fragments once per token, rather than recomputing
+normalization in every key tile. This distinct variant uses one positive
+power-of-two scale common to the token's heads, preserves per-head ReLU and
+weights, and restores the final row score. Commutation holds in real arithmetic;
+floating-point order/underflow effects must pass the same F32/FP64 and selection
+checks. The existing per-head and unscaled candidates remain diagnostic controls.
+The new 110-case matrix includes zero/tiny/large/mixed/exponent extremes and
+graph/sanitizer checks, with 15 shapes/90 pairs including the preparation launch.
+Caller-owned packed-query scratch is `(T*64*128+T)*4` bytes (64 MiB + 8 KiB at
+T=2048), bounded explicitly and included in resource accounting. No model
+runtime is enabled by this isolated experiment.
+
 P3 checkpoint: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
 P2 also concludes with F32 fallback; see `P2_COMPLETION.md`.
 The fallback disposition and evidence inventory are in `P1_COMPLETION.md`.

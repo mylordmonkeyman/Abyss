@@ -2,6 +2,7 @@
 // Isolated unscaled controls plus per-head power-of-two normalized MMA.
 #ifndef STRATA_USE_HIP
 #include "dsv4_volta_idx_batch.cuh"
+#include "dsv4_volta_idx_runner.cuh"
 #include "strata/kernels/dsv4_fast.hpp"
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
@@ -24,8 +25,8 @@ template<class T> struct Buffer {
 };
 constexpr int HEADS=64,DIM=128;
 struct Scorer {
-    int tile;bool scaled;
-    explicit Scorer(int tokens,bool normalize):tile(tokens),scaled(normalize){}
+    int tile;bool scaled,prepared;uint32_t* packed=nullptr;int* shifts=nullptr;size_t packed_count=0,shift_count=0;
+    explicit Scorer(int tokens,bool normalize,bool prepare=false):tile(tokens),scaled(normalize),prepared(prepare){}
     template<int Tokens,bool Scaled> void launch(const float* q,const uint16_t* k,const float* w,
         int p0,int T,int ld,float* score,cudaStream_t stream){
         const dim3 grid(((p0+T)/4+127)/128,(T+Tokens-1)/Tokens);
@@ -33,6 +34,7 @@ struct Scorer {
         ck(cudaGetLastError());
     }
     void run(const float* q,const uint16_t* k,const float* w,int p0,int T,int ld,float* score,int* ids,cudaStream_t stream=nullptr){
+        if(prepared){strata::kernels::volta::indexer_batch_scaled(q,k,w,p0,T,ld,score,ids,stream,packed,packed_count,shifts,shift_count);return;}
         if(scaled){if(tile==1)launch<1,true>(q,k,w,p0,T,ld,score,stream);else launch<8,true>(q,k,w,p0,T,ld,score,stream);}
         else{if(tile==1)launch<1,false>(q,k,w,p0,T,ld,score,stream);else launch<8,false>(q,k,w,p0,T,ld,score,stream);}
         for(int t=0;t<T;++t)ds::indexer_select(score+(size_t)t*ld,(p0+t+1)/4,512,ids+(size_t)t*512,stream);
@@ -67,6 +69,9 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
     for(float x:q)need(std::isfinite(x)&&(scorer.scaled||std::abs(x)<=65504),"query outside candidate domain");
     if(mode==3)for(int j=1;j<visible;++j)if(j&1)std::copy_n(k.begin()+size_t(j-1)*DIM,DIM,k.begin()+size_t(j)*DIM);
     Buffer<float> dq(q),dw(w),out(blank),old(blank);Buffer<uint16_t> dk(k);
+    Buffer<uint32_t> prepared(scorer.prepared?size_t(T)*HEADS*DIM:1);
+    Buffer<int> shifts(scorer.prepared?T:1);
+    scorer.packed=prepared.p;scorer.packed_count=prepared.n;scorer.shifts=shifts.p;scorer.shift_count=shifts.n;
     Buffer<int> ids(std::vector<int>(size_t(T)*512+32,-12345)),baseline(std::vector<int>(size_t(T)*512+32,-12345));
     auto oldrun=[&]{ds::indexer_batch(dq.p,dk.p,dw.p,HEADS,4,p0,T,512,old.p,ld,baseline.p,nullptr);};
     auto newrun=[&]{scorer.run(dq.p,dk.p,dw.p,p0,T,ld,out.p,ids.p);};
@@ -132,23 +137,27 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
     else std::snprintf(margin,sizeof(margin),"null");
     const size_t quantile=std::min(errors.size()-1,size_t(errors.size()*.99));
     std::nth_element(errors.begin(),errors.begin()+quantile,errors.end());
-    std::printf("{\"case\":\"mma_batch_indexer\",\"scaled\":%s,\"query_tile\":%d,\"T\":%d,\"p0\":%d,\"visible_max\":%d,\"mode\":%d,\"relative_l2_vs_f32\":%.9g,\"p99_abs_vs_f32\":%.9g,\"max_abs_vs_f32\":%.9g,\"sampled_max_abs_vs_fp64\":%.9g,\"sampled_relative_l2_vs_fp64\":%.9g,\"minimum_f32_margin512_513\":%s,\"score_count\":%zu,\"selection_overlap\":%zu,\"selection_count\":%zu,\"caller_owned_workspace_bytes\":%zu,\"nominal_relative_pass\":%s,\"pass\":true}\n",
-        scorer.scaled?"true":"false",scorer.tile,T,p0,visible,mode,rel,errors[quantile],max_abs,max_cpu,oracle_rel,margin,count,overlap,selected,size_t(0),rel<1e-5?"true":"false");
+    std::printf("{\"case\":\"mma_batch_indexer\",\"scaled\":%s,\"prepared\":%s,\"query_tile\":%d,\"T\":%d,\"p0\":%d,\"visible_max\":%d,\"mode\":%d,\"relative_l2_vs_f32\":%.9g,\"p99_abs_vs_f32\":%.9g,\"max_abs_vs_f32\":%.9g,\"sampled_max_abs_vs_fp64\":%.9g,\"sampled_relative_l2_vs_fp64\":%.9g,\"minimum_f32_margin512_513\":%s,\"score_count\":%zu,\"selection_overlap\":%zu,\"selection_count\":%zu,\"caller_owned_workspace_bytes\":%zu,\"nominal_relative_pass\":%s,\"pass\":true}\n",
+        scorer.scaled?"true":"false",scorer.prepared?"true":"false",scorer.tile,T,p0,visible,mode,rel,errors[quantile],max_abs,max_cpu,oracle_rel,margin,count,overlap,selected,scorer.prepared?(prepared.n+shifts.n)*sizeof(uint32_t):size_t(0),rel<1e-5?"true":"false");
     if(bench){for(int pair=0;pair<6;++pair){float f32,candidate;const int repeats=T>=256?1:3;
         if(pair&1){candidate=timing(newrun,repeats);f32=timing(oldrun,repeats);}else{f32=timing(oldrun,repeats);candidate=timing(newrun,repeats);}
-        std::printf("{\"case\":\"mma_batch_stage_timing\",\"scaled\":%s,\"query_tile\":%d,\"T\":%d,\"p0\":%d,\"pair\":%d,\"f32_ms\":%.9g,\"candidate_ms\":%.9g,\"repeats\":%d}\n",scorer.scaled?"true":"false",scorer.tile,T,p0,pair,f32,candidate,repeats);}}
+        std::printf("{\"case\":\"mma_batch_stage_timing\",\"scaled\":%s,\"prepared\":%s,\"query_tile\":%d,\"T\":%d,\"p0\":%d,\"pair\":%d,\"f32_ms\":%.9g,\"candidate_ms\":%.9g,\"repeats\":%d}\n",scorer.scaled?"true":"false",scorer.prepared?"true":"false",scorer.tile,T,p0,pair,f32,candidate,repeats);}}
 }
 }
 int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"batched MMA requires actual SM70");
-        std::printf("{\"matrix_revision\":3,\"scope\":\"isolated unscaled and power-of-two scaled MMA884 hi/lo; shared normal scale factors\"}\n");
+        std::printf("{\"matrix_revision\":4,\"scope\":\"unscaled and per-head controls plus prepared per-token scaled MMA884 hi/lo\"}\n");
         const bool bench=argc>1;
-        for(bool scaled:{false,true})for(int tile:{1,8}){
-            if(bench && (!scaled || tile!=8))continue; // Only the precision-qualified, useful tile needs new timing.
-            Scorer scorer(tile,scaled);
+        for(int variant=0;variant<5;++variant){
+            const bool prepared=variant==4,scaled=variant>=2;const int tile=variant==0||variant==2?1:8;
+            if(bench&&!prepared)continue;
+            Scorer scorer(tile,scaled,prepared);
             cudaFuncAttributes attr{};int active=0;
-            if(scaled&&tile==1){
+            if(prepared){
+                ck(cudaFuncGetAttributes(&attr,strata::kernels::volta::idx_score_volta_batch_kernel<8,false,true>));
+                ck(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&active,strata::kernels::volta::idx_score_volta_batch_kernel<8,false,true>,128,0));
+            }else if(scaled&&tile==1){
                 ck(cudaFuncGetAttributes(&attr,strata::kernels::volta::idx_score_volta_batch_kernel<1,true>));
                 ck(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&active,strata::kernels::volta::idx_score_volta_batch_kernel<1,true>,128,0));
             }else if(scaled){
@@ -161,7 +170,7 @@ int main(int argc,char**){
                 ck(cudaFuncGetAttributes(&attr,strata::kernels::volta::idx_score_volta_batch_kernel<8>));
                 ck(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&active,strata::kernels::volta::idx_score_volta_batch_kernel<8>,128,0));
             }
-            std::printf("{\"case\":\"resources\",\"scaled\":%s,\"query_tile\":%d,\"registers\":%d,\"shared_bytes\":%zu,\"local_bytes\":%zu,\"active_blocks_per_sm\":%d}\n",scaled?"true":"false",tile,attr.numRegs,attr.sharedSizeBytes,attr.localSizeBytes,active);
+            std::printf("{\"case\":\"resources\",\"scaled\":%s,\"prepared\":%s,\"query_tile\":%d,\"registers\":%d,\"shared_bytes\":%zu,\"local_bytes\":%zu,\"active_blocks_per_sm\":%d}\n",scaled?"true":"false",prepared?"true":"false",tile,attr.numRegs,attr.sharedSizeBytes,attr.localSizeBytes,active);
             if(bench){
                 for(int T:{256,1024,4096})for(int p0:{2048,8192,32768,120000})run_case(scorer,T,p0,0,true);
                 for(int p0:{65536,98304,120000})run_case(scorer,2048,p0,0,true);

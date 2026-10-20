@@ -11,10 +11,10 @@ namespace strata::kernels::volta {
 // across those queries. Four warps/CTA, 128 compressed rows/CTA. Query shared
 // memory holds only the current eight-head band, padded to 130 half elements.
 // No global [token,key,head] intermediate and no new arithmetic in the engine.
-template<int Tokens,bool Scaled=false>
+template<int Tokens,bool Scaled=false,bool Packed=false>
 __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
     const float* iq,const uint16_t* keys,const float* weights,
-    int p0,int T,int ld,float* score) {
+    int p0,int T,int ld,float* score,const uint32_t* packed=nullptr,const int* packed_shifts=nullptr) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 700 && __CUDA_ARCH__ < 750
     static_assert(Tokens==1 || Tokens==8,"bounded experimental query tiles");
     constexpr int QStride=130;
@@ -55,15 +55,20 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
         }
         for(int i=threadIdx.x;i<Tokens*8*128;i+=128){
             const int t=i/(8*128),h=(i/128)%8,d=i%128;
+            const int dst=(t*8+h)*QStride+d;
+            if constexpr(Packed){
+                const uint32_t value=t0+t<T?packed[((size_t)(t0+t)*64+head0+h)*128+d]:0;
+                qhi[dst]=uint16_t(value);qlo[dst]=uint16_t(value>>16);
+            }else{
             float q=t0+t<T?iq[((size_t)(t0+t)*64+head0+h)*128+d]:0;
             if constexpr(Scaled){
                 const float factor=scales[t*8+h];
                 q=factor!=0?__fmul_rn(q,factor):scalbnf(q,shifts[t*8+h]);
             }
             const __half hi=__float2half_rn(q);
-            const int dst=(t*8+h)*QStride+d;
             qhi[dst]=__half_as_ushort(hi);
             qlo[dst]=__half_as_ushort(__float2half_rn(q-__half2float(hi)));
+            }
         }
         for(int i=threadIdx.x;i<Tokens*8;i+=128)
             w[i]=t0+i/8<T?weights[(size_t)(t0+i/8)*64+head0+i%8]:0;
@@ -121,12 +126,20 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
 #pragma unroll
             for(int r=0;r<2;++r){
                 const int row=row0+(lane&1)+4*(lane>>4)+2*r;
-                if(t0+t<T && row<(p0+t0+t+1)/4)score[(size_t)(t0+t)*ld+row]=total[t][r];
+                if(t0+t<T && row<(p0+t0+t+1)/4){
+                    float value=total[t][r];
+                    if constexpr(Packed){
+                        const int shift=packed_shifts[t0+t];
+                        value=shift>=-126&&shift<=126?__fmul_rn(value,__uint_as_float(unsigned(127-shift)<<23)):scalbnf(value,-shift);
+                    }
+                    score[(size_t)(t0+t)*ld+row]=value;
+                }
             }
         }
     }
 #else
     (void)iq;(void)keys;(void)weights;(void)p0;(void)T;(void)ld;(void)score;
+    (void)packed;(void)packed_shifts;
 #endif
 }
 }
