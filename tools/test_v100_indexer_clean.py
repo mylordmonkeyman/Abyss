@@ -23,7 +23,7 @@ class Clean(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             record_gate(errors,'safety',lambda:(_ for _ in ()).throw(RuntimeError('memory guard')))
         metrics=logit_comparison(np.zeros((32,2)),np.ones((32,2)),0)
-        self.assertEqual(metrics['mean_kl'],0)
+        self.assertAlmostEqual(metrics['mean_kl'],0,delta=1e-14)
         self.assertFalse(metrics['bitwise_equal'])
         self.assertTrue(metrics['passes_mean_kl_limit'])
 

@@ -41,7 +41,7 @@ jobs:
           ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
           path: third_party/llama.cpp
           persist-credentials: false
-      - name: Test deferred gates before GPU work
+      - name: Test deferred-gate collection and error boundaries before GPU work
         run: /actions-runner/abyss-v100-python/bin/python tools/test_v100_indexer_clean.py
       - name: Validate verified model evidence, source and idle SM70
         run: |

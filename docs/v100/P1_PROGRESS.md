@@ -28,6 +28,14 @@ This takes priority over P3 and standalone MMA performance campaigns.
 ### Refined MMA model result and cuBLAS intervention checkpoint
 
 
+**Collection preflight follow-up.** Run39496072161 stopped before any GPU work:
+a new unit test incorrectly required exactly zero KL for logits differing by a
+constant. FP64 normalization produced1.11e-16, as expected from rounding. The
+test now uses1e-14 absolute tolerance for that synthetic identity; production
+comparison arithmetic, hash checks and the0.0005 model threshold are unchanged.
+The nine-arm continuation test itself passed. A missing bridge checkpoint now
+also produces an explicit final assessment artifact rather than only a traceback.
+
 **Measurement continuation update (20 October).** Clean run39492718045 built
 successfully but stopped on its first100K F32 hash mismatch, before any candidate
 or timing arm. Its100K allocation context135168 differed from the qualified

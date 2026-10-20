@@ -299,6 +299,12 @@ def block(cache,evidence,index):
 
 def assess(cache,evidence):
     """Apply admission gates only after the independent measurements finish."""
+    target=Path(os.environ['EVIDENCE']);target.mkdir(parents=True,exist_ok=True)
+    if not (cache/'manifest.json').is_file() or not (cache/'bridge/bridge.json').is_file():
+        q.p0.write_json(target/'assessment.json',dict(passes_admission_gates=False,
+            gate_failures=['bridge measurements unavailable; inspect bridge job setup/build/test/execution failure'],
+            disposition='Campaign did not reach measurements; no numerical candidate conclusion'))
+        raise ValueError('bridge measurements unavailable; assessment retained')
     identity=manifest(cache,evidence)
     bridge_state=json.loads((cache/'bridge/bridge.json').read_text())
     failures=list(bridge_state.get('gate_failures',[]))
