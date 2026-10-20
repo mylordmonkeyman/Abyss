@@ -1,0 +1,81 @@
+name: V100 P1 original-upstream repeatability control
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-p1]
+    paths:
+      - '.github/workflows/v100-p1-upstream-repeat.yml'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  quality:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-p1'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p1-upstream-repeat-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+      - name: Verify same runtime and component-qualified binary, refuse GPU overlap
+        run: |
+          set -euo pipefail
+          git diff --exit-code 56f51795d892aa8eae554db78458179504e0165e -- src/core src/kernels include CMakeLists.txt
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          mkdir -p "$EVIDENCE"
+          git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
+          python3 - <<'PYCODE'
+          import hashlib,json,pathlib
+          root=pathlib.Path('results/ci-v100-p1-batched-39353474002-1')
+          proof=json.loads((root/'model-quality/quality.json').read_text())
+          assert proof['source_sha']=='56f51795d892aa8eae554db78458179504e0165e'
+          assert all(r['mean_kl']<=.0005 for r in proof['comparisons'])
+          binary=pathlib.Path('build-v100-diagnostics/strata')
+          assert hashlib.sha256(binary.read_bytes()).hexdigest()==proof['binary_sha256']
+          for tool in ('memcheck','synccheck'):
+              assert 'ERROR SUMMARY: 0 errors' in (root/('cublas-'+tool+'.log')).read_text()
+          PYCODE
+      - name: Characterize original upstream and working F32 at the exact failed geometry
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p1_upstream_repeat.py
+      - name: Enforce bounded diagnostic artifact
+        if: always()
+        run: |
+          python3 - <<'PYCODE'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE']);files=list(root.rglob('*'))
+          assert not any(p.is_symlink() for p in files)
+          assert sum(p.stat().st_size for p in files if p.is_file())<=64*1024**2
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('P1_UPSTREAM_REPEAT_CAP=true\n')
+          PYCODE
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && env.P1_UPSTREAM_REPEAT_CAP == 'true'
+        with:
+          name: abyss-p1-upstream-repeat-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30

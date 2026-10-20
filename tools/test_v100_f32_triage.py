@@ -2,11 +2,25 @@
 import sys
 from pathlib import Path
 import unittest
+from unittest.mock import patch
+import os
 import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parent/'profiling'))
 from p1_f32_triage import comparison
+from p1_upstream_repeat import environment
 
 class TriageMetrics(unittest.TestCase):
+    def test_upstream_control_restores_original_environment(self):
+        with patch.dict(os.environ,{'STRATA_GLM_CPU_LANE':'0','ABYSS_V100_IDX':'cublas',
+                                   'STRATA_GLM_CPU_PLAN':'999999999','STRATA_OTHER':'unexpected'}):
+            env=environment(Path('/retained/upstream-0.f32'))
+        self.assertEqual(env['STRATA_GLM_CPU_LANE'],'28')
+        self.assertEqual(env['ABYSS_V100_IDX'],'f32')
+        self.assertEqual(env['STRATA_DS4_IDX'],'1')
+        self.assertEqual(env['STRATA_GLM_SCORE'],'131039')
+        self.assertNotIn('STRATA_GLM_CPU_PLAN',env)
+        self.assertNotIn('STRATA_OTHER',env)
+
     def test_shift_invariant_repeat(self):
         a=np.tile(np.array([[-1.,2.,3.]]),(32,1))
         result=comparison(a,a+17,131039)

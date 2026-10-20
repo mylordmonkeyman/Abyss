@@ -14,14 +14,27 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
 | Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct score/selection/attention passed (105 live samples); **full-128K KL FAILED, including F32 repeat**; platform compilation not yet run; auto unchanged |
 
-Next: isolate the failed F32 baseline before any candidate promotion. The
-new serialized triage workflow changes only `STRATA_GLM_CPU_LANE=0` for two
-F32 repeats at the exact failed partial-tail geometry. This is a diagnostic
-control, not a production fix or substitute acceptance configuration. It keeps
-bounded raw logits and per-arm checkpoints on the existing runner. SM80/HIP
-inventory and compile steps run independently even if this repeat fails.
-Automatic dispatch remains upstream; cuBLAS stays explicit and unqualified at
-full 128K. MMA remains isolated because tiny-query precision is unqualified.
+Next: establish the missing original-upstream repeatability control at the
+exact failed 128K geometry. `v100-p1-upstream-repeat.yml` runs preserved upstream
+v1.3.31 / working F32 / working F32 / upstream, with the original CPU-lane-28
+settings, frozen model/pack/input and scoring positions. The selected upstream
+binary is SHA256 `5f11a611b284af9bb0df85d5e049e41bbbe7e02b81eb8176abce28fc6426ca89`;
+no rebuild or arithmetic edit is involved. It retains four raw distributions
+on the runner under a 64 MiB total cap, hashes and checkpoints each completed
+arm, and reports upstream repeat, working repeat and two matched port comparisons.
+Collection success is not acceptance: every comparison explicitly reports
+whether the existing 0.0005 limit passed, without subtracting a baseline floor.
+
+Earlier selected-base repeatability tests covered a bounded teacher fixture,
+not the exact failed 128K geometry. Therefore the existing failure establishes
+working-configuration instability, not a regression caused by the candidate.
+The already-running CPU-lane-off diagnostic is a separate control and cannot
+replace the default-setting upstream measurement. The shared workflow concurrency
+group serializes both jobs; no overlapping GPU processes are authorized.
+Automatic dispatch remains upstream; cuBLAS stays explicit and full-context
+admission is unresolved. MMA remains isolated because tiny-query precision is
+unqualified. SM80/HIP inventory and compilation remain in the independent
+triage workflow rather than repeating them in the upstream control.
 
 ## Full-128K admission blocker — 20 October 2026
 
