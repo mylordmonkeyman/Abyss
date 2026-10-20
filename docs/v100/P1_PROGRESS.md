@@ -12,7 +12,7 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct score/selection/attention passed (105 live samples); **full-128K KL FAILED, including F32 repeat**; platform compilation not yet run; auto unchanged |
+| Production integration / P1 exit | **Open**: integration/graph/sanitizer and 100K model-KL pass. Three 128K model pairs show -1.53% median prefill latency. Direct score/selection/attention passed (105 live samples); **full-128K KL FAILED, including F32 repeat**; SM80 compile/link passes, HIP SDK unavailable; CPU-lane-off F32 repeat is bitwise identical; auto unchanged |
 
 Next: establish the missing original-upstream repeatability control at the
 exact failed 128K geometry. `v100-p1-upstream-repeat.yml` runs preserved upstream
@@ -35,6 +35,39 @@ Automatic dispatch remains upstream; cuBLAS stays explicit and full-context
 admission is unresolved. MMA remains isolated because tiny-query precision is
 unqualified. SM80/HIP inventory and compilation remain in the independent
 triage workflow rather than repeating them in the upstream control.
+
+## CPU-lane-off control and platform result — 20 October 2026
+
+[Run 39359164238](https://github.com/mylordmonkeyman/Abyss/actions/runs/39359164238)
+passes both F32 repeats at the exact failed geometry after changing only
+`STRATA_GLM_CPU_LANE` from 28 to 0. Both 16,547,840-byte dumps have identical
+SHA256 `ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81`:
+mean/max KL **0**, top-1 **32/32**. All indexer dispatches remain F32.
+This makes CPU/GPU expert execution a useful investigation axis, without proving
+which part causes the original variability or establishing a candidate regression.
+Original-upstream CPU-lane-28 repeatability remains under measurement.
+
+The independent SM80 compile/link and embedded-image check pass; binary SHA256
+`4524ccf401db1e4b60cc925012ead29c8481c0a21a3f9127437d0feec8deeb85`.
+The visible device inventory contains only SM70, so this is not SM80 inference.
+HIP compilation/runtime are unavailable because no `hipcc` exists on PATH or
+at `/opt/rocm/bin/hipcc`; host policy and HIP-name checks pass, without claiming
+an actual HIP build. Neither privileges nor toolchains were changed.
+
+`p1-f32-triage-2026-10-20.json` is reproduced by `summarize_p1_triage.py` from
+artifact 12237460320, ZIP SHA256
+`c97f37929540495c10fce414956cc549d0360d2e9d626928b8637f56c88e0301`.
+Each arm has 42 telemetry samples, no sampled thermal reason and observed power
+limiting. Minimum host MemAvailable is 48,571,547,648 bytes; overlapping memory
+ledgers are not summed. Raw logits and checkpoints stay on the existing runner.
+
+The next serialized control runs F32/cuBLAS/cuBLAS/F32 at this same CPU-lane-off
+configuration, checking all 231 intended candidate calls per candidate arm and
+the same four <=0.0005 mean-KL comparisons. It tests candidate drift under a
+measured reproducible baseline. Even a pass would apply only to CPU lane 0;
+it cannot qualify the default CPU-lane-28 setting, establish upstream baseline
+behavior, replace default-setting performance tests or automatically promote P1.
+No production math, threshold or default dispatch is changed.
 
 ## Full-128K admission blocker — 20 October 2026
 

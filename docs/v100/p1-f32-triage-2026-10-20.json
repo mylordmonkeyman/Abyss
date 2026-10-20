@@ -1,0 +1,305 @@
+{
+  "schema": 1,
+  "run": 39359164238,
+  "artifact_zip_sha256": "c97f37929540495c10fce414956cc549d0360d2e9d626928b8637f56c88e0301",
+  "source_sha": "bd6ce9378c6261a5dc3eda5372b3f1d049fac4b9",
+  "diagnostic": {
+    "schema": 1,
+    "status": "diagnostic repeat PASS; original P1 gate remains blocked",
+    "source_sha": "bd6ce9378c6261a5dc3eda5372b3f1d049fac4b9",
+    "source_run": "39359164238",
+    "binary_sha256": "fc7a26eca2da31c1a63819b3b4a6440616cbedd59d775c4f70dc8cc51c8c2392",
+    "geometry": {
+      "score_start": 131039,
+      "token_count": 131072,
+      "max_context": 135168,
+      "candidate_positions": [
+        98304,
+        100352,
+        102400,
+        104448,
+        106496,
+        108544,
+        110592,
+        112640,
+        114688,
+        116736,
+        118784
+      ]
+    },
+    "fixture_sha256": "d6887f12762454266b113168580c6a3dcce445b1d9b60c74f1f5b1c940fd23bb",
+    "retained_directory": "/actions-runner/abyss-p1-v9/triage/39359164238-1",
+    "changed_variable": {
+      "STRATA_GLM_CPU_LANE": "0"
+    },
+    "arms": {
+      "f32-0": {
+        "mode": "f32",
+        "candidate_calls": 0,
+        "diagnostic_wall_s_including_load": 459.56120189500507,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 0
+        }
+      },
+      "f32-1": {
+        "mode": "f32",
+        "candidate_calls": 0,
+        "diagnostic_wall_s_including_load": 460.5864211549924,
+        "dispatch_summary": {
+          "records": 1344,
+          "candidate_calls": 0
+        }
+      }
+    },
+    "dumps": {
+      "f32-0": {
+        "bytes": 16547840,
+        "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+        "path": "/actions-runner/abyss-p1-v9/triage/39359164238-1/f32-0.f32"
+      },
+      "f32-1": {
+        "bytes": 16547840,
+        "sha256": "ea857dda662787ae630d699d94d34f940eeab0087606997dc37964fb13417c81",
+        "path": "/actions-runner/abyss-p1-v9/triage/39359164238-1/f32-1.f32"
+      }
+    },
+    "scope": "Two F32 repeats at the original failed partial-tail geometry with CPU expert lane disabled. This isolates a scheduling/arithmetic axis; even a pass does not repair or qualify the default CPU-lane-28 configuration. No candidate execution, automatic promotion, throughput or root-cause claim. Raw logits stay runner-side (64 MiB total cap).",
+    "comparison": {
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "top1_matches": 32,
+      "rows": 32,
+      "positions": [
+        {
+          "predicted_token_index_zero_based": 131040,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131041,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131042,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131043,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131044,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131045,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131046,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131047,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131048,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131049,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131050,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131051,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131052,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131053,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131054,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131055,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131056,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131057,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131058,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131059,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131060,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131061,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131062,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131063,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131064,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131065,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131066,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131067,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131068,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131069,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131070,
+          "kl": 0.0
+        },
+        {
+          "predicted_token_index_zero_based": 131071,
+          "kl": 0.0
+        }
+      ]
+    }
+  },
+  "telemetry": {
+    "f32-0": {
+      "memory": {
+        "peak_rss_bytes": 85005885440,
+        "peak_pss_bytes": 84999455744,
+        "peak_anonymous_bytes": 1140330496,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48616251392,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    },
+    "f32-1": {
+      "memory": {
+        "peak_rss_bytes": 85007253504,
+        "peak_pss_bytes": 85000774656,
+        "peak_anonymous_bytes": 1141301248,
+        "peak_anon_huge_bytes": 0,
+        "peak_vmlck_bytes_not_cuda_pin_accounting": 0,
+        "minimum_host_memavailable_bytes": 48571547648,
+        "accounting": "RSS/PSS/anonymous/THP and cgroup charge overlap; never add them.",
+        "samples": 42
+      },
+      "thermal": {
+        "samples": 42,
+        "valid_samples": 42,
+        "thermal_flag": false,
+        "reason_coverage_complete": true,
+        "regime": "power_limited_observed",
+        "performance_claim_admitted": false,
+        "note": "Sampled reasons alone do not establish clock stability, sustained state or matched A/B conditions"
+      }
+    }
+  },
+  "platform": {
+    "inventory": {
+      "schema": 1,
+      "visible_nvidia_devices": {
+        "argv": [
+          "nvidia-smi",
+          "--query-gpu=name,compute_cap",
+          "--format=csv,noheader"
+        ],
+        "returncode": 0,
+        "output": "Tesla V100-PCIE-32GB, 7.0\n"
+      },
+      "hip_compiler": null,
+      "hip_disposition": "Unavailable: no hipcc on PATH or /opt/rocm/bin/hipcc; no HIP build/runtime claim",
+      "scope": "Toolchain inventory and visible devices only. A CUDA policy unit test is not other-device inference. SM80 compilation must be recorded separately from SM80 runtime, which needs supported hardware. No toolkit installs, container churn, privilege changes or hardware-counter/QPI probes."
+    },
+    "sm80_binary_sha256": "4524ccf401db1e4b60cc925012ead29c8481c0a21a3f9127437d0feec8deeb85",
+    "sm80_disposition": "Compile/link and embedded SM80 image pass; no SM80 hardware runtime test",
+    "hip_disposition": "Unavailable: no hipcc on PATH or /opt/rocm/bin/hipcc; no HIP build/runtime claim"
+  },
+  "disposition": "CPU-lane-off F32 is bitwise repeatable in these two runs. CPU/GPU expert execution is implicated as an investigation axis, not proven root cause. Original-upstream CPU-lane-28 control remains separate. No default-setting acceptance or P1 promotion.",
+  "model_identity": {
+    "stat_signature": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": {
+        "bytes": 5257664,
+        "mtime_ns": 1792302371602863171,
+        "inode": 84432126,
+        "device": 64512
+      },
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": {
+        "bytes": 49437013568,
+        "mtime_ns": 1792302912325395405,
+        "inode": 84432127,
+        "device": 64512
+      },
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": {
+        "bytes": 47390237120,
+        "mtime_ns": 1792303455495151894,
+        "inode": 84432160,
+        "device": 64512
+      }
+    },
+    "sha256": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": "de65c5bb660817b95cc281bf54935f9d1bcc3b22535f2eae63b35a14c7c5724b",
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": "c8728a298862cd8736782e2e4056e5e3e03c415ba552a38173264494e41ef327",
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": "a4bae0788c025c1b2388754592c98fefa1372981748ac9875039bf6a30e6eeb4"
+    },
+    "computed_utc": "2026-10-19T01:24:35.819189+00:00",
+    "cache_policy": "reused only with unchanged read-only mount stat signature",
+    "local_SHA256SUMS_sha256": "60f0a8ab9daf73c7813c417e8b7f88b7ac0c53e2cbee793605bd725d735f394f",
+    "matches_local_SHA256SUMS": {
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf": true,
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf": true,
+      "DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf": true
+    }
+  }
+}

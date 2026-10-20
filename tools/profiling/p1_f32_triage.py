@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Diagnostic CPU-lane-off repeat at the FAILED 128K geometry; never admission."""
+import argparse
 import json
 import os
 from pathlib import Path
@@ -23,6 +24,9 @@ def comparison(a,b,start):
         rows=32,positions=[dict(predicted_token_index_zero_based=start+1+i,kl=float(k)) for i,k in enumerate(kl)])
 
 def main():
+    ap=argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--candidate',action='store_true',help='also compare cuBLAS twice under this controlled CPU-lane-off setting')
+    args=ap.parse_args()
     out=Path(os.environ['EVIDENCE']).absolute()/'f32-triage';out.mkdir(parents=True,exist_ok=False)
     binary=ROOT/'build-v100-diagnostics/strata'
     if quality.p0.sha256(binary)!=BINARY_SHA:raise ValueError('component-qualified binary changed')
@@ -46,7 +50,8 @@ def main():
         retained_directory=str(retained),changed_variable={'STRATA_GLM_CPU_LANE':'0'},arms={},dumps={},
         scope='Two F32 repeats at the original failed partial-tail geometry with CPU expert lane disabled. '
         'This isolates a scheduling/arithmetic axis; even a pass does not repair or qualify the default CPU-lane-28 configuration. '
-        'No candidate execution, automatic promotion, throughput or root-cause claim. Raw logits stay runner-side (64 MiB total cap).')
+        'No automatic promotion, default-setting acceptance, throughput or root-cause claim. Raw logits stay runner-side (64 MiB total cap).',
+        candidate_control=args.candidate)
     def checkpoint():
         quality.p0.write_json(out/'triage.json',state)
         quality.p0.write_json(retained/'checkpoint.json',state)
@@ -57,23 +62,31 @@ def main():
     # Reuse the existing own-child memory guard, telemetry and dispatch checker.
     # Only this process's diagnostic environment adapter changes, never engine code.
     quality.fixed_env=diagnostic_env
-    arrays=[]
+    arrays={};comparisons=[]
     try:
-        for label in ('f32-0','f32-1'):
+        order=[('f32-0','f32'),('cublas-0','cublas'),('cublas-1','cublas'),('f32-1','f32')] if args.candidate else [('f32-0','f32'),('f32-1','f32')]
+        for label,mode in order:
             dump=retained/(label+'.f32')
             print('Starting CPU-lane-off triage',label,flush=True)
-            state['arms'][label]=quality.arm(binary,out/label,tokens,dump,'f32',geometry)
+            state['arms'][label]=quality.arm(binary,out/label,tokens,dump,mode,geometry)
             size=dump.stat().st_size
             if size<=0 or size%(32*4) or sum(p.stat().st_size for p in retained.glob('*.f32'))>64*1024**2:
                 raise ValueError('unexpected distribution ABI or retained logit cap')
             state['dumps'][label]=dict(bytes=size,sha256=quality.p0.sha256(dump),path=str(dump))
-            arrays.append(np.fromfile(dump,dtype='<f4').reshape(32,-1))
+            arrays[label]=np.fromfile(dump,dtype='<f4').reshape(32,-1)
             checkpoint()
-        state['comparison']=comparison(*arrays,geometry['score_start'])
-        passed=state['comparison']['mean_kl']<=.0005
-        state['status']='diagnostic repeat '+('PASS' if passed else 'FAIL')+'; original P1 gate remains blocked'
+        pairs=[('f32-0','f32-1')]
+        if args.candidate:pairs += [('cublas-0','cublas-1'),('f32-0','cublas-0'),('f32-1','cublas-1')]
+        for a,b in pairs:
+            result=comparison(arrays[a],arrays[b],geometry['score_start'])
+            result.update(reference=a,candidate=b)
+            comparisons.append(result)
+        state['comparisons']=comparisons
+        state['comparison']=comparisons[0] # backwards-compatible baseline repeat
+        passed=all(r['mean_kl']<=.0005 for r in comparisons)
+        state['status']='diagnostic control '+('PASS' if passed else 'FAIL')+'; original P1 gate remains blocked'
         checkpoint()
-        if not passed:raise ValueError('CPU-lane-off F32 repeat still exceeds original KL threshold')
+        if not passed:raise ValueError('CPU-lane-off diagnostic exceeds original KL threshold')
     except BaseException as e:
         state['status']='diagnostic failed; original P1 gate remains blocked'
         state['error']=str(e);checkpoint();raise
