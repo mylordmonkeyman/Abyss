@@ -135,3 +135,59 @@ The next serialized capture uses frozen genuine 128K history with unchanged
 and cache/load/placement controls; no bounded estimator or production change
 is admitted by these warmed context observations alone. All 63 local tooling
 tests and the HIP-name check pass before dispatch.
+
+## Genuine 128K result
+
+[Run 39412803044](https://github.com/mylordmonkeyman/Abyss/actions/runs/39412803044)
+passes on `babc202cdcfced6aa288f92a29281bb38529b8ff`. Artifact `12261181483`,
+ZIP SHA256 `e6adb31e81123a9fe4c15a743ac953eed3eb38c69e7576ad9a45882d22a495eb`,
+reproduces `p3-cost-128k-2026-10-20.json` with the same summarizer/digest checks.
+The engine binary SHA256 is identical across all three context captures; each
+history is genuine, frozen and checked by its distinct fixture digest.
+
+All 2752 layer/token records join, with 2342 CPU completions, no nonzero miss
+masks and zero observer drops. There are 58 same-layer/count request strata
+with at least eight samples each. The largest absolute CPU-call median change
+among those strata is 8.11%; this remains descriptive, not a controlled change
+in allocation, expert identity or CPU load. Absence of disk-miss bits in this
+warmed trace is not proof of a cold-cache working set or absence of all I/O.
+
+Minimum sampled MemAvailable is 45,803,896,832 bytes. RSS/PSS peaks are
+86,875,045,888 / 86,867,211,264 bytes, overlapping. All 109 telemetry samples
+are valid, with no sampled thermal flag and observed power limiting. Profiler
+report size is 54,619,734 bytes, retained with its digest and SQLite identity
+on the runner. Profiled request timings and differing cache/CPU populations
+are not clean throughput evidence.
+
+## Observer/profiler controls — next bounded experiment
+
+`p3_observer_control.py` runs plain / observer / traced / traced / observer /
+plain in fresh processes. The two isolated build trees have the same source
+and settings except `STRATA_V100_CAPTURE_COST=OFF/ON`; neither replaces the
+working or immutable upstream binaries. No runtime observer switch or
+production-source change is introduced.
+
+Each arm uses the identical 8224-token prefix derived from frozen
+`mixed-32768.tokens`: 8192 context tokens and 32 teacher-forced continuations.
+One excluded LOGP replay precedes three measured replays. A different explicit
+two-token context before every replay prevents LOGP's equal-context snapshot
+reuse (GEN's NO_REUSE setting alone does not control that path). The traced
+arms use the existing pinned, rootless CUDA/NVTX session API, with warm-up
+excluded from collection. Plain/observer arms do not launch Nsight. ON arms
+must have a nonempty, zero-drop annotation ledger; OFF arms must have none.
+
+These wire times include prefill, host logits/log-softmax and up to 10 ms of
+controller polling, not normal decode throughput. Fixed input bytes reduce
+generated-trajectory differences but do not eliminate CPU-lane-28 router
+variability, cache, scheduling, clock or order effects. Host load/stat,
+placement, memory and GPU telemetry remain recorded. Contrasts are descriptive
+overhead screens, not statistically established causal overhead or optimization
+admission. No thresholds are relaxed and no estimator is enabled.
+
+All GPU work remains serialized by `abyss-v100` and owner/trusted-branch guards.
+The 64 MiB upload cap, 16/8 GiB host margins and bounded runner-side reports
+are retained; cleanup targets only the controller's own process/session.
+No global cache drops, all-pages NUMA binding, competing load, container churn
+or privilege changes are used. Cold-to-warm, load and placement controls remain
+separate outstanding measurements. All 65 local tooling tests and the HIP-name
+mapping check pass before this control dispatch.

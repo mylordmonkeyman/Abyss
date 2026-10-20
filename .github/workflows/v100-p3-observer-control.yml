@@ -1,0 +1,80 @@
+name: V100 P3 observer and profiler controls
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-p1]
+    paths:
+      - '.github/workflows/v100-p3-observer-control.yml'
+      - 'tools/profiling/p3_observer_control.py'
+permissions:
+  contents: read
+concurrency:
+  group: abyss-v100
+  cancel-in-progress: false
+jobs:
+  controls:
+    if: >-
+      github.repository == 'mylordmonkeyman/Abyss' &&
+      github.actor == 'mylordmonkeyman' &&
+      github.triggering_actor == 'mylordmonkeyman' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/feature/deepseek-v100-p1'
+    runs-on: [self-hosted, Linux, X64, v100, sm70, cuda-12-8]
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      NVCC: /usr/local/cuda-12.8/bin/nvcc
+      ABYSS_GPU: '0'
+      EVIDENCE: results/ci-v100-p3-control-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          clean: false
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ggml-org/llama.cpp
+          ref: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+          path: third_party/llama.cpp
+          persist-credentials: false
+      - name: Build isolated observer ON and OFF binaries
+        run: |
+          set -euo pipefail
+          identity=$(nvidia-smi -i "$ABYSS_GPU" --query-gpu=uuid,compute_cap --format=csv,noheader)
+          [[ "$identity" == *,\ 7.0 ]]
+          echo "CUDA_VISIBLE_DEVICES=${identity%%,*}" >> "$GITHUB_ENV"
+          echo "$(dirname "$NVCC")" >> "$GITHUB_PATH"
+          test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
+          mkdir -p "$EVIDENCE"
+          git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
+          for mode in cost control; do
+            capture=OFF
+            if [[ "$mode" == cost ]]; then capture=ON; fi
+            cmake --preset v100-diagnostics -B "build-v100-p3-$mode" -DCMAKE_CUDA_COMPILER="$NVCC" \
+              -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" -DSTRATA_V100_TESTS=ON \
+              -DSTRATA_V100_CAPTURE_STAGES=OFF -DSTRATA_V100_CAPTURE_INDEXER=OFF \
+              -DSTRATA_V100_CAPTURE_COST="$capture" 2>&1 | tee "$EVIDENCE/configure-$mode.log"
+            cmake --build "build-v100-p3-$mode" --target strata --parallel 32 2>&1 | tee "$EVIDENCE/build-$mode.log"
+            sha256sum "build-v100-p3-$mode/strata" > "$EVIDENCE/binary-$mode-sha256.txt"
+          done
+      - name: Fixed-token plain observer traced and reverse-order controls
+        run: /actions-runner/abyss-v100-python/bin/python tools/profiling/p3_observer_control.py
+      - name: Enforce bounded control artifact
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          root=pathlib.Path(os.environ['EVIDENCE']);files=list(root.rglob('*'))
+          assert not any(p.is_symlink() for p in files)
+          assert sum(p.stat().st_size for p in files if p.is_file())<=64*1024**2
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('P3_CONTROL_CAP=true\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && env.P3_CONTROL_CAP == 'true'
+        with:
+          name: abyss-p3-control-${{ github.run_id }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 30
