@@ -59,6 +59,11 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
     if(mode==6)for(auto& x:q)x=std::ldexp(x,80);
     if(mode==7)for(size_t i=0;i<q.size();++i){const int h=(i/DIM)%HEADS;
         q[i]=h%4==0?0:std::ldexp(q[i],h%4==1?-100:h%4==2?-20:20);}
+    if(mode==8)for(auto& x:q)x=std::ldexp(x,-130); // Extreme exponent fallback; FP32 subnormal input.
+    if(mode==9){
+        for(auto& x:q)x=std::ldexp(x,127);
+        for(auto& x:k)x=__half_as_ushort(__float2half_rn(std::ldexp(__half2float(__ushort_as_half(x)),-14)));
+    } // Large-query fallback with finite dots/results, rather than overflowing the oracle.
     for(float x:q)need(std::isfinite(x)&&(scorer.scaled||std::abs(x)<=65504),"query outside candidate domain");
     if(mode==3)for(int j=1;j<visible;++j)if(j&1)std::copy_n(k.begin()+size_t(j-1)*DIM,DIM,k.begin()+size_t(j)*DIM);
     Buffer<float> dq(q),dw(w),out(blank),old(blank);Buffer<uint16_t> dk(k);
@@ -137,9 +142,10 @@ void run_case(Scorer& scorer,int T,int p0,int mode,bool bench){
 int main(int argc,char**){
     try{
         cudaDeviceProp p{};ck(cudaGetDeviceProperties(&p,0));need(p.major==7&&p.minor==0,"batched MMA requires actual SM70");
-        std::printf("{\"matrix_revision\":2,\"scope\":\"isolated unscaled and power-of-two scaled MMA884 hi/lo\"}\n");
+        std::printf("{\"matrix_revision\":3,\"scope\":\"isolated unscaled and power-of-two scaled MMA884 hi/lo; shared normal scale factors\"}\n");
         const bool bench=argc>1;
         for(bool scaled:{false,true})for(int tile:{1,8}){
+            if(bench && (!scaled || tile!=8))continue; // Only the precision-qualified, useful tile needs new timing.
             Scorer scorer(tile,scaled);
             cudaFuncAttributes attr{};int active=0;
             if(scaled&&tile==1){
@@ -162,7 +168,7 @@ int main(int argc,char**){
             }else{
                 for(int T:{1,3,8,9,33})for(int p0:{2040,2052,8192})run_case(scorer,T,p0,0,false);
                 for(int mode:{1,2,3,4})run_case(scorer,9,2052,mode,false);
-                if(scaled)for(int mode:{5,6,7})run_case(scorer,9,2052,mode,false);
+                if(scaled)for(int mode:{5,6,7,8,9})run_case(scorer,9,2052,mode,false);
             }
         }
         std::puts("{\"suite\":\"isolated_mma_batch_indexer\",\"pass\":true}");return 0;

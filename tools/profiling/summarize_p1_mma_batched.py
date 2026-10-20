@@ -28,18 +28,20 @@ def summarize(archive,digest,run):
         def read(name):return z.read(name).decode()
         parity=rows(read('mma-batch-parity.jsonl'));bench=rows(read('mma-batch-benchmark.jsonl'))
         revision=parity[0].get('matrix_revision')
-        if revision not in (1,2) or bench[0].get('matrix_revision')!=revision:raise ValueError('unsupported MMA matrix revision')
-        variants=[(False,1),(False,8)]+([(True,1),(True,8)] if revision==2 else [])
+        if revision not in (1,2,3) or bench[0].get('matrix_revision')!=revision:raise ValueError('unsupported MMA matrix revision')
+        variants=[(False,1),(False,8)]+([(True,1),(True,8)] if revision>=2 else [])
         end={'suite':'isolated_mma_batch_indexer','pass':True}
         if parity[-1]!=end or bench[-1]!=end:raise ValueError('incomplete MMA suite')
         cases=[r for r in parity if r.get('case')=='mma_batch_indexer']
         expected={(s,q,T,p,0) for s,q in variants for T in (1,3,8,9,33) for p in (2040,2052,8192)}
         expected|={(s,q,9,2052,m) for s,q in variants for m in (1,2,3,4)}
-        if revision==2:expected|={(True,q,9,2052,m) for q in (1,8) for m in (5,6,7)}
+        if revision>=2:expected|={(True,q,9,2052,m) for q in (1,8) for m in (5,6,7)}
+        if revision==3:expected|={(True,q,9,2052,m) for q in (1,8) for m in (8,9)}
         if len(cases)!=len(expected) or {(r.get('scaled',False),r['query_tile'],r['T'],r['p0'],r['mode']) for r in cases}!=expected:
             raise ValueError('MMA diagnostic population changed')
-        shapes={(s,q,T,p) for s,q in variants for T in (256,1024,4096) for p in (2048,8192,32768,120000)}
-        shapes|={(s,q,2048,p) for s,q in variants for p in (65536,98304,120000)}
+        timed_variants=[(True,8)] if revision==3 else variants
+        shapes={(s,q,T,p) for s,q in timed_variants for T in (256,1024,4096) for p in (2048,8192,32768,120000)}
+        shapes|={(s,q,2048,p) for s,q in timed_variants for p in (65536,98304,120000)}
         numerical=[r for r in bench if r.get('case')=='mma_batch_indexer']
         if len(numerical)!=len(shapes) or {(r.get('scaled',False),r['query_tile'],r['T'],r['p0']) for r in numerical}!=shapes:
             raise ValueError('MMA timed numerical population changed')

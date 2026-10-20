@@ -21,6 +21,7 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
     __shared__ uint16_t qhi[Tokens*8*QStride],qlo[Tokens*8*QStride];
     __shared__ float w[Tokens*8];
     __shared__ int shifts[Scaled?Tokens*8:1];
+    __shared__ float scales[Scaled?Tokens*8:1],inverse_scales[Scaled?Tokens*8:1];
     const int lane=threadIdx.x&31,warp=threadIdx.x>>5;
     const int qp=(lane>>2)&3,j=(lane&3)+4*(lane>>4);
     const int row0=(blockIdx.x*4+warp)*32+qp*8;
@@ -39,14 +40,26 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
                 }
                 for(int offset=16;offset;offset>>=1)
                     maximum=fmaxf(maximum,__shfl_down_sync(0xffffffffu,maximum,offset));
-                if(lane==0){int exponent=0;if(maximum>0)frexpf(maximum,&exponent);shifts[i]=-exponent;}
+                if(lane==0){
+                    int exponent=0;if(maximum>0)frexpf(maximum,&exponent);
+                    const int shift=-exponent;shifts[i]=shift;
+                    // Both factors are normal and exact in this common range.
+                    // Avoid a libdevice scalbn operation for every query value
+                    // and accumulator; extreme exponents retain that full path.
+                    const bool fast=shift>=-126 && shift<=126;
+                    scales[i]=fast?__uint_as_float(unsigned(127+shift)<<23):0;
+                    inverse_scales[i]=fast?__uint_as_float(unsigned(127-shift)<<23):0;
+                }
             }
             __syncthreads();
         }
         for(int i=threadIdx.x;i<Tokens*8*128;i+=128){
             const int t=i/(8*128),h=(i/128)%8,d=i%128;
             float q=t0+t<T?iq[((size_t)(t0+t)*64+head0+h)*128+d]:0;
-            if constexpr(Scaled)q=scalbnf(q,shifts[t*8+h]);
+            if constexpr(Scaled){
+                const float factor=scales[t*8+h];
+                q=factor!=0?__fmul_rn(q,factor):scalbnf(q,shifts[t*8+h]);
+            }
             const __half hi=__float2half_rn(q);
             const int dst=(t*8+h)*QStride+d;
             qhi[dst]=__half_as_ushort(hi);
@@ -89,7 +102,10 @@ __global__ void __launch_bounds__(128) idx_score_volta_batch_kernel(
                         const int i=2*r+4*band+c;
                         const int h=(lane&2)+4*band+c;
                         float dot=hi[t][i]+lo[t][i];
-                        if constexpr(Scaled)dot=scalbnf(dot,-shifts[t*8+h]);
+                        if constexpr(Scaled){
+                            const float factor=inverse_scales[t*8+h];
+                            dot=factor!=0?__fmul_rn(dot,factor):scalbnf(dot,-shifts[t*8+h]);
+                        }
                         sum+=fmaxf(dot,0.0f)*w[t*8+h];
                     }
                 }

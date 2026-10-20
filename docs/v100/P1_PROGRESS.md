@@ -29,8 +29,36 @@ L2 <1e-5 versus F32 and the sampled FP64 oracle. Additional 2^-100, 2^80 and
 mixed per-head scales test the extended domain. Normal-case FP64 absolute
 bounds are retained. Graph replays, padding/visibility/selection guards,
 memcheck/synccheck, resources, PTX/SASS and a 60-shape / 360-pair stage matrix
-include normalization cost. Physical results are pending; a passing competitive
+include normalization cost. The first physical result is recorded below; a passing competitive
 variant must next receive actual-model input-range/selection and quality tests.
+
+### Scaled MMA first physical result and next normalization schedule
+
+[Run 39432795421](https://github.com/mylordmonkeyman/Abyss/actions/runs/39432795421)
+passes all 82 diagnostic cases, both sanitizers, graphs, emitted SM70 MMA checks
+and 60 numerical timing shapes / 360 pairs. Artifact `12269201557`, ZIP SHA256
+`9005382d02c98fa10eb91eaa8b01958087e1c28127d8490943f58f9b1d2c6662`,
+recomputes into `p1-mma-scaled-2026-10-20.json`.
+
+Scaling repairs the former tiny-query precision failure: relative L2 is
+3.75204915e-7 instead of 3.0464%, with selection membership 4608/4608.
+Scaled 2^-100, 2^80 and mixed-head stresses also pass nominal F32 and sampled
+FP64 relative gates and full membership. The eight-query scaled kernel uses
+186 registers, 33792 shared bytes, zero local bytes, two active CTAs/SM.
+The one-query scaled control reports eight local bytes and is not shortlisted.
+
+The first scaled schedule loses every timed shape: actual T=2048 changes
+are +15.34% at 96K and +12.51% at 120K. These include normalization and literal
+selection launches. This is an accuracy repair, not a speed qualification.
+Before model dispatch, the next schedule shares exact normal power-of-two
+factors per head, using FP32 multiplication for query normalization and dot
+restoration. Extreme exponents retain the full integer-exponent `scalbnf`
+path. FP32-subnormal queries (2^-130) and large queries with small keys explicitly
+exercise both extreme-exponent fallbacks with finite outputs. No thresholds or
+selector semantics change. Recheck all 86 diagnostic
+cases/graphs/sanitizers, and time only the scaled eight-query tile (15 shapes,
+90 pairs); unscaled controls and the one-query loser already have their timing
+dispositions. This tests the revised normalization overhead directly.
 
 P3 checkpoint: the P0-admitted completed-cost observation in `P3_PROGRESS.md`.
 P2 also concludes with F32 fallback; see `P2_COMPLETION.md`.
