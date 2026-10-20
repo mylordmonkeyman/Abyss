@@ -12,7 +12,7 @@ The automatic merge was clean; this is not evidence that runtime parity passes.
 | Selected-base port | Full-model dispatch/route audit, 32K/128K timelines, bounded F32 repeatability screen pass; frozen P0 evidence preserved |
 | One-token MMA884 scorer | Synthetic contracts and sanitizers pass within disclosed bounds; both layouts lose versus F32, tiny-query relative error remains unqualified. Keep F32 |
 | Batched FP32 cuBLAS scorer | Three bounded variants measured, then an expanded 48-shape matrix. At the model's actual T=2048, indexer stage elapsed is -9.20% at 96K and -11.82% at 120K starting context; 64K is noise, shorter contexts lose |
-| Production integration / P1 exit | **Reopened: isolated cutoff-rescore investigation.** Prepared scaled MMA passes components and wins long shapes but fails deterministic full-128K model KL. A new isolated F32 rescore candidate is being tested before any further model/performance admission. Earlier cuBLAS failure remains documented. Production auto remains upstream. |
+| Production integration / P1 exit | **Reopened: refined MMA model investigation.** Unrefined prepared MMA fails deterministic full-128K KL. Cutoff F32 rescore with batched unchanged selectors passes component decisions/sanitizers and wins long stages; its full-model quality/repeatability is pending. Earlier cuBLAS failure remains documented. Production auto remains upstream. |
 
 Current priority: **P1 batched MMA884 reopened on 20 October at user direction**.
 The optional query-scaling experiment was not exhausted by the earlier fallback
@@ -197,6 +197,28 @@ campaign automatically. Revalidate every component gate and full-stage timing,
 and record separate preparation/scoring, selection-pass and rescore CUDA-event
 times to identify any remaining cost. These phase probes are diagnostic, not
 whole-model throughput or a substitute for interleaved totals.
+
+[Batched-selector run 39445214870](https://github.com/mylordmonkeyman/Abyss/actions/runs/39445214870)
+passes all 26 cases, exact selected scores and ordered IDs, graph replay,
+both sanitizers and emitted SM70 checks. Artifact `12275925658`, ZIP SHA256
+`b185de476388a34ade5d219035459846668ac0f7ab85bc891edb27e76f903be8`,
+reproduces `p1-mma-refined-batched-2026-10-20.json`. Full isolated stage
+latency changes at T=2048 are **-46.29% at 64K, -47.66% at 96K and -49.26%
+at 120K**, all six pairs faster at each shape. These are stage results,
+not whole-model throughput. Diagnostic preparation/scoring, one selection
+pass and rescore times are 91.37/1.26/8.49 ms at 96K and 109.29/1.46/8.72 ms
+at 120K. The interleaved total includes both selection passes and all launches.
+
+The explicit experimental `volta` path now uses this shared refined entry
+point, replacing its failed unrefined arithmetic. Its existing backend/geometry
+and starting-position restrictions, legacy override and upstream `auto` stay
+unchanged. Runtime records explicitly identify `refinement=empirical-band-f32`.
+The new model build directory is `build-v100-p1-mma-model-refined`, preserving
+the preceding diagnostic binary. The model workflow rechecks the same 26-case
+component and both sanitizers, then runs F32/MMA/MMA/F32, all 231 eligible
+layer/chunk calls, late query/selection/attention capture and the unchanged
+full-128K KL gate. The band remains empirical and unqualified for production;
+the isolated result does not establish model parity.
 
 `p1_mma_clean_ab.py` prepares the next step **conditional on a passing model
 screen**, with no new GPU dispatch at this checkpoint. It refuses failed quality,

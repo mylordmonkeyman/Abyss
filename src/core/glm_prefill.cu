@@ -25,7 +25,7 @@
 #include "strata/kernels/v100_indexer_policy.hpp"
 #ifndef STRATA_USE_HIP
 #include "../kernels/cuda/dsv4_cublas_idx.cuh"
-#include "../kernels/cuda/dsv4_volta_idx_runner.cuh"
+#include "../kernels/cuda/dsv4_volta_idx_refine.cuh"
 #endif
 
 #include "strata/core/progress.hpp"
@@ -1499,7 +1499,7 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
         if(experimental_idx) {
             if(idx_mode==ds::p1::Mode::volta){
                 // Outputs are still dead, as for the cuBLAS borrower below.
-                strata::kernels::volta::indexer_batch_scaled(B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,s,
+                strata::kernels::volta::indexer_batch_scaled_refined(B.iq,Ly.idx_cache,B.iw,p0,tn,B.score_ld,B.score,B.sel,s,
                     reinterpret_cast<uint32_t*>(B.o),(size_t)tn*HD,reinterpret_cast<int*>(B.oa),(size_t)tn*OL);
             }else{
             // B.o is written next by attend_batch; B.oa is written later by
@@ -1514,8 +1514,9 @@ bool Glm5Model::prefill_ds4_mixer(int il, int64_t p0_64, int tn, const uint16_t*
             ds::indexer_batch(B.iq,Ly.idx_cache,B.iw,g.idx_heads,4,p0,tn,g.idx_top_k,
                               B.score,B.score_ld,B.sel,s);
         if(idx_mode!=ds::p1::Mode::automatic)std::fprintf(stderr,
-            "p1_indexer layer=%d p0=%d T=%d heads=%d dim=%d scorer=%s reason=%s dynamic_shared=0 borrowed_scratch_bytes=%zu\n",
+            "p1_indexer layer=%d p0=%d T=%d heads=%d dim=%d scorer=%s refinement=%s reason=%s dynamic_shared=0 borrowed_scratch_bytes=%zu\n",
             il,p0,tn,g.idx_heads,g.idx_key,experimental_idx?(idx_mode==ds::p1::Mode::volta?"volta":"cublas"):"f32",
+            experimental_idx && idx_mode==ds::p1::Mode::volta?"empirical-band-f32":"none",
             experimental_idx?"explicit-experiment":idx_mode==ds::p1::Mode::f32?"force-f32":"outside-experimental-regime",
             experimental_idx?(idx_mode==ds::p1::Mode::cublas?(size_t)((256*64*512+512*128)*sizeof(float)):
                 ((size_t)tn*64*128+tn)*sizeof(uint32_t)):0);

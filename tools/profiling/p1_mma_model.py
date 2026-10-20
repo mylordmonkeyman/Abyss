@@ -15,7 +15,7 @@ ORDER=(('f32-0','f32'),('volta-0','volta'),('volta-1','volta'),('f32-1','f32'))
 
 def main():
     out=Path(os.environ['EVIDENCE']).absolute()/'model';out.mkdir(parents=True,exist_ok=False)
-    binary=q.ROOT/'build-v100-p1-mma-model/strata';geometry=q.GEOMETRIES['128k']
+    binary=q.ROOT/'build-v100-p1-mma-model-refined/strata';geometry=q.GEOMETRIES['128k']
     model=q.campaign.model_identity();frozen=json.loads((q.campaign.CAMPAIGN/'identity.json').read_text())
     if model['sha256']!=frozen['model_sha256'] or frozen['pack']!=json.loads((q.PACK/'v100_pack_complete.json').read_text()):
         raise ValueError('frozen model/pack changed')
@@ -28,8 +28,10 @@ def main():
     tokens=cache/'tokens';tokens.write_text(','.join(map(str,ids)))
     state=dict(schema=1,status='running; experimental scaled MMA',source_sha=q.p0.command(['git','rev-parse','HEAD'])['stdout'].strip(),
         binary_sha256=q.p0.sha256(binary),fixture_sha256=q.p0.sha256(tokens),model_identity=model,
-        geometry=geometry,cpu_lane=0,order=[label for label,_ in ORDER],arms={},dumps={},comparisons=[],
-        scope='Same binary, original F32 versus explicit scaled eight-query MMA884, CPU lane 0 to characterize deterministic repeats. '
+        geometry=geometry,cpu_lane=0,scorer_implementation='prepared-mma-empirical-cutoff-f32-batched-select',
+        order=[label for label,_ in ORDER],arms={},dumps={},comparisons=[],
+        scope='Same binary, original F32 versus explicit scaled eight-query MMA884 with empirical cutoff-band operational-F32 '
+        'rescore and two batched unchanged selectors, CPU lane 0 to characterize deterministic repeats. '
         'All 231 eligible layer/chunk calls required; first candidate captures late-chunk same-input scores/selection/attention '
         'and five query rows per C4 layer, then restores candidate IDs before continuation. '
         'Diagnostic synchronization excludes these arms from speed claims. Mean KL limit remains 0.0005. '
@@ -45,6 +47,8 @@ def main():
             state['arms'][label]=q.arm(binary,case,tokens,dump,mode,geometry,
                 overrides=dict(STRATA_GLM_CPU_LANE='0',STRATA_V100_MMA_CAPTURE='1' if label=='volta-0' else '0',
                     ABYSS_V100_CAPTURE_P0='118784'),cwd=case)
+            if mode=='volta' and any(r.get('refinement')!='empirical-band-f32' for r in state['arms'][label]['dispatch_records'] if r['scorer']=='volta'):
+                raise ValueError('actual model did not execute the qualified rescore implementation')
             size=dump.stat().st_size
             if size<=0 or size%(32*4) or sum(p.stat().st_size for p in cache.glob('*.f32'))>64*1024**2:
                 raise ValueError('unexpected model logit ABI or retained cap')

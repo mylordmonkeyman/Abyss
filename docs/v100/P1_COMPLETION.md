@@ -4,9 +4,14 @@
 earlier fallback evaluation, not exhaustion of all optional MMA refinements.
 The query-scaling experiment is active in `P1_PROGRESS.md`. Per-head controls
 and a prepared per-token variant have been physically tested; the prepared
-variant passes component precision and wins long shapes, so explicit experimental
-`volta` model qualification is now pending. The cuBLAS
-quality failure is unchanged, and no MMA candidate is admitted for production.
+variant passes component precision and wins long shapes, but full-128K `volta`
+qualification fails deterministically (mean KL 0.00980613; bitwise F32 and MMA
+repeats). A cutoff-band F32 rescore investigation is active: its first schedule
+passes exact component decisions/sanitizers but loses throughput; batched
+unchanged selector launches pass those gates and win long isolated stages.
+The refined path is advancing to actual-model qualification. See `P1_PROGRESS.md` and
+the committed model/refinement evidence. The cuBLAS quality failure is unchanged,
+and no MMA candidate is admitted for production.
 
 20 October 2026. Revision 9 permits a P1/P2 evaluation to conclude “keep F32”
 (critical-path introduction and P1.3.4/P1 exit). P1 experimentation concludes

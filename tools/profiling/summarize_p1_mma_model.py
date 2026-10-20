@@ -45,6 +45,7 @@ def summarize(archive,digest,run,diagnostic_failure=False):
         gate=check_comparisons(quality['comparisons'])
         if gate!=quality['mean_kl_gate_pass']:raise ValueError('model gate disposition mismatch')
         if not gate and not diagnostic_failure:raise ValueError('MMA model quality failed')
+        refined=quality.get('scorer_implementation')=='prepared-mma-empirical-cutoff-f32-batched-select'
         telemetry={};expected={(str(layer),str(p)) for layer in range(2,43,2) for p in range(98304,120001,2048)}
         for label in order:
             prefix='model/'+label+'/';mode='volta' if label.startswith('volta') else 'f32'
@@ -60,6 +61,8 @@ def summarize(archive,digest,run,diagnostic_failure=False):
             if mode=='volta':
                 if len(candidates)!=231 or {(r['layer'],r['p0']) for r in candidates}!=expected or any(r['T']!='2048' or r['scorer']!='volta' for r in candidates):
                     raise ValueError('MMA model candidate dispatch population mismatch')
+                if refined and any(r.get('refinement')!='empirical-band-f32' for r in candidates):
+                    raise ValueError('MMA rescore implementation dispatch mismatch')
             elif candidates:raise ValueError('candidate executed in F32 control')
             telemetry[label]=dict(thermal=read(prefix+'thermal.json'),memory=read(prefix+'memory_summary.json'))
         sizes={r['bytes'] for r in quality['dumps'].values()}
@@ -85,7 +88,7 @@ def summarize(archive,digest,run,diagnostic_failure=False):
                 if isinstance(value,float):
                     if not np.isclose(value,b[key],rtol=1e-10,atol=1e-20):raise ValueError('MMA captured metric mismatch')
                 elif value!=b[key]:raise ValueError('MMA captured metric mismatch')
-        direct['scope']=direct['scope'].replace('cuBLAS path','prepared scaled MMA884 path')
+        direct['scope']=direct['scope'].replace('cuBLAS path','prepared scaled MMA884 with cutoff F32 rescore path' if refined else 'prepared scaled MMA884 path')
         ranges=[]
         for layer in range(2,43,2):
             item=json.loads((root/f'layer-{layer}'/'query-range.json').read_text())
@@ -98,7 +101,16 @@ def summarize(archive,digest,run,diagnostic_failure=False):
         attention=max(r['attention_relative_l2'] for r in direct['samples'])>1e-4
         if attention!=quality['attention_investigation']:raise ValueError('attention disposition mismatch')
         parity=rows(z.read('parity.jsonl').decode());cases=[r for r in parity if r.get('case')=='mma_batch_indexer']
-        if len(cases)!=110 or parity[-1]!={'suite':'isolated_mma_batch_indexer','pass':True}:raise ValueError('MMA shared component population failed')
+        if len(cases)!=(26 if refined else 110) or parity[-1]!={'suite':'isolated_mma_batch_indexer','pass':True}:raise ValueError('MMA shared component population failed')
+        if refined:
+            decisions=[r for r in parity if r.get('case')=='refinement']
+            population={(T,p,0) for T in (1,3,8,9,33) for p in (2040,2052,8192)}
+            population|={(9,2052,m) for m in range(1,11)}|{(3,40000,1)}
+            key=lambda r:(r['T'],r['p0'],r['mode'])
+            if {key(r) for r in cases}!=population or any(not r.get('prepared') or not r.get('scaled') or r['query_tile']!=8 for r in cases):
+                raise ValueError('refined component shape population changed')
+            if len(decisions)!=26 or {key(r) for r in decisions}!=population or any(not r['exact_selected_scores_and_order'] for r in decisions):
+                raise ValueError('missing exact refined component decisions')
         for record in cases:check_numerical(record)
         for tool in ('memcheck','synccheck'):
             if 'ERROR SUMMARY: 0 errors' not in z.read(tool+'.log').decode():raise ValueError('MMA model sanitizer evidence missing')

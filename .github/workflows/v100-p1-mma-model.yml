@@ -1,6 +1,11 @@
-name: V100 P1 scaled MMA model qualification
+name: V100 P1 refined scaled MMA model qualification
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/deepseek-v100-p1]
+    paths:
+      - '.github/workflows/v100-p1-mma-model.yml'
+      - 'tools/profiling/p1_mma_model.py'
 permissions:
   contents: read
 concurrency:
@@ -45,21 +50,21 @@ jobs:
           test -z "$(nvidia-smi -i "$ABYSS_GPU" --query-compute-apps=pid --format=csv,noheader)"
           mkdir -p "$EVIDENCE"
           git rev-parse HEAD > "$EVIDENCE/source-sha.txt"
-          cmake --preset v100-diagnostics -B build-v100-p1-mma-model -DCMAKE_CUDA_COMPILER="$NVCC" \
+          cmake --preset v100-diagnostics -B build-v100-p1-mma-model-refined -DCMAKE_CUDA_COMPILER="$NVCC" \
             -DSTRATA_GGML_DIR="$GITHUB_WORKSPACE/third_party/llama.cpp" -DSTRATA_V100_TESTS=ON \
             -DSTRATA_V100_CAPTURE_STAGES=OFF -DSTRATA_V100_CAPTURE_INDEXER=ON \
             -DSTRATA_V100_CAPTURE_COST=OFF 2>&1 | tee "$EVIDENCE/configure.log"
-          cmake --build build-v100-p1-mma-model --target strata test_dsv4_mma_batched --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
-          sha256sum build-v100-p1-mma-model/strata > "$EVIDENCE/binary-sha256.txt"
-          cuobjdump --list-elf build-v100-p1-mma-model/strata > "$EVIDENCE/object-images.txt"
+          cmake --build build-v100-p1-mma-model-refined --target strata test_dsv4_mma_refined --parallel 32 2>&1 | tee "$EVIDENCE/build.log"
+          sha256sum build-v100-p1-mma-model-refined/strata > "$EVIDENCE/binary-sha256.txt"
+          cuobjdump --list-elf build-v100-p1-mma-model-refined/strata > "$EVIDENCE/object-images.txt"
           grep -q sm_70 "$EVIDENCE/object-images.txt"
       - name: Revalidate shared model entry point and sanitizers
         run: |
           set -euo pipefail
-          STRATA_DS4_IDX=1 timeout 600s build-v100-p1-mma-model/test_dsv4_mma_batched 2>&1 | tee "$EVIDENCE/parity.jsonl"
+          STRATA_DS4_IDX=1 timeout 600s build-v100-p1-mma-model-refined/test_dsv4_mma_refined 2>&1 | tee "$EVIDENCE/parity.jsonl"
           for tool in memcheck synccheck; do
             STRATA_DS4_IDX=1 timeout 900s compute-sanitizer --tool "$tool" --error-exitcode 1 \
-              build-v100-p1-mma-model/test_dsv4_mma_batched 2>&1 | tee "$EVIDENCE/$tool.log"
+              build-v100-p1-mma-model-refined/test_dsv4_mma_refined 2>&1 | tee "$EVIDENCE/$tool.log"
           done
           python3 -m unittest tools.test_v100_indexer_policy
       - name: F32 MMA MMA F32 full 128K repeats and late live-input capture
