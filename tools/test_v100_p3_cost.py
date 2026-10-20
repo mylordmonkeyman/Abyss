@@ -10,9 +10,24 @@ import unittest
 import zipfile
 sys.path.insert(0,str(Path(__file__).resolve().parent/'profiling'))
 from p3_cost_analyze import analyze_rows
-from summarize_p3_cost import distribution,population,summarize
+from summarize_p3_cost import distribution,population,summarize,request_strata
 
 class CostJoin(unittest.TestCase):
+    def test_request_strata_require_same_layer_count_and_enough_miss_free_samples(self):
+        def row(request,value,**extra):
+            return dict(device=0,layer=2,cpu_experts=2,fetch_experts=1,miss=0,
+                request_index=request,cpu_completed_wall_ns=value,fetch_ns=50,**extra)
+        rows=[row(q,100+100*q) for q in (0,1) for _ in range(8)]
+        result=request_strata(rows)
+        self.assertEqual(len(result),1)
+        self.assertEqual(result[0]['costs']['cpu_completed_wall_ns']['request1_vs_request0_change_pct'],100)
+        self.assertNotIn('cpu_wait_ns',result[0]['costs'])
+        self.assertEqual(request_strata(rows[:-1]),[])
+        bad=copy.deepcopy(rows);bad[-1]['miss']=1
+        self.assertEqual(request_strata(bad),[])
+        bad=copy.deepcopy(rows);bad[-1]['layer']=3
+        self.assertEqual(request_strata(bad),[])
+
     def test_artifact_summary_rejects_inconsistent_evidence(self):
         rows=[dict(device=0,layer=layer,token_index=token,request_index=token//32,
             cpu=0,fetch=0,miss=0,cpu_experts=0,fetch_experts=0,cpu_completed_wall_ns=0,fetch_ns=1)

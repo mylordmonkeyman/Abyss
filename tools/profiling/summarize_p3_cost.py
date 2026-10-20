@@ -42,6 +42,27 @@ def layer_summary(rows):
         cpu_wait_ns=distribution([r['cpu_wait_ns'] for r in clean if 'cpu_wait_ns' in r]))
 
 
+def request_strata(rows,minimum_samples=8):
+    """Descriptive matched layer/count strata, NOT same-expert paired trials."""
+    groups=collections.defaultdict(lambda:collections.defaultdict(list))
+    for r in rows:
+        if r['cpu_experts'] and not r['miss']:
+            groups[(r['device'],r['layer'],r['cpu_experts'],r['fetch_experts'])][r['request_index']].append(r)
+    result=[]
+    for (device,layer,cpu,fetch),requests in sorted(groups.items()):
+        if min(len(requests[0]),len(requests[1]))<minimum_samples:continue
+        costs={}
+        for name in ('cpu_completed_wall_ns','fetch_ns','cpu_wait_ns'):
+            values=[[r[name] for r in requests[q] if name in r] for q in (0,1)]
+            if min(map(len,values))<minimum_samples:continue
+            medians=[statistics.median(v) for v in values]
+            if medians[0]<=0:raise ValueError('nonpositive stratum baseline')
+            costs[name]=dict(samples=list(map(len,values)),medians_ns=medians,
+                request1_vs_request0_change_pct=100*(medians[1]/medians[0]-1))
+        result.append(dict(device=device,layer=layer,cpu_experts=cpu,fetch_experts=fetch,costs=costs))
+    return result
+
+
 def summarize(archive,digest,run):
     if hashlib.sha256(archive.read_bytes()).hexdigest()!=digest:raise ValueError('cost artifact digest mismatch')
     with zipfile.ZipFile(archive) as z:
@@ -76,7 +97,8 @@ def summarize(archive,digest,run):
             observer_ranges_including_excluded_warmup=int(counts[0][0]),observer_dropped=0,
             nonzero_miss_mask_records=sum(bool(r['miss']) for r in rows),
             conditioned_costs=population(rows),per_layer={str(layer):layer_summary([r for r in rows if r['layer']==layer])
-                for layer in range(43)},memory=read('memory_summary.json'),thermal=read('thermal.json'),
+                for layer in range(43)},request_strata_minimum_samples=8,
+            same_layer_count_request_strata=request_strata(rows),memory=read('memory_summary.json'),thermal=read('thermal.json'),
             scope='Warmed profiled observations only; first prompt-final forward included in each request. '
             'CPU completed-call wall, mapped-read fetch kernel and exposed CPU wait overlap: do not add them. '
             'Zero-fetch overhead separated; nonzero miss mask is not pure RAM transfer. '

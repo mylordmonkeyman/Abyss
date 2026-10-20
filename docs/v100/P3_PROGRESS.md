@@ -82,7 +82,7 @@ this is neither sustained clock qualification nor a clean performance claim.
 Raw profiler report and SQLite identities are recorded and retained on the
 runner for replay without loading the model.
 
-Next capture extends the same observational protocol to frozen genuine 32K
+The 32K capture extends the same observational protocol to frozen genuine 32K
 history. It keeps the startup plan, 28-thread lane, F32 dispatch and all security,
 memory, profiler and artifact limits. No synthetic position offset substitutes
 for long-context routes. Longer context alone does not close observer-overhead,
@@ -90,9 +90,48 @@ cold-to-warm, competing-load or alternate-placement evidence gaps.
 
 The 32K extension is dispatched as
 [run 39405805983](https://github.com/mylordmonkeyman/Abyss/actions/runs/39405805983)
-from `dc409c2d532270b549d06bc8070714b758ef257e`. Inspect its result before
-another GPU dispatch. Artifact-summary regression tests additionally reject
+from `dc409c2d532270b549d06bc8070714b758ef257e`. Its successful result is
+reviewed below. Artifact-summary regression tests additionally reject
 incomplete populations, source/binary identity disagreement, wrong context,
 observer drops and ZIP digest mismatch. All 62 local V100 tooling tests and
 the HIP-name mapping check pass; this does not substitute for physical HIP or
 other-device inference.
+
+## Genuine 32K result and within-layer/count variation
+
+Run 39405805983 passes. Artifact `12257890824`, ZIP SHA256
+`5b1e44a6fb03803cc4e4d255e8c260667249a13852049c66a41f15cac1cd3ef2`,
+recomputes into `p3-cost-32k-2026-10-20.json`. The actual engine binary SHA256
+is identical to the 8K capture (`be1e0c02b7087b49b94232c32794a5ac736eea1f05fab1e1281b2f4483f4f602`);
+the fixture SHA256 differs as expected for genuine longer history.
+
+All 2752 layer/token records join; 2542 have completed CPU calls. There is one
+nonzero miss-mask record and zero observer drops. The raw report is 23,200,145
+bytes, retained with its SHA256 and SQLite digest on the runner. Minimum sampled
+MemAvailable is 46,361,104,384 bytes; RSS/PSS peak at 86,613,348,352 /
+86,604,806,144 bytes (overlapping). All 24 telemetry samples are valid; no
+thermal flag is sampled, but power limiting is observed. No clean speed claim.
+
+The summarizer now compares request medians **only within the same device,
+layer, CPU expert count and fetch expert count**, excludes disk-miss records,
+and requires at least eight samples in each request. The 32K capture provides
+43 such CPU-active strata. Examples of completed CPU-call wall medians:
+
+| Layer / CPU experts / fetch experts | Request samples | First ms | Second ms | Relative change |
+| --- | --- | --- | --- | --- |
+| 15 / 2 / 0 | 15 / 14 | 0.6650 | 0.4332 | -34.85% |
+| 28 / 2 / 0 | 8 / 8 | 0.6530 | 0.4444 | -31.95% |
+| 19 / 2 / 0 | 9 / 8 | 0.6472 | 0.7379 | +14.01% |
+
+This is descriptive variation, not paired execution of identical experts or a
+significance test. Expert identities, cache locality and host scheduling remain
+uncontrolled; pooled count-only medians also mix layers/formats. Neither the
+cause of a slow call nor a better allocation follows from these medians. The
+minimum sample screen is not an estimator admission threshold. The 8K ledger
+is regenerated with the same descriptive strata for reproducibility.
+
+The next serialized capture uses frozen genuine 128K history with unchanged
+32-output requests and safety limits. Only then proceed to observer-overhead
+and cache/load/placement controls; no bounded estimator or production change
+is admitted by these warmed context observations alone. All 63 local tooling
+tests and the HIP-name check pass before dispatch.
